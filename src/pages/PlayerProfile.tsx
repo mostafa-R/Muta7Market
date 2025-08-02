@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -21,32 +20,12 @@ import {
   Share2,
   Heart,
   User,
-  Award,
-  Play,
-  Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight
+  Award
 } from 'lucide-react';
 
 const PlayerProfile = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const player = playerId ? getPlayerById(playerId) : null;
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  // Mock data for videos and images
-  const playerVideos = [
-    { id: 1, title: 'أفضل اللحظات 2024', thumbnail: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop', duration: '3:45' },
-    { id: 2, title: 'مهارات فردية', thumbnail: 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=400&h=300&fit=crop', duration: '2:30' },
-    { id: 3, title: 'تدريبات خاصة', thumbnail: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop', duration: '5:20' },
-  ];
-
-  const playerImages = [
-    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=400&fit=crop',
-  ];
 
   if (!player) {
     return (
@@ -254,97 +233,6 @@ const PlayerProfile = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Videos Section */}
-            <Card className="gradient-card border-0 shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                  <Play className="w-5 h-5 text-primary" />
-                  <span>مقاطع الفيديو</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {playerVideos.map((video) => (
-                    <div key={video.id} className="relative group cursor-pointer rounded-lg overflow-hidden">
-                      <img 
-                        src={video.thumbnail} 
-                        alt={video.title}
-                        className="w-full h-32 object-cover transition-transform group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-colors">
-                        <Play className="w-8 h-8 text-white" />
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                        <p className="text-white text-sm font-medium">{video.title}</p>
-                        <p className="text-white/80 text-xs">{video.duration}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Images Gallery */}
-            <Card className="gradient-card border-0 shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                  <ImageIcon className="w-5 h-5 text-primary" />
-                  <span>معرض الصور</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative">
-                  <div className="aspect-video rounded-lg overflow-hidden mb-4">
-                    <img 
-                      src={playerImages[currentImageIndex]} 
-                      alt={`صورة ${currentImageIndex + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  {/* Image Navigation */}
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={() => setCurrentImageIndex((prev) => prev === 0 ? playerImages.length - 1 : prev - 1)}
-                      className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                    <span className="text-sm text-muted-foreground">
-                      {currentImageIndex + 1} من {playerImages.length}
-                    </span>
-                    <button
-                      onClick={() => setCurrentImageIndex((prev) => prev === playerImages.length - 1 ? 0 : prev + 1)}
-                      className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Thumbnail Strip */}
-                  <div className="flex space-x-2 space-x-reverse overflow-x-auto pb-2">
-                    {playerImages.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                          index === currentImageIndex 
-                            ? 'border-primary shadow-md' 
-                            : 'border-transparent hover:border-primary/50'
-                        }`}
-                      >
-                        <img 
-                          src={image} 
-                          alt={`صورة مصغرة ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Sidebar */}

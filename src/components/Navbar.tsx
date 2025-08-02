@@ -12,7 +12,6 @@ const Navbar = () => {
     { name: 'الرئيسية', path: '/', icon: Trophy },
     { name: 'استكشاف الألعاب', path: '/sports', icon: Search },
     { name: 'اللاعبين', path: '/players', icon: Users },
-    { name: 'المدربين', path: '/coaches', icon: User },
     { name: 'سجل بياناتك', path: '/register-profile', icon: FileText },
   ];
 
