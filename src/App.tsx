@@ -8,7 +8,6 @@ import Sports from "./pages/Sports";
 import SportDetail from "./pages/SportDetail";
 import Players from "./pages/Players";
 import PlayerProfile from "./pages/PlayerProfile";
-import Coaches from "./pages/Coaches";
 import RegisterProfile from "./pages/RegisterProfile";
 import NotFound from "./pages/NotFound";
 
@@ -26,8 +25,6 @@ const App = () => (
           <Route path="/sports/:sportId" element={<SportDetail />} />
           <Route path="/players" element={<Players />} />
           <Route path="/player/:playerId" element={<PlayerProfile />} />
-          <Route path="/coaches" element={<Coaches />} />
-          <Route path="/coach/:coachId" element={<PlayerProfile />} />
           <Route path="/register-profile" element={<RegisterProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

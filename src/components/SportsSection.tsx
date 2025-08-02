@@ -19,7 +19,7 @@ const SportsSection = () => {
       name: 'كرة القدم',
       icon: Trophy,
       playersCount: 450,
-      description: 'أشهر رياضة في العالم العربي - تطوير المهارات الفنية والجسدية للاعبين',
+      description: 'أشهر رياضة في العالم العربي',
       gradient: 'from-green-500 to-emerald-600'
     },
     {
@@ -27,7 +27,7 @@ const SportsSection = () => {
       name: 'كرة السلة',
       icon: Target,
       playersCount: 280,
-      description: 'رياضة سريعة ومثيرة تتطلب مهارات عالية في التصويب والتحكم بالكرة',
+      description: 'رياضة سريعة ومثيرة',
       gradient: 'from-orange-500 to-red-600'
     },
     {
@@ -35,7 +35,7 @@ const SportsSection = () => {
       name: 'التنس',
       icon: Zap,
       playersCount: 150,
-      description: 'رياضة فردية راقية تعتمد على التركيز والدقة والتحمل البدني',
+      description: 'رياضة فردية راقية',
       gradient: 'from-yellow-500 to-orange-600'
     },
     {
@@ -43,7 +43,7 @@ const SportsSection = () => {
       name: 'السباحة',
       icon: Waves,
       playersCount: 200,
-      description: 'رياضة مائية شاملة تطور جميع عضلات الجسم وتحسن اللياقة البدنية',
+      description: 'رياضة مائية شاملة',
       gradient: 'from-blue-500 to-cyan-600'
     },
     {
@@ -97,7 +97,7 @@ const SportsSection = () => {
             const Icon = sport.icon;
             return (
               <Link key={sport.id} to={`/sports/${sport.id}`}>
-                <Card className="h-full border-0 gradient-card overflow-hidden group transition-smooth hover:-translate-y-1">
+                <Card className="h-full card-hover border-0 gradient-card overflow-hidden group">
                   <CardContent className="p-6 text-center">
                     <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-r ${sport.gradient} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                       <Icon className="w-8 h-8 text-white" />
