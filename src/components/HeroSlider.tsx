@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Play, Users, Trophy } from 'lucide-react';
 import heroFootball1 from '@/assets/hero-football-1.jpg';
-import heroFootball2 from '@/assets/hero-football-2.jpg';
-import heroFootball3 from '@/assets/hero-football-3.jpg';
+import heroTennis from '@/assets/hero-tennis.jpg';
+import heroHandball from '@/assets/hero-handball.jpg';
 
 const HeroSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -17,16 +17,16 @@ const HeroSlider = () => {
       stats: { players: '1000+', sports: '15+' }
     },
     {
-      image: heroFootball2,
-      title: 'طور مهاراتك الرياضية',
-      subtitle: 'انضم لمجتمع الرياضيين وشارك موهبتك مع العالم',
+      image: heroTennis,
+      title: 'طور مهاراتك في التنس',
+      subtitle: 'انضم لمجتمع لاعبي التنس وشارك موهبتك مع العالم',
       cta: 'سجل بياناتك',
       stats: { players: '1000+', sports: '15+' }
     },
     {
-      image: heroFootball3,
-      title: 'احتفل بانجازاتك الرياضية',
-      subtitle: 'منصة تربط اللاعبين بالفرق والأندية المناسبة',
+      image: heroHandball,
+      title: 'احتفل بانجازاتك في كرة اليد',
+      subtitle: 'منصة تربط لاعبي كرة اليد بالفرق والأندية المناسبة',
       cta: 'استكشف الفرص',
       stats: { players: '1000+', sports: '15+' }
     }
@@ -48,7 +48,7 @@ const HeroSlider = () => {
   };
 
   return (
-    <div className="relative h-[70vh] overflow-hidden rounded-3xl">
+    <div className="relative h-[70vh] overflow-hidden w-full">
       {slides.map((slide, index) => (
         <div
           key={index}

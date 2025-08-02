@@ -9,26 +9,26 @@
 @layer base {
   :root {
     /* Sports Brand Colors */
-    --background: 0 0% 98%;
-    --foreground: 220 15% 20%;
+    --background: 0 0% 97%;
+    --foreground: 220 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 20%;
+    --card-foreground: 220 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 20%;
+    --popover-foreground: 220 20% 15%;
 
-    /* Sports Primary - Dynamic Green */
-    --primary: 120 60% 45%;
+    /* Sports Primary - Dynamic Purple */
+    --primary: 260 70% 55%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 120 70% 55%;
+    --primary-glow: 260 80% 65%;
 
-    /* Sports Secondary - Football Orange */
-    --secondary: 25 95% 55%;
+    /* Sports Secondary - Vibrant Orange */
+    --secondary: 30 100% 60%;
     --secondary-foreground: 0 0% 98%;
 
-    /* Sports Accent - Dynamic Blue */
-    --accent: 210 85% 50%;
+    /* Sports Accent - Electric Blue */
+    --accent: 200 90% 55%;
     --accent-foreground: 0 0% 98%;
 
     --muted: 210 20% 96%;
@@ -78,14 +78,14 @@
     --popover: 220 20% 10%;
     --popover-foreground: 210 15% 92%;
 
-    --primary: 120 60% 50%;
+    --primary: 260 70% 60%;
     --primary-foreground: 220 20% 8%;
-    --primary-glow: 120 70% 60%;
+    --primary-glow: 260 80% 70%;
 
-    --secondary: 25 95% 60%;
+    --secondary: 30 100% 65%;
     --secondary-foreground: 220 20% 8%;
 
-    --accent: 210 85% 55%;
+    --accent: 200 90% 60%;
     --accent-foreground: 220 20% 8%;
 
     --muted: 220 20% 15%;
@@ -167,7 +167,7 @@
 
   /* Sports Card Animations */
   .card-hover {
-    @apply transition-sports hover:shadow-sports hover:-translate-y-2 hover:scale-105;
+    @apply transition-sports hover:-translate-y-1 hover:scale-102;
   }
 
   .hero-text {
