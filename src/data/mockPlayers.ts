@@ -1,0 +1,146 @@
+import { Player } from '@/components/PlayerCard';
+
+export const mockPlayers: Player[] = [
+  {
+    id: '1',
+    name: 'أحمد محمد الخليل',
+    age: 23,
+    status: 'Free Agent',
+    gender: 'Male',
+    nationality: 'السعودية',
+    category: 'Professional',
+    monthlySalary: 15000,
+    annualContractValue: 200000,
+    contractConditions: 'عقد لمدة سنتين مع إمكانية التجديد',
+    transferDeadline: '2024-12-31',
+    sport: 'كرة القدم',
+    position: 'مهاجم',
+    rating: 4,
+    experience: 5
+  },
+  {
+    id: '2',
+    name: 'فاطمة عبد الرحمن',
+    age: 21,
+    status: 'Contracted',
+    gender: 'Female',
+    nationality: 'الإمارات',
+    category: 'Elite',
+    monthlySalary: 25000,
+    annualContractValue: 350000,
+    sport: 'التنس',
+    position: 'لاعبة مفردات',
+    rating: 5,
+    experience: 7
+  },
+  {
+    id: '3',
+    name: 'عمر صالح النجار',
+    age: 26,
+    status: 'Transferred',
+    gender: 'Male',
+    nationality: 'مصر',
+    category: 'Professional',
+    monthlySalary: 12000,
+    annualContractValue: 150000,
+    sport: 'كرة السلة',
+    position: 'حارس مرمى',
+    rating: 4,
+    experience: 8
+  },
+  {
+    id: '4',
+    name: 'نور الدين المغربي',
+    age: 19,
+    status: 'Free Agent',
+    gender: 'Male',
+    nationality: 'المغرب',
+    category: 'Amateur',
+    sport: 'السباحة',
+    position: 'سباحة حرة',
+    rating: 3,
+    experience: 3
+  },
+  {
+    id: '5',
+    name: 'زينب الكويتية',
+    age: 24,
+    status: 'Contracted',
+    gender: 'Female',
+    nationality: 'الكويت',
+    category: 'Professional',
+    monthlySalary: 18000,
+    annualContractValue: 220000,
+    sport: 'ألعاب القوى',
+    position: 'جري المسافات الطويلة',
+    rating: 4,
+    experience: 6
+  },
+  {
+    id: '6',
+    name: 'خالد التونسي',
+    age: 28,
+    status: 'Free Agent',
+    gender: 'Male',
+    nationality: 'تونس',
+    category: 'Elite',
+    monthlySalary: 30000,
+    annualContractValue: 400000,
+    sport: 'كرة القدم',
+    position: 'وسط مدافع',
+    rating: 5,
+    experience: 10
+  },
+  {
+    id: '7',
+    name: 'ريم اللبنانية',
+    age: 22,
+    status: 'Contracted',
+    gender: 'Female',
+    nationality: 'لبنان',
+    category: 'Professional',
+    monthlySalary: 14000,
+    annualContractValue: 180000,
+    sport: 'الكرة الطائرة',
+    position: 'ضاربة',
+    rating: 4,
+    experience: 4
+  },
+  {
+    id: '8',
+    name: 'يوسف الأردني',
+    age: 25,
+    status: 'Free Agent',
+    gender: 'Male',
+    nationality: 'الأردن',
+    category: 'Professional',
+    monthlySalary: 16000,
+    annualContractValue: 200000,
+    sport: 'ركوب الدراجات',
+    position: 'سباق الطرق',
+    rating: 4,
+    experience: 6
+  }
+];
+
+export const getPlayersBySport = (sport: string): Player[] => {
+  const sportMapping: { [key: string]: string } = {
+    'football': 'كرة القدم',
+    'basketball': 'كرة السلة',
+    'tennis': 'التنس',
+    'swimming': 'السباحة',
+    'athletics': 'ألعاب القوى',
+    'cycling': 'ركوب الدراجات',
+    'weightlifting': 'رفع الأثقال',
+    'volleyball': 'الكرة الطائرة'
+  };
+
+  const arabicSportName = sportMapping[sport];
+  if (!arabicSportName) return [];
+
+  return mockPlayers.filter(player => player.sport === arabicSportName);
+};
+
+export const getPlayerById = (id: string): Player | undefined => {
+  return mockPlayers.find(player => player.id === id);
+};
