@@ -167,7 +167,7 @@
 
   /* Sports Card Animations */
   .card-hover {
-    @apply transition-sports hover:shadow-sports hover:-translate-y-2 hover:scale-105;
+    @apply transition-sports hover:shadow-sports hover:-translate-y-2 hover:scale-110;
   }
 
   .hero-text {
