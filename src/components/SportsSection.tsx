@@ -97,24 +97,15 @@ const SportsSection = () => {
             const Icon = sport.icon;
             return (
               <Link key={sport.id} to={`/sports/${sport.id}`}>
-                <Card className="h-full border-0 overflow-hidden group transition-smooth">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-2xl flex items-center justify-center">
-                      <Icon className="w-8 h-8 text-white" />
+                <Card className="h-full border-0 overflow-hidden group transition-smooth hover:shadow-lg">
+                  <CardContent className="p-8 text-center">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-primary/15 rounded-3xl flex items-center justify-center">
+                      <Icon className="w-10 h-10 text-primary" />
                     </div>
                     
-                    <h3 className="text-lg font-bold text-card-foreground mb-2 group-hover:text-primary transition-colors">
+                    <h3 className="text-xl font-bold text-card-foreground group-hover:text-primary transition-colors">
                       {sport.name}
                     </h3>
-                    
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {sport.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary">
-                      <Users className="w-4 h-4" />
-                      <span className="font-semibold">{sport.playersCount} لاعب</span>
-                    </div>
                   </CardContent>
                 </Card>
               </Link>
