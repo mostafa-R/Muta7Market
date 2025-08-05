@@ -24,7 +24,7 @@ const Navbar = () => {
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Trophy className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold hero-text">سوق الرياضة العربي</span>
+            <span className="text-xl font-bold hero-text">Muta7market</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -38,8 +38,8 @@ const Navbar = () => {
                   to={item.path}
                   className={`flex items-center space-x-2 space-x-reverse px-3 py-2 rounded-md text-sm font-medium transition-sports ${
                     isActive
-                      ? 'text-primary bg-primary/10'
-                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-primary hover:bg-primary/5"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -77,8 +77,8 @@ const Navbar = () => {
                         onClick={() => setIsOpen(false)}
                         className={`flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-lg transition-sports ${
                           isActive
-                            ? 'text-primary bg-primary/10'
-                            : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                            ? "text-primary bg-primary/10"
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/5"
                         }`}
                       >
                         <Icon className="w-5 h-5" />

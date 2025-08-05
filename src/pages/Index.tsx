@@ -27,8 +27,8 @@ const Index = () => {
       <SimpleHero />
       
       {/* مساحة إعلانية */}
-      <section className="py-8 bg-secondary/30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-8 bg-muted">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ">
           <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-8 text-center border border-primary/20">
             <div className="text-muted-foreground text-sm mb-2">مساحة إعلانية</div>
             <div className="text-lg font-semibold text-foreground mb-2">اعلن هنا عن خدماتك الرياضية</div>
@@ -41,7 +41,7 @@ const Index = () => {
       <SportsSection />
 
       {/* Featured Players */}
-      <section className="py-16">
+      <section className="py-16 bg-muted ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -70,7 +70,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-muted">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-primary rounded-3xl p-8 md:p-12 text-center text-white">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">

@@ -81,7 +81,7 @@ const SportsSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="py-16 bg-muted">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -92,12 +92,12 @@ const SportsSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ">
           {sports.map((sport) => {
             const Icon = sport.icon;
             return (
               <Link key={sport.id} to={`/sports/${sport.id}`}>
-                <Card className="h-full border-0 overflow-hidden group transition-smooth hover:shadow-lg">
+                <Card className="h-full border-[muted] overflow-hidden group transition-smooth hover:shadow-lg">
                   <CardContent className="p-8 text-center">
                     <div className="w-20 h-20 mx-auto mb-6 bg-primary/15 rounded-3xl flex items-center justify-center">
                       <Icon className="w-10 h-10 text-primary" />

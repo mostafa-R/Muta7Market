@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -9,7 +9,7 @@
 @layer base {
   :root {
     /* Calm Beige & Soft Blue Design System */
-    --background: 35 15% 96%;
+    --background: 0 0% 95%;
     --foreground: 210 15% 25%;
 
     --card: 0 0% 100%;
@@ -19,18 +19,18 @@
     --popover-foreground: 210 15% 25%;
 
     /* Primary - Soft Blue */
-    --primary: 210 25% 60%;
+    --primary: 216 100% 12%;
     --primary-foreground: 0 0% 98%;
 
     /* Secondary - Warm Beige */
-    --secondary: 35 20% 85%;
+    --secondary: 0 0% 100%;
     --secondary-foreground: 210 15% 25%;
 
     /* Accent - Light Blue */
     --accent: 200 20% 75%;
     --accent-foreground: 210 15% 25%;
 
-    --muted: 35 15% 92%;
+    --muted: 0 0% 100%;
     --muted-foreground: 210 12% 55%;
 
     --destructive: 0 50% 60%;
@@ -117,7 +117,7 @@
 @layer utilities {
   /* Arabic RTL Support */
   .font-arabic {
-    font-family: 'Noto Sans Arabic', sans-serif;
+    font-family: "Noto Sans Arabic", sans-serif;
   }
 
   .shadow-card {

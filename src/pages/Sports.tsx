@@ -97,7 +97,7 @@ const Sports = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted ">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
@@ -126,7 +126,7 @@ const Sports = () => {
             const Icon = sport.icon;
             return (
               <Link key={sport.id} to={`/sports/${sport.id}`}>
-                <Card className={`h-full border-0 overflow-hidden group relative transition-smooth ${
+                <Card className={`h-full border-[muted] overflow-hidden group relative transition-smooth ${
                   sport.featured ? 'ring-2 ring-primary/50' : ''
                 }`}>
                   {sport.featured && (
