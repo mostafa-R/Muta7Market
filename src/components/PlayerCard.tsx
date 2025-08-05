@@ -66,7 +66,7 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
   };
 
   return (
-    <Card className="gradient-card border-0 card-hover overflow-hidden group">
+    <Card className="border-0 overflow-hidden group transition-smooth">
       <CardContent className="p-0">
         {/* Header with Avatar and Status */}
         <div className="relative p-6 pb-4">

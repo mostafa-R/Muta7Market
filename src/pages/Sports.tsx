@@ -126,7 +126,7 @@ const Sports = () => {
             const Icon = sport.icon;
             return (
               <Link key={sport.id} to={`/sports/${sport.id}`}>
-                <Card className={`h-full card-hover border-0 gradient-card overflow-hidden group relative ${
+                <Card className={`h-full border-0 overflow-hidden group relative transition-smooth ${
                   sport.featured ? 'ring-2 ring-primary/50' : ''
                 }`}>
                   {sport.featured && (
@@ -136,7 +136,7 @@ const Sports = () => {
                   )}
                   
                   <CardContent className="p-6">
-                    <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-r ${sport.gradient} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-2xl flex items-center justify-center">
                       <Icon className="w-8 h-8 text-white" />
                     </div>
                     
@@ -186,7 +186,7 @@ const Sports = () => {
             سجل بياناتك كلاعب وساعدنا في إضافة المزيد من الرياضات
           </p>
           <Link to="/register-profile">
-            <Button variant="hero" size="lg">
+            <Button variant="default" size="lg">
               <Trophy className="w-5 h-5 ml-2" />
               سجل بياناتك الآن
             </Button>

@@ -1,5 +1,5 @@
 import Navbar from '@/components/Navbar';
-import HeroSlider from '@/components/HeroSlider';
+import SimpleHero from '@/components/SimpleHero';
 import SportsSection from '@/components/SportsSection';
 import PlayerCard from '@/components/PlayerCard';
 import { Button } from '@/components/ui/button';
@@ -24,14 +24,10 @@ const Index = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <HeroSlider />
-        </div>
-      </section>
+      <SimpleHero />
 
       {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-r from-primary/5 via-accent/5 to-secondary/5">
+      <section className="py-16 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
@@ -92,7 +88,7 @@ const Index = () => {
 
           <div className="text-center">
             <Link to="/players">
-              <Button variant="hero" size="lg">
+              <Button variant="default" size="lg">
                 <Users className="w-5 h-5 ml-2" />
                 عرض جميع اللاعبين
               </Button>
@@ -104,7 +100,7 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-r from-primary to-accent rounded-3xl p-8 md:p-12 text-center text-white">
+          <div className="bg-primary rounded-3xl p-8 md:p-12 text-center text-white">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               ابدأ رحلتك الرياضية معنا
             </h2>
@@ -135,7 +131,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 space-x-reverse mb-4">
-              <div className="w-8 h-8 gradient-sports rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-white" />
               </div>
               <span className="text-lg font-bold hero-text">سوق الرياضة العربي</span>

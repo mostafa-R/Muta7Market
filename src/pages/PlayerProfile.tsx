@@ -35,7 +35,7 @@ const PlayerProfile = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">اللاعب غير موجود</h1>
             <Link to="/players">
-              <Button variant="hero">
+              <Button variant="default">
                 <ArrowRight className="w-4 h-4 mr-2" />
                 العودة للاعبين
               </Button>
@@ -100,7 +100,7 @@ const PlayerProfile = () => {
           {/* Main Profile */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header Card */}
-            <Card className="gradient-card border-0 shadow-card">
+            <Card className="border-0 shadow-card">
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-6 md:space-x-reverse">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
@@ -176,7 +176,7 @@ const PlayerProfile = () => {
 
             {/* Financial Information */}
             {(player.monthlySalary || player.annualContractValue) && (
-              <Card className="gradient-card border-0 shadow-card">
+              <Card className="border-0 shadow-card">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 space-x-reverse">
                     <DollarSign className="w-5 h-5 text-primary" />
@@ -207,7 +207,7 @@ const PlayerProfile = () => {
 
             {/* Contract Information */}
             {(player.contractConditions || player.transferDeadline) && (
-              <Card className="gradient-card border-0 shadow-card">
+              <Card className="border-0 shadow-card">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 space-x-reverse">
                     <Clock className="w-5 h-5 text-primary" />
@@ -238,12 +238,12 @@ const PlayerProfile = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Actions */}
-            <Card className="gradient-card border-0 shadow-card">
+            <Card className="border-0 shadow-card">
               <CardHeader>
                 <CardTitle>تواصل مع اللاعب</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="hero" className="w-full">
+                <Button variant="default" className="w-full">
                   <MessageCircle className="w-4 h-4 ml-2" />
                   إرسال رسالة
                 </Button>
@@ -259,7 +259,7 @@ const PlayerProfile = () => {
             </Card>
 
             {/* Profile Actions */}
-            <Card className="gradient-card border-0 shadow-card">
+            <Card className="border-0 shadow-card">
               <CardHeader>
                 <CardTitle>إجراءات</CardTitle>
               </CardHeader>
@@ -280,7 +280,7 @@ const PlayerProfile = () => {
             </Card>
 
             {/* Stats */}
-            <Card className="gradient-card border-0 shadow-card">
+            <Card className="border-0 shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 space-x-reverse">
                   <Award className="w-5 h-5 text-primary" />

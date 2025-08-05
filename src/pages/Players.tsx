@@ -178,7 +178,7 @@ const Players = () => {
             </Button>
             
             <Link to="/register-profile">
-              <Button variant="hero" size="sm">
+              <Button variant="default" size="sm">
                 <UserPlus className="w-4 h-4 ml-2" />
                 سجل كلاعب
               </Button>
@@ -230,7 +230,7 @@ const Players = () => {
             انضم إلى مجتمعنا المتنامي من اللاعبين والمدربين المحترفين
           </p>
           <Link to="/register-profile">
-            <Button variant="hero" size="lg">
+            <Button variant="default" size="lg">
               <Star className="w-5 h-5 ml-2" />
               سجل بياناتك الآن
             </Button>

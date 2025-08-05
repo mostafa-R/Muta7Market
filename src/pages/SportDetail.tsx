@@ -66,7 +66,7 @@ const SportDetail = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">الرياضة غير موجودة</h1>
             <Link to="/sports">
-              <Button variant="hero">
+              <Button variant="default">
                 <ArrowRight className="w-4 h-4 mr-2" />
                 العودة للرياضات
               </Button>
@@ -213,7 +213,7 @@ const SportDetail = () => {
             انضم إلى مجتمعنا وأعرض مهاراتك للعالم
           </p>
           <Link to="/register-profile">
-            <Button variant="hero" size="lg">
+            <Button variant="default" size="lg">
               <Star className="w-5 h-5 ml-2" />
               سجل بياناتك الآن
             </Button>

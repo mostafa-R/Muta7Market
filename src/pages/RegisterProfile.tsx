@@ -130,7 +130,7 @@ const RegisterProfile = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
-          <Card className="gradient-card border-0 shadow-card">
+          <Card className="border-0 shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
                 <User className="w-5 h-5 text-primary" />
@@ -230,7 +230,7 @@ const RegisterProfile = () => {
           </Card>
 
           {/* Sports Information */}
-          <Card className="gradient-card border-0 shadow-card">
+          <Card className="border-0 shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
                 <Trophy className="w-5 h-5 text-primary" />
@@ -315,7 +315,7 @@ const RegisterProfile = () => {
           </Card>
 
           {/* Financial Information */}
-          <Card className="gradient-card border-0 shadow-card">
+          <Card className="border-0 shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
                 <DollarSign className="w-5 h-5 text-primary" />
@@ -365,7 +365,7 @@ const RegisterProfile = () => {
           </Card>
 
           {/* Additional Information */}
-          <Card className="gradient-card border-0 shadow-card">
+          <Card className="border-0 shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
                 <FileText className="w-5 h-5 text-primary" />
@@ -388,7 +388,7 @@ const RegisterProfile = () => {
           </Card>
 
           {/* Terms and Conditions */}
-          <Card className="gradient-card border-0 shadow-card">
+          <Card className="border-0 shadow-card">
             <CardContent className="pt-6">
               <div className="flex items-start space-x-3 space-x-reverse">
                 <Checkbox
@@ -413,7 +413,7 @@ const RegisterProfile = () => {
 
           {/* Submit Button */}
           <div className="flex justify-center">
-            <Button type="submit" variant="hero" size="xl" className="px-12">
+            <Button type="submit" variant="default" size="xl" className="px-12">
               <Save className="w-5 h-5 ml-2" />
               إنشاء الملف الشخصي
             </Button>

@@ -76,7 +76,7 @@ const HeroSlider = () => {
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-4 mb-8 animate-in slide-in-from-right duration-1000 delay-300">
-                    <Button variant="hero" size="xl" className="group">
+                    <Button variant="default" size="xl" className="group">
                       <Play className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
                       {slide.cta}
                     </Button>
