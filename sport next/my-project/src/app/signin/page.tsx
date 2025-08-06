@@ -333,12 +333,12 @@ export default function Login() {
 
               {/* Forgot Password */}
               <div className="mt-4 text-center">
-                <Link
+                {/* <Link
                   href="/forgetpassword"
                   className="text-[#6A64F1] hover:underline text-sm"
                 >
                   {translations[language].forgotPassword}
-                </Link>
+                </Link> */}
 
                 <Link
                   href="/signup"

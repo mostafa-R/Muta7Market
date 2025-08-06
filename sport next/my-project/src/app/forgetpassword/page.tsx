@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { motion } from "framer-motion";
 import Joi from "joi";
@@ -172,6 +173,8 @@ export default function ForgotPassword() {
     email: "",
   };
 
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/forgot-password`;
+  
   const handleSubmit = async (
     values: FormValues,
     { setSubmitting, resetForm, setFieldError }: FormikHelpers<FormValues>
@@ -180,7 +183,11 @@ export default function ForgotPassword() {
     setSubmitMessage("");
 
     try {
-      const result = await checkEmailExists(values.email);
+      const response = await axios.post(API_URL, values, {
+        withCredentials: true,
+      });
+
+      const result = response.data;
 
       if (!result.exists) {
         setFieldError(

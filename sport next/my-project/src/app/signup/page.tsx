@@ -5,14 +5,7 @@ import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import Joi from "joi";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  FiCalendar,
-  FiClock,
-  FiLock,
-  FiMail,
-  FiPhone,
-  FiUser,
-} from "react-icons/fi";
+import { FiLock, FiMail, FiPhone, FiUser } from "react-icons/fi";
 
 // Types
 type Language = "ar" | "en";
@@ -401,7 +394,7 @@ export default function SignUp() {
                 <button
                   type="submit"
                   disabled={formikSubmitting || isSubmitting}
-                  className="hover:shadow-form w-full rounded-md bg-[#6A64F1] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="hover:shadow-form w-full rounded-md bg-[hsl(var(--primary))] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">

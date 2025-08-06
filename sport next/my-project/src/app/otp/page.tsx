@@ -6,6 +6,9 @@ import { useState } from "react";
 import { FiLock } from "react-icons/fi";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
 
 // Language types
 type Language = "ar" | "en";
@@ -39,7 +42,7 @@ const translations: Record<
   ar: {
     title: "إدخال رمز التحقق",
     otp: "رمز التحقق",
-    submit: "Submit",
+    submit: "إرسال",
     submitting: "جاري الإرسال...",
     backToLogin: "العودة إلى تسجيل الدخول",
     successMessage: "تم التحقق من الرمز بنجاح!",
@@ -100,16 +103,12 @@ const validate = (values: FormValues, language: Language) => {
   return errors;
 };
 
-// Simulate OTP verification
-const verifyOTP = async (otp: string): Promise<boolean> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return otp !== "000000";
-};
-
+// Component
 export default function OTP() {
   const [language, setLanguage] = useState<Language>("ar");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const router = useRouter();
 
   const initialValues: FormValues = {
     otp: "",
@@ -124,17 +123,25 @@ export default function OTP() {
     setSubmitMessage("");
 
     try {
-      const isValid = await verifyOTP(values.otp);
-      if (!isValid) {
-        setFieldError("otp", translations[language].errorMessage);
-        throw new Error("Invalid OTP");
-      }
+      // Replace with your actual API endpoint
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/verify-email`,
+        values,
+        {
+          withCredentials: true,
+        }
+      );
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("OTP verified:", values);
-      setSubmitMessage(translations[language].successMessage);
-      resetForm();
-    } catch {
+      if (response.data.success) {
+        setSubmitMessage(translations[language].successMessage);
+        resetForm();
+        // Optional: Redirect to another page after successful verification
+        router.push("/signin");
+      } else {
+        setFieldError("otp", translations[language].errorMessage);
+      }
+    } catch (error: any) {
+      console.error("OTP Verification Error:", error);
       setSubmitMessage(translations[language].errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -242,7 +249,7 @@ export default function OTP() {
 
               <div className="mt-4 text-center">
                 <Link
-                  href="/login"
+                  href="/signin"
                   className="text-[#6A64F1] hover:underline text-sm"
                 >
                   {translations[language].backToLogin}
