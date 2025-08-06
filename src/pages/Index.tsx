@@ -27,7 +27,7 @@ const Index = () => {
       <SimpleHero />
       
       {/* مساحة إعلانية */}
-      <section className="py-8 bg-muted">
+      <section className="py-8 bg-[var(--muted)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ">
           <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-8 text-center border border-primary/20">
             <div className="text-muted-foreground text-sm mb-2">مساحة إعلانية</div>

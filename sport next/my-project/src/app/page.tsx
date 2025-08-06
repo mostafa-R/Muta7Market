@@ -1,5 +1,18 @@
 import Image from "next/image";
+import SimpleHero from "./home/SimpleHero";
+import AdBanner from "./home/AdBanner";
+import SportsSection from "./home/SportsSection";
+import PlayerSection from "./home/PlayerSection";
+import StartJourneySection from "./home/StartJourneySection";
 
 export default function Home() {
-  return <h1 className="text-3xl font-bold underline">Hello world!</h1>;
+  return (
+    <>
+      <SimpleHero />
+      <AdBanner />
+      <SportsSection />
+      <PlayerSection />
+      <StartJourneySection />
+    </> 
+  );
 }
