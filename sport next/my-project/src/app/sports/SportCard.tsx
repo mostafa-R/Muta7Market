@@ -12,70 +12,136 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
-function SportCard() {
+
+interface SportCardProps {
+  searchTerm: string;
+}
+
+function SportCard({ searchTerm }: SportCardProps) {
   const sports = [
     {
       id: "football",
       name: "كرة القدم",
       icon: Trophy,
-      playersCount: 450,
-      description:
-        "أشهر رياضة في العالم العربي مع أكبر عدد من اللاعبين المسجلين",
       featured: true,
     },
     {
       id: "basketball",
       name: "كرة السلة",
       icon: Target,
-      playersCount: 280,
-      description: "رياضة سريعة ومثيرة تتطلب مهارات فنية عالية",
     },
     {
       id: "tennis",
       name: "التنس",
       icon: Zap,
-      playersCount: 150,
-      description: "رياضة فردية راقية تتطلب دقة وتحمل عالي",
     },
     {
       id: "swimming",
       name: "السباحة",
       icon: Waves,
-      playersCount: 200,
-      description: "رياضة مائية شاملة تطور جميع عضلات الجسم",
     },
     {
       id: "athletics",
       name: "ألعاب القوى",
       icon: Timer,
-      playersCount: 320,
-      description: "أم الرياضات تشمل الجري والقفز والرمي",
       featured: true,
     },
     {
       id: "cycling",
       name: "ركوب الدراجات",
       icon: Bike,
-      playersCount: 180,
-      description: "رياضة التحمل والسرعة في الهواء الطلق",
     },
     {
       id: "weightlifting",
       name: "رفع الأثقال",
       icon: Dumbbell,
-      playersCount: 120,
-      description: "رياضة القوة والعزيمة لبناء العضلات",
     },
     {
       id: "volleyball",
       name: "الكرة الطائرة",
       icon: Users,
-      playersCount: 220,
-      description: "رياضة جماعية ممتعة تتطلب التنسيق والتعاون",
+    },
+    {
+      id: "handball",
+      name: "كرة اليد",
+      icon: Users,
+    },
+    {
+      id: "badminton",
+      name: "الريشة الطائرة",
+      icon: Zap,
+    },
+    {
+      id: "karate",
+      name: "الكاراتيه",
+      icon: Dumbbell,
+    },
+    {
+      id: "taekwondo",
+      name: "التايكوندو",
+      icon: Dumbbell,
+    },
+    {
+      id: "archery",
+      name: "السهام",
+      icon: Target,
+    },
+    {
+      id: "esports",
+      name: "الرياضات الإلكترونية",
+      icon: Zap,
+    },
+    {
+      id: "judo",
+      name: "الجودو",
+      icon: Dumbbell,
+    },
+    {
+      id: "fencing",
+      name: "المبارزة",
+      icon: Zap,
+    },
+    {
+      id: "squash",
+      name: "الإسكواش",
+      icon: Target,
+    },
+    {
+      id: "futsal",
+      name: "كرة قدم الصالات",
+      icon: Trophy,
+    },
+    {
+      id: "boxing",
+      name: "الملاكمة",
+      icon: Dumbbell,
+    },
+    {
+      id: "gymnastics",
+      name: "الجمباز",
+      icon: Timer,
+    },
+    {
+      id: "billiards",
+      name: "البلياردو والسنوكر",
+      icon: Target,
+    },
+    {
+      id: "wrestling",
+      name: "المصارعة",
+      icon: Dumbbell,
     },
   ];
 
-  const filteredSports = sports;
+  // إزالة التكرار بناءً على id باستخدام reduce
+  const uniqueSports = sports.reduce<typeof sports>((unique, sport) => {
+    return unique.find((item) => item.id === sport.id) ? unique : [...unique, sport];
+  }, []);
+
+  // فلترة الرياضات بناءً على مصطلح البحث
+  const filteredSports = uniqueSports.filter((sport) =>
+    sport.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
@@ -88,11 +154,7 @@ function SportCard() {
               <div
                 className={`
                   h-full relative overflow-hidden group transition-smooth border border-gray-200 rounded-2xl bg-[hsl(var(--card))] shadow-card
-                  ${
-                    sport.featured
-                      ? "ring-2 ring-[hsl(var(--primary)/0.5)]"
-                      : ""
-                  }
+                  ${sport.featured ? "ring-2 ring-[hsl(var(--primary)/0.5)]" : ""}
                 `}
               >
                 {sport.featured && (
@@ -107,15 +169,6 @@ function SportCard() {
                   <h3 className="text-lg line-clamp-1 font-bold text-[hsl(var(--card-foreground))] mb-2 group-hover:text-[hsl(var(--primary))] transition-colors text-center">
                     {sport.name}
                   </h3>
-                  <p className="text-sm text-[hsl(var(--muted-foreground))]  h-12 line-clamp-2  mb-4 text-center leading-relaxed">
-                    {sport.description}
-                  </p>
-                  <div className="flex items-center justify-center space-x-2 space-x-reverse text-[hsl(var(--primary))] mb-4">
-                    <Users className="w-4 h-4" />
-                    <span className="font-semibold">
-                      {sport.playersCount} لاعب
-                    </span>
-                  </div>
                   <button
                     type="button"
                     className="w-full flex items-center justify-center border border-[hsl(var(--primary))] text-[hsl(var(--primary))] rounded-lg px-4 py-2 bg-transparent hover:bg-[hsl(var(--primary)/0.1)] group transition"

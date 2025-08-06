@@ -9,13 +9,28 @@ import CTA from "./CTA";
 
 const sportNames: { [key: string]: string } = {
   football: "كرة القدم",
+  handball: "كرة اليد",
   basketball: "كرة السلة",
-  tennis: "التنس",
-  swimming: "السباحة",
-  athletics: "ألعاب القوى",
-  cycling: "ركوب الدراجات",
-  weightlifting: "رفع الأثقال",
   volleyball: "الكرة الطائرة",
+  badminton: "الريشة الطائرة",
+  athletics: "ألعاب القوى",
+  tennis: "التنس",
+  tabletennis: "كرة الطاولة",
+  karate: "الكاراتيه",
+  taekwondo: "التايكوندو",
+  archery: "السهام",
+  esports: "الرياضات الإلكترونية",
+  swimming: "السباحة",
+  judo: "الجودو",
+  fencing: "المبارزة",
+  cycling: "الدراجات الهوائية",
+  squash: "الإسكواش",
+  weightlifting: "رفع الأثقال",
+  futsal: "كرة قدم الصالات",
+  boxing: "الملاكمة",
+  gymnastics: "الجمباز",
+  billiards: "البلياردو والسنوكر",
+  wrestling: "المصارعة",
 };
 
 const statusOptions = [
