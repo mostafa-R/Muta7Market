@@ -12,55 +12,28 @@ import {
 import Link from "next/link";
 
 const sports = [
-  {
-    id: "football",
-    name: "كرة القدم",
-    icon: Trophy,
-    gradient: "from-green-500 to-emerald-600",
-  },
-  {
-    id: "basketball",
-    name: "كرة السلة",
-    icon: Target,
-    gradient: "from-orange-500 to-red-600",
-  },
-  {
-    id: "tennis",
-    name: "التنس",
-    icon: Zap,
-    gradient: "from-yellow-500 to-orange-600",
-  },
-  {
-    id: "swimming",
-    name: "السباحة",
-    icon: Waves,
-    gradient: "from-blue-500 to-cyan-600",
-  },
-  {
-    id: "athletics",
-    name: "ألعاب القوى",
-    icon: Timer,
-    gradient: "from-purple-500 to-pink-600",
-  },
-  {
-    id: "cycling",
-    name: "ركوب الدراجات",
-    icon: Bike,
-    gradient: "from-indigo-500 to-blue-600",
-  },
-  {
-    id: "weightlifting",
-    name: "رفع الأثقال",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
-  },
-  {
-    id: "volleyball",
-    name: "الكرة الطائرة",
-    icon: Users,
-    gradient: "from-teal-500 to-green-600",
-  },
-  
+  { id: "handball", name: "كرة اليد", icon: Users, gradient: "from-teal-500 to-green-600" },
+  { id: "basketball", name: "كرة السلة", icon: Target, gradient: "from-orange-500 to-red-600" },
+  { id: "volleyball", name: "الكرة الطائرة", icon: Users, gradient: "from-teal-500 to-green-600" },
+  { id: "badminton", name: "الريشة الطائرة", icon: Zap, gradient: "from-yellow-500 to-orange-600" },
+  { id: "athletics", name: "ألعاب القوى", icon: Timer, gradient: "from-purple-500 to-pink-600" },
+  { id: "tennis", name: "التنس", icon: Zap, gradient: "from-yellow-500 to-orange-600" },
+  { id: "tabletennis", name: "كرة الطاولة", icon: Target, gradient: "from-orange-500 to-red-600" },
+  { id: "karate", name: "الكاراتيه", icon: Dumbbell, gradient: "from-gray-700 to-gray-900" },
+  { id: "taekwondo", name: "التايكوندو", icon: Dumbbell, gradient: "from-gray-700 to-gray-900" },
+  { id: "archery", name: "السهام", icon: Target, gradient: "from-orange-500 to-red-600" },
+  { id: "esports", name: "الرياضات الإلكترونية", icon: Zap, gradient: "from-yellow-500 to-orange-600" },
+  { id: "swimming", name: "السباحة", icon: Waves, gradient: "from-blue-500 to-cyan-600" },
+  { id: "judo", name: "الجودو", icon: Dumbbell, gradient: "from-gray-700 to-gray-900" },
+  { id: "fencing", name: "المبارزة", icon: Zap, gradient: "from-yellow-500 to-orange-600" },
+  { id: "cycling", name: "الدراجات الهوائية", icon: Bike, gradient: "from-indigo-500 to-blue-600" },
+  { id: "squash", name: "الإسكواش", icon: Target, gradient: "from-orange-500 to-red-600" },
+  { id: "weightlifting", name: "رفع الأثقال", icon: Dumbbell, gradient: "from-gray-700 to-gray-900" },
+  { id: "futsal", name: "كرة قدم الصالات", icon: Trophy, gradient: "from-green-500 to-emerald-600" },
+  { id: "boxing", name: "الملاكمة", icon: Dumbbell, gradient: "from-gray-700 to-gray-900" },
+  { id: "gymnastics", name: "الجمباز", icon: Timer, gradient: "from-purple-500 to-pink-600" },
+  { id: "billiards", name: "البلياردو والسنوكر", icon: Target, gradient: "from-orange-500 to-red-600" },
+  { id: "wrestling", name: "المصارعة", icon: Dumbbell, gradient: "from-gray-700 to-gray-900" },
 ];
 
 const SportsSection = () => {
@@ -77,25 +50,26 @@ const SportsSection = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-wrap justify-center gap-2">
           {sports.map((sport) => {
             const Icon = sport.icon;
             return (
               <Link key={sport.id} href={`/sports/${sport.id}`}>
                 <div
-                  className="
-                  h-full overflow-hidden group transition-smooth hover:shadow-lg 
-                  border border-[hsl(var(--border))]
-                  bg-[hsl(var(--card))]
-                  rounded-2xl
-                  w-fit
-                "
+                  className={`
+                    flex flex-col items-center justify-center
+                    min-w-[90px] h-20
+                    overflow-hidden group transition-smooth hover:shadow-md
+                    border border-gray-200
+                    bg-white
+                    rounded-lg
+                  `}
                 >
-                  <div className="p-8 text-center">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-[hsl(var(--primary)/0.15)] rounded-3xl flex items-center justify-center">
-                      <Icon className="w-10 h-10 text-[hsl(var(--primary))]" />
+                  <div className="p-2 text-center">
+                    <div className="w-10 h-10 mx-auto mb-1 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Icon className="w-8 h-8 text-[hsl(var(--primary))]" />
                     </div>
-                    <h3 className="text-xl font-bold text-[hsl(var(--card-foreground))] group-hover:text-[hsl(var(--primary))] transition-colors">
+                    <h3 className="text-xs font-semibold text-gray-800 group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-2">
                       {sport.name}
                     </h3>
                   </div>
