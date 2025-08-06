@@ -278,7 +278,7 @@ export default function ForgotPassword() {
                 <button
                   type="submit"
                   disabled={formikSubmitting || isSubmitting}
-                  className="hover:shadow-form w-full rounded-md bg-[#6A64F1] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:bg-[#5a57d1]"
+                 className="flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-3 hover:bg-[hsl(var(--primary)/0.9)] transition ml-auto mr-auto"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">
@@ -313,7 +313,7 @@ export default function ForgotPassword() {
               {/* Back to Login */}
               <div className="mt-4 text-center">
                 <Link
-                  href="/login"
+                  href="/signin"
                   className="text-[#6A64F1] hover:underline text-sm transition-colors duration-200"
                 >
                   {translations[language].backToLogin}

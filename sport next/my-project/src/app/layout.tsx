@@ -4,6 +4,16 @@ import "./globals.css";
 import Navbar from "./component/header";
 import SimpleHero from "./home/SimpleHero";
 import Footer from "./component/Footer";
+import { Noto_Sans_Arabic } from "next/font/google";
+
+
+
+const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ["arabic"], // Ensure Arabic subset is loaded
+  weight: ["300", "400", "500", "600", "700", "800", "900"], // Desired font weights
+  display: "swap", // Fallback strategy
+});
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ar" className={notoSansArabic.className}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >

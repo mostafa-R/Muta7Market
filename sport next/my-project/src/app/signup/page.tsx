@@ -1,14 +1,15 @@
 "use client";
 
+import axios from "axios";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import Joi from "joi";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   FiCalendar,
   FiClock,
   FiLock,
   FiMail,
-  FiMapPin,
   FiPhone,
   FiUser,
 } from "react-icons/fi";
@@ -20,12 +21,6 @@ interface FormValues {
   name: string;
   phone: string;
   email: string;
-  date: string;
-  time: string;
-  area: string;
-  city: string;
-  state: string;
-  postCode: string;
   password: string;
   confirmPassword: string;
 }
@@ -46,15 +41,8 @@ interface Translation {
   name: string;
   phone: string;
   email: string;
-  date: string;
-  time: string;
-  area: string;
-  city: string;
-  state: string;
-  postCode: string;
   password: string;
   confirmPassword: string;
-  addressDetails: string;
   submit: string;
   submitting: string;
   successMessage: string;
@@ -63,10 +51,6 @@ interface Translation {
     name: string;
     phone: string;
     email: string;
-    area: string;
-    city: string;
-    state: string;
-    postCode: string;
     password: string;
     confirmPassword: string;
   };
@@ -74,12 +58,6 @@ interface Translation {
     name: TranslationError;
     phone: TranslationError;
     email: TranslationError;
-    date: TranslationError;
-    time: TranslationError;
-    area: TranslationError;
-    city: TranslationError;
-    state: TranslationError;
-    postCode: TranslationError;
     password: TranslationError;
     confirmPassword: TranslationError;
   };
@@ -96,16 +74,9 @@ const translations: Translations = {
     name: "الاسم الكامل",
     phone: "رقم الهاتف",
     email: "البريد الإلكتروني",
-    date: "التاريخ",
-    time: "الوقت",
-    area: "المنطقة",
-    city: "المدينة",
-    state: "المحافظة",
-    postCode: "الكود البريدي",
     password: "كلمة المرور",
     confirmPassword: "تأكيد كلمة المرور",
-    addressDetails: "تفاصيل العنوان",
-    submit: "Submit",
+    submit: "إرسال",
     submitting: "جاري الإرسال...",
     successMessage: "تم إنشاء الحساب بنجاح!",
     errorMessage: "حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.",
@@ -113,10 +84,6 @@ const translations: Translations = {
       name: "أدخل الاسم الكامل",
       phone: "أدخل رقم الهاتف",
       email: "أدخل البريد الإلكتروني",
-      area: "أدخل المنطقة",
-      city: "أدخل المدينة",
-      state: "أدخل المحافظة",
-      postCode: "أدخل الكود البريدي",
       password: "أدخل كلمة المرور",
       confirmPassword: "أدخل كلمة المرور مرة أخرى",
     },
@@ -128,37 +95,12 @@ const translations: Translations = {
       },
       phone: {
         required: "رقم الهاتف مطلوب",
-        pattern: "رقم الهاتف غير صحيح",
+        pattern: "رقم الهاتف غير صحيح. الرجاء إدخال كود الدولة.",
       },
       email: {
         required: "البريد الإلكتروني مطلوب",
         email: "البريد الإلكتروني غير صحيح",
         taken: "البريد الإلكتروني مستخدم بالفعل",
-      },
-      date: {
-        required: "التاريخ مطلوب",
-        min: "التاريخ يجب أن يكون في المستقبل",
-        invalid: "تاريخ غير صحيح",
-      },
-      time: {
-        required: "الوقت مطلوب",
-        pattern: "صيغة الوقت غير صحيحة",
-      },
-      area: {
-        required: "المنطقة مطلوبة",
-        min: "المنطقة يجب أن تكون على الأقل حرفين",
-      },
-      city: {
-        required: "المدينة مطلوبة",
-        min: "المدينة يجب أن تكون على الأقل حرفين",
-      },
-      state: {
-        required: "المحافظة مطلوبة",
-        min: "المحافظة يجب أن تكون على الأقل حرفين",
-      },
-      postCode: {
-        required: "الكود البريدي مطلوب",
-        pattern: "الكود البريدي يجب أن يكون 5 أرقام",
       },
       password: {
         required: "كلمة المرور مطلوبة",
@@ -175,15 +117,8 @@ const translations: Translations = {
     name: "Full Name",
     phone: "Phone Number",
     email: "Email Address",
-    date: "Date",
-    time: "Time",
-    area: "Area",
-    city: "City",
-    state: "State",
-    postCode: "Postal Code",
     password: "Password",
     confirmPassword: "Confirm Password",
-    addressDetails: "Address Details",
     submit: "Submit",
     submitting: "Submitting...",
     successMessage: "Account created successfully!",
@@ -193,10 +128,6 @@ const translations: Translations = {
       name: "Enter full name",
       phone: "Enter phone number",
       email: "Enter email address",
-      area: "Enter area",
-      city: "Enter city",
-      state: "Enter state",
-      postCode: "Enter postal code",
       password: "Enter password",
       confirmPassword: "Confirm password",
     },
@@ -208,37 +139,12 @@ const translations: Translations = {
       },
       phone: {
         required: "Phone number is required",
-        pattern: "Invalid phone number",
+        pattern: "Invalid phone number. You must insert country code.",
       },
       email: {
         required: "Email address is required",
         email: "Invalid email address",
         taken: "Email address is already taken",
-      },
-      date: {
-        required: "Date is required",
-        min: "Date must be in the future",
-        invalid: "Invalid date",
-      },
-      time: {
-        required: "Time is required",
-        pattern: "Invalid time format",
-      },
-      area: {
-        required: "Area is required",
-        min: "Area must be at least 2 characters",
-      },
-      city: {
-        required: "City is required",
-        min: "City must be at least 2 characters",
-      },
-      state: {
-        required: "State is required",
-        min: "State must be at least 2 characters",
-      },
-      postCode: {
-        required: "Postal code is required",
-        pattern: "Postal code must be 5 digits",
       },
       password: {
         required: "Password is required",
@@ -260,16 +166,6 @@ const appointmentSchema = Joi.object({
     .required(),
   email: Joi.string()
     .email({ tlds: { allow: false } })
-    .required(),
-  date: Joi.date().min("now").required(),
-  time: Joi.string()
-    .pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .required(),
-  area: Joi.string().min(2).required(),
-  city: Joi.string().min(2).required(),
-  state: Joi.string().min(2).required(),
-  postCode: Joi.string()
-    .pattern(/^[0-9]{5}$/)
     .required(),
   password: Joi.string().min(6).required(),
   confirmPassword: Joi.string().valid(Joi.ref("password")).required(),
@@ -294,32 +190,21 @@ const validate = (
   return errors;
 };
 
-// Simulated email check
-const checkEmailAvailability = async (email: string): Promise<boolean> => {
-  // Simulate API call to check if email is taken
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  // For demo purposes, assume emails ending with '@taken.com' are already taken
-  return !email.endsWith("@taken.com");
-};
-
 export default function SignUp() {
   const [language, setLanguage] = useState<Language>("ar");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<string>("");
+  const router = useRouter();
 
   const initialValues: FormValues = {
     name: "",
     phone: "",
     email: "",
-    date: "",
-    time: "",
-    area: "",
-    city: "",
-    state: "",
-    postCode: "",
     password: "",
     confirmPassword: "",
   };
+
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`;
 
   const handleSubmit = async (
     values: FormValues,
@@ -329,21 +214,28 @@ export default function SignUp() {
     setSubmitMessage("");
 
     try {
-      // Check email availability
-      const isEmailAvailable = await checkEmailAvailability(values.email);
-      if (!isEmailAvailable) {
-        setFieldError("email", translations[language].errors.email.taken!);
-        throw new Error("Email taken");
-      }
+      const response = await axios.post(API_URL, values, {
+        withCredentials: true,
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const data = response.data;
 
-      console.log("Form submitted:", values);
+      // Success Case
       setSubmitMessage(translations[language].successMessage);
       resetForm();
-    } catch (error) {
-      setSubmitMessage(translations[language].errorMessage);
+      router.push("/otp");
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        const data = error.response.data;
+
+        if (data.error === "Email already taken") {
+          setFieldError("email", translations[language].errors.email.taken);
+        } else {
+          setSubmitMessage(data.error || translations[language].errorMessage);
+        }
+      } else {
+        setSubmitMessage(translations[language].errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
       setSubmitting(false);
@@ -504,153 +396,12 @@ export default function SignUp() {
                 />
               </div>
 
-              {/* Date and Time */}
-              <div className="-mx-3 flex flex-wrap">
-                <div className="w-full px-3 sm:w-1/2">
-                  <div className="mb-5">
-                    <label
-                      htmlFor="date"
-                      className="mb-3 block text-base font-medium text-[#07074D]"
-                    >
-                      {translations[language].date}
-                    </label>
-                    <div className="relative">
-                      <Field
-                        type="date"
-                        name="date"
-                        id="date"
-                        className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                      />
-                      <FiCalendar className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                    </div>
-                    <ErrorMessage
-                      name="date"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                </div>
-                <div className="w-full px-3 sm:w-1/2">
-                  <div className="mb-5">
-                    <label
-                      htmlFor="time"
-                      className="mb-3 block text-base font-medium text-[#07074D]"
-                    >
-                      {translations[language].time}
-                    </label>
-                    <div className="relative">
-                      <Field
-                        type="time"
-                        name="time"
-                        id="time"
-                        className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                      />
-                      <FiClock className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                    </div>
-                    <ErrorMessage
-                      name="time"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Address Details */}
-              <div className="mb-5 pt-3">
-                <label className="mb-5 block text-base font-semibold text-[#07074D] sm:text-xl">
-                  {translations[language].addressDetails}
-                </label>
-                <div className="-mx-3 flex flex-wrap">
-                  <div className="w-full px-3 sm:w-1/2">
-                    <div className="mb-5">
-                      <div className="relative">
-                        <Field
-                          type="text"
-                          name="area"
-                          id="area"
-                          placeholder={translations[language].placeholders.area}
-                          className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                        />
-                        <FiMapPin className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                      </div>
-                      <ErrorMessage
-                        name="area"
-                        component="div"
-                        className="text-red-500 text-sm mt-1"
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full px-3 sm:w-1/2">
-                    <div className="mb-5">
-                      <div className="relative">
-                        <Field
-                          type="text"
-                          name="city"
-                          id="city"
-                          placeholder={translations[language].placeholders.city}
-                          className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                        />
-                        <FiMapPin className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                      </div>
-                      <ErrorMessage
-                        name="city"
-                        component="div"
-                        className="text-red-500 text-sm mt-1"
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full px-3 sm:w-1/2">
-                    <div className="mb-5">
-                      <div className="relative">
-                        <Field
-                          type="text"
-                          name="state"
-                          id="state"
-                          placeholder={
-                            translations[language].placeholders.state
-                          }
-                          className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                        />
-                        <FiMapPin className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                      </div>
-                      <ErrorMessage
-                        name="state"
-                        component="div"
-                        className="text-red-500 text-sm mt-1"
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full px-3 sm:w-1/2">
-                    <div className="mb-5">
-                      <div className="relative">
-                        <Field
-                          type="text"
-                          name="postCode"
-                          id="postCode"
-                          placeholder={
-                            translations[language].placeholders.postCode
-                          }
-                          className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                        />
-                        <FiMapPin className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                      </div>
-                      <ErrorMessage
-                        name="postCode"
-                        component="div"
-                        className="text-red-500 text-sm mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Submit Button */}
               <div>
                 <button
                   type="submit"
                   disabled={formikSubmitting || isSubmitting}
-                  className="flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-3 hover:bg-[hsl(var(--primary)/0.9)] transition ml-auto mr-auto"
+                  className="hover:shadow-form w-full rounded-md bg-[#6A64F1] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">

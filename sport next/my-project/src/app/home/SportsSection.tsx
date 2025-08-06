@@ -60,6 +60,7 @@ const sports = [
     icon: Users,
     gradient: "from-teal-500 to-green-600",
   },
+  
 ];
 
 const SportsSection = () => {
@@ -76,7 +77,7 @@ const SportsSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex flex-wrap gap-6">
           {sports.map((sport) => {
             const Icon = sport.icon;
             return (
@@ -87,6 +88,7 @@ const SportsSection = () => {
                   border border-[hsl(var(--border))]
                   bg-[hsl(var(--card))]
                   rounded-2xl
+                  w-fit
                 "
                 >
                   <div className="p-8 text-center">

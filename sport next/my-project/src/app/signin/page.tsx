@@ -1,11 +1,13 @@
 "use client";
 
-import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
-import Joi from "joi";
-import { useState } from "react";
-import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
+import axios from "axios";
+import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { motion } from "framer-motion";
+import Joi from "joi";
 import Link from "next/link";
+import { useState } from "react";
+import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 // -----------------------------------
 // Types
@@ -55,7 +57,7 @@ const translations: Translations = {
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
     forgotPassword: "نسيت كلمة المرور؟",
-    submit: "Submit",
+    submit: "تسجيل الدخول",
     submitting: "جاري الإرسال...",
     successMessage: "تم تسجيل الدخول بنجاح!",
     errorMessage:
@@ -140,25 +142,6 @@ const validate = (
 };
 
 // -----------------------------------
-// Simulated Login Function
-// -----------------------------------
-const checkLoginCredentials = async (
-  email: string,
-  password: string
-): Promise<boolean> => {
-  // Simulate API call delay
-  await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-
-  // Check if email is provided and valid
-  const isEmailValid = Boolean(email) && !email.endsWith("@invalid.com");
-
-  // Check if password matches (in real app, this would be a secure API call)
-  const isPasswordValid = password === "password123";
-
-  return isEmailValid && isPasswordValid;
-};
-
-// -----------------------------------
 // Component
 // -----------------------------------
 export default function Login() {
@@ -166,11 +149,15 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const router = useRouter();
+  
 
   const initialValues: LoginFormValues = {
     email: "",
     password: "",
   };
+
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`;
 
   const handleSubmit = async (
     values: LoginFormValues,
@@ -178,23 +165,31 @@ export default function Login() {
   ): Promise<void> => {
     setIsSubmitting(true);
     setSubmitMessage("");
-
     try {
-      const isValid = await checkLoginCredentials(
-        values.email,
-        values.password
-      );
-      if (!isValid) {
-        setFieldError("email", translations[language].errorMessage);
-        throw new Error("Invalid credentials");
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Login successful:", values);
-      setSubmitMessage(translations[language].successMessage);
+       await axios.post(API_URL, values, {
+        withCredentials: true,
+      });
+      
+      setSubmitMessage(translations[language].successMessage);     
       resetForm();
-    } catch (error) {
-      setSubmitMessage(translations[language].errorMessage);
+      localStorage.setItem("isLoggedIn", "true");
+      router.push("/");
+    } catch (error: any) {
+      console.error("Login Error:", error);
+
+      if (error.response && error.response.data) {
+        const { message, errors } = error.response.data;
+
+        if (errors) {
+          Object.entries(errors).forEach(([field, errorMessage]) => {
+            setFieldError(field, errorMessage as string);
+          });
+        } else {
+          setSubmitMessage(message || translations[language].errorMessage);
+        }
+      } else {
+        setSubmitMessage(translations[language].errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
       setSubmitting(false);
@@ -299,12 +294,12 @@ export default function Login() {
                 />
               </div>
 
-              {/* Submit */}
+              {/* Submit Button */}
               <div>
                 <button
                   type="submit"
                   disabled={formikSubmitting || isSubmitting}
-                  className="flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-3 hover:bg-[hsl(var(--primary)/0.9)] transition ml-auto mr-auto"
+                  className="hover:shadow-form w-full rounded-md bg-[hsl(var(--primary))] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">
@@ -338,22 +333,24 @@ export default function Login() {
 
               {/* Forgot Password */}
               <div className="mt-4 text-center">
-                <Link href="/signup" className="text-[#6A64F1] hover:underline text-sm transition-colors duration-200 ml-2 mr-2">
-                don't have an account?
-                </Link>
                 <Link
-                  href="/forgot-password"
-                  className="text-[#6A64F1] hover:underline text-sm transition-colors duration-200"
+                  href="/forgetpassword"
+                  className="text-[#6A64F1] hover:underline text-sm"
                 >
                   {translations[language].forgotPassword}
+                </Link>
+
+                <Link
+                  href="/signup"
+                  className="text-[#6A64F1] hover:underline text-sm mx-5"
+                >
+                  don't have an account?
                 </Link>
               </div>
 
               {/* Submit Message */}
               {submitMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <div
                   className={`mt-4 p-3 rounded-md text-center ${
                     submitMessage.includes("بنجاح") ||
                     submitMessage.includes("successfully")
@@ -362,7 +359,7 @@ export default function Login() {
                   }`}
                 >
                   {submitMessage}
-                </motion.div>
+                </div>
               )}
             </Form>
           )}
