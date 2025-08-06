@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { FileText, Menu, Search, Trophy, User, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, User, Trophy, Users, FileText, Search, X } from "lucide-react";
+import { useState } from "react";
 
 // شعار المنصة
 const NavLogo = () => (
@@ -32,13 +32,14 @@ const NavItem = ({
   return (
     <Link
       href={item.path}
-      className={`flex items-center space-x-2 space-x-reverse px-3 py-2 rounded-md text-sm font-medium transition
-      ${isActive
-        ? "text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)]"
-        : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
+      className={`flex items-center space-x-2 space-x-reverse px-3 py-2 rounded-md text-sm font-medium transition 
+      ${
+        isActive
+          ? "text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)]"
+          : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
       }`}
     >
-      <Icon className="w-4 h-4" />
+      <Icon className="w-4 h-4 mr-2 ml-2" />
       <span>{item.name}</span>
     </Link>
   );
@@ -51,7 +52,8 @@ const ProfileButton = ({
   className?: string;
   fullWidth?: boolean;
 }) => (
-  <button
+  <Link
+    href="/signin"
     type="button"
     className={
       "border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition " +
@@ -61,7 +63,7 @@ const ProfileButton = ({
   >
     <User className="w-4 h-4 ml-2" />
     تسجيل الدخول
-  </button>
+  </Link>
 );
 
 const MobileNavMenu = ({
@@ -93,9 +95,10 @@ const MobileNavMenu = ({
               href={item.path}
               onClick={onClose}
               className={`flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-lg transition
-              ${isActive
-                ? "text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)]"
-                : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
+              ${
+                isActive
+                  ? "text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)]"
+                  : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
               }`}
             >
               <Icon className="w-5 h-5" />

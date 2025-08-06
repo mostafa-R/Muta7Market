@@ -3,42 +3,43 @@
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
 import Joi from "joi";
 import { useState } from "react";
-import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 // -----------------------------------
 // Types
 // -----------------------------------
-interface LoginFormValues {
-  email: string;
-  password: string;
-}
-
 type Language = "ar" | "en";
+
+interface FormValues {
+  newPassword: string;
+  confirmPassword: string;
+}
 
 interface TranslationError {
   required: string;
-  email?: string;
   min?: string;
+  match?: string;
 }
 
 interface Translation {
   title: string;
-  email: string;
-  password: string;
-  forgotPassword: string;
+  newPassword: string;
+  confirmPassword: string;
   submit: string;
   submitting: string;
+  backToLogin: string;
   successMessage: string;
   errorMessage: string;
   placeholders: {
-    email: string;
-    password: string;
+    newPassword: string;
+    confirmPassword: string;
   };
   errors: {
-    email: TranslationError;
-    password: TranslationError;
+    newPassword: TranslationError;
+    confirmPassword: TranslationError;
   };
 }
 
@@ -47,153 +48,183 @@ type Translations = {
 };
 
 // -----------------------------------
-// Translation object
+// Language data
 // -----------------------------------
 const translations: Translations = {
   ar: {
-    title: "تسجيل الدخول",
-    email: "البريد الإلكتروني",
-    password: "كلمة المرور",
-    forgotPassword: "نسيت كلمة المرور؟",
+    title: "إعادة تعيين كلمة المرور",
+    newPassword: "كلمة المرور الجديدة",
+    confirmPassword: "تأكيد كلمة المرور",
     submit: "Submit",
     submitting: "جاري الإرسال...",
-    successMessage: "تم تسجيل الدخول بنجاح!",
-    errorMessage:
-      "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+    backToLogin: "العودة إلى تسجيل الدخول",
+    successMessage: "تم إعادة تعيين كلمة المرور بنجاح!",
+    errorMessage: "حدث خطأ. يرجى المحاولة مرة أخرى.",
     placeholders: {
-      email: "أدخل البريد الإلكتروني",
-      password: "أدخل كلمة المرور",
+      newPassword: "أدخل كلمة المرور الجديدة",
+      confirmPassword: "أدخل تأكيد كلمة المرور",
     },
     errors: {
-      email: {
-        required: "البريد الإلكتروني مطلوب",
-        email: "البريد الإلكتروني غير صحيح",
-      },
-      password: {
-        required: "كلمة المرور مطلوبة",
+      newPassword: {
+        required: "كلمة المرور الجديدة مطلوبة",
         min: "كلمة المرور يجب أن تكون على الأقل 6 أحرف",
+      },
+      confirmPassword: {
+        required: "تأكيد كلمة المرور مطلوب",
+        match: "تأكيد كلمة المرور لا يتطابق",
       },
     },
   },
   en: {
-    title: "Login",
-    email: "Email Address",
-    password: "Password",
-    forgotPassword: "Forgot Password?",
+    title: "Reset Password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm Password",
     submit: "Submit",
     submitting: "Submitting...",
-    successMessage: "Logged in successfully!",
-    errorMessage: "Incorrect email or password. Please try again.",
+    backToLogin: "Back to Login",
+    successMessage: "Password reset successfully!",
+    errorMessage: "An error occurred. Please try again.",
     placeholders: {
-      email: "Enter email address",
-      password: "Enter password",
+      newPassword: "Enter new password",
+      confirmPassword: "Enter confirm password",
     },
     errors: {
-      email: {
-        required: "Email address is required",
-        email: "Invalid email address",
-      },
-      password: {
-        required: "Password is required",
+      newPassword: {
+        required: "New password is required",
         min: "Password must be at least 6 characters",
+      },
+      confirmPassword: {
+        required: "Confirm password is required",
+        match: "Confirm password does not match",
       },
     },
   },
 };
 
 // -----------------------------------
-// Joi Validation Schema
+// Joi validation schema
 // -----------------------------------
-const loginSchema = Joi.object<LoginFormValues>({
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
+const resetSchema = Joi.object<FormValues>({
+  newPassword: Joi.string().min(6).required().messages({
+    "string.empty": translations.ar.errors.newPassword.required,
+    "string.min": translations.ar.errors.newPassword.min!,
+  }),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
     .required()
     .messages({
-      "string.empty": translations.ar.errors.email.required,
-      "string.email": translations.ar.errors.email.email!,
+      "string.empty": translations.ar.errors.confirmPassword.required,
+      "any.only": translations.ar.errors.confirmPassword.match!,
     }),
-  password: Joi.string().min(6).required().messages({
-    "string.empty": translations.ar.errors.password.required,
-    "string.min": translations.ar.errors.password.min!,
-  }),
 });
 
 // -----------------------------------
 // Validate Function
 // -----------------------------------
 const validate = (
-  values: LoginFormValues,
+  values: FormValues,
   language: Language
-): Partial<LoginFormValues> => {
-  const { error } = loginSchema.validate(values, { abortEarly: false });
+): Partial<FormValues> => {
+  const { error } = resetSchema.validate(values, { abortEarly: false });
   if (!error) return {};
 
-  const errors: Partial<LoginFormValues> = {};
+  const errors: Partial<FormValues> = {};
   error.details.forEach((detail) => {
-    const field = detail.path[0] as keyof LoginFormValues;
-    const messageKey = (detail.type.split(".")[1] ||
-      "required") as keyof TranslationError;
+    const field = detail.path[0] as keyof FormValues;
+    const messageKey =
+      detail.type === "any.only"
+        ? "match"
+        : ((detail.type.split(".")[1] || "required") as keyof TranslationError);
+
     const fieldErrors = translations[language].errors[field];
     errors[field] = fieldErrors[messageKey] || detail.message;
   });
+
   return errors;
 };
 
 // -----------------------------------
-// Simulated Login Function
+// Reset Password Function
 // -----------------------------------
-const checkLoginCredentials = async (
-  email: string,
-  password: string
-): Promise<boolean> => {
-  // Simulate API call delay
+interface ResetPasswordResult {
+  success: boolean;
+  message?: string;
+}
+
+const resetPassword = async (
+  newPassword: string,
+  token: string
+): Promise<ResetPasswordResult> => {
+  // Simulate API call
   await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
-  // Check if email is provided and valid
-  const isEmailValid = Boolean(email) && !email.endsWith("@invalid.com");
+  // Validate token
+  if (!token || token === "invalid") {
+    return {
+      success: false,
+      message: "Invalid or expired reset token",
+    };
+  }
 
-  // Check if password matches (in real app, this would be a secure API call)
-  const isPasswordValid = password === "password123";
+  // Validate password strength (example)
+  if (newPassword.length < 6) {
+    return {
+      success: false,
+      message: "Password is too weak",
+    };
+  }
 
-  return isEmailValid && isPasswordValid;
+  // Simulate successful password reset
+  return {
+    success: true,
+    message: "Password has been reset successfully",
+  };
 };
 
 // -----------------------------------
 // Component
 // -----------------------------------
-export default function Login() {
+export default function ResetPassword() {
   const [language, setLanguage] = useState<Language>("ar");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
 
-  const initialValues: LoginFormValues = {
-    email: "",
-    password: "",
+  // Get token from URL params (in real app)
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") || "sample-token";
+
+  const initialValues: FormValues = {
+    newPassword: "",
+    confirmPassword: "",
   };
 
   const handleSubmit = async (
-    values: LoginFormValues,
-    { setSubmitting, resetForm, setFieldError }: FormikHelpers<LoginFormValues>
+    values: FormValues,
+    { setSubmitting, resetForm }: FormikHelpers<FormValues>
   ): Promise<void> => {
     setIsSubmitting(true);
     setSubmitMessage("");
 
     try {
-      const isValid = await checkLoginCredentials(
-        values.email,
-        values.password
-      );
-      if (!isValid) {
-        setFieldError("email", translations[language].errorMessage);
-        throw new Error("Invalid credentials");
+      const result = await resetPassword(values.newPassword, token);
+
+      if (!result.success) {
+        throw new Error(result.message || "Reset failed");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Login successful:", values);
+      console.log("Password reset successful");
       setSubmitMessage(translations[language].successMessage);
       resetForm();
+
+      // Redirect to login after success (example)
+      // setTimeout(() => {
+      //   router.push('/login');
+      // }, 2000);
     } catch (error) {
+      console.error("Reset password error:", error);
       setSubmitMessage(translations[language].errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -239,72 +270,86 @@ export default function Login() {
         >
           {({ isSubmitting: formikSubmitting }) => (
             <Form>
-              {/* Email */}
+              {/* New Password */}
               <div className="mb-5">
                 <label
-                  htmlFor="email"
+                  htmlFor="newPassword"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  {translations[language].email}
+                  {translations[language].newPassword}
                 </label>
                 <div className="relative">
                   <Field
-                    type="email"
-                    name="email"
-                    id="email"
-                    placeholder={translations[language].placeholders.email}
-                    className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-                  />
-                  <FiMail className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
-                </div>
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-
-              {/* Password */}
-              <div className="mb-5">
-                <label
-                  htmlFor="password"
-                  className="mb-3 block text-base font-medium text-[#07074D]"
-                >
-                  {translations[language].password}
-                </label>
-                <div className="relative">
-                  <Field
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    id="password"
-                    placeholder={translations[language].placeholders.password}
+                    type={showNewPassword ? "text" : "password"}
+                    name="newPassword"
+                    id="newPassword"
+                    placeholder={
+                      translations[language].placeholders.newPassword
+                    }
                     className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-12 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
                   />
                   <FiLock className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute top-1/2 right-3 transform -translate-y-1/2 text-[#6B7280] hover:text-[#6A64F1] focus:outline-none"
                     aria-label={
-                      showPassword ? "Hide password" : "Show password"
+                      showNewPassword ? "Hide password" : "Show password"
                     }
                   >
-                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                    {showNewPassword ? <FiEyeOff /> : <FiEye />}
                   </button>
                 </div>
                 <ErrorMessage
-                  name="password"
+                  name="newPassword"
                   component="div"
                   className="text-red-500 text-sm mt-1"
                 />
               </div>
 
-              {/* Submit */}
+              {/* Confirm Password */}
+              <div className="mb-5">
+                <label
+                  htmlFor="confirmPassword"
+                  className="mb-3 block text-base font-medium text-[#07074D]"
+                >
+                  {translations[language].confirmPassword}
+                </label>
+                <div className="relative">
+                  <Field
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    id="confirmPassword"
+                    placeholder={
+                      translations[language].placeholders.confirmPassword
+                    }
+                    className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-12 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
+                  />
+                  <FiLock className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute top-1/2 right-3 transform -translate-y-1/2 text-[#6B7280] hover:text-[#6A64F1] focus:outline-none"
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+                <ErrorMessage
+                  name="confirmPassword"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+
+              {/* Submit Button */}
               <div>
                 <button
                   type="submit"
                   disabled={formikSubmitting || isSubmitting}
-                  className="flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-3 hover:bg-[hsl(var(--primary)/0.9)] transition ml-auto mr-auto"
+                  className="hover:shadow-form w-full rounded-md bg-[#6A64F1] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:bg-[#5a57d1]"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">
@@ -321,12 +366,12 @@ export default function Login() {
                           r="10"
                           stroke="currentColor"
                           strokeWidth="4"
-                        ></circle>
+                        />
                         <path
                           className="opacity-75"
                           fill="currentColor"
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
+                        />
                       </svg>
                       {translations[language].submitting}
                     </div>
@@ -336,20 +381,17 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* Forgot Password */}
+              {/* Back to Login Link */}
               <div className="mt-4 text-center">
-                <Link href="/signup" className="text-[#6A64F1] hover:underline text-sm transition-colors duration-200 ml-2 mr-2">
-                don't have an account?
-                </Link>
                 <Link
-                  href="/forgot-password"
+                  href="/login"
                   className="text-[#6A64F1] hover:underline text-sm transition-colors duration-200"
                 >
-                  {translations[language].forgotPassword}
+                  {translations[language].backToLogin}
                 </Link>
               </div>
 
-              {/* Submit Message */}
+              {/* Success/Error Message */}
               {submitMessage && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
