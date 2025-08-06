@@ -1,15 +1,15 @@
 "use client";
 import { useState } from 'react';
-// import Navbar from './header';
-// import { Button } from '@/components/ui/button';
-// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// import { Textarea } from '@/components/ui/textarea';
-// import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-// import { Checkbox } from '@/components/ui/checkbox';
-// import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Navbar from '../component/header';
+import { Textarea } from '../component/ui/textarea';
+import { Button } from '../component/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../component/ui/card';
+import { Input } from '../component/ui/input';
+import { Label } from '../component/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../component/ui/select';
+import { RadioGroup, RadioGroupItem } from '../component/ui/radio-group';
+import { Checkbox } from '../component/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '../component/ui/avatar';
 import { 
   User, 
   Upload, 
@@ -22,20 +22,9 @@ import {
   Save,
   Camera
 } from 'lucide-react';
-import Navbar from '../component/header';
-import { Textarea } from '../component/ui/textarea';
-import { Button } from '../component/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../component/ui/card';
-import { Input } from '../component/ui/input';
-import { Label } from '../component/ui/label';
-import {  Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../component/ui/select';
-import { RadioGroup,RadioGroupItem } from '../component/ui/radio-group';
-import { Checkbox } from '../component/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '../component/ui/avatar';
 
-// يمكنك حذف useToast لو لم تكن تستخدم مكتبة Toast جاهزة، واستبدالها بـ alert بسيط للتجربة.
 const useToast = () => ({
-  toast: ({ title, description }: { title: string; description: string; variant?: string }) =>
+  toast: ({ title, description }) =>
     alert(`${title}\n${description}`),
 });
 
@@ -56,7 +45,7 @@ const RegisterProfile = () => {
     transferDeadline: '',
     experience: '',
     profilePicture: '',
-    agreeToTerms: false as boolean,
+    agreeToTerms: false,
   });
 
   const sports = [
@@ -69,7 +58,7 @@ const RegisterProfile = () => {
     'الأردن', 'لبنان', 'سوريا', 'العراق', 'ليبيا', 'تونس', 'الجزائر', 'السودان', 'اليمن', 'أخرى'
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.agreeToTerms) {
       toast({
@@ -79,9 +68,8 @@ const RegisterProfile = () => {
       });
       return;
     }
-    // Validate required fields
     const requiredFields = ['name', 'age', 'gender', 'nationality', 'sport', 'category', 'status'];
-    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    const missingFields = requiredFields.filter(field => !formData[field]);
     if (missingFields.length > 0) {
       toast({
         title: "خطأ",
@@ -90,23 +78,59 @@ const RegisterProfile = () => {
       });
       return;
     }
-    // Simulate form submission
+    // Placeholder for API submission
+    // Example: 
+    // const formDataToSend = new FormData();
+    // formDataToSend.append('profilePicture', formData.profilePictureFile);
+    // Object.entries(formData).forEach(([key, value]) => {
+    //   if (key !== 'profilePictureFile') formDataToSend.append(key, value);
+    // });
+    // fetch('YOUR_API_ENDPOINT', { method: 'POST', body: formDataToSend });
     toast({
       title: "تم التسجيل بنجاح!",
       description: "تم إنشاء ملفك الشخصي بنجاح. سيتم مراجعته قريباً.",
     });
-    // يمكنك هنا ارسال البيانات لـ backend فعلي أو API
     console.log('Form submitted:', formData);
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+          title: "خطأ",
+          description: "حجم الصورة يجب أن يكون أقل من 2 ميجابايت",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+        toast({
+          title: "خطأ",
+          description: "الصورة يجب أن تكون بصيغة JPG، PNG أو GIF",
+          variant: "destructive"
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          profilePicture: reader.result, // Base64 for preview
+          profilePictureFile: file // Actual file for upload
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
- 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             سجل بياناتك كلاعب
@@ -139,9 +163,21 @@ const RegisterProfile = () => {
                     الصورة الشخصية
                   </Label>
                   <div className="mt-2">
-                    <Button type="button" variant="outline" size="sm" disabled>
+                    <Input
+                      id="profile-picture"
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('profile-picture').click()}
+                    >
                       <Upload className="w-4 h-4 ml-2" />
-                      رفع صورة (قريبًا)
+                      رفع صورة
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -174,7 +210,6 @@ const RegisterProfile = () => {
                     required
                   />
                 </div>
-                {/* Gender */}
                 <div className="space-y-3">
                   <Label>الجنس *</Label>
                   <RadioGroup
@@ -378,7 +413,6 @@ const RegisterProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
           <div className="flex justify-center">
             <Button type="submit" variant="default" size="xl" className="px-12">
               <Save className="w-5 h-5 ml-2" />
