@@ -88,41 +88,12 @@ const getCategoryText = (category: Player["category"]) => {
 
 const PlayerCard = ({ player }: PlayerCardProps) => {
   return (
-    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-96 ">
+    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-full ">
       {/* Header with Avatar and Status */}
       <div className="relative p-6 pb-4">
-        <div className="flex items-start space-x-4 space-x-reverse">
-          <div className="w-16 h-16 rounded-full border-4 border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)]">
-            {player.profilePicture ? (
-              <Image
-                src={player.profilePicture}
-                alt={player.name}
-                width={64}
-                height={64}
-                className="w-16 h-16 object-cover rounded-full"
-              />
-            ) : (
-              <span className="text-[hsl(var(--primary))] text-xl font-bold">
-                {player.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
-              </span>
-            )}
-          </div>
+        <div className="absolute top-4 right-4 flex space-x-4 space-x-reverse">
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-[hsl(var(--card-foreground))] truncate group-hover:text-[hsl(var(--primary))] transition-colors">
-                  {player.name}
-                </h3>
-                <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                  <MapPin className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                  <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                    {player.nationality}
-                  </span>
-                </div>
-              </div>
               <div className="flex flex-col gap-2">
                 <span
                   className={`text-white text-xs px-2 py-1 rounded-lg ${getStatusColor(
@@ -142,22 +113,55 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
             </div>
           </div>
         </div>
+
+        <div className="mr-auto ml-auto flex items-center justify-center flex-col">
+          <div className="w-24 h-24 rounded-full border-1 border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
+            {player.profilePicture ? (
+              <Image
+                src={player.profilePicture}
+                alt={player.name}
+                width={64}
+                height={64}
+                className="w-20 h-20 object-cover rounded-full"
+              />
+            ) : (
+              <span className="text-[hsl(var(--primary))] text-xl font-bold">
+                {player.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </span>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-[hsl(var(--card-foreground))] truncate group-hover:text-[hsl(var(--primary))] transition-colors">
+              {player.name}
+            </h3>
+            <div className="flex justify-center items-center space-x-2 space-x-reverse mt-1">
+              <MapPin className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+              <span className="text-sm text-[hsl(var(--muted-foreground))]">
+                {player.nationality}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Player Info */}
-      <div className="px-6 pb-4 space-y-3 h-54">
+      <div className="px-6 pb-4 space-y-3 h-54 mt-3">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center space-x-2 space-x-reverse">
-            <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+            <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))] " />
             <span className="text-[hsl(var(--muted-foreground))]">العمر:</span>
-            <span className="font-medium">{player.age} سنة</span>
+            <span className="font-medium ml-1 mr-1">{player.age} سنة</span>
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <Trophy className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-            <span className="text-[hsl(var(--muted-foreground))]">
+            <span className="text-[hsl(var(--muted-foreground))] ">
               الرياضة:
             </span>
-            <span className="font-medium">{player.sport}</span>
+            <span className="font-medium ml-1 mr-1">{player.sport}</span>
           </div>
         </div>
 
@@ -165,7 +169,7 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
           <div className="flex items-center space-x-2 space-x-reverse text-sm">
             <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
             <span className="text-[hsl(var(--muted-foreground))]">المركز:</span>
-            <span className="font-medium">{player.position}</span>
+            <span className="font-medium ml-1 mr-1">{player.position}</span>
           </div>
         )}
 
@@ -183,7 +187,7 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
                 />
               ))}
             </div>
-            <span className="font-medium">{player.rating}/5</span>
+            <span className="font-medium ml-1 mr-1">{player.rating}/5</span>
           </div>
         )}
 
@@ -193,7 +197,7 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
-                  <span className="text-[hsl(var(--muted-foreground))]">
+                  <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
                     الراتب الشهري:
                   </span>
                 </div>
@@ -206,7 +210,7 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
-                  <span className="text-[hsl(var(--muted-foreground))]">
+                  <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
                     قيمة العقد السنوي:
                   </span>
                 </div>

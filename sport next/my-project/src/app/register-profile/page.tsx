@@ -250,7 +250,7 @@ export default function RegisterProfile() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            سجل بياناتك كلاعب
+            سجل بياناتك
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             أنشئ ملفك الشخصي الاحترافي وابدأ رحلتك الرياضية معنا
@@ -264,7 +264,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <User className="w-5 h-5 text-primary" />
+                <User className="w-5 h-5 text-primary ml-2 mr-2" />
                 <span>المعلومات الشخصية</span>
               </CardTitle>
             </CardHeader>
@@ -343,11 +343,11 @@ export default function RegisterProfile() {
                     }
                     className="flex space-x-6 space-x-reverse"
                   >
-                    <div className="flex items-center space-x-2 space-x-reverse">
+                    <div className="flex items-center space-x-2 space-x-reverse gap-2">
                       <RadioGroupItem value="Male" id="male" />
                       <Label htmlFor="male">ذكر</Label>
                     </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
+                    <div className="flex items-center space-x-2 space-x-reverse gap-2">
                       <RadioGroupItem value="Female" id="female" />
                       <Label htmlFor="female">أنثى</Label>
                     </div>
@@ -381,7 +381,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <Trophy className="w-5 h-5 text-primary" />
+                <Trophy className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>المعلومات الرياضية</span>
               </CardTitle>
             </CardHeader>
@@ -413,7 +413,7 @@ export default function RegisterProfile() {
                     onChange={(e) =>
                       handleInputChange("position", e.target.value)
                     }
-                    placeholder="مثال: مهاجم، حارس مرمى، عداء سرعة"
+                    placeholder="مثال: مهاجم، حارس مرمى، مدرب لياقة"
                   />
                 </div>
                 <div className="space-y-2">
@@ -454,7 +454,7 @@ export default function RegisterProfile() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2 md:col-span-1">
                   <Label htmlFor="experience">سنوات الخبرة</Label>
                   <Input
                     id="experience"
@@ -468,6 +468,21 @@ export default function RegisterProfile() {
                     placeholder="عدد سنوات ممارسة الرياضة"
                   />
                 </div>
+                <div className="space-y-2 md:col-span-1">
+                  <Label htmlFor="role">الدور *</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => handleInputChange("role", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر دورك (لاعب / مدرب)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Player">لاعب</SelectItem>
+                      <SelectItem value="Coach">مدرب</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -476,7 +491,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <DollarSign className="w-5 h-5 text-primary" />
+                <DollarSign className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>المعلومات المالية (اختيارية)</span>
               </CardTitle>
             </CardHeader>
@@ -533,7 +548,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiFileText className="w-5 h-5 text-blue-600" />
+                <FiFileText className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>معلومات الانتقال (اختياري)</span>
               </CardTitle>
             </CardHeader>
@@ -580,7 +595,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiInstagram className="w-5 h-5 text-pink-500" />
+                <FiInstagram className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>روابط التواصل الاجتماعي</span>
               </CardTitle>
             </CardHeader>
@@ -650,14 +665,15 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiMail className="w-5 h-5 text-blue-600" />
+                <FiMail className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>معلومات التواصل</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label className="flex items-center space-x-2 space-x-reverse">
+                <Label className="flex items-center space-x-2 space-x-reverse ">
                   <Checkbox
+                    className="mr-2 ml-2"
                     checked={formData.contactInfo.isHidden}
                     onChange={(e) =>
                       handleNested("contactInfo", "isHidden", e.target.checked)
@@ -725,7 +741,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiUpload className="w-5 h-5 text-green-600" />
+                <FiUpload className="w-5 h-5 text-primary mr-2 ml-2 " />
                 <span>رفع فيديوهات رياضية (اختياري)</span>
               </CardTitle>
             </CardHeader>
@@ -766,7 +782,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiUpload className="w-5 h-5 text-purple-600" />
+                <FiUpload className="w-5 h-5 text-primary mr-2 ml-2 " />
                 <span>رفع مستندات داعمة (PDF أو صور) (اختياري)</span>
               </CardTitle>
             </CardHeader>
@@ -814,7 +830,7 @@ export default function RegisterProfile() {
                     handleInputChange("agreeToTerms", !!checked)
                   }
                 />
-                <div className="flex-1">
+                <div className="flex-1 mr-2 ml-2">
                   <Label
                     htmlFor="terms"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

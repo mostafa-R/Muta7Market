@@ -2,7 +2,7 @@ import { Trophy, Users, Play } from "lucide-react";
 
 const SimpleHero = () => {
   return (
-    <section className="py-20  text-[hsl(var(--foreground))]">
+    <section className="pt-20  text-[hsl(var(--foreground))] mb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold text-[hsl(var(--foreground))] mb-8">
@@ -13,7 +13,7 @@ const SimpleHero = () => {
             لمجتمع الرياضيين وشارك موهبتك مع العالم واحتفل بإنجازاتك الرياضية.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
+          {/* <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
             <button
               type="button"
               className="flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-3 hover:bg-[hsl(var(--primary)/0.9)] transition"
@@ -27,7 +27,7 @@ const SimpleHero = () => {
             >
               تعرف على المزيد
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>

@@ -142,7 +142,7 @@ const PlayerProfile = () => {
             <Card className="border-0 shadow-card">
               <CardContent className="p-8 bg-white rounded-xl">
                 <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-6 md:space-x-reverse">
-                  <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+                  <Avatar className="w-32 h-32 border-4 border-white shadow-lg ml-3 mr-3">
                     <AvatarImage
                       src={player.profilePicture}
                       alt={player.name}
@@ -163,7 +163,7 @@ const PlayerProfile = () => {
                         <Badge
                           className={`${getStatusColor(
                             player.status
-                          )} text-white`}
+                          )} text-white ml-2 mr-2`}
                         >
                           {getStatusText(player.status)}
                         </Badge>
