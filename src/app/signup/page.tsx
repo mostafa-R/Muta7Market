@@ -3,6 +3,7 @@
 import axios from "axios";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import Joi from "joi";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FiLock, FiMail, FiPhone, FiUser } from "react-icons/fi";
@@ -54,6 +55,7 @@ interface Translation {
     password: TranslationError;
     confirmPassword: TranslationError;
   };
+  signInLink: string;
 }
 
 type Translations = {
@@ -104,6 +106,7 @@ const translations: Translations = {
         match: "كلمة المرور غير متطابقة",
       },
     },
+    signInLink: "لديك حساب بالفعل؟ تسجيل الدخول",
   },
   en: {
     title: "Create an Account",
@@ -148,6 +151,7 @@ const translations: Translations = {
         match: "Passwords do not match",
       },
     },
+    signInLink: "Already have an account? Sign in",
   },
 };
 
@@ -241,8 +245,6 @@ export default function SignUp() {
       dir={language === "ar" ? "rtl" : "ltr"}
     >
       <div className="mx-auto w-full max-w-[550px] bg-white rounded-lg shadow-lg p-8">
-        
-        
         <Formik
           initialValues={initialValues}
           validate={(values) => validate(values, language)}
@@ -363,9 +365,7 @@ export default function SignUp() {
                     type="password"
                     name="confirmPassword"
                     id="confirmPassword"
-                    placeholder={
-                      translations[language].placeholders.confirmPassword
-                    }
+                    placeholder={translations[language].placeholders.confirmPassword}
                     className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pl-10 pr-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
                   />
                   <FiLock className="absolute top-1/2 left-3 transform -translate-y-1/2 text-[#6B7280]" />
@@ -412,6 +412,16 @@ export default function SignUp() {
                     translations[language].submit
                   )}
                 </button>
+              </div>
+
+              {/* Sign In Link */}
+              <div className="mt-4 text-center">
+                <Link
+                  href="/signin"
+                  className="text-[#6A64F1] hover:underline text-sm"
+                >
+                  {translations[language].signInLink}
+                </Link>
               </div>
 
               {/* Success/Error Message */}
