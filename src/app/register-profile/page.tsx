@@ -1,6 +1,6 @@
 "use client";
-import { Camera, DollarSign, Save, Trophy, Upload, User } from "lucide-react";
 import { useState } from "react";
+import { Camera, DollarSign, Save, Trophy, Upload, User } from "lucide-react";
 import {
   FiFileText,
   FiInstagram,
@@ -10,74 +10,40 @@ import {
   FiUpload,
   FiYoutube,
 } from "react-icons/fi";
-import { Avatar, AvatarFallback, AvatarImage } from "../component/ui/avatar";
-import { Button } from "../component/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../component/ui/card";
-import { Checkbox } from "../component/ui/checkbox";
-import { Input } from "../component/ui/input";
-import { Label } from "../component/ui/label";
-import { RadioGroup, RadioGroupItem } from "../component/ui/radio-group";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
+import { Button } from "@/app/component/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/component/ui/card";
+import { Checkbox } from "@/app/component/ui/checkbox";
+import { Input } from "@/app/component/ui/input";
+import { Label } from "@/app/component/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/app/component/ui/radio-group";
+import { PlayerFormData, ProfileStatus, Category, Gender } from "./types/PlayerFormData";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../component/ui/select";
-import { PlayerFormData } from "./types/PlayerFormData";
+} from "@/app/component/ui/select";
+
+
 
 const sports = [
-  "كرة اليد",
-  "كرة السلة",
-  "الكرة الطائرة",
-  "الريشة الطائرة",
-  "ألعاب القوى",
-  "التنس",
-  "كرة الطاولة",
-  "الكاراتيه",
-  "التايكوندو",
-  "السهام",
-  "الرياضات الالكترونية",
-  "السباحة",
-  "الجودو",
-  "المبارزة",
-  "الدراجات الهوائية",
-  "الإسكواش",
-  "رفع الأثقال",
-  "كرة قدم الصالات",
-  "الملاكمة",
-  "الجمباز",
-  "البلياردو والسنوكر",
-  "المصارعة",
+  "كرة اليد", "كرة السلة", "الكرة الطائرة", "الريشة الطائرة", "ألعاب القوى",
+  "التنس", "كرة الطاولة", "الكاراتيه", "التايكوندو", "السهام",
+  "الرياضات الالكترونية", "السباحة", "الجودو", "المبارزة", "الدراجات الهوائية",
+  "الإسكواش", "رفع الأثقال", "كرة قدم الصالات", "الملاكمة", "الجمباز",
+  "البلياردو والسنوكر", "المصارعة"
 ];
 
 const nationalities = [
-  "السعودية",
-  "الإمارات",
-  "مصر",
-  "المغرب",
-  "الكويت",
-  "قطر",
-  "البحرين",
-  "عمان",
-  "الأردن",
-  "لبنان",
-  "سوريا",
-  "العراق",
-  "ليبيا",
-  "تونس",
-  "الجزائر",
-  "السودان",
-  "اليمن",
-  "أخرى",
+  "السعودية", "الإمارات", "مصر", "المغرب", "الكويت", "قطر", "البحرين",
+  "عمان", "الأردن", "لبنان", "سوريا", "العراق", "ليبيا", "تونس", "الجزائر",
+  "السودان", "اليمن", "أخرى",
 ];
 
-const useToast = () => ({
-  toast: ({ title, description }) => alert(`${title}\n${description}`),
-});
-
 export default function RegisterProfile() {
-  const { toast } = useToast();
+
   const [formData, setFormData] = useState<PlayerFormData>({
     name: "",
     age: "",
@@ -113,20 +79,13 @@ export default function RegisterProfile() {
   const handleInput = (field: keyof PlayerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
-  const handleNested = <T,>(
-    parent: keyof PlayerFormData,
-    field: keyof T,
-    value: any
-  ) => {
+  const handleNested = <T,>(parent: keyof PlayerFormData, field: keyof T, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [parent]: { ...prev[parent], [field]: value },
     }));
   };
-  const handleAgent = (
-    field: keyof PlayerFormData["contactInfo"]["agent"],
-    value: string
-  ) => {
+  const handleAgent = (field: keyof PlayerFormData["contactInfo"]["agent"], value: string) => {
     setFormData((prev) => ({
       ...prev,
       contactInfo: {
@@ -135,53 +94,27 @@ export default function RegisterProfile() {
       },
     }));
   };
-
-  const handleTransfer = (
-    field: keyof PlayerFormData["transferredTo"],
-    value: any
-  ) => {
+  const handleTransfer = (field: keyof PlayerFormData["transferredTo"], value: any) => {
     setFormData((prev) => ({
       ...prev,
       transferredTo: { ...prev.transferredTo, [field]: value },
     }));
   };
-  const handlePromoted = (
-    field: keyof PlayerFormData["isPromoted"],
-    value: any
-  ) => {
+  const handlePromoted = (field: keyof PlayerFormData["isPromoted"], value: any) => {
     setFormData((prev) => ({
       ...prev,
       isPromoted: { ...prev.isPromoted, [field]: value },
     }));
   };
-  const handleSocial = (
-    field: keyof PlayerFormData["socialLinks"],
-    value: string
-  ) => {
+  const handleSocial = (field: keyof PlayerFormData["socialLinks"], value: string) => {
     setFormData((prev) => ({
       ...prev,
       socialLinks: { ...prev.socialLinks, [field]: value },
     }));
   };
-
-  // --- File Handlers ---
   const handleProfilePicture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "خطأ",
-        description: "حجم الصورة يجب أن يكون أقل من 2 ميجابايت",
-      });
-      return;
-    }
-    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
-      toast({
-        title: "خطأ",
-        description: "الصورة يجب أن تكون بصيغة JPG، PNG أو GIF",
-      });
-      return;
-    }
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData((prev) => ({
@@ -193,7 +126,6 @@ export default function RegisterProfile() {
     reader.readAsDataURL(file);
   };
 
-  // Placeholder for video/document upload
   const handleMediaUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "videos" | "documents"
@@ -219,32 +151,11 @@ export default function RegisterProfile() {
   // --- Submit Handler ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.agreeToTerms) {
-      toast({ title: "خطأ", description: "يجب الموافقة على الشروط والأحكام" });
-      return;
-    }
     const required: (keyof PlayerFormData)[] = [
-      "name",
-      "age",
-      "gender",
-      "nationality",
-      "category",
-      "status",
-      "game",
+      "name", "age", "gender", "nationality", "category", "status", "game",
     ];
-    const missing = required.filter((f) => !formData[f]);
-    if (missing.length > 0) {
-      toast({ title: "خطأ", description: "يرجى ملء جميع الحقول المطلوبة" });
-      return;
-    }
-    toast({
-      title: "تم التسجيل بنجاح!",
-      description: "تم إنشاء ملفك الشخصي بنجاح.",
-    });
-    console.log("FormData:", formData);
   };
 
-  // --- Render ---
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -256,10 +167,7 @@ export default function RegisterProfile() {
             أنشئ ملفك الشخصي الاحترافي وابدأ رحلتك الرياضية معنا
           </p>
         </div>
-        <form
-          onSubmit={handleSubmit}
-          className="max-w-3xl mx-auto space-y-6 p-4 bg-gray-50"
-        >
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6 p-4">
           {/* Personal Info */}
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
@@ -269,19 +177,15 @@ export default function RegisterProfile() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Profile Picture */}
               <div className="flex items-center space-x-6 space-x-reverse">
                 <Avatar className="w-24 h-24 border-4 border-primary/20 ml-2 mr-2">
-                  <AvatarImage src={formData.profilePicture} />
-                  <AvatarFallback className="bg-primary/10  ">
+                  <AvatarImage src={formData.profilePicturePreview} />
+                  <AvatarFallback className="bg-primary/10">
                     <Camera className="w-8 h-8 text-primary" />
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <Label
-                    htmlFor="profile-picture"
-                    className="text-sm font-medium"
-                  >
+                  <Label htmlFor="profile-picture" className="text-sm font-medium">
                     الصورة الشخصية
                   </Label>
                   <div className="mt-2">
@@ -289,7 +193,7 @@ export default function RegisterProfile() {
                       id="profile-picture"
                       type="file"
                       accept="image/jpeg,image/png,image/gif"
-                      // onChange={handleFileChange}
+                      onChange={handleProfilePicture}
                       className="hidden"
                     />
                     <Button
@@ -297,7 +201,7 @@ export default function RegisterProfile() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        document.getElementById("profile-picture").click()
+                        document.getElementById("profile-picture")?.click()
                       }
                     >
                       <Upload className="w-4 h-4 ml-2" />
@@ -309,14 +213,13 @@ export default function RegisterProfile() {
                   </p>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">الاسم الكامل *</Label>
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    onChange={(e) => handleInput("name", e.target.value)}
                     placeholder="أدخل اسمك الكامل"
                     required
                   />
@@ -329,7 +232,7 @@ export default function RegisterProfile() {
                     min="16"
                     max="50"
                     value={formData.age}
-                    onChange={(e) => handleInputChange("age", e.target.value)}
+                    onChange={(e) => handleInput("age", Number(e.target.value))}
                     placeholder="أدخل عمرك"
                     required
                   />
@@ -338,8 +241,8 @@ export default function RegisterProfile() {
                   <Label>الجنس *</Label>
                   <RadioGroup
                     value={formData.gender}
-                    onValueChange={(value) =>
-                      handleInputChange("gender", value)
+                    onValueChange={(value: Gender) =>
+                      handleInput("gender", value)
                     }
                     className="flex space-x-6 space-x-reverse"
                   >
@@ -357,9 +260,7 @@ export default function RegisterProfile() {
                   <Label htmlFor="nationality">الجنسية *</Label>
                   <Select
                     value={formData.nationality}
-                    onValueChange={(value) =>
-                      handleInputChange("nationality", value)
-                    }
+                    onValueChange={(value) => handleInput("nationality", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر جنسيتك" />
@@ -388,10 +289,10 @@ export default function RegisterProfile() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="sport">الرياضة *</Label>
+                  <Label htmlFor="game">الرياضة *</Label>
                   <Select
-                    value={formData.sport}
-                    onValueChange={(value) => handleInputChange("sport", value)}
+                    value={formData.game}
+                    onValueChange={(value) => handleInput("game", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر رياضتك" />
@@ -410,9 +311,7 @@ export default function RegisterProfile() {
                   <Input
                     id="position"
                     value={formData.position}
-                    onChange={(e) =>
-                      handleInputChange("position", e.target.value)
-                    }
+                    onChange={(e) => handleInput("position", e.target.value)}
                     placeholder="مثال: مهاجم، حارس مرمى، مدرب لياقة"
                   />
                 </div>
@@ -420,17 +319,14 @@ export default function RegisterProfile() {
                   <Label htmlFor="category">الفئة *</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) =>
-                      handleInputChange("category", value)
-                    }
+                    onValueChange={(value: Category) => handleInput("category", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر فئتك" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Amateur">هاوي</SelectItem>
-                      <SelectItem value="Professional">محترف</SelectItem>
-                      <SelectItem value="Elite">نخبة</SelectItem>
+                      <SelectItem value="player">لاعب</SelectItem>
+                      <SelectItem value="coach">مدرب</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -438,50 +334,29 @@ export default function RegisterProfile() {
                   <Label htmlFor="status">الحالة الحالية *</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
-                      handleInputChange("status", value)
-                    }
+                    onValueChange={(value: ProfileStatus) => handleInput("status", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر حالتك" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Free Agent">
-                        حر (بحث عن فريق)
-                      </SelectItem>
-                      <SelectItem value="Contracted">متعاقد</SelectItem>
-                      <SelectItem value="Transferred">منتقل مؤخراً</SelectItem>
+                      <SelectItem value="AVAILABLE">حر (بحث عن فريق)</SelectItem>
+                      <SelectItem value="CONTRACTED">متعاقد</SelectItem>
+                      <SelectItem value="TRANSFERRED">منتقل مؤخراً</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 md:col-span-1">
-                  <Label htmlFor="experience">سنوات الخبرة</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="expreiance">سنوات الخبرة</Label>
                   <Input
-                    id="experience"
+                    id="expreiance"
                     type="number"
                     min="0"
                     max="30"
-                    value={formData.experience}
-                    onChange={(e) =>
-                      handleInputChange("experience", e.target.value)
-                    }
+                    value={formData.expreiance}
+                    onChange={(e) => handleInput("expreiance", Number(e.target.value))}
                     placeholder="عدد سنوات ممارسة الرياضة"
                   />
-                </div>
-                <div className="space-y-2 md:col-span-1">
-                  <Label htmlFor="role">الدور *</Label>
-                  <Select
-                    value={formData.role}
-                    onValueChange={(value) => handleInputChange("role", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر دورك (لاعب / مدرب)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Player">لاعب</SelectItem>
-                      <SelectItem value="Coach">مدرب</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -499,45 +374,28 @@ export default function RegisterProfile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="monthly-salary">
-                    الراتب الشهري المطلوب ($)
+                    الراتب الشهري المطلوب (بالريال)
                   </Label>
                   <Input
                     id="monthly-salary"
                     type="number"
                     min="0"
-                    value={formData.monthlySalary}
+                    value={formData.monthlySalary.amount}
                     onChange={(e) =>
-                      handleInputChange("monthlySalary", e.target.value)
+                      handleNested("monthlySalary", "amount", Number(e.target.value))
                     }
                     placeholder="مثال: 5000"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="annual-contract">
-                    قيمة العقد السنوي المطلوب ($)
+                  <Label htmlFor="contract-end-date">
+                    تاريخ نهاية العقد الحالي
                   </Label>
                   <Input
-                    id="annual-contract"
-                    type="number"
-                    min="0"
-                    value={formData.annualContractValue}
-                    onChange={(e) =>
-                      handleInputChange("annualContractValue", e.target.value)
-                    }
-                    placeholder="مثال: 60000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="transfer-deadline">
-                    موعد انتهاء العقد/الانتقال
-                  </Label>
-                  <Input
-                    id="transfer-deadline"
+                    id="contract-end-date"
                     type="date"
-                    value={formData.transferDeadline}
-                    onChange={(e) =>
-                      handleInputChange("transferDeadline", e.target.value)
-                    }
+                    value={formData.contractEndDate}
+                    onChange={(e) => handleInput("contractEndDate", e.target.value)}
                   />
                 </div>
               </div>
@@ -573,17 +431,14 @@ export default function RegisterProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="transfer-amount">قيمة الانتقال ($)</Label>
+                  <Label htmlFor="transfer-amount">قيمة الانتقال (بالريال)</Label>
                   <Input
                     id="transfer-amount"
                     type="number"
                     placeholder="قيمة الانتقال"
                     value={formData.transferredTo.amount}
                     onChange={(e) =>
-                      handleTransfer(
-                        "amount",
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
+                      handleTransfer("amount", e.target.value === "" ? "" : Number(e.target.value))
                     }
                   />
                 </div>
@@ -602,10 +457,7 @@ export default function RegisterProfile() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="social-instagram"
-                    className="flex items-center gap-1"
-                  >
+                  <Label htmlFor="social-instagram" className="flex items-center gap-1">
                     <FiInstagram className="w-4 h-4" /> Instagram
                   </Label>
                   <Input
@@ -616,10 +468,7 @@ export default function RegisterProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="social-twitter"
-                    className="flex items-center gap-1"
-                  >
+                  <Label htmlFor="social-twitter" className="flex items-center gap-1">
                     <FiTwitter className="w-4 h-4" /> Twitter
                   </Label>
                   <Input
@@ -630,10 +479,7 @@ export default function RegisterProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="social-whatsapp"
-                    className="flex items-center gap-1"
-                  >
+                  <Label htmlFor="social-whatsapp" className="flex items-center gap-1">
                     <FiPhone className="w-4 h-4" /> WhatsApp
                   </Label>
                   <Input
@@ -644,10 +490,7 @@ export default function RegisterProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="social-youtube"
-                    className="flex items-center gap-1"
-                  >
+                  <Label htmlFor="social-youtube" className="flex items-center gap-1">
                     <FiYoutube className="w-4 h-4" /> YouTube
                   </Label>
                   <Input
@@ -675,8 +518,8 @@ export default function RegisterProfile() {
                   <Checkbox
                     className="mr-2 ml-2"
                     checked={formData.contactInfo.isHidden}
-                    onChange={(e) =>
-                      handleNested("contactInfo", "isHidden", e.target.checked)
+                    onCheckedChange={(checked) =>
+                      handleNested("contactInfo", "isHidden", !!checked)
                     }
                   />
                   <span>إخفاء معلومات التواصل عن الجميع</span>
@@ -684,10 +527,7 @@ export default function RegisterProfile() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="contact-email"
-                    className="flex items-center gap-1"
-                  >
+                  <Label htmlFor="contact-email" className="flex items-center gap-1">
                     <FiMail className="w-4 h-4" /> البريد الإلكتروني
                   </Label>
                   <Input
@@ -700,13 +540,11 @@ export default function RegisterProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="contact-phone"
-                    className="flex items-center gap-1"
-                  >
+                  <Label htmlFor="contact-phone" className="flex items-center gap-1">
                     <FiPhone className="w-4 h-4" /> رقم الهاتف
                   </Label>
                   <Input
+                    type="number" 
                     id="contact-phone"
                     placeholder="رقم الهاتف"
                     value={formData.contactInfo.phone}
@@ -723,6 +561,7 @@ export default function RegisterProfile() {
                     onChange={(e) => handleAgent("name", e.target.value)}
                   />
                   <Input
+                    type="number"
                     placeholder="هاتف الوكيل"
                     value={formData.contactInfo.agent.phone}
                     onChange={(e) => handleAgent("phone", e.target.value)}
@@ -827,7 +666,7 @@ export default function RegisterProfile() {
                   id="terms"
                   checked={formData.agreeToTerms}
                   onCheckedChange={(checked) =>
-                    handleInputChange("agreeToTerms", !!checked)
+                    handleInput("agreeToTerms", !!checked)
                   }
                 />
                 <div className="flex-1 mr-2 ml-2">

@@ -27,7 +27,7 @@ const PlayerSection = () => {
             <PlayerCard key={player.id} player={player} />
           ))}
         </div>
-        <div className="text-center">
+        <div className="text-center my-12">
           <Link href="/players">
             <button
               type="button"
