@@ -85,7 +85,7 @@ const ProfileButton = ({
     }
   };
 
-  return isLoggedIn ? (
+  return !isLoggedIn ? (
     <button
       type="button"
       onClick={handleLogout}
@@ -221,4 +221,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Navbar

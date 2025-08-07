@@ -76,7 +76,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
 });
 
 // عنوان الـ API
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?category=coach`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?jop=coach`;
 
 export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -288,7 +288,7 @@ export default function PlayersPage() {
             <Link href="/register-profile">
               <button className="bg-primary text-white rounded px-4 py-2 text-sm flex items-center hover:bg-primary/90 transition">
                 <UserPlus className="w-4 h-4 ml-2" />
-سجل كمدرب
+                سجل كمدرب
               </button>
             </Link>
           </div>

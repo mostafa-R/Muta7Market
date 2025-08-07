@@ -252,3 +252,10 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
 };
 
 export default PlayerCard;
+
+
+
+
+
+
+
