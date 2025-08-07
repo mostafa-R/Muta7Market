@@ -2,13 +2,135 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
 import PlayerCard from "../component/PlayerCard";
-import { mockPlayers } from "../data/mockPlayer";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
+// واجهة Player المستخدمة في PlayerCard
+interface Player {
+  id: string;
+  name: string;
+  age: number;
+  status: "Free Agent" | "Contracted" | "Transferred";
+  gender: "Male" | "Female";
+  nationality: string;
+  category: "Amateur" | "Professional" | "Elite";
+  monthlySalary?: number;
+  annualContractValue?: number;
+  contractConditions?: string;
+  transferDeadline?: string;
+  sport: string;
+  position?: string;
+  profilePicture?: string;
+  rating?: number;
+  experience?: number;
+}
 
-const featuredPlayers = mockPlayers.slice(0, 6);
+// واجهة لبيانات الـ API الخام
+interface ApiPlayer {
+  _id: string;
+  user: null | string;
+  name: string;
+  age: number;
+  gender: string;
+  nationality: string;
+  category: string;
+  position: string;
+  status: string;
+  expreiance: number;
+  monthlySalary: {
+    amount: number;
+    currency: string;
+  };
+  game: string;
+  views: number;
+  isActive: boolean;
+  contractEndDate?: string;
+}
 
+// دالة لتحويل بيانات الـ API إلى واجهة Player
+const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+  id: apiPlayer._id,
+  name: apiPlayer.name,
+  age: apiPlayer.age,
+  status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
+  gender: apiPlayer.gender === "male" ? "Male" : "Female",
+  nationality: apiPlayer.nationality,
+  category: apiPlayer.category === "player" ? "Professional" : "Elite",
+  monthlySalary: apiPlayer.monthlySalary?.amount,
+  annualContractValue: undefined,
+  contractConditions: undefined,
+  transferDeadline: apiPlayer.contractEndDate,
+  sport: apiPlayer.game,
+  position: apiPlayer.position,
+  profilePicture: undefined,
+  rating: undefined,
+  experience: apiPlayer.expreiance,
+});
+
+// عنوان الـ API
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerSection = () => {
+  // إعداد الحالات
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // جلب البيانات باستخدام Axios
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(API_URL);
+        // تحويل بيانات الـ API إلى واجهة Player
+        const fetchedPlayers = response.data.data.players
+          .slice(0, 10)
+          .map(transformApiDataToPlayer);
+        setPlayers(fetchedPlayers);
+        setLoading(false);
+      } catch (err) {
+        setError("فشل في جلب بيانات اللاعبين. حاول مرة أخرى لاحقًا.");
+        setLoading(false);
+      }
+    };
+
+    fetchPlayers();
+  }, []);
+
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <section className="py-16 bg-[hsl(var(--muted))]">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
+              اللاعبون المميزون
+            </h2>
+            <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
+              جارٍ تحميل البيانات...
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // عرض حالة الخطأ
+  if (error) {
+    return (
+      <section className="py-16 bg-[hsl(var(--muted))]">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
+              اللاعبون المميزون
+            </h2>
+            <p className="text-xl text-red-500 max-w-2xl mx-auto">{error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 bg-[hsl(var(--muted))]">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,14 +142,12 @@ const PlayerSection = () => {
             تعرف على أبرز المواهب الرياضية المسجلة في منصتنا
           </p>
         </div>
-        {/* //grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 */}
         <div className="flex flex-wrap justify-center gap-6">
-          {featuredPlayers.map((player) => (
-            // تأكد أن PlayerCard معرف عندك
+          {players.map((player) => (
             <PlayerCard key={player.id} player={player} />
           ))}
         </div>
-        <div className="text-center">
+        <div className="text-center mt-8">
           <Link href="/players">
             <button
               type="button"

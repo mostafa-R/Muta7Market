@@ -1,12 +1,18 @@
 "use client";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Badge } from "@/components/ui/badge";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Separator } from "@/components/ui/separator";
-import { mockPlayers } from "@/app/data/mockPlayer";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Button } from "@/app/component/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/component/ui/card";
+import { Badge } from "@/app/component/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
+import { Separator } from "@/app/component/ui/separator";
 import {
   ArrowRight,
   Calendar,
@@ -23,37 +29,129 @@ import {
   User,
   Award,
 } from "lucide-react";
-import { Button } from "@/app/component/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/component/ui/card";
-import { Badge } from "@/app/component/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
-import { Separator } from "@/app/component/ui/separator";
 
-// إذا لم يكن عندك دالة getPlayerById يمكنك عملها هكذا:
-function getPlayerById(id: string) {
-  return mockPlayers.find((p) => p.id === id);
+// واجهة Player المستخدمة في المكون
+interface Player {
+  id: string;
+  name: string;
+  age: number;
+  status: "Free Agent" | "Contracted" | "Transferred";
+  gender: "Male" | "Female";
+  nationality: string;
+  category: "Amateur" | "Professional" | "Elite";
+  monthlySalary?: number;
+  annualContractValue?: number;
+  contractConditions?: string;
+  transferDeadline?: string;
+  sport: string;
+  position?: string;
+  profilePicture?: string;
+  rating?: number;
+  experience?: number;
+  views?: number;
 }
+
+// واجهة لبيانات الـ API الخام
+interface ApiPlayer {
+  _id: string;
+  user: null | string;
+  name: string;
+  age: number;
+  gender: string;
+  nationality: string;
+  category: string;
+  position: string;
+  status: string;
+  expreiance: number;
+  monthlySalary: {
+    amount: number;
+    currency: string;
+  };
+  game: string;
+  views: number;
+  isActive: boolean;
+  contractEndDate?: string;
+}
+
+// دالة لتحويل بيانات الـ API إلى واجهة Player
+const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+  id: apiPlayer._id,
+  name: apiPlayer.name,
+  age: apiPlayer.age,
+  status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
+  gender: apiPlayer.gender === "male" ? "Male" : "Female",
+  nationality: apiPlayer.nationality,
+  category: apiPlayer.category === "player" ? "Professional" : "Elite",
+  monthlySalary: apiPlayer.monthlySalary?.amount,
+  annualContractValue: undefined,
+  contractConditions: undefined,
+  transferDeadline: apiPlayer.contractEndDate,
+  sport: apiPlayer.game,
+  position: apiPlayer.position,
+  profilePicture: undefined,
+  rating: undefined,
+  experience: apiPlayer.expreiance,
+});
+
+// عنوان الـ API
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerProfile = () => {
   const params = useParams();
   const playerId = Array.isArray(params?.playerId)
     ? params?.playerId[0]
     : (params?.playerId as string);
-  const player = playerId ? getPlayerById(playerId) : null;
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!player) {
+  // جلب بيانات اللاعب باستخدام Axios
+  useEffect(() => {
+    const fetchPlayer = async () => {
+      if (!playerId) {
+        setError("معرف اللاعب غير متوفر");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/${playerId}`);
+        const fetchedPlayer = transformApiDataToPlayer(response.data.data);
+        setPlayer(fetchedPlayer);
+        setLoading(false);
+      } catch (err) {
+        setError("فشل في جلب بيانات اللاعب. حاول مرة أخرى لاحقًا.");
+        setLoading(false);
+      }
+    };
+
+    fetchPlayer();
+  }, [playerId]);
+
+  // عرض حالة التحميل
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">
-              اللاعب غير موجود
+              جارٍ تحميل بيانات اللاعب...
+            </h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // عرض حالة الخطأ أو اللاعب غير موجود
+  if (error || !player) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              {error || "اللاعب غير موجود"}
             </h1>
             <Link href="/players">
               <Button variant="default">
@@ -121,7 +219,6 @@ const PlayerProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 space-x-reverse text-sm text-muted-foreground mb-6">
@@ -137,7 +234,7 @@ const PlayerProfile = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Profile */}
-          <div className="lg:col-span-2 space-y-6 ">
+          <div className="lg:col-span-2 space-y-6">
             {/* Header Card */}
             <Card className="border-0 shadow-card">
               <CardContent className="p-8 bg-white rounded-xl">
@@ -277,7 +374,14 @@ const PlayerProfile = () => {
                     <div className="flex items-center space-x-2 space-x-reverse text-orange-600 bg-orange-50 p-3 rounded-lg">
                       <Clock className="w-4 h-4" />
                       <span className="font-medium">
-                        موعد انتهاء الانتقال: {player.transferDeadline}
+                        موعد انتهاء الانتقال:{" "}
+                        {new Date(player.transferDeadline).toLocaleDateString(
+                          "ar-us",
+                          {
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )}
                       </span>
                     </div>
                   )}
@@ -353,7 +457,9 @@ const PlayerProfile = () => {
                 <Separator />
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">مرات المشاهدة</span>
-                  <span className="font-semibold">15,678</span>
+                  <span className="font-semibold">
+                    {player.views || "15,678"}
+                  </span>
                 </div>
               </CardContent>
             </Card>
