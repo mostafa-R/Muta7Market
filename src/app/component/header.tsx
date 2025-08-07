@@ -85,7 +85,7 @@ const ProfileButton = ({
     }
   };
 
-  return isLoggedIn ? (
+  return !isLoggedIn ? (
     <button
       type="button"
       onClick={handleLogout}

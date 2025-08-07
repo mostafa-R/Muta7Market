@@ -21,7 +21,7 @@ interface Player {
   status: "Free Agent" | "Contracted" | "Transferred";
   gender: "Male" | "Female";
   nationality: string;
-  category: string
+  category: string;
   monthlySalary?: number;
   annualContractValue?: number;
   contractConditions?: string;
@@ -63,7 +63,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
   gender: apiPlayer.gender === "male" ? "Male" : "Female",
   nationality: apiPlayer.nationality,
-  category: apiPlayer.category ,
+  category: apiPlayer.category,
   monthlySalary: apiPlayer.monthlySalary?.amount,
   annualContractValue: undefined,
   contractConditions: undefined,
@@ -76,7 +76,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
 });
 
 // عنوان الـ API
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?category=player`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?jop=player`;
 
 export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState("");

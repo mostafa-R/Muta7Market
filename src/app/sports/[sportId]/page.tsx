@@ -1,9 +1,9 @@
 "use client";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowRight, Search, Filter, Users, Trophy, Star } from "lucide-react";
-import { mockPlayers } from "@/app/data/mockPlayer";
+import { useState, useEffect } from "react";
+import { ArrowRight, Search, Filter, Users, Trophy } from "lucide-react";
+import axios from "axios";
 import PlayerCard from "@/app/component/PlayerCard";
 import CTA from "./CTA";
 
@@ -42,15 +42,151 @@ const statusOptions = [
 
 const categoryOptions = [
   { value: "all", label: "جميع الفئات" },
-  { value: "Elite", label: "نخبة" },
-  { value: "Professional", label: "محترف" },
-  { value: "Amateur", label: "هاوي" },
+  { value: "player", label: "لاعب" },
+  { value: "coach", label: "مدرب" },
 ];
 
-// دالة وهمية لجلب اللاعبين حسب الرياضة (عدلها لـ fetch API/DB لو عندك)
-function getPlayersBySport(sportId: string) {
-  return mockPlayers.filter((p) => p.sportId === sportId);
+// واجهة Player (مطابقة لـ PlayerCard)
+interface Player {
+  id: string;
+  name: string;
+  age: number;
+  status: "Free Agent" | "Contracted" | "Transferred";
+  gender: "Male" | "Female";
+  nationality: string;
+  jop: "player" | "coach";
+  monthlySalary?: number;
+  annualContractValue?: number;
+  contractConditions?: string;
+  transferDeadline?: string;
+  sport: string;
+  position?: string;
+  profilePicture?: string;
+  rating?: number;
+  experience?: number;
+  socialLinks?: {
+    instagram?: string;
+    twitter?: string;
+    whatsapp?: string;
+    youtube?: string;
+  };
+  isPromoted?: {
+    status: boolean;
+    startDate?: string;
+    endDate?: string;
+    type?: "featured" | "premium";
+  };
+  transferredTo?: {
+    club: string;
+    date: string;
+    amount: number;
+  };
 }
+
+// واجهة لبيانات الـ API الخام
+interface ApiPlayer {
+  _id: string;
+  user: string;
+  name: string;
+  age: number;
+  gender: string;
+  nationality: string;
+  jop: string;
+  position: string;
+  status: string;
+  expreiance: number;
+  monthlySalary: {
+    amount: number;
+    currency: string;
+  };
+  yearSalary: {
+    amount: number;
+    currency: string;
+  };
+  contractEndDate?: string;
+  game: string;
+  views: number;
+  isActive: boolean;
+  media?: {
+    profileImage?: {
+      url: string;
+      publicId?: string;
+    };
+    videos?: Array<{
+      url: string;
+      publicId: string;
+      title: string;
+      duration: number;
+      uploadedAt: string;
+    }>;
+    documents?: Array<{
+      url: string;
+      publicId: string;
+      title: string;
+      type: string;
+      uploadedAt: string;
+    }>;
+  };
+  socialLinks?: {
+    instagram?: string;
+    twitter?: string;
+    whatsapp?: string;
+    youtube?: string;
+  };
+  isPromoted?: {
+    status: boolean;
+    startDate?: string;
+    endDate?: string;
+    type?: "featured" | "premium";
+  };
+  contactInfo?: {
+    isHidden: boolean;
+    email?: string;
+    phone?: string;
+    agent?: {
+      name: string;
+      phone: string;
+      email: string;
+    };
+  };
+  transferredTo?: {
+    club: string;
+    date: string;
+    amount: number;
+  };
+}
+
+// دالة لتحويل بيانات الـ API إلى واجهة Player
+const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+  id: apiPlayer._id,
+  name: apiPlayer.name,
+  age: apiPlayer.age,
+  status:
+    apiPlayer.status === "available"
+      ? "Free Agent"
+      : apiPlayer.status === "transferred"
+      ? "Transferred"
+      : "Contracted",
+  gender: apiPlayer.gender === "male" ? "Male" : "Female",
+  nationality: apiPlayer.nationality,
+  jop: apiPlayer.jop,
+  monthlySalary: apiPlayer.monthlySalary?.amount,
+  annualContractValue: apiPlayer.yearSalary?.amount,
+  contractConditions: undefined,
+  transferDeadline: apiPlayer.contractEndDate,
+  sport: apiPlayer.game,
+  position: apiPlayer.position,
+  profilePicture: apiPlayer.media?.profileImage?.url || undefined,
+  rating: undefined,
+  experience: apiPlayer.expreiance,
+  socialLinks: apiPlayer.socialLinks,
+  isPromoted: apiPlayer.isPromoted,
+  transferredTo: apiPlayer.transferredTo,
+});
+
+// عنوان الـ API الأساسي
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ;
 
 const SportDetailPage = () => {
   const params = useParams();
@@ -60,10 +196,59 @@ const SportDetailPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const players = sportId ? getPlayersBySport(sportId) : [];
-  const sportName = sportId ? sportNames[sportId] : "";
+  const sportName = sportId ? sportNames[sportId.toLowerCase()] : "";
+  const apiSportName = sportName
+    ? Object.keys(sportNames)
+        .find((key) => sportNames[key] === sportName)
+        ?.toLowerCase()
+    : "";
 
+  // جلب البيانات باستخدام Axios
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `${API_BASE_URL}/players?game=${apiSportName}`
+        );
+        console.log("API Response:", response.data); // Debugging: Log the full response
+
+        // التحقق من هيكلية الاستجابة
+        let fetchedPlayers: Player[] = [];
+        if (response.data?.players) {
+          fetchedPlayers = response.data.players.map(transformApiDataToPlayer);
+        } else {
+          console.error("Unexpected API response structure:", response.data);
+          throw new Error("هيكلية استجابة الـ API غير متوقعة");
+        }
+
+        setPlayers(fetchedPlayers);
+        console.log("Fetched Players:", fetchedPlayers);
+        
+        setLoading(false);
+      } catch (err: any) {
+        console.error("Error fetching players:", err);
+        setError(
+          err.response?.data?.message ||
+            "فشل في جلب بيانات اللاعبين. حاول مرة أخرى لاحقًا."
+        );
+        setLoading(false);
+      }
+    };
+
+    if (apiSportName) {
+      fetchPlayers();
+    } else {
+      setLoading(false);
+      setError("الرياضة غير موجودة");
+    }
+  }, [apiSportName]);
+
+  // تصفية اللاعبين
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.trim().toLowerCase();
     const matchesSearch =
@@ -72,16 +257,35 @@ const SportDetailPage = () => {
     const matchesStatus =
       statusFilter === "all" || player.status === statusFilter;
     const matchesCategory =
-      categoryFilter === "all" || player.category === categoryFilter;
+      categoryFilter === "all" || player.jop === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  if (!sportId || !sportName) {
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[hsl(var(--background))]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--foreground))] mb-4">
+              جارٍ تحميل {sportName || "الرياضة"}
+            </h1>
+            <p className="text-[hsl(var(--muted-foreground))]">
+              جارٍ تحميل البيانات...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // عرض حالة الخطأ أو الرياضة غير موجودة
+  if (error || !sportName) {
     return (
       <div className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))] mb-4">
-            الرياضة غير موجودة
+            {error || "الرياضة غير موجودة"}
           </h1>
           <Link href="/sports">
             <button className="inline-flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg px-6 py-3 text-lg font-semibold hover:bg-[hsl(var(--primary)/0.95)] transition">
