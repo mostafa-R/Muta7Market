@@ -1,6 +1,4 @@
 "use client";
-import Image from "next/image";
-import Link from "next/link";
 import {
   Calendar,
   Clock,
@@ -10,6 +8,8 @@ import {
   Star,
   Trophy,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export interface Player {
   id: string;
@@ -18,7 +18,7 @@ export interface Player {
   status: "Free Agent" | "Contracted" | "Transferred";
   gender: "Male" | "Female";
   nationality: string;
-  category: "Amateur" | "Professional" | "Elite";
+  category: string;
   monthlySalary?: number;
   annualContractValue?: number;
   contractConditions?: string;
@@ -37,11 +37,11 @@ interface PlayerCardProps {
 const getStatusColor = (status: Player["status"]) => {
   switch (status) {
     case "Free Agent":
-      return "bg-green-500";
+      return "bg-gray-500";
     case "Contracted":
       return "bg-blue-500";
     case "Transferred":
-      return "bg-orange-500";
+      return "bg-gray-500";
     default:
       return "bg-gray-500";
   }
@@ -49,12 +49,11 @@ const getStatusColor = (status: Player["status"]) => {
 
 const getCategoryColor = (category: Player["category"]) => {
   switch (category) {
-    case "Elite":
-      return "bg-yellow-500";
-    case "Professional":
-      return "bg-purple-500";
-    case "Amateur":
-      return "bg-gray-500";
+    case "player":
+      return "bg-blue-500";
+    case "coach":
+      return "bg-blue-500";
+
     default:
       return "bg-gray-500";
   }
@@ -75,18 +74,17 @@ const getStatusText = (status: Player["status"]) => {
 
 const getCategoryText = (category: Player["category"]) => {
   switch (category) {
-    case "Elite":
-      return "نخبة";
-    case "Professional":
-      return "محترف";
-    case "Amateur":
-      return "هاوي";
+    case "player":
+      return "player";
+    case "coach":
+      return "coach";
+
     default:
       return category;
   }
 };
 
-const PlayerCard = ({ player : player  }: PlayerCardProps) => {
+const PlayerCard = ({ player: player }: PlayerCardProps) => {
   return (
     <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-full ">
       {/* Header with Avatar and Status */}
@@ -150,7 +148,7 @@ const PlayerCard = ({ player : player  }: PlayerCardProps) => {
 
       {/* Player Info */}
       <div className="px-6 pb-4 space-y-3 h-54 mt-3">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2  text-sm">
           <div className="flex items-center space-x-2 space-x-reverse">
             <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))] " />
             <span className="text-[hsl(var(--muted-foreground))]">العمر:</span>
@@ -226,7 +224,12 @@ const PlayerCard = ({ player : player  }: PlayerCardProps) => {
           <div className="flex items-center space-x-2 space-x-reverse text-sm text-orange-600">
             <Clock className="w-4 h-4" />
             <span>موعد انتهاء الانتقال:</span>
-            <span className="font-medium">{player.transferDeadline}</span>
+            <span className="font-medium ml-2 mr-2">
+              {new Date(player.transferDeadline).toLocaleDateString("ar-en", {
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
           </div>
         )}
       </div>

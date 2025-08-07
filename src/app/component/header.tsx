@@ -1,8 +1,9 @@
 "use client";
 import { FileText, Menu, Search, Trophy, User, Users, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 // شعار المنصة
 const NavLogo = () => (
@@ -51,20 +52,67 @@ const ProfileButton = ({
 }: {
   className?: string;
   fullWidth?: boolean;
-}) => (
-  <Link
-    href="/signin"
-    type="button"
-    className={
-      "border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition " +
-      (fullWidth ? "w-full " : "") +
-      className
+}) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+
+  // تحقق من حالة اليوزر عند تحميل الكومبوننت
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loggedIn);
+  }, []);
+
+  // دالة تسجيل الخروج
+  const handleLogout = async () => {
+    try {
+      // إرسال طلب تسجيل الخروج إلى الـ API
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+      // مسح حالة تسجيل الدخول من localStorage
+      localStorage.removeItem("isLoggedIn");
+      setIsLoggedIn(false);
+      // إعادة توجيه إلى صفحة تسجيل الدخول
+      router.push("/signin");
+    } catch (error) {
+      console.error("Logout Error:", error);
+      // في حالة وجود خطأ، بنمسح isLoggedIn ونعيد التوجيه
+      localStorage.removeItem("isLoggedIn");
+      setIsLoggedIn(false);
+      router.push("/signin");
     }
-  >
-    <User className="w-4 h-4 ml-2" />
-    تسجيل الدخول
-  </Link>
-);
+  };
+
+  return isLoggedIn ? (
+    <button
+      type="button"
+      onClick={handleLogout}
+      className={
+        "border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition " +
+        (fullWidth ? "w-full " : "") +
+        className
+      }
+    >
+      <User className="w-4 h-4 ml-2" />
+      تسجيل الخروج
+    </button>
+  ) : (
+    <Link
+      href="/signin"
+      type="button"
+      className={
+        "border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition " +
+        (fullWidth ? "w-full " : "") +
+        className
+      }
+    >
+      <User className="w-4 h-4 ml-2" />
+      تسجيل الدخول
+    </Link>
+  );
+};
 
 const MobileNavMenu = ({
   navItems,
