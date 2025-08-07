@@ -1,8 +1,23 @@
 "use client";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import axios from "axios";
+=======
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Button } from "@/app/component/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/component/ui/card";
+import { Badge } from "@/app/component/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
+import { Separator } from "@/app/component/ui/separator";
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
 import {
   ArrowRight,
   Calendar,
@@ -20,17 +35,8 @@ import {
   Award,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/app/component/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/component/ui/card";
-import { Badge } from "@/app/component/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
-import { Separator } from "@/app/component/ui/separator";
 
+<<<<<<< HEAD
 // إعداد axios مع credentials
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
@@ -53,10 +59,14 @@ apiClient.interceptors.response.use(
   }
 );
 
+=======
+// واجهة Player المستخدمة في المكون
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
 interface Player {
   id: string;
   name: string;
   age: number;
+<<<<<<< HEAD
   nationality: string;
   sport: string;
   position?: string;
@@ -64,10 +74,17 @@ interface Player {
   category: string;
   rating?: number;
   profilePicture?: string;
+=======
+  status: "Free Agent" | "Contracted" | "Transferred";
+  gender: "Male" | "Female";
+  nationality: string;
+  category: "Amateur" | "Professional" | "Elite";
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
   monthlySalary?: number;
   annualContractValue?: number;
   contractConditions?: string;
   transferDeadline?: string;
+<<<<<<< HEAD
   experience?: string;
   bio?: string;
   achievements?: string[];
@@ -77,13 +94,67 @@ interface Player {
   views?: number;
   createdAt?: string;
   updatedAt?: string;
+=======
+  sport: string;
+  position?: string;
+  profilePicture?: string;
+  rating?: number;
+  experience?: number;
+  views?: number;
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
 }
+
+// واجهة لبيانات الـ API الخام
+interface ApiPlayer {
+  _id: string;
+  user: null | string;
+  name: string;
+  age: number;
+  gender: string;
+  nationality: string;
+  category: string;
+  position: string;
+  status: string;
+  expreiance: number;
+  monthlySalary: {
+    amount: number;
+    currency: string;
+  };
+  game: string;
+  views: number;
+  isActive: boolean;
+  contractEndDate?: string;
+}
+
+// دالة لتحويل بيانات الـ API إلى واجهة Player
+const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+  id: apiPlayer._id,
+  name: apiPlayer.name,
+  age: apiPlayer.age,
+  status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
+  gender: apiPlayer.gender === "male" ? "Male" : "Female",
+  nationality: apiPlayer.nationality,
+  category: apiPlayer.category === "player" ? "Professional" : "Elite",
+  monthlySalary: apiPlayer.monthlySalary?.amount,
+  annualContractValue: undefined,
+  contractConditions: undefined,
+  transferDeadline: apiPlayer.contractEndDate,
+  sport: apiPlayer.game,
+  position: apiPlayer.position,
+  profilePicture: undefined,
+  rating: undefined,
+  experience: apiPlayer.expreiance,
+});
+
+// عنوان الـ API
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerProfile = () => {
   const params = useParams();
   const playerId = Array.isArray(params?.playerId)
     ? params?.playerId[0]
     : (params?.playerId as string);
+<<<<<<< HEAD
 
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,12 +165,24 @@ const PlayerProfile = () => {
     const fetchPlayer = async () => {
       if (!playerId) {
         setError("معرف اللاعب غير صحيح");
+=======
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // جلب بيانات اللاعب باستخدام Axios
+  useEffect(() => {
+    const fetchPlayer = async () => {
+      if (!playerId) {
+        setError("معرف اللاعب غير متوفر");
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
+<<<<<<< HEAD
         setError(null);
         
         const response = await apiClient.get(`/user/${playerId}`);
@@ -120,6 +203,14 @@ const PlayerProfile = () => {
           setError("حدث خطأ في جلب بيانات اللاعب");
         }
       } finally {
+=======
+        const response = await axios.get(`${API_URL}/${playerId}`);
+        const fetchedPlayer = transformApiDataToPlayer(response.data.data);
+        setPlayer(fetchedPlayer);
+        setLoading(false);
+      } catch (err) {
+        setError("فشل في جلب بيانات اللاعب. حاول مرة أخرى لاحقًا.");
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
         setLoading(false);
       }
     };
@@ -127,6 +218,7 @@ const PlayerProfile = () => {
     fetchPlayer();
   }, [playerId]);
 
+<<<<<<< HEAD
   // دالة إضافة للمفضلة
   const handleAddToFavorites = async () => {
     try {
@@ -181,6 +273,30 @@ const PlayerProfile = () => {
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">
+=======
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              جارٍ تحميل بيانات اللاعب...
+            </h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // عرض حالة الخطأ أو اللاعب غير موجود
+  if (error || !player) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
               {error || "اللاعب غير موجود"}
             </h1>
             <Link href="/players">
@@ -443,7 +559,14 @@ const PlayerProfile = () => {
                     <div className="flex items-center space-x-2 space-x-reverse text-orange-600 bg-orange-50 p-3 rounded-lg">
                       <Clock className="w-4 h-4" />
                       <span className="font-medium">
-                        موعد انتهاء الانتقال: {player.transferDeadline}
+                        موعد انتهاء الانتقال:{" "}
+                        {new Date(player.transferDeadline).toLocaleDateString(
+                          "ar-us",
+                          {
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )}
                       </span>
                     </div>
                   )}
@@ -522,7 +645,11 @@ const PlayerProfile = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">مرات المشاهدة</span>
                   <span className="font-semibold">
+<<<<<<< HEAD
                     {player.views?.toLocaleString() || "0"}
+=======
+                    {player.views || "15,678"}
+>>>>>>> c095197bc01471fae00fc204f0ef10bbfad323f6
                   </span>
                 </div>
                 {player.createdAt && (

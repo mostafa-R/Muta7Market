@@ -1,18 +1,82 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PlayerCard from "@/app/component/PlayerCard";
 import Link from "next/link";
+import axios from "axios";
 import {
   Search,
   Filter,
   Users,
   Trophy,
-  Star,
-  UserPlus,
   SlidersHorizontal,
+  UserPlus,
 } from "lucide-react";
-import { mockPlayers } from "../data/mockPlayer";
 import CTA from "./CTA";
+
+// واجهة Player المستخدمة في PlayerCard
+interface Player {
+  id: string;
+  name: string;
+  age: number;
+  status: "Free Agent" | "Contracted" | "Transferred";
+  gender: "Male" | "Female";
+  nationality: string;
+  category: string
+  monthlySalary?: number;
+  annualContractValue?: number;
+  contractConditions?: string;
+  transferDeadline?: string;
+  sport: string;
+  position?: string;
+  profilePicture?: string;
+  rating?: number;
+  experience?: number;
+}
+
+// واجهة لبيانات الـ API الخام
+interface ApiPlayer {
+  _id: string;
+  user: null | string;
+  name: string;
+  age: number;
+  gender: string;
+  nationality: string;
+  category: string;
+  position: string;
+  status: string;
+  expreiance: number;
+  monthlySalary: {
+    amount: number;
+    currency: string;
+  };
+  game: string;
+  views: number;
+  isActive: boolean;
+  contractEndDate?: string;
+}
+
+// دالة لتحويل بيانات الـ API إلى واجهة Player
+const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+  id: apiPlayer._id,
+  name: apiPlayer.name,
+  age: apiPlayer.age,
+  status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
+  gender: apiPlayer.gender === "male" ? "Male" : "Female",
+  nationality: apiPlayer.nationality,
+  category: apiPlayer.category ,
+  monthlySalary: apiPlayer.monthlySalary?.amount,
+  annualContractValue: undefined,
+  contractConditions: undefined,
+  transferDeadline: apiPlayer.contractEndDate,
+  sport: apiPlayer.game,
+  position: apiPlayer.position,
+  profilePicture: undefined,
+  rating: undefined,
+  experience: apiPlayer.expreiance,
+});
+
+// عنوان الـ API
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?category=player`;
 
 export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,15 +84,38 @@ export default function PlayersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [nationalityFilter, setNationalityFilter] = useState("all");
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // جلب البيانات باستخدام Axios
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(API_URL);
+        const fetchedPlayers = response.data.data.players.map(
+          transformApiDataToPlayer
+        );
+        setPlayers(fetchedPlayers);
+        setLoading(false);
+      } catch (err) {
+        setError("فشل في جلب بيانات اللاعبين. حاول مرة أخرى لاحقًا.");
+        setLoading(false);
+      }
+    };
+
+    fetchPlayers();
+  }, []);
 
   // Get unique values for filters
-  const uniqueSports = [...new Set(mockPlayers.map((player) => player.sport))];
+  const uniqueSports = [...new Set(players.map((player) => player.sport))];
   const uniqueNationalities = [
-    ...new Set(mockPlayers.map((player) => player.nationality)),
+    ...new Set(players.map((player) => player.nationality)),
   ];
 
   // Filter players
-  const filteredPlayers = mockPlayers.filter((player) => {
+  const filteredPlayers = players.filter((player) => {
     const matchesSearch =
       player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.nationality.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,6 +145,47 @@ export default function PlayersPage() {
     setNationalityFilter("all");
   };
 
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              جميع اللاعبين
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
+              جارٍ تحميل البيانات...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // عرض حالة الخطأ
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              جميع اللاعبين
+            </h1>
+            <p className="text-xl text-red-500 max-w-3xl mx-auto mb-6">
+              {error}
+            </p>
+            <Link href="/">
+              <button className="bg-primary text-white rounded px-4 py-2 text-sm flex items-center hover:bg-primary/90 transition">
+                العودة للرئيسية
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
@@ -71,7 +199,7 @@ export default function PlayersPage() {
           <div className="flex items-center justify-center space-x-4 space-x-reverse">
             <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
               <Users className="w-4 h-4" />
-              <span>{mockPlayers.length} 8 لاعب مسجل</span>
+              <span>{players.length} لاعب مسجل</span>
             </span>
             <span className="inline-flex items-center border border-border text-foreground rounded-full px-3 py-1 text-sm font-semibold">
               <Trophy className="w-4 h-4" />
@@ -169,9 +297,9 @@ export default function PlayersPage() {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            عرض {filteredPlayers.length} من أصل {mockPlayers.length} لاعب
+            عرض {filteredPlayers.length} من أصل {players.length} لاعب
           </p>
-          {filteredPlayers.length !== mockPlayers.length && (
+          {filteredPlayers.length !== players.length && (
             <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
               تم تطبيق فلاتر
             </span>
@@ -207,7 +335,6 @@ export default function PlayersPage() {
 
         {/* CTA Section */}
         <CTA />
-
       </div>
     </div>
   );
