@@ -3,6 +3,11 @@ export type ProfileStatus = "AVAILABLE" | "CONTRACTED" | "TRANSFERRED";
 export type Category = "player" | "coach";
 export type PromotionType = "featured" | "premium" | "";
 
+export interface YearSalary  {
+  amount: number;
+  currency: string;
+};
+
 export interface SocialLinks {
   instagram: string;
   twitter: string;
@@ -88,4 +93,5 @@ export interface PlayerFormData {
   agreeToTerms: boolean;
   profilePicturePreview?: string;
   profilePictureFile?: File;
+  yearSalary?: number;
 }

@@ -215,20 +215,22 @@ const SportDetailPage = () => {
         const response = await axios.get(
           `${API_BASE_URL}/players?game=${apiSportName}`
         );
-        console.log("API Response:", response.data); // Debugging: Log the full response
+        console.log("API Response:", response.data); // تسجيل استجابة الـ API الكاملة
 
         // التحقق من هيكلية الاستجابة
-        let fetchedPlayers: Player[] = [];
-        if (response.data?.players) {
-          fetchedPlayers = response.data.players.map(transformApiDataToPlayer);
-        } else {
+        if (!response.data?.data?.players) {
           console.error("Unexpected API response structure:", response.data);
           throw new Error("هيكلية استجابة الـ API غير متوقعة");
         }
 
+        // تحويل بيانات اللاعبين إلى تنسيق Player
+        const fetchedPlayers: Player[] = response.data.data.players.map(
+          transformApiDataToPlayer
+        );
+
         setPlayers(fetchedPlayers);
-        console.log("Fetched Players:", fetchedPlayers);
-        
+        console.log("Fetched Players:", fetchedPlayers); // تسجيل اللاعبين بعد التحويل
+
         setLoading(false);
       } catch (err: any) {
         console.error("Error fetching players:", err);
@@ -246,8 +248,7 @@ const SportDetailPage = () => {
       setLoading(false);
       setError("الرياضة غير موجودة");
     }
-  }, [apiSportName]);
-
+  }, [apiSportName]); 
   // تصفية اللاعبين
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.trim().toLowerCase();

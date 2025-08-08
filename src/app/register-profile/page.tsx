@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Camera, DollarSign, Save, Trophy, Upload, User } from "lucide-react";
 import {
   FiFileText,
@@ -7,8 +7,8 @@ import {
   FiMail,
   FiPhone,
   FiTwitter,
-  FiUpload,
   FiYoutube,
+  FiUpload,
 } from "react-icons/fi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
 import { Button } from "@/app/component/ui/button";
@@ -39,31 +39,33 @@ import { useFormik } from "formik";
 import Joi from "joi";
 import { playerFormSchema } from "./types/schema";
 import axios from "axios";
+import {sportsOptions} from "./types/constants";
 
-const sports = [
-  "كرة اليد",
-  "كرة السلة",
-  "الكرة الطائرة",
-  "الريشة الطائرة",
-  "ألعاب القوى",
-  "التنس",
-  "كرة الطاولة",
-  "الكاراتيه",
-  "التايكوندو",
-  "السهام",
-  "الرياضات الالكترونية",
-  "السباحة",
-  "الجودو",
-  "المبارزة",
-  "الدراجات الهوائية",
-  "الإسكواش",
-  "رفع الأثقال",
-  "كرة قدم الصالات",
-  "الملاكمة",
-  "الجمباز",
-  "البلياردو والسنوكر",
-  "المصارعة",
-];
+
+// const sports = [
+//   "كرة اليد",
+//   "كرة السلة",
+//   "الكرة الطائرة",
+//   "الريشة الطائرة",
+//   "ألعاب القوى",
+//   "التنس",
+//   "كرة الطاولة",
+//   "الكاراتيه",
+//   "التايكوندو",
+//   "السهام",
+//   "الرياضات الالكترونية",
+//   "السباحة",
+//   "الجودو",
+//   "المبارزة",
+//   "الدراجات الهوائية",
+//   "الإسكواش",
+//   "رفع الأثقال",
+//   "كرة قدم الصالات",
+//   "الملاكمة",
+//   "الجمباز",
+//   "البلياردو والسنوكر",
+//   "المصارعة",
+// ];
 
 const nationalities = [
   "السعودية",
@@ -87,45 +89,132 @@ const nationalities = [
 ];
 
 export default function RegisterProfile() {
-  const handleSubmit = async (
-    values: any,
-    { setSubmitting, setErrors, resetForm }: any
-  ) => {
-    console.log(values);
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
+  const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/webm"];
+  const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
+  const uploadFile = async (file: File, endpoint: string) => {
+    const token = getCookie("accessToken");
+    const formData = new FormData();
+    formData.append("file", file);
     try {
-      const payload = {
-        ...values,
-        gender: values.gender?.toLowerCase(),
-        jop: values.category,
-        // add any required data processing here
-        contractEndDate: values.contractEndDate
-          ? new Date(values.contractEndDate)
-          : null,
-      };
-      const res = await axios.post(
-        "http://localhost:5000/api/v1/players/createPlayer",
-        payload
-      );
-      alert("تم إرسال البيانات بنجاح!");
-      resetForm();
-    } catch (error: any) {
-      if (error.response) {
-        if (error.response.data?.errors) {
-          setErrors(error.response.data.errors);
-        }
-        alert(error.response.data?.message || "حدث خطأ أثناء إرسال البيانات");
-        console.log("Backend error:", error.response.data);
-      } else if (error.request) {
-        alert("لم يتم تلقي رد من السيرفر");
-        console.log("No response:", error.request);
-      } else {
-        alert("خطأ غير متوقع");
-        console.log("Unknown error:", error.message);
-      }
-    } finally {
-      setSubmitting(false);
+      const response = await axios.post(endpoint, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data" ,
+           Authorization: `Bearer ${token}`
+        },
+        withCredentials: true,
+      });
+      return response.data; // Assuming response contains { url, publicId }
+    } catch (error) {
+      throw new Error("فشل في رفع الملف");
     }
   };
+
+
+  const handleSubmit = useCallback(
+    async (
+      values: any,
+      { setSubmitting, setErrors, resetForm }: any
+    ) => {
+      try {
+        let profileImage = values.media.profileImage;
+        if (values.profilePictureFile) {
+          const uploadedImage = await uploadFile(
+            values.profilePictureFile,
+            "http://localhost:5000/api/v1/upload/image"
+          );
+          profileImage = {
+            url: uploadedImage.url,
+            publicId: uploadedImage.publicId,
+          };
+        }
+
+        const videos = await Promise.all(
+          values.media.videos.map(async (video: any) => {
+            if (video.file) {
+              const uploadedVideo = await uploadFile(
+                video.file,
+                "http://localhost:5000/api/v1/upload/video"
+              );
+              return {
+                ...video,
+                url: uploadedVideo.url,
+                publicId: uploadedVideo.publicId,
+                file: undefined, // remove file after upload
+              };
+            }
+            return video;
+          })
+        );
+
+        const documents = await Promise.all(
+          values.media.documents.map(async (doc: any) => {
+            if (doc.file) {
+
+              const uploadedDoc = await uploadFile(
+                doc.file,
+                "http://localhost:5000/api/v1/upload/document"
+              );
+              return {
+                ...doc,
+                url: uploadedDoc.url,
+                publicId: uploadedDoc.publicId,
+                file: undefined, // remove file after upload
+              };
+            }
+            return doc;
+          })
+        );
+
+        const payload = {
+          ...values,
+          gender: values.gender?.toLowerCase(),
+          status: values.status?.toLowerCase(), 
+          jop: values.category,
+          yearSalary: values.yearSalary ? Number(values.yearSalary) : null,
+          media: {
+            ...values.media,
+            profileImage,
+            videos,
+            documents,
+          },
+          contractEndDate: values.contractEndDate
+            ? new Date(values.contractEndDate).toISOString()
+            : null,
+        };
+
+        if (!values.isPromoted.type) {
+          delete values.isPromoted.type; // سيبه فاضي عشان الـ default يشتغل
+        }
+
+        const res = await axios.post(
+          "http://localhost:5000/api/v1/players/createPlayer",
+          payload, {
+            withCredentials: true
+          }
+        );
+   
+        alert("تم إرسال البيانات بنجاح!");
+        resetForm();
+      } catch (error: any) {
+        if (error.response) {
+          setErrors(error.response.data.errors || {});
+          console.log(error)
+          alert(error.response.data?.message || "حدث خطأ أثناء إرسال البيانات");
+        } else if (error.request) {
+          alert("لم يتم تلقي رد من السيرفر");
+        } else {
+          alert("خطأ غير متوقع");
+          console.log(error);
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    []
+  );
 
   const formik = useFormik({
     initialValues: {
@@ -138,6 +227,7 @@ export default function RegisterProfile() {
       status: "",
       expreiance: "",
       monthlySalary: { amount: 0, currency: "SAR" },
+      yearSalary: "",
       contractEndDate: "",
       transferredTo: { club: "", date: "", amount: "" },
       media: {
@@ -163,9 +253,8 @@ export default function RegisterProfile() {
         abortEarly: false,
       });
       if (!error) return {};
-      const errors: any = {};
+      const errors: Record<string, string> = {};
       error.details.forEach((detail) => {
-        // nested fields (dot notation)
         const path = detail.path.join(".");
         errors[path] = detail.message;
       });
@@ -174,105 +263,19 @@ export default function RegisterProfile() {
     onSubmit: handleSubmit,
   });
 
-  // const handleInput = (field: keyof PlayerFormData, value: any) => {
-  //   setFormData((prev) => ({ ...prev, [field]: value }));
-  // };
-  // const handleNested = <T,>(
-  //   parent: keyof PlayerFormData,
-  //   field: keyof T,
-  //   value: any
-  // ) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [parent]: { ...prev[parent], [field]: value },
-  //   }));
-  // };
-  // const handleAgent = (
-  //   field: keyof PlayerFormData["contactInfo"]["agent"],
-  //   value: string
-  // ) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     contactInfo: {
-  //       ...prev.contactInfo,
-  //       agent: { ...prev.contactInfo.agent, [field]: value },
-  //     },
-  //   }));
-  // };
-  // const handleTransfer = (
-  //   field: keyof PlayerFormData["transferredTo"],
-  //   value: any
-  // ) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     transferredTo: { ...prev.transferredTo, [field]: value },
-  //   }));
-  // };
-  // const handlePromoted = (
-  //   field: keyof PlayerFormData["isPromoted"],
-  //   value: any
-  // ) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     isPromoted: { ...prev.isPromoted, [field]: value },
-  //   }));
-  // };
-  // const handleSocial = (
-  //   field: keyof PlayerFormData["socialLinks"],
-  //   value: string
-  // ) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     socialLinks: { ...prev.socialLinks, [field]: value },
-  //   }));
-  // };
-  // const handleProfilePicture = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-  //   const reader = new FileReader();
-  //   reader.onloadend = () => {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       profilePicturePreview: reader.result as string,
-  //       profilePictureFile: file,
-  //     }));
-  //   };
-  //   reader.readAsDataURL(file);
-  // };
-  // const handleMediaUpload = async (
-  //   e: React.ChangeEvent<HTMLInputElement>,
-  //   type: "videos" | "documents"
-  // ) => {
-  //   const files = Array.from(e.target.files || []);
-  //   const uploaded = files.map((file) => ({
-  //     url: URL.createObjectURL(file),
-  //     publicId: Math.random().toString(36).slice(2),
-  //     title: file.name,
-  //     duration: type === "videos" ? 0 : undefined,
-  //     type: type === "documents" ? file.type : undefined,
-  //     uploadedAt: new Date().toISOString(),
-  //   }));
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     media: {
-  //       ...prev.media,
-  //       [type]: [...prev.media[type], ...uploaded],
-  //     },
-  //   }));
-  // };
-
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const required: (keyof PlayerFormData)[] = [
-  //     "name",
-  //     "age",
-  //     "gender",
-  //     "nationality",
-  //     "category",
-  //     "status",
-  //     "game",
-  //   ];
-  // };
+  const handleFileValidation = (
+    file: File,
+    allowedTypes: string[],
+    maxSize: number
+  ) => {
+    if (!allowedTypes.includes(file.type)) {
+      return "نوع الملف غير مدعوم";
+    }
+    if (file.size > maxSize) {
+      return "حجم الملف كبير جدًا (الحد الأقصى 2MB)";
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -316,10 +319,19 @@ export default function RegisterProfile() {
                     <Input
                       id="profile-picture"
                       type="file"
-                      accept="image/jpeg,image/png,image/gif"
+                      accept={ALLOWED_IMAGE_TYPES.join(",")}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        const error = handleFileValidation(
+                          file,
+                          ALLOWED_IMAGE_TYPES,
+                          MAX_FILE_SIZE
+                        );
+                        if (error) {
+                          formik.setFieldError("profilePictureFile", error);
+                          return;
+                        }
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           formik.setFieldValue(
@@ -343,6 +355,11 @@ export default function RegisterProfile() {
                       <Upload className="w-4 h-4 ml-2" />
                       رفع صورة
                     </Button>
+                    {formik.errors.profilePictureFile && (
+                      <div className="text-red-500 text-xs mt-1">
+                        {formik.errors.profilePictureFile}
+                      </div>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     JPG, PNG أو GIF (حد أقصى 2MB)
@@ -465,9 +482,9 @@ export default function RegisterProfile() {
                       <SelectValue placeholder="اختر رياضتك" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sports.map((sport) => (
-                        <SelectItem key={sport} value={sport}>
-                          {sport}
+                      {sportsOptions.map((sport) => (
+                        <SelectItem key={sport.value} value={sport.value}>
+                          {sport.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -522,7 +539,7 @@ export default function RegisterProfile() {
                   <Select
                     value={formik.values.status}
                     onValueChange={(value) =>
-                      formik.setFieldValue("status", value)
+                      formik.setFieldValue("status", value.toLowerCase())
                     }
                     onBlur={() => formik.setFieldTouched("status", true)}
                   >
@@ -603,6 +620,31 @@ export default function RegisterProfile() {
                         {formik.errors["monthlySalary.amount"]}
                       </div>
                     )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="year-salary">
+                    قيمة العقد السنوي (بالريال)
+                  </Label>
+                  <Input
+                    id="year-salary"
+                    name="yearSalary"
+                    type="number"
+                    min="0"
+                    value={formik.values.yearSalary}
+                    onChange={(e) =>
+                      formik.setFieldValue(
+                        "yearSalary",
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
+                    onBlur={() => formik.setFieldTouched("yearSalary", true)}
+                    placeholder="مثال: 60000"
+                  />
+                  {formik.touched.yearSalary && formik.errors.yearSalary && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {formik.errors.yearSalary}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contract-end-date">
@@ -814,7 +856,7 @@ export default function RegisterProfile() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label className="flex items-center space-x-2 space-x-reverse ">
+                <Label className="flex items-center space-x-2 space-x-reverse">
                   <Checkbox
                     className="mr-2 ml-2"
                     checked={formik.values.contactInfo.isHidden}
@@ -865,7 +907,7 @@ export default function RegisterProfile() {
                     <FiPhone className="w-4 h-4" /> رقم الهاتف
                   </Label>
                   <Input
-                    type="number"
+                    type="tel"
                     id="contact-phone"
                     name="contactInfo.phone"
                     placeholder="رقم الهاتف"
@@ -896,7 +938,7 @@ export default function RegisterProfile() {
                       </div>
                     )}
                   <Input
-                    type="number"
+                    type="tel"
                     placeholder="هاتف الوكيل"
                     name="contactInfo.agent.phone"
                     value={formik.values.contactInfo.agent.phone}
@@ -931,7 +973,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiUpload className="w-5 h-5 text-primary mr-2 ml-2 " />
+                <FiUpload className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>رفع فيديوهات رياضية (اختياري)</span>
               </CardTitle>
             </CardHeader>
@@ -941,16 +983,29 @@ export default function RegisterProfile() {
                 <Input
                   id="media-upload"
                   type="file"
-                  accept="video/*"
+                  accept={ALLOWED_VIDEO_TYPES.join(",")}
                   multiple
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
-                    const uploaded = files.map((file) => ({
+                    const validFiles = files.filter((file) => {
+                      const error = handleFileValidation(
+                        file,
+                        ALLOWED_VIDEO_TYPES,
+                        MAX_FILE_SIZE
+                      );
+                      if (error) {
+                        formik.setFieldError("media.videos", error);
+                        return false;
+                      }
+                      return true;
+                    });
+                    const uploaded = validFiles.map((file: any) => ({
                       url: URL.createObjectURL(file),
                       publicId: Math.random().toString(36).slice(2),
                       title: file.name,
                       duration: 0,
                       uploadedAt: new Date().toISOString(),
+                      file, // Store file for upload
                     }));
                     formik.setFieldValue("media.videos", [
                       ...formik.values.media.videos,
@@ -958,6 +1013,11 @@ export default function RegisterProfile() {
                     ]);
                   }}
                 />
+                {formik.errors["media.videos"] && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {formik.errors["media.videos"]}
+                  </div>
+                )}
               </div>
               {formik.values.media.videos.length > 0 && (
                 <div className="space-y-2">
@@ -985,7 +1045,7 @@ export default function RegisterProfile() {
           <Card className="border-0 shadow-card bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 space-x-reverse">
-                <FiUpload className="w-5 h-5 text-primary mr-2 ml-2 " />
+                <FiUpload className="w-5 h-5 text-primary mr-2 ml-2" />
                 <span>رفع مستندات داعمة (PDF أو صور) (اختياري)</span>
               </CardTitle>
             </CardHeader>
@@ -995,16 +1055,29 @@ export default function RegisterProfile() {
                 <Input
                   id="document-upload"
                   type="file"
-                  accept="application/pdf,image/*"
+                  accept={ALLOWED_DOCUMENT_TYPES.join(",")}
                   multiple
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
-                    const uploaded = files.map((file) => ({
+                    const validFiles = files.filter((file) => {
+                      const error = handleFileValidation(
+                        file,
+                        ALLOWED_DOCUMENT_TYPES,
+                        MAX_FILE_SIZE
+                      );
+                      if (error) {
+                        formik.setFieldError("media.documents", error);
+                        return false;
+                      }
+                      return true;
+                    });
+                    const uploaded = validFiles.map((file: any) => ({
                       url: URL.createObjectURL(file),
                       publicId: Math.random().toString(36).slice(2),
                       title: file.name,
                       type: file.type,
                       uploadedAt: new Date().toISOString(),
+                      file, // Store file for upload
                     }));
                     formik.setFieldValue("media.documents", [
                       ...formik.values.media.documents,
@@ -1012,6 +1085,11 @@ export default function RegisterProfile() {
                     ]);
                   }}
                 />
+                {formik.errors["media.documents"] && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {formik.errors["media.documents"]}
+                  </div>
+                )}
               </div>
               {formik.values.media.documents.length > 0 && (
                 <div className="space-y-2">
@@ -1081,6 +1159,7 @@ export default function RegisterProfile() {
               type="submit"
               variant="default"
               size="xl"
+              disabled={formik.isSubmitting}
               className="hover:shadow-form w-full rounded-md bg-[hsl(var(--primary))] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               <Save className="w-5 h-5 ml-2" />
@@ -1092,3 +1171,7 @@ export default function RegisterProfile() {
     </div>
   );
 }
+
+
+
+

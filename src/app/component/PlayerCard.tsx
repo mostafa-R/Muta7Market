@@ -116,11 +116,14 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
           <div className="w-24 h-24 rounded-full border-1 border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
             {player.profilePicture ? (
               <Image
-                src={player.profilePicture}
+                src={
+                  "https://img.freepik.com/free-photo/woman-beach-with-her-baby-enjoying-sunset_52683-144131.jpg?size=626&ext=jpg"
+                }
                 alt={player.name}
                 width={64}
                 height={64}
                 className="w-20 h-20 object-cover rounded-full"
+                unoptimized
               />
             ) : (
               <span className="text-[hsl(var(--primary))] text-xl font-bold">
