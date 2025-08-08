@@ -1,8 +1,10 @@
+// components/TermsCard.tsx
 import { Save } from "lucide-react";
 import { Button } from "@/app/component/ui/button";
 import { Card, CardContent } from "@/app/component/ui/card";
 import { Checkbox } from "@/app/component/ui/checkbox";
 import { Label } from "@/app/component/ui/label";
+import { get } from "lodash";
 
 interface TermsCardProps {
   formik: any;
@@ -40,11 +42,12 @@ export const TermsCard = ({ formik }: TermsCardProps) => {
               <p className="text-xs text-muted-foreground mt-1">
                 بتسجيلك تُوافق على عرض بياناتك للأندية والمدربين المهتمين
               </p>
-              {formik.touched.agreeToTerms && formik.errors.agreeToTerms && (
-                <div className="text-red-500 text-xs mt-1">
-                  {formik.errors.agreeToTerms}
-                </div>
-              )}
+              {get(formik.touched, "agreeToTerms") &&
+                get(formik.errors, "agreeToTerms") && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {get(formik.errors, "agreeToTerms")}
+                  </div>
+                )}
             </div>
           </div>
         </CardContent>

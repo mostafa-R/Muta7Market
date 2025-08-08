@@ -1,11 +1,23 @@
+// components/MediaUploadCard.tsx
 import { FiUpload } from "react-icons/fi";
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/component/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/component/ui/card";
 import { Input } from "@/app/component/ui/input";
 import { Label } from "@/app/component/ui/label";
+import { get } from "lodash";
+import { v4 as uuidv4 } from "uuid";
 
 interface MediaUploadCardProps {
   formik: any;
-  handleFileValidation: (file: File, allowedTypes: string[], maxSize: number) => string | null;
+  handleFileValidation: (
+    file: File | null | undefined,
+    allowedTypes: string[],
+    maxSize: number
+  ) => string | null;
   ALLOWED_VIDEO_TYPES: string[];
   ALLOWED_DOCUMENT_TYPES: string[];
   MAX_FILE_SIZE: number;
@@ -51,7 +63,7 @@ export const MediaUploadCard = ({
                 });
                 const uploaded = validFiles.map((file: any) => ({
                   url: URL.createObjectURL(file),
-                  publicId: Math.random().toString(36).slice(2),
+                  publicId: uuidv4(),
                   title: file.name,
                   duration: 0,
                   uploadedAt: new Date().toISOString(),
@@ -63,9 +75,9 @@ export const MediaUploadCard = ({
                 ]);
               }}
             />
-            {formik.errors["media.videos"] && (
+            {get(formik.errors, "media.videos") && (
               <div className="text-red-500 text-xs mt-1">
-                {formik.errors["media.videos"]}
+                {get(formik.errors, "media.videos")}
               </div>
             )}
           </div>
@@ -122,7 +134,7 @@ export const MediaUploadCard = ({
                 });
                 const uploaded = validFiles.map((file: any) => ({
                   url: URL.createObjectURL(file),
-                  publicId: Math.random().toString(36).slice(2),
+                  publicId: uuidv4(),
                   title: file.name,
                   type: file.type,
                   uploadedAt: new Date().toISOString(),
@@ -134,9 +146,9 @@ export const MediaUploadCard = ({
                 ]);
               }}
             />
-            {formik.errors["media.documents"] && (
+            {get(formik.errors, "media.documents") && (
               <div className="text-red-500 text-xs mt-1">
-                {formik.errors["media.documents"]}
+                {get(formik.errors, "media.documents")}
               </div>
             )}
           </div>

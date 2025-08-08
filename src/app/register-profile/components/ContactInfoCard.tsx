@@ -1,3 +1,4 @@
+// components/ContactInfoCard.tsx
 import { FiMail, FiPhone } from "react-icons/fi";
 import {
   Card,
@@ -6,8 +7,9 @@ import {
   CardTitle,
 } from "@/app/component/ui/card";
 import { Checkbox } from "@/app/component/ui/checkbox";
-import { Input } from "@/app/component/ui/input";
+import { FormField } from "./FormField";
 import { Label } from "@/app/component/ui/label";
+import { get } from "lodash";
 
 interface ContactInfoCardProps {
   formik: any;
@@ -37,99 +39,51 @@ export const ContactInfoCard = ({ formik }: ContactInfoCardProps) => {
             />
             <span>إخفاء معلومات التواصل عن الجميع</span>
           </Label>
-          {formik.touched["contactInfo.isHidden"] &&
-            formik.errors["contactInfo.isHidden"] && (
+          {get(formik.touched, "contactInfo.isHidden") &&
+            get(formik.errors, "contactInfo.isHidden") && (
               <div className="text-red-500 text-xs mt-1">
-                {formik.errors["contactInfo.isHidden"]}
+                {get(formik.errors, "contactInfo.isHidden")}
               </div>
             )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="contact-email" className="flex items-center gap-1">
-              <FiMail className="w-4 h-4" /> البريد الإلكتروني
-            </Label>
-            <Input
-              id="contact-email"
-              name="contactInfo.email"
-              placeholder="البريد الإلكتروني"
-              value={formik.values.contactInfo.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            {formik.touched["contactInfo.email"] &&
-              formik.errors["contactInfo.email"] && (
-                <div className="text-red-500 text-xs mt-1">
-                  {formik.errors["contactInfo.email"]}
-                </div>
-              )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contact-phone" className="flex items-center gap-1">
-              <FiPhone className="w-4 h-4" /> رقم الهاتف
-            </Label>
-            <Input
-              type="tel"
-              id="contact-phone"
-              name="contactInfo.phone"
-              placeholder="رقم الهاتف"
-              value={formik.values.contactInfo.phone}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            {formik.touched["contactInfo.phone"] &&
-              formik.errors["contactInfo.phone"] && (
-                <div className="text-red-500 text-xs mt-1">
-                  {formik.errors["contactInfo.phone"]}
-                </div>
-              )}
-          </div>
+          <FormField
+            label="البريد الإلكتروني"
+            name="contactInfo.email"
+            placeholder="البريد الإلكتروني"
+            formik={formik}
+          />
+          <FormField
+            label="رقم الهاتف"
+            name="contactInfo.phone"
+            type="tel"
+            placeholder="رقم الهاتف"
+            formik={formik}
+          />
           <div className="space-y-2 md:col-span-2">
             <Label>معلومات الوكيل (اختياري)</Label>
-            <Input
-              placeholder="اسم الوكيل"
+            <FormField
+              label="اسم الوكيل"
               name="contactInfo.agent.name"
-              value={formik.values.contactInfo.agent.name}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
+              placeholder="اسم الوكيل"
+              formik={formik}
             />
-            {formik.touched["contactInfo.agent.name"] &&
-              formik.errors["contactInfo.agent.name"] && (
-                <div className="text-red-500 text-xs mt-1">
-                  {formik.errors["contactInfo.agent.name"]}
-                </div>
-              )}
-            <Input
+            <FormField
+              label="هاتف الوكيل"
+              name="contactInfo.agent.phone"
               type="tel"
               placeholder="هاتف الوكيل"
-              name="contactInfo.agent.phone"
-              value={formik.values.contactInfo.agent.phone}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
+              formik={formik}
             />
-            {formik.touched["contactInfo.agent.phone"] &&
-              formik.errors["contactInfo.agent.phone"] && (
-                <div className="text-red-500 text-xs mt-1">
-                  {formik.errors["contactInfo.agent.phone"]}
-                </div>
-              )}
-            <Input
-              placeholder="بريد الوكيل"
+            <FormField
+              label="بريد الوكيل"
               name="contactInfo.agent.email"
-              value={formik.values.contactInfo.agent.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
+              placeholder="بريد الوكيل"
+              formik={formik}
             />
-            {formik.touched["contactInfo.agent.email"] &&
-              formik.errors["contactInfo.agent.email"] && (
-                <div className="text-red-500 text-xs mt-1">
-                  {formik.errors["contactInfo.agent.email"]}
-                </div>
-              )}
           </div>
         </div>
       </CardContent>
     </Card>
   );
 };
-

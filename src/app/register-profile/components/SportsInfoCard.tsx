@@ -1,3 +1,4 @@
+// components/SportsInfoCard.tsx
 import { Trophy } from "lucide-react";
 import {
   Card,
@@ -5,8 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/component/ui/card";
-import { Input } from "@/app/component/ui/input";
-import { Label } from "@/app/component/ui/label";
+import { FormField } from "./FormField";
 import {
   Select,
   SelectContent,
@@ -14,7 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/component/ui/select";
-import { sportsOptions } from "../types/constants";
+import { sportsOptions } from "../types/types";
+import { get } from "lodash";
+import { Label } from "@/app/component/ui/label";
 
 interface SportsInfoCardProps {
   formik: any;
@@ -49,28 +51,18 @@ export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
                 ))}
               </SelectContent>
             </Select>
-            {formik.touched.game && formik.errors.game && (
+            {get(formik.touched, "game") && get(formik.errors, "game") && (
               <div className="text-red-500 text-xs mt-1">
-                {formik.errors.game}
+                {get(formik.errors, "game")}
               </div>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="position">المركز/التخصص</Label>
-            <Input
-              id="position"
-              name="position"
-              value={formik.values.position}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="مثال: مهاجم، حارس مرمى، مدرب لياقة"
-            />
-            {formik.touched.position && formik.errors.position && (
-              <div className="text-red-500 text-xs mt-1">
-                {formik.errors.position}
-              </div>
-            )}
-          </div>
+          <FormField
+            label="المركز/التخصص"
+            name="position"
+            placeholder="مثال: مهاجم، حارس مرمى، مدرب لياقة"
+            formik={formik}
+          />
           <div className="space-y-2">
             <Label htmlFor="category">الفئة *</Label>
             <Select
@@ -86,17 +78,20 @@ export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
                 <SelectItem value="coach">مدرب</SelectItem>
               </SelectContent>
             </Select>
-            {formik.touched.category && formik.errors.category && (
-              <div className="text-red-500 text-xs mt-1">
-                {formik.errors.category}
-              </div>
-            )}
+            {get(formik.touched, "category") &&
+              get(formik.errors, "category") && (
+                <div className="text-red-500 text-xs mt-1">
+                  {get(formik.errors, "category")}
+                </div>
+              )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">الحالة الحالية *</Label>
             <Select
               value={formik.values.status}
-              onValueChange={(value) => formik.setFieldValue("status", value)}
+              onValueChange={(value) =>
+                formik.setFieldValue("status", value.toLowerCase())
+              }
               onBlur={() => formik.setFieldTouched("status", true)}
             >
               <SelectTrigger>
@@ -105,34 +100,22 @@ export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
               <SelectContent>
                 <SelectItem value="available">حر (بحث عن فريق)</SelectItem>
                 <SelectItem value="contracted">متعاقد</SelectItem>
-                <SelectItem value="transferred">منتقل مؤخراً</SelectItem>
+                <SelectItem value="transferred">منتقل مؤخرًا</SelectItem>
               </SelectContent>
             </Select>
-            {formik.touched.status && formik.errors.status && (
+            {get(formik.touched, "status") && get(formik.errors, "status") && (
               <div className="text-red-500 text-xs mt-1">
-                {formik.errors.status}
+                {get(formik.errors, "status")}
               </div>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="expreiance">سنوات الخبرة</Label>
-            <Input
-              id="expreiance"
-              name="expreiance"
-              type="number"
-              min="0"
-              max="30"
-              value={formik.values.expreiance}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="عدد سنوات ممارسة الرياضة"
-            />
-            {formik.touched.expreiance && formik.errors.expreiance && (
-              <div className="text-red-500 text-xs mt-1">
-                {formik.errors.expreiance}
-              </div>
-            )}
-          </div>
+          <FormField
+            label="سنوات الخبرة"
+            name="experience"
+            type="number"
+            placeholder="عدد سنوات ممارسة الرياضة"
+            formik={formik}
+          />
         </div>
       </CardContent>
     </Card>

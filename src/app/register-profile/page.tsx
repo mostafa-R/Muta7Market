@@ -1,24 +1,24 @@
 "use client";
-import { useState, useCallback } from "react";
-import { useFormik } from "formik";
 import axios from "axios";
-import { playerFormSchema } from "./types/schema";
-
-// Import all components
-import { PersonalInfoCard } from "./components/PersonalInfoCard";
-import { SportsInfoCard } from "./components/SportsInfoCard";
-import { FinancialInfoCard } from "./components/FinancialInfoCard";
-import { TransferInfoCard } from "./components/TransferInfoCard";
-import { SocialLinksCard } from "./components/SocialLinksCard";
+import { useFormik } from "formik";
+import { useCallback, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { ContactInfoCard } from "./components/ContactInfoCard";
+import { FinancialInfoCard } from "./components/FinancialInfoCard";
 import { MediaUploadCard } from "./components/MediaUploadCard";
+import { PersonalInfoCard } from "./components/PersonalInfoCard";
+import { SocialLinksCard } from "./components/SocialLinksCard";
+import { SportsInfoCard } from "./components/SportsInfoCard";
 import { TermsCard } from "./components/TermsCard";
+import { TransferInfoCard } from "./components/TransferInfoCard";
+import { playerFormSchema } from "./types/schema";
+import { PlayerFormData } from "./types/types";
 
-// Helper function to get cookie
 function getCookie(name: string) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
   return null;
 }
 
@@ -27,9 +27,14 @@ export default function RegisterProfile() {
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
   const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/webm"];
   const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const uploadFile = async (file: File, endpoint: string) => {
     const token = getCookie("accessToken");
+    if (!token) {
+      throw new Error("التوكن غير متوفر، يرجى تسجيل الدخول");
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     try {
@@ -39,6 +44,14 @@ export default function RegisterProfile() {
           Authorization: `Bearer ${token}`,
         },
         withCredentials: true,
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setUploadProgress(progress);
+          }
+        },
       });
       return response.data;
     } catch (error) {
@@ -47,7 +60,7 @@ export default function RegisterProfile() {
   };
 
   const handleSubmit = useCallback(
-    async (values: any, { setSubmitting, setErrors, resetForm }: any) => {
+    async (values: PlayerFormData, { setSubmitting, setErrors, resetForm }) => {
       try {
         let profileImage = values.media.profileImage;
         if (values.profilePictureFile) {
@@ -100,7 +113,7 @@ export default function RegisterProfile() {
         const payload = {
           ...values,
           gender: values.gender?.toLowerCase(),
-          status: values.status?.toUpperCase(),
+          status: values.status?.toLowerCase(),
           jop: values.category,
           yearSalary: values.yearSalary ? Number(values.yearSalary) : null,
           media: {
@@ -114,37 +127,38 @@ export default function RegisterProfile() {
             : null,
         };
 
-        if (!values.isPromoted.type) {
-          delete values.isPromoted.type;
+        if (!payload.isPromoted.type) {
+          delete payload.isPromoted.type;
         }
 
-        const res = await axios.post(
+        await axios.post(
           "http://localhost:5000/api/v1/players/createPlayer",
           payload,
           { withCredentials: true }
         );
 
-        alert("تم إرسال البيانات بنجاح!");
+        toast.success("تم إرسال البيانات بنجاح!");
         resetForm();
       } catch (error: any) {
         if (error.response) {
           setErrors(error.response.data.errors || {});
-          console.log(error);
-          alert(error.response.data?.message || "حدث خطأ أثناء إرسال البيانات");
+          toast.error(
+            error.response.data?.message || "حدث خطأ أثناء إرسال البيانات"
+          );
         } else if (error.request) {
-          alert("لم يتم تلقي رد من السيرفر");
+          toast.error("لم يتم تلقي رد من السيرفر");
         } else {
-          alert("خطأ غير متوقع");
-          console.log(error);
+          toast.error(error.message || "خطأ غير متوقع");
         }
       } finally {
         setSubmitting(false);
+        setUploadProgress(0);
       }
     },
     []
   );
 
-  const formik = useFormik({
+  const formik = useFormik<PlayerFormData>({
     initialValues: {
       name: "",
       age: "",
@@ -153,7 +167,7 @@ export default function RegisterProfile() {
       category: "",
       position: "",
       status: "",
-      expreiance: "",
+      experience: "", // Corrected from `expreiance`
       monthlySalary: { amount: 0, currency: "SAR" },
       yearSalary: "",
       contractEndDate: "",
@@ -192,10 +206,13 @@ export default function RegisterProfile() {
   });
 
   const handleFileValidation = (
-    file: File,
+    file: File | null | undefined,
     allowedTypes: string[],
     maxSize: number
   ) => {
+    if (!file) {
+      return "لم يتم اختيار ملف";
+    }
     if (!allowedTypes.includes(file.type)) {
       return "نوع الملف غير مدعوم";
     }
@@ -207,6 +224,7 @@ export default function RegisterProfile() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
@@ -216,6 +234,19 @@ export default function RegisterProfile() {
             أنشئ ملفك الشخصي الاحترافي وابدأ رحلتك الرياضية معنا
           </p>
         </div>
+        {uploadProgress > 0 && (
+          <div className="mb-4">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-center mt-2">
+              تقدم الرفع: {uploadProgress}%
+            </p>
+          </div>
+        )}
         <form
           onSubmit={formik.handleSubmit}
           className="max-w-3xl mx-auto space-y-6 p-4"
@@ -226,17 +257,11 @@ export default function RegisterProfile() {
             ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
             MAX_FILE_SIZE={MAX_FILE_SIZE}
           />
-
           <SportsInfoCard formik={formik} />
-
           <FinancialInfoCard formik={formik} />
-
           <TransferInfoCard formik={formik} />
-
           <SocialLinksCard formik={formik} />
-
           <ContactInfoCard formik={formik} />
-
           <MediaUploadCard
             formik={formik}
             handleFileValidation={handleFileValidation}
@@ -244,14 +269,9 @@ export default function RegisterProfile() {
             ALLOWED_DOCUMENT_TYPES={ALLOWED_DOCUMENT_TYPES}
             MAX_FILE_SIZE={MAX_FILE_SIZE}
           />
-
           <TermsCard formik={formik} />
         </form>
       </div>
     </div>
   );
 }
-
-
-
-

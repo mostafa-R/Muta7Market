@@ -1,3 +1,4 @@
+// schema.ts
 import Joi from "joi";
 
 export const playerFormSchema = Joi.object({
@@ -31,10 +32,10 @@ export const playerFormSchema = Joi.object({
       "any.only": "الحالة مطلوبة",
       "string.empty": "الحالة مطلوبة",
     }),
-  expreiance: Joi.number().integer().min(0).max(30).allow("").messages({
-    "number.base": "يجب أن يكون رقم",
-    "number.min": "يجب أن يكون أكبر من أو يساوي 0",
-    "number.max": "يجب أن يكون أقل من أو يساوي 30",
+  experience: Joi.number().min(0).max(30).allow(null).optional().messages({
+    "number.base": "يجب أن تكون سنوات الخبرة رقمًا",
+    "number.min": "يجب أن تكون الخبرة 0 أو أكثر",
+    "number.max": "يجب ألا تتجاوز الخبرة 30 عامًا",
   }),
   monthlySalary: Joi.object({
     amount: Joi.number().min(0).allow("").messages({
@@ -66,7 +67,7 @@ export const playerFormSchema = Joi.object({
           title: Joi.string().allow(""),
           duration: Joi.number().allow(0),
           uploadedAt: Joi.string().allow(""),
-          file: Joi.any().optional(), // Allow file field for upload
+          file: Joi.any().optional(),
         })
       )
       .allow(""),
@@ -78,22 +79,44 @@ export const playerFormSchema = Joi.object({
           title: Joi.string().allow(""),
           type: Joi.string().allow(""),
           uploadedAt: Joi.string().allow(""),
-          file: Joi.any().optional(), // Allow file field for upload
+          file: Joi.any().optional(),
         })
       )
       .allow(""),
   }),
   socialLinks: Joi.object({
-    instagram: Joi.string().allow("").uri({ allowRelative: false }).messages({
-      "string.uri": "يجب أن يكون رابط صحيح",
-    }),
-    twitter: Joi.string().allow("").uri({ allowRelative: false }).messages({
-      "string.uri": "يجب أن يكون رابط صحيح",
-    }),
-    whatsapp: Joi.string().allow(""),
-    youtube: Joi.string().allow("").uri({ allowRelative: false }).messages({
-      "string.uri": "يجب أن يكون رابط صحيح",
-    }),
+    instagram: Joi.string()
+      .allow("")
+      .uri()
+      .pattern(/^(https?:\/\/)?(www\.)?instagram\.com\/[a-zA-Z0-9._]+\/?$/)
+      .messages({
+        "string.uri": "يجب أن يكون رابط Instagram صحيحًا",
+        "string.pattern.base": "يجب أن يكون رابط Instagram صحيحًا",
+      }),
+    twitter: Joi.string()
+      .allow("")
+      .uri()
+      .pattern(/^(https?:\/\/)?(www\.)?(twitter|x)\.com\/[a-zA-Z0-9._]+\/?$/)
+      .messages({
+        "string.uri": "يجب أن يكون رابط Twitter صحيحًا",
+        "string.pattern.base": "يجب أن يكون رابط Twitter صحيحًا",
+      }),
+    whatsapp: Joi.string()
+      .allow("")
+     
+      .messages({
+        "string.pattern.base": "رقم WhatsApp غير صحيح",
+      }),
+    youtube: Joi.string()
+      .allow("")
+      .uri()
+      .pattern(
+        /^(https?:\/\/)?(www\.)?youtube\.com\/[a-zA-Z0-9_-]+\/?$/
+      )
+      .messages({
+        "string.uri": "يجب أن يكون رابط YouTube صحيحًا",
+        "string.pattern.base": "يجب أن يكون رابط YouTube صحيحًا",
+      }),
   }),
   isPromoted: Joi.object({
     status: Joi.boolean(),
@@ -108,13 +131,18 @@ export const playerFormSchema = Joi.object({
     }),
     phone: Joi.string()
       .allow("")
-      .pattern(/^[0-9]{8,20}$/)
+     
       .messages({
         "string.pattern.base": "رقم الهاتف غير صحيح",
       }),
     agent: Joi.object({
       name: Joi.string().allow(""),
-      phone: Joi.string().allow(""),
+      phone: Joi.string()
+        .allow("")
+        
+        .messages({
+          "string.pattern.base": "رقم هاتف الوكيل غير صحيح",
+        }),
       email: Joi.string().allow("").email({ tlds: false }).messages({
         "string.email": "بريد الوكيل غير صحيح",
       }),
@@ -127,101 +155,5 @@ export const playerFormSchema = Joi.object({
     "any.only": "يجب الموافقة على الشروط والأحكام",
   }),
   profilePicturePreview: Joi.string().allow(""),
-  profilePictureFile: Joi.any().optional(), // Changed to optional
+  profilePictureFile: Joi.any().optional(),
 });
-
-// Type definitions
-export type Gender = "Male" | "Female";
-export type ProfileStatus = "AVAILABLE" | "CONTRACTED" | "TRANSFERRED";
-export type Category = "player" | "coach";
-export type PromotionType = "featured" | "premium" | "";
-
-export interface SocialLinks {
-  instagram: string;
-  twitter: string;
-  whatsapp: string;
-  youtube: string;
-}
-
-export interface ProfileImage {
-  url: string;
-  publicId: string;
-}
-
-export interface VideoMedia {
-  url: string;
-  publicId: string;
-  title: string;
-  duration: number;
-  uploadedAt: string;
-  file?: File; // Added for upload handling
-}
-
-export interface DocumentMedia {
-  url: string;
-  publicId: string;
-  title: string;
-  type: string;
-  uploadedAt: string;
-  file?: File; // Added for upload handling
-}
-
-export interface Media {
-  profileImage: ProfileImage;
-  videos: VideoMedia[];
-  documents: DocumentMedia[];
-}
-
-export interface MonthlySalary {
-  amount: number;
-  currency: string;
-}
-
-export interface TransferInfo {
-  club: string;
-  date: string;
-  amount: number | "";
-}
-
-export interface IsPromoted {
-  status: boolean;
-  startDate: string;
-  endDate: string;
-  type: PromotionType;
-}
-
-export interface AgentInfo {
-  name: string;
-  phone: string;
-  email: string;
-}
-
-export interface ContactInfo {
-  isHidden: boolean;
-  email: string;
-  phone: string;
-  agent: AgentInfo;
-}
-
-export interface PlayerFormData {
-  name: string;
-  age: number | "";
-  gender: Gender | "";
-  nationality: string;
-  category: Category | "";
-  position: string;
-  status: ProfileStatus | "";
-  expreiance: number | "";
-  monthlySalary: MonthlySalary;
-  yearSalary: number | "";
-  contractEndDate: string;
-  transferredTo: TransferInfo;
-  media: Media;
-  socialLinks: SocialLinks;
-  isPromoted: IsPromoted;
-  contactInfo: ContactInfo;
-  game: string;
-  agreeToTerms: boolean;
-  profilePicturePreview?: string;
-  profilePictureFile?: File;
-}

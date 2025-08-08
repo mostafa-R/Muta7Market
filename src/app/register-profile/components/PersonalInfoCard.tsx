@@ -1,29 +1,31 @@
-import { Camera, Upload, User } from "lucide-react";
+// components/PersonalInfoCard.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
-import { Button } from "@/app/component/ui/button";
+import { Button } from "../../component/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/app/component/ui/card";
-import { Input } from "@/app/component/ui/input";
-import { Label } from "@/app/component/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/app/component/ui/radio-group";
+} from "../../component/ui/card";
+import { RadioGroup, RadioGroupItem } from "../../component/ui/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/component/ui/select";
-import { nationalities } from "../types/constants";
-
+} from "../../component/ui/select";
+import { Camera, Upload, User } from "lucide-react";
+import { FormField } from "./FormField";
+import { nationalities } from "../types/types";
+import { Label } from "../../component/ui/label";
+import { get } from "lodash";
+import { Input } from "@/app/component/ui/input";
 
 interface PersonalInfoCardProps {
   formik: any;
   handleFileValidation: (
-    file: File,
+    file: File | null | undefined,
     allowedTypes: string[],
     maxSize: number
   ) => string | null;
@@ -64,7 +66,6 @@ export const PersonalInfoCard = ({
                 accept={ALLOWED_IMAGE_TYPES.join(",")}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (!file) return;
                   const error = handleFileValidation(
                     file,
                     ALLOWED_IMAGE_TYPES,
@@ -97,9 +98,9 @@ export const PersonalInfoCard = ({
                 <Upload className="w-4 h-4 ml-2" />
                 رفع صورة
               </Button>
-              {formik.errors.profilePictureFile && (
+              {get(formik.errors, "profilePictureFile") && (
                 <div className="text-red-500 text-xs mt-1">
-                  {formik.errors.profilePictureFile}
+                  {get(formik.errors, "profilePictureFile")}
                 </div>
               )}
             </div>
@@ -109,43 +110,21 @@ export const PersonalInfoCard = ({
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">الاسم الكامل *</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formik.values.name}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="أدخل اسمك الكامل"
-              required
-            />
-            {formik.touched.name && formik.errors.name && (
-              <div className="text-red-500 text-xs mt-1">
-                {formik.errors.name}
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="age">العمر *</Label>
-            <Input
-              id="age"
-              name="age"
-              type="number"
-              min="16"
-              max="50"
-              value={formik.values.age}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="أدخل عمرك"
-              required
-            />
-            {formik.touched.age && formik.errors.age && (
-              <div className="text-red-500 text-xs mt-1">
-                {formik.errors.age}
-              </div>
-            )}
-          </div>
+          <FormField
+            label="الاسم الكامل"
+            name="name"
+            placeholder="أدخل اسمك الكامل"
+            required
+            formik={formik}
+          />
+          <FormField
+            label="العمر"
+            name="age"
+            type="number"
+            placeholder="أدخل عمرك"
+            required
+            formik={formik}
+          />
           <div className="space-y-3">
             <Label>الجنس *</Label>
             <RadioGroup
@@ -163,9 +142,9 @@ export const PersonalInfoCard = ({
                 <Label htmlFor="female">أنثى</Label>
               </div>
             </RadioGroup>
-            {formik.touched.gender && formik.errors.gender && (
+            {get(formik.touched, "gender") && get(formik.errors, "gender") && (
               <div className="text-red-500 text-xs mt-1">
-                {formik.errors.gender}
+                {get(formik.errors, "gender")}
               </div>
             )}
           </div>
@@ -189,11 +168,12 @@ export const PersonalInfoCard = ({
                 ))}
               </SelectContent>
             </Select>
-            {formik.touched.nationality && formik.errors.nationality && (
-              <div className="text-red-500 text-xs mt-1">
-                {formik.errors.nationality}
-              </div>
-            )}
+            {get(formik.touched, "nationality") &&
+              get(formik.errors, "nationality") && (
+                <div className="text-red-500 text-xs mt-1">
+                  {get(formik.errors, "nationality")}
+                </div>
+              )}
           </div>
         </div>
       </CardContent>
