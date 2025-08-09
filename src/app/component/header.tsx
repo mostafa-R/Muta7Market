@@ -12,6 +12,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -105,7 +106,8 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
         aria-label="فتح قائمة المستخدم"
       >
         {user?.profileImage ? (
-          <img
+          <Image
+            unoptimized
             src={user.profileImage}
             alt="صورة المستخدم"
             className="w-12 h-12 rounded-full object-cover"
