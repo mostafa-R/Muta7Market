@@ -414,12 +414,17 @@
 //   );
 // }
 
-function ResetPassword() {
+"use client";
+
+
+
+
+
+export default function ResetPassword() {
+ 
   return (
-    <div>
-      <h1>ResetPassword</h1>
+    <div className="min-h-screen bg-gray-100">
+     <h1>Reset Password Page</h1>
     </div>
   );
 }
-
-export default ResetPassword;
