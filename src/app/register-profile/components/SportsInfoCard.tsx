@@ -1,121 +1,186 @@
-// components/SportsInfoCard.tsx
-import { Trophy } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
+import { Button } from "../../component/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/app/component/ui/card";
-import { FormField } from "./FormField";
+} from "../../component/ui/card";
+import { RadioGroup, RadioGroupItem } from "../../component/ui/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/component/ui/select";
-import { sportsOptions } from "../types/types";
+} from "../../component/ui/select";
+import { Camera, Upload, User } from "lucide-react";
+import { FormField } from "./FormField";
+import { nationalities } from "../types/types";
+import { Label } from "../../component/ui/label";
 import { get } from "lodash";
-import { Label } from "@/app/component/ui/label";
+import { Input } from "@/app/component/ui/input";
 
-interface SportsInfoCardProps {
+interface PersonalInfoCardProps {
   formik: any;
+  handleFileValidation: (
+    file: File | null | undefined,
+    allowedTypes: string[],
+    maxSize: number
+  ) => string | null;
+  ALLOWED_IMAGE_TYPES: string[];
+  MAX_FILE_SIZE: number;
 }
 
-export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
+export const PersonalInfoCard = ({
+  formik,
+  handleFileValidation,
+  ALLOWED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+}: PersonalInfoCardProps) => {
   return (
     <Card className="border-0 shadow-card bg-white">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2 space-x-reverse">
-          <Trophy className="w-5 h-5 text-primary mr-2 ml-2" />
-          <span>المعلومات الرياضية</span>
+          <User className="w-5 h-5 text-primary ml-2 mr-2" />
+          <span>المعلومات الشخصية</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="flex items-center space-x-6 space-x-reverse">
+          <Avatar className="w-24 h-24 border-4 border-primary/20 ml-2 mr-2">
+            <AvatarImage src={formik.values.profilePicturePreview} />
+            <AvatarFallback className="bg-primary/10">
+              <Camera className="w-8 h-8 text-primary" />
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <Label htmlFor="profile-picture" className="text-sm font-medium">
+              الصورة الشخصية
+            </Label>
+            <div className="mt-2">
+              <Input
+                id="profile-picture"
+                type="file"
+                accept={ALLOWED_IMAGE_TYPES.join(",")}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) {
+                    formik.setFieldError(
+                      "profilePictureFile",
+                      "يرجى اختيار ملف"
+                    );
+                    return;
+                  }
+                  const error = handleFileValidation(
+                    file,
+                    ALLOWED_IMAGE_TYPES,
+                    MAX_FILE_SIZE
+                  );
+                  if (error) {
+                    formik.setFieldError("profilePictureFile", error);
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    formik.setFieldValue(
+                      "profilePicturePreview",
+                      reader.result as string
+                    );
+                    formik.setFieldValue("profilePictureFile", file);
+                  };
+                  reader.readAsDataURL(file);
+                }}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  document.getElementById("profile-picture")?.click()
+                }
+              >
+                <Upload className="w-4 h-4 ml-2" />
+                رفع صورة
+              </Button>
+              {get(formik.errors, "profilePictureFile") && (
+                <div className="text-red-500 text-xs mt-1">
+                  {get(formik.errors, "profilePictureFile")}
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              JPG, PNG أو GIF (حد أقصى 2MB)
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            label="الاسم الكامل"
+            name="name"
+            placeholder="أدخل اسمك الكامل"
+            required
+            formik={formik}
+          />
+          <FormField
+            label="العمر"
+            name="age"
+            type="number"
+            placeholder="أدخل عمرك"
+            required
+            formik={formik}
+          />
+          <div className="space-y-3">
+            <Label>الجنس *</Label>
+            <RadioGroup
+              value={formik.values.gender}
+              onValueChange={(value) => formik.setFieldValue("gender", value)}
+              onBlur={() => formik.setFieldTouched("gender", true)}
+              className="flex space-x-6 space-x-reverse"
+            >
+              <div className="flex items-center space-x-2 space-x-reverse gap-2">
+                <RadioGroupItem value="Male" id="male" />
+                <Label htmlFor="male">ذكر</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse gap-2">
+                <RadioGroupItem value="Female" id="female" />
+                <Label htmlFor="female">أنثى</Label>
+              </div>
+            </RadioGroup>
+            {get(formik.touched, "gender") && get(formik.errors, "gender") && (
+              <div className="text-red-500 text-xs mt-1">
+                {get(formik.errors, "gender")}
+              </div>
+            )}
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="game">الرياضة *</Label>
+            <Label htmlFor="nationality">الجنسية *</Label>
             <Select
-              value={formik.values.game}
-              onValueChange={(value) => formik.setFieldValue("game", value)}
-              onBlur={() => formik.setFieldTouched("game", true)}
+              value={formik.values.nationality}
+              onValueChange={(value) =>
+                formik.setFieldValue("nationality", value)
+              }
+              onBlur={() => formik.setFieldTouched("nationality", true)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="اختر رياضتك" />
+                <SelectValue placeholder="اختر جنسيتك" />
               </SelectTrigger>
               <SelectContent>
-                {sportsOptions.map((sport) => (
-                  <SelectItem key={sport.value} value={sport.value}>
-                    {sport.label}
+                {nationalities.map((nationality) => (
+                  <SelectItem key={nationality} value={nationality}>
+                    {nationality}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {get(formik.touched, "game") && get(formik.errors, "game") && (
-              <div className="text-red-500 text-xs mt-1">
-                {get(formik.errors, "game")}
-              </div>
-            )}
-          </div>
-          <FormField
-            label="المركز/التخصص"
-            name="position"
-            placeholder="مثال: مهاجم، حارس مرمى، مدرب لياقة"
-            formik={formik}
-          />
-          <div className="space-y-2">
-            <Label htmlFor="category">الفئة *</Label>
-            <Select
-              value={formik.values.category}
-              onValueChange={(value) => formik.setFieldValue("category", value)}
-              onBlur={() => formik.setFieldTouched("category", true)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="اختر فئتك" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="player">لاعب</SelectItem>
-                <SelectItem value="coach">مدرب</SelectItem>
-              </SelectContent>
-            </Select>
-            {get(formik.touched, "category") &&
-              get(formik.errors, "category") && (
+            {get(formik.touched, "nationality") &&
+              get(formik.errors, "nationality") && (
                 <div className="text-red-500 text-xs mt-1">
-                  {get(formik.errors, "category")}
+                  {get(formik.errors, "nationality")}
                 </div>
               )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="status">الحالة الحالية *</Label>
-            <Select
-              value={formik.values.status}
-              onValueChange={(value) =>
-                formik.setFieldValue("status", value.toLowerCase())
-              }
-              onBlur={() => formik.setFieldTouched("status", true)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="اختر حالتك" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="available">حر (بحث عن فريق)</SelectItem>
-                <SelectItem value="contracted">متعاقد</SelectItem>
-                <SelectItem value="transferred">منتقل مؤخرًا</SelectItem>
-              </SelectContent>
-            </Select>
-            {get(formik.touched, "status") && get(formik.errors, "status") && (
-              <div className="text-red-500 text-xs mt-1">
-                {get(formik.errors, "status")}
-              </div>
-            )}
-          </div>
-          <FormField
-            label="سنوات الخبرة"
-            name="experience"
-            type="number"
-            placeholder="عدد سنوات ممارسة الرياضة"
-            formik={formik}
-          />
         </div>
       </CardContent>
     </Card>
