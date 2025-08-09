@@ -158,10 +158,10 @@ export const PersonalInfoCard = ({
             <Label htmlFor="nationality">الجنسية *</Label>
             <Select
               value={formik.values.nationality}
-              onValueChange={(value) =>
-                formik.setFieldValue("nationality", value)
-              }
-              onBlur={() => formik.setFieldTouched("nationality", true)}
+              onValueChange={(value) => {
+                formik.setFieldValue("nationality", value);
+                formik.setFieldTouched("nationality", true);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="اختر جنسيتك" />

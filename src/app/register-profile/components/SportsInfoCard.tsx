@@ -1,4 +1,3 @@
-// components/SportsInfoCard.tsx
 import { Trophy } from "lucide-react";
 import {
   Card,
@@ -37,8 +36,10 @@ export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
             <Label htmlFor="game">الرياضة *</Label>
             <Select
               value={formik.values.game}
-              onValueChange={(value) => formik.setFieldValue("game", value)}
-              onBlur={() => formik.setFieldTouched("game", true)}
+              onValueChange={(value) => {
+                formik.setFieldValue("game", value);
+                formik.setFieldTouched("game", true);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="اختر رياضتك" />
@@ -67,8 +68,10 @@ export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
             <Label htmlFor="category">الفئة *</Label>
             <Select
               value={formik.values.category}
-              onValueChange={(value) => formik.setFieldValue("category", value)}
-              onBlur={() => formik.setFieldTouched("category", true)}
+              onValueChange={(value) => {
+                formik.setFieldValue("category", value);
+                formik.setFieldTouched("category", true);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="اختر فئتك" />
@@ -89,10 +92,10 @@ export const SportsInfoCard = ({ formik }: SportsInfoCardProps) => {
             <Label htmlFor="status">الحالة الحالية *</Label>
             <Select
               value={formik.values.status}
-              onValueChange={(value) =>
-                formik.setFieldValue("status", value.toLowerCase())
-              }
-              onBlur={() => formik.setFieldTouched("status", true)}
+              onValueChange={(value) => {
+                formik.setFieldValue("status", value.toLowerCase());
+                formik.setFieldTouched("status", true);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="اختر حالتك" />
