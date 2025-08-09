@@ -109,10 +109,6 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
             alt="صورة المستخدم"
             className="w-12 h-12 rounded-full object-cover"
             loading="lazy"
-            onError={(e) => {
-              e.target.src = "/images/default-avatar.png";
-              e.target.alt = "صورة افتراضية";
-            }}
           />
         ) : (
           <User className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
