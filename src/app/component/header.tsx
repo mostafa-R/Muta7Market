@@ -48,6 +48,12 @@ interface UserProfileDropdownProps {
   className?: string;
 }
 
+interface User {
+  profileImage?: string;
+  name?: string;
+  email?: string;
+}
+
 // مكون القائمة المنسدلة للمستخدم
 const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   profileImage,
@@ -57,7 +63,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
 }) => {
   const { isLoggedIn } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {
@@ -89,7 +95,6 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
       </button>
     );
   }
-
 
   return (
     <Menu as="div" className="relative inline-block text-center">
