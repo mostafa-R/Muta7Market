@@ -1,9 +1,9 @@
 "use client";
-import Link from "next/link";
-import { Users } from "lucide-react";
-import PlayerCard from "../component/PlayerCard";
-import { useState, useEffect } from "react";
 import axios from "axios";
+import { Users } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import PlayerCard from "../component/PlayerCard";
 
 // واجهة Player المستخدمة في PlayerCard
 interface Player {
@@ -15,12 +15,13 @@ interface Player {
   nationality: string;
   category: "Amateur" | "Professional" | "Elite";
   monthlySalary?: number;
+  yearSalary?: number;
   annualContractValue?: number;
   contractConditions?: string;
   transferDeadline?: string;
   sport: string;
   position?: string;
-  profilePicture?: string;
+  profileImage?: string;
   rating?: number;
   experience?: number;
 }
@@ -41,10 +42,20 @@ interface ApiPlayer {
     amount: number;
     currency: string;
   };
+  yearSalary: {
+    amount: number;
+    currency: string;
+  };
   game: string;
   views: number;
   isActive: boolean;
   contractEndDate?: string;
+  media?: {
+    profileImage?: {
+      url: string;
+      publicId: string;
+    };
+  };
 }
 
 // دالة لتحويل بيانات الـ API إلى واجهة Player
@@ -57,12 +68,12 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   nationality: apiPlayer.nationality,
   category: apiPlayer.category === "player" ? "Professional" : "Elite",
   monthlySalary: apiPlayer.monthlySalary?.amount,
-  annualContractValue: undefined,
+  annualContractValue: apiPlayer.yearSalary?.amount,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
   sport: apiPlayer.game,
   position: apiPlayer.position,
-  profilePicture: undefined,
+  profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
 });
@@ -87,6 +98,7 @@ const PlayerSection = () => {
           .slice(0, 10)
           .map(transformApiDataToPlayer);
         setPlayers(fetchedPlayers);
+        console.log("Fetched Players:", fetchedPlayers);
         setLoading(false);
       } catch (err) {
         setError("فشل في جلب بيانات اللاعبين. حاول مرة أخرى لاحقًا.");

@@ -1,21 +1,21 @@
 "use client";
 
+import { Menu, Transition } from "@headlessui/react";
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   FileText,
+  LogOut,
+  Menu as MenuIcon,
   Trophy,
   User,
   Users,
   X,
-  LogOut,
-  Menu as MenuIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
-import { Menu, Transition } from "@headlessui/react";
 
 // إدارة حالة تسجيل الدخول باستخدام Zustand
 interface AuthState {
@@ -42,7 +42,7 @@ interface NavItemType {
 
 // واجهة لمكون القائمة المنسدلة
 interface UserProfileDropdownProps {
-  userImage?: string;
+  profileImage?: string;
   handleLogout: () => void;
   fullWidth?: boolean;
   className?: string;
@@ -50,23 +50,23 @@ interface UserProfileDropdownProps {
 
 // مكون القائمة المنسدلة للمستخدم
 const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
-  userImage,
+  profileImage,
   handleLogout,
   fullWidth = false,
   className = "",
 }) => {
   const { isLoggedIn } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({});
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get( API_URL,{
+        const response = await axios.get(API_URL, {
           withCredentials: true,
         });
-        setUser(response.data.user);
+        setUser(response.data.data.user);
       } catch (error) {
         console.error(error);
       }
@@ -90,25 +90,29 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     );
   }
 
+
   return (
-    <Menu as="div" className="relative inline-block text-left">
+    <Menu as="div" className="relative inline-block text-center">
       <Menu.Button
-        className={`flex items-center border border-[hsl(var(--border))] rounded px-4 py-2 text-sm hover:bg-[hsl(var(--primary)/0.08)] transition focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] ${
+        className={`flex items-center justify-center rounded-full w-12 h-12 border border-[hsl(var(--muted))] hover:border-[hsl(var(--border))] transition-colors duration-200 ${
           fullWidth ? "w-full" : ""
         } ${className}`}
         aria-label="فتح قائمة المستخدم"
       >
-        {userImage ? (
+        {user?.profileImage ? (
           <img
-            src={userImage}
+            src={user.profileImage}
             alt="صورة المستخدم"
-            className="w-6 h-6 rounded-full ml-2 object-cover"
+            className="w-12 h-12 rounded-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              e.target.src = "/images/default-avatar.png";
+              e.target.alt = "صورة افتراضية";
+            }}
           />
         ) : (
-          <User className="w-4 h-4 ml-2" />
+          <User className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
         )}
-        <span>الحساب</span>
       </Menu.Button>
 
       <Transition
@@ -119,7 +123,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+        <Menu.Items className="absolute left-0 mt-2 w-45 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-muted ring-opacity-5 focus:outline-none">
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (
@@ -130,7 +134,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
                   } flex items-center px-4 py-2 text-sm text-gray-700`}
                 >
                   <User className="w-4 h-4 ml-2" />
-                  الملف التعريفي
+                  الملف الشخصي
                 </Link>
               )}
             </Menu.Item>

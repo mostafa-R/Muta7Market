@@ -28,13 +28,7 @@ export interface Player {
   profilePicture?: string;
   rating?: number;
   experience?: number;
-  media?: {
-    profileImage?: {
-      url: string;
-      publicId: string;
-    };
-    
-  };
+  profileImage?: string;
 }
 
 interface PlayerCardProps {
@@ -91,9 +85,13 @@ const getCategoryText = (category: Player["category"]) => {
   }
 };
 
+
 const PlayerCard = ({ player: player }: PlayerCardProps) => {
+  {
+    console.log(player.annualContractValue);
+  }
   return (
-    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-full ">
+    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-full min-h-[400px]  w-[300px]">
       {/* Header with Avatar and Status */}
       <div className="relative p-6 pb-4">
         <div className="absolute top-4 right-4 flex space-x-4 space-x-reverse">
@@ -121,13 +119,13 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
 
         <div className="mr-auto ml-auto flex items-center justify-center flex-col">
           <div className="w-24 h-24 rounded-full border-1 border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
-            {player.profilePicture ? (
+            {player.profileImage ? (
               <Image
-                src={player.media?.profileImage?.url}
+                src={player.profileImage}
                 alt={player.name}
                 width={64}
                 height={64}
-                className="w-20 h-20 object-cover rounded-full"
+                className="w-22 h-22 object-cover rounded-full"
                 unoptimized
               />
             ) : (
@@ -155,7 +153,7 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
       </div>
 
       {/* Player Info */}
-      <div className="px-6 pb-4 space-y-3 h-54 mt-3">
+      <div className="px-6 pb-4 space-y-3 h-45 mt-3">
         <div className="grid grid-cols-2  text-sm">
           <div className="flex items-center space-x-2 space-x-reverse">
             <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))] " />
@@ -179,7 +177,7 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
           </div>
         )}
 
-        {player.rating && (
+        {/* {player.rating && (
           <div className="flex items-center space-x-2 space-x-reverse text-sm">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
@@ -195,7 +193,7 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
             </div>
             <span className="font-medium ml-1 mr-1">{player.rating}/5</span>
           </div>
-        )}
+        )} */}
 
         {(player.monthlySalary || player.annualContractValue) && (
           <div className="bg-[hsl(var(--muted))] rounded-lg p-3 space-y-2">
@@ -212,19 +210,23 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
                 </span>
               </div>
             )}
-            {player.annualContractValue && (
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
-                  <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
-                    قيمة العقد السنوي:
+
+            {player.annualContractValue !== null &&
+              player.annualContractValue !== undefined && (
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
+                      قيمة العقد السنوي:
+                    </span>
+                  </div>
+                  <span className="font-semibold text-[hsl(var(--primary))]">
+                    {player.annualContractValue === 0
+                      ? "غير محدد"
+                      : player.annualContractValue.toLocaleString()}
                   </span>
                 </div>
-                <span className="font-semibold text-[hsl(var(--primary))]">
-                  ${player.annualContractValue.toLocaleString()}
-                </span>
-              </div>
-            )}
+              )}
           </div>
         )}
 
@@ -260,10 +262,3 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
 };
 
 export default PlayerCard;
-
-
-
-
-
-
-

@@ -1,16 +1,16 @@
 "use client";
-import { useState, useEffect } from "react";
 import PlayerCard from "@/app/component/PlayerCard";
-import Link from "next/link";
 import axios from "axios";
 import {
-  Search,
   Filter,
-  Users,
-  Trophy,
+  Search,
   SlidersHorizontal,
+  Trophy,
   UserPlus,
+  Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import CTA from "./CTA";
 
 // واجهة Player المستخدمة في PlayerCard
@@ -31,6 +31,8 @@ interface Player {
   profilePicture?: string;
   rating?: number;
   experience?: number;
+  profileImage?: string;
+  yearSalary?: number;
 }
 
 // واجهة لبيانات الـ API الخام
@@ -53,6 +55,16 @@ interface ApiPlayer {
   views: number;
   isActive: boolean;
   contractEndDate?: string;
+  media?: {
+    profileImage?: {
+      url: string;
+      publicId: string;
+    };
+  };
+  yearSalary: {
+    amount: number;
+    currency: string;
+  };
 }
 
 // دالة لتحويل بيانات الـ API إلى واجهة Player
@@ -65,7 +77,6 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   nationality: apiPlayer.nationality,
   category: apiPlayer.category,
   monthlySalary: apiPlayer.monthlySalary?.amount,
-  annualContractValue: undefined,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
   sport: apiPlayer.game,
@@ -73,6 +84,8 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   profilePicture: undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
+  profileImage: apiPlayer.media?.profileImage?.url || undefined,
+  annualContractValue: apiPlayer.yearSalary?.amount,
 });
 
 // عنوان الـ API
@@ -188,7 +201,7 @@ export default function PlayersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
+      <div className=" py-8 bg-muted max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             جميع اللاعبين
@@ -308,7 +321,7 @@ export default function PlayersPage() {
 
         {/* Players Grid */}
         {filteredPlayers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="flex flex-wrap justify-center gap-6">
             {filteredPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} />
             ))}
