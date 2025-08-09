@@ -12,7 +12,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -49,12 +48,6 @@ interface UserProfileDropdownProps {
   className?: string;
 }
 
-interface User {
-  profileImage?: string;
-  name?: string;
-  email?: string;
-}
-
 // مكون القائمة المنسدلة للمستخدم
 const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   profileImage,
@@ -64,7 +57,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
 }) => {
   const { isLoggedIn } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState({});
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {
@@ -97,6 +90,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     );
   }
 
+
   return (
     <Menu as="div" className="relative inline-block text-center">
       <Menu.Button
@@ -106,12 +100,15 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
         aria-label="فتح قائمة المستخدم"
       >
         {user?.profileImage ? (
-          <Image
-            unoptimized
+          <img
             src={user.profileImage}
             alt="صورة المستخدم"
             className="w-12 h-12 rounded-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              e.target.src = "/images/default-avatar.png";
+              e.target.alt = "صورة افتراضية";
+            }}
           />
         ) : (
           <User className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
@@ -355,7 +352,7 @@ const Navbar = () => {
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-4 space-x-reverse">
             <UserProfileDropdown
-              userImage={
+              profileImage={
                 isLoggedIn ? "https://example.com/user.jpg" : undefined
               }
               handleLogout={handleLogout}

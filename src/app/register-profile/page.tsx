@@ -59,6 +59,7 @@ export default function RegisterProfile() {
     }
   };
 
+  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   const handleSubmit = useCallback(
     async (values: PlayerFormData, { setSubmitting, setErrors, resetForm }) => {
       try {
@@ -66,7 +67,7 @@ export default function RegisterProfile() {
         if (values.profilePictureFile) {
           const uploadedImage = await uploadFile(
             values.profilePictureFile,
-            "http://localhost:5000/api/v1/upload/image"
+            `${API_URL}/upload/image`
           );
           profileImage = {
             url: uploadedImage.url,
@@ -79,7 +80,7 @@ export default function RegisterProfile() {
             if (video.file) {
               const uploadedVideo = await uploadFile(
                 video.file,
-                "http://localhost:5000/api/v1/upload/video"
+                `${API_URL}/upload/video`
               );
               return {
                 ...video,
@@ -97,7 +98,7 @@ export default function RegisterProfile() {
             if (doc.file) {
               const uploadedDoc = await uploadFile(
                 doc.file,
-                "http://localhost:5000/api/v1/upload/document"
+                `${API_URL}/upload/document`
               );
               return {
                 ...doc,
@@ -132,7 +133,7 @@ export default function RegisterProfile() {
         }
 
         await axios.post(
-          "http://localhost:5000/api/v1/players/createPlayer",
+         `${API_URL}/players/createPlayer`,
           payload,
           { withCredentials: true }
         );
