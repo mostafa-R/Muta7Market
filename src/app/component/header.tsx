@@ -57,7 +57,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
 }) => {
   const { isLoggedIn } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState({});
+  const [user, setUser] = useState<any>(null);
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {

@@ -1,8 +1,6 @@
 "use client";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
+import { Badge } from "@/app/component/ui/badge";
 import { Button } from "@/app/component/ui/button";
 import {
   Card,
@@ -10,25 +8,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/component/ui/card";
-import { Badge } from "@/app/component/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
 import { Separator } from "@/app/component/ui/separator";
+import axios from "axios";
 import {
   ArrowRight,
-  Calendar,
-  MapPin,
-  DollarSign,
-  Clock,
-  Trophy,
-  Star,
-  Phone,
-  Mail,
-  MessageCircle,
-  Share2,
-  Heart,
-  User,
   Award,
+  Calendar,
+  Clock,
+  DollarSign,
+  Heart,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Share2,
+  Star,
+  Trophy,
+  User,
 } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 // واجهة Player المستخدمة في المكون
 interface Player {
@@ -40,12 +40,13 @@ interface Player {
   nationality: string;
   category: "Amateur" | "Professional" | "Elite";
   monthlySalary?: number;
+  yearSalary?: number;
   annualContractValue?: number;
   contractConditions?: string;
   transferDeadline?: string;
   sport: string;
   position?: string;
-  profilePicture?: string;
+  profileImage?: string;
   rating?: number;
   experience?: number;
   views?: number;
@@ -67,10 +68,20 @@ interface ApiPlayer {
     amount: number;
     currency: string;
   };
+  yearSalary: {
+    amount: number;
+    currency: string;
+  };
   game: string;
   views: number;
   isActive: boolean;
   contractEndDate?: string;
+  media?: {
+    profileImage?: {
+      url: string;
+      publicId: string;
+    };
+  };
 }
 
 // دالة لتحويل بيانات الـ API إلى واجهة Player
@@ -83,12 +94,12 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   nationality: apiPlayer.nationality,
   category: apiPlayer.category === "player" ? "Professional" : "Elite",
   monthlySalary: apiPlayer.monthlySalary?.amount,
-  annualContractValue: undefined,
+  annualContractValue: apiPlayer.yearSalary?.amount,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
   sport: apiPlayer.game,
   position: apiPlayer.position,
-  profilePicture: undefined,
+  profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
 });
@@ -240,10 +251,7 @@ const PlayerProfile = () => {
               <CardContent className="p-8 bg-white rounded-xl">
                 <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-6 md:space-x-reverse">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-lg ml-3 mr-3">
-                    <AvatarImage
-                      src={player.profilePicture}
-                      alt={player.name}
-                    />
+                    <AvatarImage src={player.profileImage} alt={player.name} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
                       {player.name
                         .split(" ")
@@ -301,7 +309,7 @@ const PlayerProfile = () => {
                       )}
                     </div>
 
-                    {player.rating && (
+                    {/* {player.rating && (
                       <div className="flex items-center space-x-3 space-x-reverse">
                         <span className="text-muted-foreground">التقييم:</span>
                         <div className="flex items-center space-x-1 space-x-reverse">
@@ -310,7 +318,7 @@ const PlayerProfile = () => {
                           </span>
                         </div>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </CardContent>
@@ -336,16 +344,19 @@ const PlayerProfile = () => {
                       </span>
                     </div>
                   )}
-                  {player.annualContractValue && (
-                    <div className="flex items-center justify-between p-4 bg-secondary/5 rounded-lg">
-                      <span className="text-muted-foreground">
-                        قيمة العقد السنوي
-                      </span>
-                      <span className="text-2xl font-bold text-secondary">
-                        ${player.annualContractValue.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
+                  {player.annualContractValue !== null &&
+                    player.annualContractValue !== undefined && (
+                      <div className="flex items-center justify-between p-4 bg-secondary/5 rounded-lg">
+                        <span className="text-muted-foreground">
+                          قيمة العقد السنوي
+                        </span>
+                        <span className="text-2xl font-bold text-secondary">
+                          {player.annualContractValue === 0
+                            ? "غير محدد"
+                            : player.annualContractValue.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                 </CardContent>
               </Card>
             )}
