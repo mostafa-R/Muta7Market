@@ -230,7 +230,7 @@ export default function RegisterProfile() {
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             سجل بياناتك
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-[#7e8c9a] max-w-2xl mx-auto">
             أنشئ ملفك الشخصي الاحترافي وابدأ رحلتك الرياضية معنا
           </p>
         </div>
@@ -249,7 +249,7 @@ export default function RegisterProfile() {
         )}
         <form
           onSubmit={formik.handleSubmit}
-          className="max-w-3xl mx-auto space-y-6 p-4"
+          className=" mx-auto space-y-6 p-4 w-[115%]"
         >
           <PersonalInfoCard
             formik={formik}
