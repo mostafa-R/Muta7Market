@@ -1,6 +1,6 @@
 "use client";
 import axios from "axios";
-import { useFormik } from "formik";
+import { useFormik, FormikHelpers } from "formik";
 import { useCallback, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -61,7 +61,11 @@ export default function RegisterProfile() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   const handleSubmit = useCallback(
-    async (values: PlayerFormData, { setSubmitting, setErrors, resetForm }) => {
+    async (
+      values: PlayerFormData,
+      formikHelpers: FormikHelpers<PlayerFormData>
+    ) => {
+      const { setSubmitting, setErrors, resetForm } = formikHelpers;
       try {
         let profileImage = values.media.profileImage;
         if (values.profilePictureFile) {
@@ -111,7 +115,7 @@ export default function RegisterProfile() {
           })
         );
 
-        const payload = {
+        const payload: any = {
           ...values,
           gender: values.gender?.toLowerCase(),
           status: values.status?.toLowerCase(),
@@ -129,14 +133,15 @@ export default function RegisterProfile() {
         };
 
         if (!payload.isPromoted.type) {
-          delete payload.isPromoted.type;
+          payload.isPromoted = {
+            ...payload.isPromoted,
+            type: undefined,
+          };
         }
 
-        await axios.post(
-         `${API_URL}/players/createPlayer`,
-          payload,
-          { withCredentials: true }
-        );
+        await axios.post(`${API_URL}/players/createPlayer`, payload, {
+          withCredentials: true,
+        });
 
         toast.success("تم إرسال البيانات بنجاح!");
         resetForm();

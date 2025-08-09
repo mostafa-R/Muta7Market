@@ -55,6 +55,7 @@ interface Player {
   gender: "Male" | "Female";
   nationality: string;
   jop: "player" | "coach";
+  category: string; // Added category field
   monthlySalary?: number;
   annualContractValue?: number;
   contractConditions?: string;
@@ -169,10 +170,11 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
       : "Contracted",
   gender: apiPlayer.gender === "male" ? "Male" : "Female",
   nationality: apiPlayer.nationality,
-  jop: apiPlayer.jop,
+  jop: (apiPlayer.jop === "player" || apiPlayer.jop === "coach") ? apiPlayer.jop : "player", // Type-safe conversion
+  category: apiPlayer.jop === "coach" ? "مدرب" : "لاعب", // Added category field
   monthlySalary: apiPlayer.monthlySalary?.amount,
   annualContractValue: apiPlayer.yearSalary?.amount,
-  contractConditions: undefined,
+  contractConditions: undefined, // Fixed syntax error
   transferDeadline: apiPlayer.contractEndDate,
   sport: apiPlayer.game,
   position: apiPlayer.position,
@@ -248,7 +250,7 @@ const SportDetailPage = () => {
       setLoading(false);
       setError("الرياضة غير موجودة");
     }
-  }, [apiSportName]); 
+  }, [apiSportName]);
   // تصفية اللاعبين
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.trim().toLowerCase();
