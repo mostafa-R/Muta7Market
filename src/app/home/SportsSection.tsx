@@ -79,12 +79,6 @@ const sports = [
     gradient: "from-yellow-500 to-orange-600",
   },
   {
-    id: "swimming",
-    name: "السباحة",
-    icon: Waves,
-    gradient: "from-blue-500 to-cyan-600",
-  },
-  {
     id: "judo",
     name: "الجودو",
     icon: Dumbbell,
@@ -144,9 +138,20 @@ const sports = [
     icon: Dumbbell,
     gradient: "from-gray-700 to-gray-900",
   },
+  {
+    id: "swimming",
+    name: "السباحة",
+    icon: Waves,
+    gradient: "from-blue-500 to-cyan-600",
+  },
 ];
 
 const SportsSection = () => {
+  // تقسيم الرياضات إلى صفين متساويين
+  const half = Math.ceil(sports.length / 2);
+  const firstRow = sports.slice(0, half);
+  const secondRow = sports.slice(half);
+
   return (
     <section className="py-16 bg-[hsl(var(--muted))]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,39 +160,75 @@ const SportsSection = () => {
             استكشف الألعاب الرياضية
           </h2>
           <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-            اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين
-            المحترفين
+            اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين المحترفين
           </p>
         </div>
 
-        <div className="flex flex-wrap  gap-2">
-          {sports.map((sport) => {
-            const Icon = sport.icon;
-            return (
-              <Link key={sport.id} href={`/sports/${sport.id}`}>
-                <div
-                  className={`
-                    flex flex-col  
-                    min-w-[90px] h-20
-                    overflow-hidden group transition-smooth hover:shadow-md
-                    border border-gray-200
-                    bg-white
-                    rounded-lg
-                  `}
-                >
-                  <div className="p-2 text-center  w-20">
-                    <div className="w-10 h-10 mx-auto mb-1 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Icon className="w-8 h-8 text-[hsl(var(--primary))]" />
-                    </div>
-                    <h3 className="text-xs font-semibold text-gray-800 group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-1">
-                      {sport.name}
-                    </h3>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+       <div className="flex flex-col gap-4">
+  {/* الصف الأول */}
+  <div className="flex flex-wrap gap-2 justify-center">
+    {firstRow.map((sport) => {
+      const Icon = sport.icon;
+      return (
+        <Link key={sport.id} href={`/sports/${sport.id}`}>
+          <div
+            className={`
+              flex flex-col items-center
+              min-w-[100px] w-24 h-24
+              overflow-hidden group transition-all duration-200
+              border border-gray-200 hover:border-[hsl(var(--primary))]
+              bg-white hover:bg-gray-50
+              rounded-lg
+              shadow-sm hover:shadow-md
+              cursor-pointer
+            `}
+          >
+            <div className="p-3 w-full h-full flex flex-col justify-center">
+              <div className="w-12 h-12 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
+                <Icon className="w-6 h-6 text-[hsl(var(--primary))] group-hover:scale-110 transition-transform" />
+              </div>
+              <h3 className="text-xs font-bold text-gray-800 group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-1 px-1">
+                {sport.name}
+              </h3>
+            </div>
+          </div>
+        </Link>
+      );
+    })}
+  </div>
+
+  {/* الصف الثاني */}
+  <div className="flex flex-wrap gap-2 justify-center">
+    {secondRow.map((sport) => {
+      const Icon = sport.icon;
+      return (
+        <Link key={sport.id} href={`/sports/${sport.id}`}>
+          <div
+            className={`
+              flex flex-col items-center
+              min-w-[100px] w-24 h-24
+              overflow-hidden group transition-all duration-200
+              border border-gray-200 hover:border-[hsl(var(--primary))]
+              bg-white hover:bg-gray-50
+              rounded-lg
+              shadow-sm hover:shadow-md
+              cursor-pointer
+            `}
+          >
+            <div className="p-2 w-full h-full flex flex-col justify-center">
+              <div className="w-12 h-12 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
+                <Icon className="w-6 h-6 text-[hsl(var(--primary))] group-hover:scale-110 transition-transform" />
+              </div>
+              <h3 className="text-xs font-bold text-gray-800 group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-1 px-1">
+                {sport.name}
+              </h3>
+            </div>
+          </div>
+        </Link>
+      );
+    })}
+  </div>
+</div>
 
         <div className="text-center mt-12">
           <Link href="/sports">
