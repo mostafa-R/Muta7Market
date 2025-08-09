@@ -7,7 +7,6 @@ import Joi from "joi";
 import Link from "next/link";
 import { useState } from "react";
 import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
-import { useRouter } from "next/navigation";
 
 // -----------------------------------
 // Types
@@ -149,8 +148,6 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const router = useRouter();
-  
 
   const initialValues: LoginFormValues = {
     email: "",
@@ -166,14 +163,14 @@ export default function Login() {
     setIsSubmitting(true);
     setSubmitMessage("");
     try {
-       await axios.post(API_URL, values, {
+      await axios.post(API_URL, values, {
         withCredentials: true,
       });
-      
-      setSubmitMessage(translations[language].successMessage);     
+
+      setSubmitMessage(translations[language].successMessage);
       resetForm();
       localStorage.setItem("isLoggedIn", "true");
-      router.push("/");
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Login Error:", error);
 

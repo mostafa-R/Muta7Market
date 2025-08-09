@@ -1,11 +1,21 @@
 "use client";
 
+import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileText, Menu, Trophy, User, Users, X } from "lucide-react";
+import {
+  FileText,
+  Trophy,
+  User,
+  Users,
+  X,
+  LogOut,
+  Menu as MenuIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
+import { Menu, Transition } from "@headlessui/react";
 
 // إدارة حالة تسجيل الدخول باستخدام Zustand
 interface AuthState {
@@ -29,6 +39,121 @@ interface NavItemType {
   path: string;
   icon: React.ElementType;
 }
+
+// واجهة لمكون القائمة المنسدلة
+interface UserProfileDropdownProps {
+  userImage?: string;
+  handleLogout: () => void;
+  fullWidth?: boolean;
+  className?: string;
+}
+
+// مكون القائمة المنسدلة للمستخدم
+const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
+  userImage,
+  handleLogout,
+  fullWidth = false,
+  className = "",
+}) => {
+  const { isLoggedIn } = useAuthStore();
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get( API_URL,{
+          withCredentials: true,
+        });
+        setUser(response.data.user);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (!isLoggedIn) {
+    return (
+      <button
+        type="button"
+        onClick={() => router.push("/signin")}
+        className={`border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] ${
+          fullWidth ? "w-full" : ""
+        } ${className}`}
+        aria-label="تسجيل الدخول"
+      >
+        <User className="w-4 h-4 ml-2" />
+        تسجيل الدخول
+      </button>
+    );
+  }
+
+  return (
+    <Menu as="div" className="relative inline-block text-left">
+      <Menu.Button
+        className={`flex items-center border border-[hsl(var(--border))] rounded px-4 py-2 text-sm hover:bg-[hsl(var(--primary)/0.08)] transition focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] ${
+          fullWidth ? "w-full" : ""
+        } ${className}`}
+        aria-label="فتح قائمة المستخدم"
+      >
+        {userImage ? (
+          <img
+            src={userImage}
+            alt="صورة المستخدم"
+            className="w-6 h-6 rounded-full ml-2 object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <User className="w-4 h-4 ml-2" />
+        )}
+        <span>الحساب</span>
+      </Menu.Button>
+
+      <Transition
+        enter="transition ease-out duration-100"
+        enterFrom="transform opacity-0 scale-95"
+        enterTo="transform opacity-100 scale-100"
+        leave="transition ease-in duration-75"
+        leaveFrom="transform opacity-100 scale-100"
+        leaveTo="transform opacity-0 scale-95"
+      >
+        <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div className="py-1">
+            <Menu.Item>
+              {({ active }) => (
+                <Link
+                  href="/profile"
+                  className={`${
+                    active ? "bg-[hsl(var(--primary)/0.1)]" : ""
+                  } flex items-center px-4 py-2 text-sm text-gray-700`}
+                >
+                  <User className="w-4 h-4 ml-2" />
+                  الملف التعريفي
+                </Link>
+              )}
+            </Menu.Item>
+            <Menu.Item>
+              {({ active }) => (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={`${
+                    active ? "bg-[hsl(var(--primary)/0.1)]" : ""
+                  } flex items-center w-full px-4 py-2 text-sm text-gray-700 text-right`}
+                >
+                  <LogOut className="w-4 h-4 ml-2" />
+                  تسجيل الخروج
+                </button>
+              )}
+            </Menu.Item>
+          </div>
+        </Menu.Items>
+      </Transition>
+    </Menu>
+  );
+};
 
 // مكون شعار المنصة
 const NavLogo = () => {
@@ -67,49 +192,6 @@ const NavItem = ({
   );
 };
 
-// مكون زر الملف الشخصي
-const ProfileButton = ({
-  className = "",
-  fullWidth = false,
-}: {
-  className?: string;
-  fullWidth?: boolean;
-}) => {
-  const { isLoggedIn, setIsLoggedIn } = useAuthStore();
-  const router = useRouter();
-
-  const handleLogout = useCallback(() => {
-    localStorage.setItem("isLoggedIn", "false");
-    setIsLoggedIn(false);
-    router.push("/signin");
-  }, [router, setIsLoggedIn]);
-
-  return isLoggedIn ? (
-    <button
-      type="button"
-      onClick={handleLogout}
-      className={`border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] ${
-        fullWidth ? "w-full" : ""
-      } ${className}`}
-      aria-label="تسجيل الخروج"
-    >
-      <User className="w-4 h-4 ml-2" />
-      تسجيل الخروج
-    </button>
-  ) : (
-    <Link
-      href="/signin"
-      className={`border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] ${
-        fullWidth ? "w-full" : ""
-      } ${className}`}
-      aria-label="تسجيل الدخول"
-    >
-      <User className="w-4 h-4 ml-2" />
-      تسجيل الدخول
-    </Link>
-  );
-};
-
 // مكون قائمة الهاتف المحمول
 const MobileNavMenu = ({
   navItems,
@@ -120,6 +202,22 @@ const MobileNavMenu = ({
   onClose: () => void;
   currentPath: string;
 }) => {
+  const { isLoggedIn, setIsLoggedIn } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = useCallback(async () => {
+    localStorage.setItem("isLoggedIn", "false");
+    setIsLoggedIn(false);
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
+      {},
+      {
+        withCredentials: true,
+      }
+    );
+    router.push("/signin");
+  }, [router, setIsLoggedIn]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -174,7 +272,11 @@ const MobileNavMenu = ({
               );
             })}
             <div className="pt-4 border-t border-[hsl(var(--border))]">
-              <ProfileButton fullWidth />
+              <UserProfileDropdown
+                userImage={isLoggedIn ? user.profileImage : undefined}
+                handleLogout={handleLogout}
+                fullWidth
+              />
             </div>
           </div>
         </motion.div>
@@ -188,10 +290,10 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, isLoggedIn, setIsLoggedIn } = useAuthStore();
 
   useEffect(() => {
-    checkAuth(); // التحقق من حالة تسجيل الدخول عند تحميل المكون
+    checkAuth();
   }, [checkAuth]);
 
   const navItems = useMemo<NavItemType[]>(
@@ -205,7 +307,19 @@ const Navbar = () => {
     []
   );
 
-  // تحميل مسبق للروابط
+  const handleLogout = useCallback(async () => {
+    localStorage.setItem("isLoggedIn", "false");
+    setIsLoggedIn(false);
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
+      {},
+      {
+        withCredentials: true,
+      }
+    );
+    router.push("/signin");
+  }, [router, setIsLoggedIn]);
+
   useEffect(() => {
     navItems.forEach((item) => {
       router.prefetch(item.path);
@@ -233,7 +347,12 @@ const Navbar = () => {
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-4 space-x-reverse">
-            <ProfileButton />
+            <UserProfileDropdown
+              userImage={
+                isLoggedIn ? "https://example.com/user.jpg" : undefined
+              }
+              handleLogout={handleLogout}
+            />
           </div>
 
           {/* Mobile Menu Button */}
@@ -244,7 +363,7 @@ const Navbar = () => {
               onClick={() => setIsOpen(true)}
               aria-label="فتح القائمة"
             >
-              <Menu className="h-6 w-6" />
+              <MenuIcon className="h-6 w-6" />
             </button>
           </div>
         </div>

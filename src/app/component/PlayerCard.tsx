@@ -28,6 +28,13 @@ export interface Player {
   profilePicture?: string;
   rating?: number;
   experience?: number;
+  media?: {
+    profileImage?: {
+      url: string;
+      publicId: string;
+    };
+    
+  };
 }
 
 interface PlayerCardProps {
@@ -116,9 +123,7 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
           <div className="w-24 h-24 rounded-full border-1 border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
             {player.profilePicture ? (
               <Image
-                src={
-                  "https://img.freepik.com/free-photo/woman-beach-with-her-baby-enjoying-sunset_52683-144131.jpg?size=626&ext=jpg"
-                }
+                src={player.media?.profileImage?.url}
                 alt={player.name}
                 width={64}
                 height={64}

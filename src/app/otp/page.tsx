@@ -166,7 +166,7 @@ export default function OTP() {
         animate="animate"
         key={language}
       >
-        <div className="flex justify-between items-center mb-8">
+        {/* <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-[#07074D]">
             {translations[language].title}
           </h1>
@@ -178,7 +178,7 @@ export default function OTP() {
             <option value="ar">العربية</option>
             <option value="en">English</option>
           </select>
-        </div>
+        </div> */}
 
         <Formik
           initialValues={initialValues}
