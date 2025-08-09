@@ -9,7 +9,6 @@ import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
-
 // Language types
 type Language = "ar" | "en";
 
@@ -35,6 +34,7 @@ const translations: Record<
       otp: {
         required: string;
         pattern: string;
+        [key: string]: string; // Add index signature
       };
     };
   }
@@ -97,8 +97,14 @@ const validate = (values: FormValues, language: Language) => {
   error.details.forEach((detail) => {
     const field = detail.path[0] as keyof FormValues;
     const messageKey = detail.type.split(".")[1] || "required";
-    errors[field] =
-      translations[language].errors[field][messageKey] || detail.message;
+
+    // Type-safe access to error messages
+    const fieldErrors = translations[language].errors[field];
+    if (fieldErrors && messageKey in fieldErrors) {
+      errors[field] = fieldErrors[messageKey as keyof typeof fieldErrors];
+    } else {
+      errors[field] = detail.message;
+    }
   });
   return errors;
 };
