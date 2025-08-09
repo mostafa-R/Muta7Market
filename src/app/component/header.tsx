@@ -17,6 +17,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
 
+// واجهة لتحديد نوع الكائن user
+interface User {
+  profileImage?: string;
+}
+
 // إدارة حالة تسجيل الدخول باستخدام Zustand
 interface AuthState {
   isLoggedIn: boolean;
@@ -57,7 +62,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
 }) => {
   const { isLoggedIn } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState({});
+  const [user, setUser] = useState<User>({}); // تحديد نوع user باستخدام الواجهة User
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {
@@ -89,7 +94,6 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
       </button>
     );
   }
-
 
   return (
     <Menu as="div" className="relative inline-block text-center">
@@ -208,6 +212,22 @@ const MobileNavMenu = ({
 }) => {
   const { isLoggedIn, setIsLoggedIn } = useAuthStore();
   const router = useRouter();
+  const [user, setUser] = useState<User>({}); // تحديد نوع user هنا أيضًا
+
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(API_URL, {
+          withCredentials: true,
+        });
+        setUser(response.data.data.user);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    if (isLoggedIn) fetchUser();
+  }, [isLoggedIn]);
 
   const handleLogout = useCallback(async () => {
     localStorage.setItem("isLoggedIn", "false");
@@ -277,7 +297,7 @@ const MobileNavMenu = ({
             })}
             <div className="pt-4 border-t border-[hsl(var(--border))]">
               <UserProfileDropdown
-                userImage={isLoggedIn ? user.profileImage : undefined}
+                profileImage={isLoggedIn ? user.profileImage : undefined}
                 handleLogout={handleLogout}
                 fullWidth
               />
