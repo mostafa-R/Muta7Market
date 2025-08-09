@@ -1,4 +1,3 @@
-// components/PersonalInfoCard.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
 import { Button } from "../../component/ui/button";
 import {
@@ -66,6 +65,13 @@ export const PersonalInfoCard = ({
                 accept={ALLOWED_IMAGE_TYPES.join(",")}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
+                  if (!file) {
+                    formik.setFieldError(
+                      "profilePictureFile",
+                      "يرجى اختيار ملف"
+                    );
+                    return;
+                  }
                   const error = handleFileValidation(
                     file,
                     ALLOWED_IMAGE_TYPES,
