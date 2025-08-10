@@ -14,6 +14,8 @@ import { TermsCard } from "./components/TermsCard";
 import { TransferInfoCard } from "./components/TransferInfoCard";
 import { playerFormSchema } from "./types/schema";
 import { PlayerFormData } from "./types/types";
+import PaymentBtn from "./components/PaymentBtn";
+import { Toaster } from "sonner";
 
 function getCookie(name: string) {
   const value = `; ${document.cookie}`;
@@ -21,13 +23,13 @@ function getCookie(name: string) {
   if (parts.length === 2) return parts.pop()?.split(";").shift();
   return null;
 }
-
 export default function RegisterProfile() {
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
   const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/webm"];
   const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [canPay, setCanPay] = useState(false);
 
   const uploadFile = async (file: File, endpoint: string) => {
     const token = getCookie("accessToken");
@@ -59,7 +61,7 @@ export default function RegisterProfile() {
     }
   };
 
-  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_URL = "https://players-sales.fly.dev";
   const handleSubmit = useCallback(
     async (
       values: PlayerFormData,
@@ -139,11 +141,12 @@ export default function RegisterProfile() {
           };
         }
 
-        await axios.post(`${API_URL}/players/createPlayer`, payload, {
+        await axios.post(`${API_URL}/api/v1/players/createPlayer`, payload, {
           withCredentials: true,
         });
 
-        toast.success("تم إرسال البيانات بنجاح!");
+        toast.success("تم إرسال البيانات بنجاح الرجاء الدفه");
+        setCanPay(true);
         resetForm();
       } catch (error: any) {
         if (error.response) {
@@ -230,6 +233,7 @@ export default function RegisterProfile() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <Toaster position="top-right" dir="rtl" />
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
@@ -267,7 +271,6 @@ export default function RegisterProfile() {
           <FinancialInfoCard formik={formik} />
           <TransferInfoCard formik={formik} />
           <SocialLinksCard formik={formik} />
-          <ContactInfoCard formik={formik} />
           <MediaUploadCard
             formik={formik}
             handleFileValidation={handleFileValidation}
@@ -276,6 +279,15 @@ export default function RegisterProfile() {
             MAX_FILE_SIZE={MAX_FILE_SIZE}
           />
           <TermsCard formik={formik} />
+          {canPay && (
+            <>
+              <div className="text-center text-lg text-gray-700 mb-4 ">
+                ادفع الاشتراك لإكمال التفعيل
+              </div>
+
+              <PaymentBtn />
+            </>
+          )}
         </form>
       </div>
     </div>

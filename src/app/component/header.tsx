@@ -96,7 +96,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   }
 
   return (
-    <Menu as="div" className="relative inline-block text-center">
+    <Menu as="div" className="relative inline-block text-center bg-primary">
       <Menu.Button
         className={`flex items-center justify-center rounded-full w-12 h-12 border border-[hsl(var(--muted))] hover:border-[hsl(var(--border))] transition-colors duration-200 ${
           fullWidth ? "w-full" : ""
@@ -260,7 +260,7 @@ const MobileNavMenu = ({
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] w-72 h-full p-6 flex flex-col space-y-4 shadow-card relative"
+          className="bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] w-72 h-full p-6 flex flex-col space-y-4 shadow-card relative "
         >
           <button
             type="button"
@@ -270,7 +270,7 @@ const MobileNavMenu = ({
           >
             <X className="w-6 h-6" />
           </button>
-          <div className="mt-8 flex flex-col space-y-4">
+          <div className="mt-8 flex flex-col space-y-4 text-[hsl(var(--muted-foreground))] bg-[#ffffff]">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
               return (
@@ -297,6 +297,7 @@ const MobileNavMenu = ({
                 handleLogout={handleLogout}
                 fullWidth
               />
+              
             </div>
           </div>
         </motion.div>

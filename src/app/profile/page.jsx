@@ -49,46 +49,19 @@ const PendingPaymentSchema = Joi.object({
   orderDate: Joi.date().iso().required(),
 });
 
-// تعريف أنواع البيانات
-interface User {
-  _id: string;
-  name: string;
-  profileImage?: string;
-  email: string;
-  phone?: string;
-  role: string;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  phoneVerificationOTP?: string;
-  phoneVerificationExpires?: string;
-  isActive: boolean;
-  refreshTokens?: string[];
-  __v?: number;
-  createdAt: string;
-  updatedAt: string;
-  lastLogin?: string;
-}
-
-interface PendingPayment {
-  id: string;
-  itemName: string;
-  price: number;
-  orderDate: string;
-}
-
 // تعريف عنوان API
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
 
-const UserProfile: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
+const UserProfile = () => {
+  const [user, setUser] = useState(null);
+  const [pendingPayments, setPendingPayments] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const router = useRouter();
 
   // جلب بيانات المستخدم باستخدام useCallback
@@ -108,8 +81,10 @@ const UserProfile: React.FC = () => {
         throw new Error(userError.details.map((d) => d.message).join(", "));
       }
       setUser(userData);
+
+      console.log(userData);
       const payments = response.data.data.pendingPayments || [];
-      const validatedPayments = payments.map((p: any) => {
+      const validatedPayments = payments.map((p) => {
         const { error, value } = PendingPaymentSchema.validate(p, {
           abortEarly: false,
         });
@@ -194,7 +169,7 @@ const UserProfile: React.FC = () => {
   }, [username, password, profileImage, fetchUserData]);
 
   // معالجة تحميل الصورة
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith("image/")) {
@@ -249,8 +224,8 @@ const UserProfile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6  bg-primary min-h-screen grid">
-      <h1 className="text-4xl font-extrabold  mb-8 flex items-center">
+    <div className="max-w-5xl mx-auto p-6 bg-primary min-h-screen grid">
+      <h1 className="text-4xl font-extrabold mb-8 flex items-center">
         <FaUser className="mr-3 text-3xl ml-3" />
         الملف الشخصي
       </h1>
@@ -304,10 +279,11 @@ const UserProfile: React.FC = () => {
                 user.isEmailVerified ? "text-green-500" : "text-red-500"
               }`}
             />
-            <strong className="text-gray-600 ml-2 mr-2">حالة البريد الألكتروني :</strong>{" "}
+            <strong className="text-gray-600 ml-2 mr-2">
+              حالة البريد الإلكتروني:
+            </strong>{" "}
             {user.isEmailVerified ? "مفعّل" : "غير مفعّل"}
           </p>
-        
           <p className="flex items-center">
             <FaCheckCircle
               className={`mr-2 ${
