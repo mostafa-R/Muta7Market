@@ -141,7 +141,7 @@ export default function RegisterProfile() {
           };
         }
 
-        await axios.post(`${API_URL}/api/v1/players/createPlayer`, payload, {
+        await axios.post(`${API_URL}/players/createPlayer`, payload, {
           withCredentials: true,
         });
 
