@@ -24,7 +24,7 @@ function getCookie(name: string) {
   return null;
 }
 export default function RegisterProfile() {
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const MAX_FILE_SIZE = 4 * 1024 * 1024; // 2MB
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
   const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/webm"];
   const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
@@ -61,7 +61,7 @@ export default function RegisterProfile() {
     }
   };
 
-  const API_URL = "https://players-sales.fly.dev";
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`;
   const handleSubmit = useCallback(
     async (
       values: PlayerFormData,

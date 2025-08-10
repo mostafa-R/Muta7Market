@@ -122,3 +122,49 @@
     transition: var(--transition-smooth);
   }
 }
+
+
+
+/* styles/animations.css */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Responsive Design Improvements */
+@media (max-width: 768px) {
+  .grid-cols-1 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.3s ease;
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00183d;
+  border-radius: 10px;
+}

@@ -5,6 +5,7 @@ import Navbar from "./component/header";
 import SimpleHero from "./home/SimpleHero";
 import Footer from "./component/Footer";
 import { Noto_Sans_Arabic } from "next/font/google";
+import Script from "next/script"; 
 
 
 
@@ -40,6 +41,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
+        <Script
+          src="https://checkout-web-components.checkout.com/index.js"
+          strategy="afterInteractive"
+        />
         <Navbar />
         {children}
         <Footer />
