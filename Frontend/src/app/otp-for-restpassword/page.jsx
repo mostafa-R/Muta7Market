@@ -1,0 +1,383 @@
+"use client";
+
+import axios from "axios";
+import { ErrorMessage, Field, Form, Formik } from "formik";
+import Joi from "joi";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { FiLock } from "react-icons/fi";
+import { toast } from "react-toastify";
+
+// ------------------------------
+// Joi schema
+// ------------------------------
+const otpSchema = Joi.object({
+  otp: Joi.string()
+    .pattern(/^\d{6}$/)
+    .required()
+    .messages({
+      "string.empty": "الرجاء إدخال رمز التحقق",
+      "string.pattern.base": "الرجاء إدخال رمز تحقق صحيح مكون من 6 أرقام",
+      "any.required": "رمز التحقق مطلوب",
+    }),
+  password: Joi.string().min(8).required().messages({
+    "string.empty": "الرجاء إدخال كلمة المرور",
+    "string.min": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+  }),
+  confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
+    "any.only": "كلمة المرور وتأكيدها غير متطابقين",
+    "string.empty": "الرجاء إدخال تأكيد كلمة المرور",
+  }),
+});
+
+const validate = (values) => {
+  const { error } = otpSchema.validate(values, { abortEarly: false });
+  if (!error) return {};
+  const errors = {};
+  for (const d of error.details) errors[d.path[0]] = d.message;
+  return errors;
+};
+
+// Extract API message safely
+const pickMsg = (x) => {
+  if (!x) return "";
+  if (typeof x === "string") return x;
+  if (typeof x?.message === "string") return x.message;
+  if (Array.isArray(x) && typeof x[0] === "string") return x[0];
+  try {
+    return JSON.stringify(x);
+  } catch {
+    return String(x);
+  }
+};
+
+export default function OTPForResetPassword() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const router = useRouter();
+  const params = useSearchParams();
+  const intervalRef = useRef(null);
+
+  const challengeId = params.get("challengeId");
+  const resetToken = params.get("token");
+
+  const initialValues = { otp: "", password: "", confirmPassword: "" };
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const VERIFY_URL = `${API_BASE}/auth/reset-password`; // changed to reset-password API
+  const RESEND_URL = `${API_BASE}/auth/resend-otp`;
+
+  // ------------------------------
+  // Resend OTP
+  // ------------------------------
+  const handleResendOTP = async () => {
+    try {
+      setResendDisabled(true);
+      setResendCountdown(60);
+
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        setResendCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            setResendDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      const payload = {};
+      if (challengeId) payload.challengeId = challengeId;
+      if (resetToken) payload.token = resetToken;
+
+      const { data, status } = await axios.post(RESEND_URL, payload, {
+        withCredentials: true,
+        validateStatus: () => true,
+      });
+
+      if (status >= 400) {
+        const msg =
+          pickMsg(data?.error) ||
+          pickMsg(data?.message) ||
+          "فشل في إرسال رمز التحقق الجديد";
+        toast.error(msg);
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        setResendDisabled(false);
+        setResendCountdown(0);
+        return;
+      }
+
+      toast.success(
+        pickMsg(data?.message) || "تم إرسال رمز التحقق الجديد بنجاح!"
+      );
+    } catch {
+      toast.error("فشل في إرسال رمز التحقق الجديد");
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setResendDisabled(false);
+      setResendCountdown(0);
+    }
+  };
+
+  useEffect(
+    () => () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    },
+    []
+  );
+
+  // ------------------------------
+  // Submit Form (OTP + Passwords)
+  // ------------------------------
+  const handleSubmit = async (
+    values,
+    { setSubmitting, resetForm, setFieldError, setStatus }
+  ) => {
+    setIsSubmitting(true);
+    setSubmitMessage("");
+    setStatus(null);
+
+    try {
+      const payload = {
+        otp: values.otp.trim(),
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      };
+      if (challengeId) payload.challengeId = challengeId;
+      if (resetToken) payload.token = resetToken;
+
+      const { data, status } = await axios.post(VERIFY_URL, payload, {
+        withCredentials: true,
+        validateStatus: () => true,
+      });
+
+      if (status >= 400) {
+        const msg =
+          pickMsg(data?.error) ||
+          pickMsg(data?.message) ||
+          "حدث خطأ أثناء إعادة التعيين";
+        setFieldError("otp", msg);
+        setStatus(msg);
+        setSubmitMessage(msg);
+        return;
+      }
+
+      const successMsg =
+        pickMsg(data?.message) || "تم إعادة تعيين كلمة المرور بنجاح!";
+      setSubmitMessage(successMsg);
+      toast.success(successMsg);
+      resetForm();
+      router.push("/signin");
+    } catch (error) {
+      const data = error?.response?.data;
+      const msg =
+        pickMsg(data?.error) ||
+        pickMsg(data?.message) ||
+        pickMsg(data) ||
+        "حدث خطأ غير متوقع";
+      setFieldError("otp", msg);
+      setStatus(msg);
+      setSubmitMessage(msg);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="flex items-center justify-center p-12 min-h-screen bg-gray-50"
+      dir="rtl"
+    >
+      <div className="mx-auto w-full max-w-[550px] bg-white rounded-lg shadow-lg p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-[#07074D] mb-2">
+            إعادة تعيين كلمة المرور
+          </h1>
+          <p className="text-gray-600">
+            تم إرسال رمز التحقق إلى بريدك الإلكتروني
+          </p>
+        </div>
+
+        <Formik
+          initialValues={initialValues}
+          validate={validate}
+          onSubmit={handleSubmit}
+        >
+          {({ isSubmitting: formikSubmitting, status }) => (
+            <Form>
+              {/* OTP Field */}
+              <div className="mb-5">
+                <label
+                  htmlFor="otp"
+                  className="mb-3 block text-base font-medium text-[#07074D]"
+                >
+                  رمز التحقق
+                </label>
+                <div className="relative">
+                  <Field
+                    type="text"
+                    name="otp"
+                    id="otp"
+                    placeholder="أدخل رمز التحقق (6 أرقام)"
+                    maxLength="6"
+                    className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
+                    style={{ letterSpacing: "0.5em" }}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                    }}
+                  />
+                  <FiLock className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6B7280]" />
+                </div>
+                <ErrorMessage
+                  name="otp"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+
+              {/* Password Field */}
+              <div className="mb-5">
+                <label
+                  htmlFor="password"
+                  className="mb-3 block text-base font-medium text-[#07074D]"
+                >
+                  كلمة المرور الجديدة
+                </label>
+                <Field
+                  type="password"
+                  name="password"
+                  id="password"
+                  placeholder="أدخل كلمة المرور الجديدة"
+                  className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md"
+                />
+                <ErrorMessage
+                  name="password"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="mb-5">
+                <label
+                  htmlFor="confirmPassword"
+                  className="mb-3 block text-base font-medium text-[#07074D]"
+                >
+                  تأكيد كلمة المرور
+                </label>
+                <Field
+                  type="password"
+                  name="confirmPassword"
+                  id="confirmPassword"
+                  placeholder="أعد إدخال كلمة المرور"
+                  className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md"
+                />
+                <ErrorMessage
+                  name="confirmPassword"
+                  component="div"
+                  className="text-red-500 text-sm mt-1"
+                />
+              </div>
+
+              {/* General Error */}
+              {status && (
+                <div className="mb-4 p-3 rounded-md text-center text-sm bg-red-50 text-red-700 border border-red-200">
+                  {String(status)}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <div className="mb-4">
+                <button
+                  type="submit"
+                  disabled={formikSubmitting || isSubmitting}
+                  className="hover:shadow-form w-full rounded-md bg-[hsl(var(--primary))] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:bg-[hsl(var(--primary)/0.9)]"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center">
+                      <svg
+                        className="animate-spin h-5 w-5 ml-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      جاري التحقق...
+                    </div>
+                  ) : (
+                    "تأكيد وإعادة التعيين"
+                  )}
+                </button>
+              </div>
+
+              {/* Back to Login */}
+              <div className="text-center">
+                <Link
+                  href="/signin"
+                  className="text-[hsl(var(--primary))] hover:underline text-sm font-medium transition-colors duration-200"
+                >
+                  العودة لتسجيل الدخول
+                </Link>
+              </div>
+
+              {/* Success/Error Message */}
+              {submitMessage && (
+                <div
+                  className={`mt-4 p-3 rounded-md text-center text-sm border ${
+                    submitMessage.includes("بنجاح") ||
+                    submitMessage.toLowerCase().includes("success")
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
+                  {String(submitMessage)}
+                </div>
+              )}
+            </Form>
+          )}
+        </Formik>
+
+        {/* Resend OTP */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 text-sm">
+            لم تستلم الرمز؟{" "}
+            <button
+              type="button"
+              disabled={resendDisabled}
+              className={`font-medium transition-colors duration-200 ${
+                resendDisabled
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[hsl(var(--primary))] hover:underline"
+              }`}
+              onClick={handleResendOTP}
+            >
+              {resendDisabled
+                ? `إعادة الإرسال (${resendCountdown})`
+                : "إعادة الإرسال"}
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
