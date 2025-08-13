@@ -491,7 +491,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   const player = await Player.findOne({ user: userId }).populate(
     "user",
     "name email phone"
-  );
+  ).select("+_id");
 
   if (!player) {
    return res.status(404).json(new ApiResponse(404, null, "Player not found"));

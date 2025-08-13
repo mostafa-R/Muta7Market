@@ -29,94 +29,150 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-// واجهة Player المستخدمة في المكون
-interface Player {
-  id: string;
-  name: string;
-  age: number;
-  status: "Free Agent" | "Contracted" | "Transferred";
-  gender: "Male" | "Female";
-  nationality: string;
-  category: "Amateur" | "Professional" | "Elite";
-  monthlySalary?: number;
-  yearSalary?: number;
-  annualContractValue?: number;
-  contractConditions?: string;
-  transferDeadline?: string;
-  sport: string;
-  position?: string;
-  profileImage?: string;
-  rating?: number;
-  experience?: number;
-  views?: number;
-}
-
-// واجهة لبيانات الـ API الخام
-interface ApiPlayer {
-  _id: string;
-  user: null | string;
-  name: string;
-  age: number;
-  gender: string;
-  nationality: string;
-  category: string;
-  position: string;
-  status: string;
-  expreiance: number;
-  monthlySalary: {
-    amount: number;
-    currency: string;
-  };
-  yearSalary: {
-    amount: number;
-    currency: string;
-  };
-  game: string;
-  views: number;
-  isActive: boolean;
-  contractEndDate?: string;
-  media?: {
-    profileImage?: {
-      url: string;
-      publicId: string;
-    };
-  };
-}
-
-// دالة لتحويل بيانات الـ API إلى واجهة Player
-const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
-  id: apiPlayer._id,
-  name: apiPlayer.name,
-  age: apiPlayer.age,
-  status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
-  gender: apiPlayer.gender === "male" ? "Male" : "Female",
-  nationality: apiPlayer.nationality,
-  category: apiPlayer.category === "player" ? "Professional" : "Elite",
-  monthlySalary: apiPlayer.monthlySalary?.amount,
-  annualContractValue: apiPlayer.yearSalary?.amount,
-  contractConditions: undefined,
-  transferDeadline: apiPlayer.contractEndDate,
-  sport: apiPlayer.game,
-  position: apiPlayer.position,
-  profileImage: apiPlayer.media?.profileImage?.url || undefined,
-  rating: undefined,
-  experience: apiPlayer.expreiance,
-});
-
-// عنوان الـ API
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerProfile = () => {
   const params = useParams();
   const playerId = Array.isArray(params?.playerId)
     ? params?.playerId[0]
-    : (params?.playerId as string);
-  const [player, setPlayer] = useState<Player | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+    : (params?.playerId || "").toString();
+  const [player, setPlayer] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
-  // جلب بيانات اللاعب باستخدام Axios
+
+
+  const handleSendMessage = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
+
+    try {
+      // التأكد من وجود بيانات الاتصال والرقم
+      const phoneNumber = player.user?.phone; // استخدام optional chaining
+      if (phoneNumber) {
+        // صيغة رقم الهاتف في واتساب (إزالة الصفر في البداية)
+        const formattedNumber = phoneNumber.replace(/^0/, "");
+        // فتح رابط واتساب
+        window.open(`https://wa.me/${formattedNumber}`, "_blank");
+      } else {
+        toast.error("لا يوجد رقم هاتف متاح لهذا اللاعب");
+      }
+    } catch (error) {
+      toast.error("حدث خطأ أثناء محاولة الاتصال باللاعب");
+      console.error(error);
+    }
+  };
+
+  // طلب رقم الهاتف
+  const handleRequestPhone = () => {
+    const phone = player.user?.phone; // استخدام optional chaining
+    if (phone) {
+      navigator.clipboard
+        .writeText(phone)
+        .then(() => {
+          alert("تم نسخ رقم الهاتف: " + phone);
+          toast.success(`تم نسخ رقم الهاتف: ${phone}`);
+        })
+        .catch(() => {
+          toast.error("فشل في نسخ رقم الهاتف");
+        });
+    } else {
+      toast.error("رقم الهاتف غير متاح حالياً");
+    }
+  };
+
+  // إرسال بريد إلكتروني
+  const handleSendEmail = () => {
+    const email = player?.user?.email;
+    console.log("Email:", email);
+
+    if (email) {
+      // فتح في نافذة جديدة لتجنب حظر المتصفح
+      window.open(`mailto:${email}`, "_blank");
+    } else {
+      toast.error("البريد الإلكتروني غير متاح");
+    }
+  };
+
+
+  // إضافة للمفضلة
+  const handleAddToFavorites = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
+
+    try {
+      // محاكاة API
+      await fetch(`/api/players/${player._id}/favorite`, {
+        method: isFavorite ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setIsFavorite(!isFavorite);
+      toast.success(
+        isFavorite ? "تم الإزالة من المفضلة" : "تمت الإضافة للمفضلة"
+      );
+    } catch (error) {
+      toast.error("حدث خطأ أثناء تعديل المفضلة");
+    }
+  };
+
+  // مشاركة الملف الشخصي
+  const handleShareProfile = async () => {
+    const shareUrl = window.location.href;
+    const shareText = `تحقق من ملف اللاعب ${player.name}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `ملف ${player.name}`,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch {
+        // تجاهل الإلغاء
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        toast.success("تم نسخ رابط الملف الشخصي");
+      });
+    }
+  };
+
+  // متابعة اللاعب
+  const handleFollowPlayer = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
+
+    try {
+      // محاكاة API
+      await fetch(`/api/players/${player._id}/follow`, {
+        method: isFollowing ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setIsFollowing(!isFollowing);
+      toast.success(isFollowing ? "تم إلغاء المتابعة" : "تمت متابعة اللاعب");
+    } catch (error) {
+      toast.error("حدث خطأ أثناء تعديل المتابعة");
+    }
+  };
+
   useEffect(() => {
     const fetchPlayer = async () => {
       if (!playerId) {
@@ -128,7 +184,7 @@ const PlayerProfile = () => {
       try {
         setLoading(true);
         const response = await axios.get(`${API_URL}/${playerId}`);
-        const fetchedPlayer = transformApiDataToPlayer(response.data.data);
+        const fetchedPlayer = response.data.data; // استخدم البيانات مباشرة
         setPlayer(fetchedPlayer);
         setLoading(false);
       } catch (err) {
@@ -140,7 +196,6 @@ const PlayerProfile = () => {
     fetchPlayer();
   }, [playerId]);
 
-  // عرض حالة التحميل
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -155,7 +210,6 @@ const PlayerProfile = () => {
     );
   }
 
-  // عرض حالة الخطأ أو اللاعب غير موجود
   if (error || !player) {
     return (
       <div className="min-h-screen bg-background">
@@ -176,20 +230,20 @@ const PlayerProfile = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case "Free Agent":
+      case "available":
         return "bg-green-500";
-      case "Contracted":
+      case "contracted":
         return "bg-blue-500";
-      case "Transferred":
+      case "transferred":
         return "bg-orange-500";
       default:
         return "bg-gray-500";
     }
   };
 
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = (category) => {
     switch (category) {
       case "Elite":
         return "bg-yellow-500";
@@ -202,36 +256,9 @@ const PlayerProfile = () => {
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "Free Agent":
-        return "حر";
-      case "Contracted":
-        return "متعاقد";
-      case "Transferred":
-        return "منتقل";
-      default:
-        return status;
-    }
-  };
-
-  const getCategoryText = (category: string) => {
-    switch (category) {
-      case "Elite":
-        return "نخبة";
-      case "Professional":
-        return "محترف";
-      case "Amateur":
-        return "هاوي";
-      default:
-        return category;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
         <div className="flex items-center space-x-2 space-x-reverse text-sm text-muted-foreground mb-6">
           <Link
             href="/players"
@@ -244,14 +271,15 @@ const PlayerProfile = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Profile */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Header Card */}
             <Card className="border-0 shadow-card">
               <CardContent className="p-8 bg-white rounded-xl">
                 <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-6 md:space-x-reverse">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-lg ml-3 mr-3">
-                    <AvatarImage src={player.profileImage} alt={player.name} />
+                    <AvatarImage
+                      src={player.media?.profileImage?.url}
+                      alt={player.name}
+                    />
                     <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
                       {player.name
                         .split(" ")
@@ -270,14 +298,18 @@ const PlayerProfile = () => {
                             player.status
                           )} text-white ml-2 mr-2`}
                         >
-                          {getStatusText(player.status)}
+                          {player.status === "available"
+                            ? "حر"
+                            : player.status === "contracted"
+                            ? "متعاقد"
+                            : "منتقل"}
                         </Badge>
                         <Badge
                           className={`${getCategoryColor(
                             player.category
                           )} text-white`}
                         >
-                          {getCategoryText(player.category)}
+                          {player.category === "player" ? "محترف" : "نخبة"}
                         </Badge>
                       </div>
                     </div>
@@ -298,7 +330,7 @@ const PlayerProfile = () => {
                       <div className="flex items-center space-x-2 space-x-reverse">
                         <Trophy className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">الرياضة:</span>
-                        <span className="font-medium">{player.sport}</span>
+                        <span className="font-medium">{player.game}</span>
                       </div>
                       {player.position && (
                         <div className="flex items-center space-x-2 space-x-reverse">
@@ -308,24 +340,13 @@ const PlayerProfile = () => {
                         </div>
                       )}
                     </div>
-
-                    {/* {player.rating && (
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <span className="text-muted-foreground">التقييم:</span>
-                        <div className="flex items-center space-x-1 space-x-reverse">
-                          <span className="font-semibold text-lg mr-2">
-                            {player.rating}/5
-                          </span>
-                        </div>
-                      </div>
-                    )} */}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Financial Information */}
-            {(player.monthlySalary || player.annualContractValue) && (
+            {(player.monthlySalary || player.yearSalary) && (
               <Card className="border-0 shadow-card bg-white">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 space-x-reverse">
@@ -340,29 +361,26 @@ const PlayerProfile = () => {
                         الراتب الشهري
                       </span>
                       <span className="text-2xl font-bold text-primary">
-                        ${player.monthlySalary.toLocaleString()}
+                        ${player.monthlySalary.amount.toLocaleString()}
                       </span>
                     </div>
                   )}
-                  {player.annualContractValue !== null &&
-                    player.annualContractValue !== undefined && (
-                      <div className="flex items-center justify-between p-4 bg-secondary/5 rounded-lg">
-                        <span className="text-muted-foreground">
-                          قيمة العقد السنوي
-                        </span>
-                        <span className="text-2xl font-bold text-secondary">
-                          {player.annualContractValue === 0
-                            ? "غير محدد"
-                            : player.annualContractValue.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
+                  {player.yearSalary && (
+                    <div className="flex items-center justify-between p-4 bg-secondary/5 rounded-lg">
+                      <span className="text-muted-foreground">
+                        قيمة العقد السنوي
+                      </span>
+                      <span className="text-2xl font-bold text-secondary">
+                        ${player.yearSalary.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
 
             {/* Contract Information */}
-            {(player.contractConditions || player.transferDeadline) && (
+            {player.contractEndDate && (
               <Card className="border-0 shadow-card">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 space-x-reverse">
@@ -371,31 +389,16 @@ const PlayerProfile = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {player.contractConditions && (
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-2">
-                        شروط العقد
-                      </h4>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {player.contractConditions}
-                      </p>
-                    </div>
-                  )}
-                  {player.transferDeadline && (
-                    <div className="flex items-center space-x-2 space-x-reverse text-orange-600 bg-orange-50 p-3 rounded-lg">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">
-                        موعد انتهاء الانتقال:{" "}
-                        {new Date(player.transferDeadline).toLocaleDateString(
-                          "ar-us",
-                          {
-                            month: "long",
-                            year: "numeric",
-                          }
-                        )}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2 space-x-reverse text-orange-600 bg-orange-50 p-3 rounded-lg">
+                    <Clock className="w-4 h-4" />
+                    <span className="font-medium">
+                      موعد انتهاء العقد:{" "}
+                      {new Date(player.contractEndDate).toLocaleDateString(
+                        "ar-US",
+                        { year: "numeric", month: "long", day: "numeric" }
+                      )}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -404,20 +407,33 @@ const PlayerProfile = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Actions */}
+            {/* Contact Actions */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
                 <CardTitle>تواصل مع اللاعب</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="default" className="w-full">
+                <Button
+                  variant="default"
+                  className="w-full cursor-pointer"
+                  onClick={handleSendMessage}
+                >
                   <MessageCircle className="w-4 h-4 ml-2" />
                   إرسال رسالة
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  onClick={handleRequestPhone}
+                >
                   <Phone className="w-4 h-4 ml-2" />
                   طلب رقم الهاتف
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  onClick={handleSendEmail}
+                >
                   <Mail className="w-4 h-4 ml-2" />
                   إرسال إيميل
                 </Button>
@@ -430,21 +446,32 @@ const PlayerProfile = () => {
                 <CardTitle>إجراءات</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  onClick={handleAddToFavorites}
+                >
                   <Heart className="w-4 h-4 ml-2" />
                   إضافة للمفضلة
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  onClick={handleShareProfile}
+                >
                   <Share2 className="w-4 h-4 ml-2" />
                   مشاركة الملف
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  onClick={handleFollowPlayer}
+                >
                   <User className="w-4 h-4 ml-2" />
                   متابعة اللاعب
                 </Button>
               </CardContent>
             </Card>
-
             {/* Stats */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
@@ -457,7 +484,7 @@ const PlayerProfile = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">سنوات الخبرة</span>
                   <span className="font-semibold">
-                    {player.experience || "غير محدد"}
+                    {player.expreiance || "غير محدد"}
                   </span>
                 </div>
                 <Separator />

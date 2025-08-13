@@ -5,10 +5,10 @@ export const sportsOptions = [
   { label: "الريشة الطائرة", value: "badminton" },
   { label: "ألعاب القوى", value: "athletics" },
   { label: "التنس", value: "tennis" },
-  { label: "كرة الطاولة", value: "table_tennis" },
+  { label: "كرة الطاولة", value: "tabletennis" },
   { label: "الكاراتيه", value: "karate" },
   { label: "التايكوندو", value: "taekwondo" },
-  { label: "السهام", value: "darts" },
+  { label: "السهام", value: "archery" },
   { label: "الرياضات الالكترونية", value: "esports" },
   { label: "السباحة", value: "swimming" },
   { label: "الجودو", value: "judo" },
@@ -19,7 +19,7 @@ export const sportsOptions = [
   { label: "كرة قدم الصالات", value: "futsal" },
   { label: "الملاكمة", value: "boxing" },
   { label: "الجمباز", value: "gymnastics" },
-  { label: "البلياردو والسنوكر", value: "billiards_snooker" },
+  { label: "البلياردو والسنوكر", value: "billiards" },
   { label: "المصارعة", value: "wrestling" },
 ];
 

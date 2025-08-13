@@ -338,6 +338,7 @@ const UserProfile = () => {
                 isLoading={isUpdating}
                 error={error}
                 success={success}
+                router={router}
               />
             )}
           </div>

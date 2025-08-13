@@ -211,7 +211,7 @@ const PlayerCard = ({ player }) => {
           <button
             type="button"
             className="w-full group bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] 
-            border border-[hsl(var(--primary))] rounded-lg px-4 py-2 hover:bg-[hsl(var(--primary)/0.9)] hover:text-white transition flex items-center justify-center"
+            border border-[hsl(var(--primary))] rounded-lg px-4 py-2 hover:bg-[hsl(var(--primary)/0.9)] hover:text-white transition flex items-center justify-center cursor-pointer"
           >
             <Eye className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
             عرض الملف الشخصي

@@ -1,9 +1,17 @@
 "use client";
-import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const PlayerProfile = ({ player, handleSubmit, isLoading, error, success }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const PlayerProfile = ({
+  player,
+  handleSubmit,
+  isLoading,
+  error,
+  success,
+  router,
+  onChange,
+}) => {
+  const [isEditing, setIsEditing] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({});
 
@@ -177,7 +185,7 @@ const PlayerProfile = ({ player, handleSubmit, isLoading, error, success }) => {
             </div>
           </div>
 
-          {/* Security Section */}
+          {/* Security Section
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <i className="fas fa-lock text-purple-600"></i>
@@ -191,7 +199,7 @@ const PlayerProfile = ({ player, handleSubmit, isLoading, error, success }) => {
               onChange={handleChange}
               name="password"
             />
-          </div>
+          </div> */}
 
           {/* Messages */}
           {error && (
@@ -212,11 +220,13 @@ const PlayerProfile = ({ player, handleSubmit, isLoading, error, success }) => {
             <button
               type="button"
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
-              onClick={handleEditToggle}
+              onClick={() =>
+                router.push(`/register-profile?id=${player._id}`)
+              }
             >
-              {isEditing ? "إلغاء التعديل" : "تعديل"}
+              تعديل
             </button>
-            {isEditing && (
+            {/* {isEditing && (
               <button
                 type="submit"
                 className="px-6 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#001a3d] transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
@@ -234,7 +244,7 @@ const PlayerProfile = ({ player, handleSubmit, isLoading, error, success }) => {
                   </>
                 )}
               </button>
-            )}
+            )} */}
           </div>
         </form>
       </div>
