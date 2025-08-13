@@ -1,24 +1,27 @@
-import { Router } from 'express';
-import {
-  notPaied,
-  update
-} from '../controllers/user.controller.js';
-import { roleMiddleware } from '../middleware/roleMiddleware.js';
-import { authMiddleware } from '../middleware/auth.middleware.js';
+import { Router } from "express";
+import { notPaied, update } from "../controllers/user.controller.js";
+import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
+import { uploadMixed } from "../config/cloudinary.js";
+import validate from "../middleware/validation.middleware.js";
+import { updateProfileSchema } from "../validators/auth.validator.js";
 // import profileUpload from "../middleware/uploads/profileUpload.js";
 
 const userRoutes = Router();
 
 userRoutes.use(authMiddleware);
 
-userRoutes.patch('/update',  update);
+userRoutes.patch(
+  "/update",
+  verifiedOnly,
+  uploadMixed.fields([{ name: "profileImage", maxCount: 1 }]),
+  validate(updateProfileSchema),
+  update
+);
+
 
 userRoutes.get("/notpaid", notPaied);
 
-
 // userRoutes.get("/allusers", roleMiddleware(["admin"]), getAllUsers);
-
-
 
 // userRoutes.get("/notifications", roleMiddleware(["admin"]), getNotifictions);
 

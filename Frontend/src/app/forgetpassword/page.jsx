@@ -53,8 +53,9 @@ export default function ForgotPassword() {
     values,
     { setSubmitting, setFieldError, setStatus }
   ) => {
-    setIsSubmitting(true);
-    setSubmitMessage("");
+    setIsSubmitting(true); // حالة محلية إذا كانت موجودة
+    setSubmitting(true); // لحالة Formik
+    setSubmitMessage(""); // مسح الرسائل السابقة
     setStatus(null);
 
     try {
@@ -65,63 +66,65 @@ export default function ForgotPassword() {
         },
       });
 
-      // Success handling
-      if (response.data.success || response.status === 200) {
+      // التحقق من النجاح الحقيقي: status 200 و success true
+      if (response.status === 200 && response.data.success) {
         setSubmitMessage(
           "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني!"
         );
         toast.success("تم إرسال رابط إعادة تعيين كلمة المرور بنجاح!");
 
-        // Navigate to reset password page after success
+        // توجيه بعد تأخير للسماح للمستخدم بقراءة الرسالة
         setTimeout(() => {
           router.push("/otp-for-restpassword");
         }, 2000);
       } else {
-        setSubmitMessage("حدث خطأ أثناء إرسال الطلب");
-        toast.error("حدث خطأ أثناء إرسال الطلب");
+        // إذا status 200 لكن !success، عامل كخطأ وارمِ للـ catch
+        throw new Error(response.data.error?.message || "حدث خطأ غير متوقع");
       }
     } catch (error) {
-      console.error("Forgot Password Error:", error);
+      console.error(
+        "Forgot Password Error:",
+        error.toJSON ? error.toJSON() : error
+      ); // تسجيل دقيق باستخدام toJSON من Axios
 
       if (error.response && error.response.data) {
         const data = error.response.data;
 
-        // Handle specific field errors
+        // التعامل مع أخطاء الحقول (مثل validation errors)
         if (data.errors) {
           Object.entries(data.errors).forEach(([field, errorMessage]) => {
             setFieldError(field, errorMessage);
           });
-        } else if (
-          data.error?.includes("not found") ||
+          toast.error("يرجى التحقق من الحقول المحددة");
+        }
+        // التعامل مع رسائل الخطأ المحددة من الخلفية
+        else if (
+          data.error?.message === "No user found with this email" ||
           data.message?.includes("not found")
         ) {
           setFieldError("email", "البريد الإلكتروني غير مسجل في النظام");
           toast.error("البريد الإلكتروني غير مسجل في النظام");
-        } else {
-          setSubmitMessage(
-            data.error ||
-              data.message ||
-              "البريد الإلكتروني غير مسجل. يرجى المحاولة مرة أخرى."
-          );
-          setStatus(
-            data.error ||
-              data.message ||
-              "البريد الإلكتروني غير مسجل. يرجى المحاولة مرة أخرى."
-          );
-          toast.error(
-            data.error ||
-              data.message ||
-              "البريد الإلكتروني غير مسجل. يرجى المحاولة مرة أخرى."
-          );
+        }
+        // أخطاء عامة أخرى
+        else {
+          const errorMsg =
+            data.error?.message || data.message || "حدث خطأ أثناء إرسال الطلب";
+          setSubmitMessage(errorMsg);
+          setStatus(errorMsg);
+          toast.error(errorMsg);
         }
       } else if (error.request) {
-        setSubmitMessage("فشل في الاتصال بالخادم");
-        setStatus("فشل في الاتصال بالخادم");
-        toast.error("فشل في الاتصال بالخادم");
+        // مشكلة شبكة: لا استجابة من الخادم
+        const networkMsg = "فشل في الاتصال بالخادم، يرجى التحقق من الإنترنت";
+        setSubmitMessage(networkMsg);
+        setStatus(networkMsg);
+        toast.error(networkMsg);
       } else {
-        setSubmitMessage("حدث خطأ غير متوقع");
-        setStatus("حدث خطأ غير متوقع");
-        toast.error("حدث خطأ غير متوقع");
+        // خطأ في الإعداد أو غير متوقع
+        const generalMsg = error.message || "حدث خطأ غير متوقع";
+        setSubmitMessage(generalMsg);
+        setStatus(generalMsg);
+        toast.error(generalMsg);
       }
     } finally {
       setIsSubmitting(false);

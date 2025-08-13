@@ -1,5 +1,7 @@
 // components/profile/EditProfile.jsx
-import React from "react";
+"use client";
+import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const EditProfile = ({
   register,
@@ -16,38 +18,63 @@ const EditProfile = ({
     label,
     name,
     type = "text",
+    disabled = false,
     placeholder,
     isTextarea = false,
     rows = 4,
-  }) => (
-    <div className="mb-6">
-      <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
-        <i className={`fas ${icon} text-purple-600`}></i>
-        {label}
-      </label>
-      {isTextarea ? (
-        <textarea
-          {...register(name)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
-          placeholder={placeholder}
-          rows={rows}
-        />
-      ) : (
-        <input
-          {...register(name)}
-          type={type}
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-          placeholder={placeholder}
-        />
-      )}
-      {errors[name] && (
-        <p className="text-red-500 text-sm flex items-center gap-1 mt-2">
-          <i className="fas fa-exclamation-circle"></i>
-          {errors[name].message}
-        </p>
-      )}
-    </div>
-  );
+  }) => {
+    const [showPassword, setShowPassword] = useState(false);
+
+    const togglePassword = () => setShowPassword((prev) => !prev);
+
+    return (
+      <div className="mb-6">
+        {/* Label */}
+        <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
+          <i className={`fas ${icon} text-purple-600`}></i>
+          {label}
+        </label>
+
+        {/* Input / Textarea */}
+        {isTextarea ? (
+          <textarea
+            {...register(name)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] text-gray-500 focus:border-transparent transition-all resize-none"
+            placeholder={placeholder}
+            rows={rows}
+            disabled={disabled}
+          />
+        ) : (
+          <div className="relative">
+            <input
+              {...register(name)}
+              type={type === "password" && showPassword ? "text" : type}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] focus:border-transparent transition-all pr-10"
+              placeholder={placeholder}
+              disabled={disabled}
+            />
+            {type === "password" && (
+              <button
+                type="button"
+                onClick={togglePassword}
+                className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Error Message */}
+        {errors?.[name] && (
+          <p className="text-red-500 text-sm flex items-center gap-1 mt-2">
+            <i className="fas fa-exclamation-circle"></i>
+            {errors[name].message}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -65,7 +92,7 @@ const EditProfile = ({
           {/* Basic Information Section */}
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <i className="fas fa-user text-purple-600"></i>
+              <i className="fas fa-user text-[#00183D]"></i>
               المعلومات الأساسية
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -81,18 +108,13 @@ const EditProfile = ({
                 name="email"
                 type="email"
                 placeholder="أدخل البريد الإلكتروني"
+                disabled={true}
               />
               <FormField
                 icon="fa-phone"
                 label="رقم الهاتف"
                 name="phone"
                 placeholder="أدخل رقم الهاتف"
-              />
-              <FormField
-                icon="fa-birthday-cake"
-                label="تاريخ الميلاد"
-                name="dateOfBirth"
-                type="date"
               />
             </div>
           </div>
@@ -104,24 +126,6 @@ const EditProfile = ({
               معلومات إضافية
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                icon="fa-map-marker-alt"
-                label="العنوان"
-                name="address"
-                placeholder="أدخل العنوان"
-              />
-              <FormField
-                icon="fa-briefcase"
-                label="المهنة"
-                name="occupation"
-                placeholder="أدخل المهنة"
-              />
-              <FormField
-                icon="fa-globe"
-                label="الموقع الإلكتروني"
-                name="website"
-                placeholder="https://example.com"
-              />
               <div className="md:col-span-2">
                 <FormField
                   icon="fa-user-tag"
@@ -145,7 +149,22 @@ const EditProfile = ({
               label="كلمة المرور الجديدة"
               name="password"
               type="password"
-              placeholder="أدخل كلمة المرور الجديدة (اختياري)"
+              placeholder=" كلمة المرور الجديدة"
+            />
+            <FormField
+              icon="fa-lock"
+              label="تاكيد كلمة المرور الجديدة"
+              name="confirmPassword"
+              type="password"
+              placeholder="تاكيد كلمة المرور الجديدة"
+            />
+
+            <FormField
+              icon="fa-lock"
+              label="كلمة المرور الحالية"
+              name="oldPassword"
+              type="password"
+              placeholder="كلمة المرور الحالية"
             />
           </div>
 

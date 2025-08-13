@@ -11,31 +11,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-export interface Player {
-  id: string;
-  name: string;
-  age: number;
-  status: "Free Agent" | "Contracted" | "Transferred";
-  gender: "Male" | "Female";
-  nationality: string;
-  category: string;
-  monthlySalary?: number;
-  annualContractValue?: number;
-  contractConditions?: string;
-  transferDeadline?: string;
-  sport: string;
-  position?: string;
-  profilePicture?: string;
-  rating?: number;
-  experience?: number;
-  profileImage?: string;
-}
-
-interface PlayerCardProps {
-  player: Player;
-}
-
-const getStatusColor = (status: Player["status"]) => {
+// دالة للحصول على لون الحالة
+const getStatusColor = (status) => {
   switch (status) {
     case "Free Agent":
       return "bg-gray-500";
@@ -48,19 +25,20 @@ const getStatusColor = (status: Player["status"]) => {
   }
 };
 
-const getCategoryColor = (category: Player["category"]) => {
+// دالة للحصول على لون الفئة
+const getCategoryColor = (category) => {
   switch (category) {
     case "player":
       return "bg-blue-500";
     case "coach":
       return "bg-blue-500";
-
     default:
       return "bg-gray-500";
   }
 };
 
-const getStatusText = (status: Player["status"]) => {
+// دالة للحصول على نص الحالة (بالعربية)
+const getStatusText = (status) => {
   switch (status) {
     case "Free Agent":
       return "حر";
@@ -73,23 +51,22 @@ const getStatusText = (status: Player["status"]) => {
   }
 };
 
-const getCategoryText = (category: Player["category"]) => {
+// دالة للحصول على نص الفئة
+const getCategoryText = (category) => {
   switch (category) {
     case "player":
       return "player";
     case "coach":
       return "coach";
-
     default:
       return category;
   }
 };
 
-
-const PlayerCard = ({ player: player }: PlayerCardProps) => {
-
+// المكون الرئيسي
+const PlayerCard = ({ player }) => {
   return (
-    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-full min-h-[400px]  w-[300px]">
+    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-full min-h-[400px] w-[300px]">
       {/* Header with Avatar and Status */}
       <div className="relative p-6 pb-4">
         <div className="absolute top-4 right-4 flex space-x-4 space-x-reverse">
@@ -116,7 +93,7 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
         </div>
 
         <div className="mr-auto ml-auto flex items-center justify-center flex-col">
-          <div className="w-24 h-24 rounded-full border-1 border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
+          <div className="w-24 h-24 rounded-full border border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
             {player.profileImage ? (
               <Image
                 src={player.profileImage}
@@ -151,19 +128,20 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
       </div>
 
       {/* Player Info */}
-      <div className="px-6 pb-4 space-y-3 h-45 mt-3">
-        <div className="grid grid-cols-2  text-sm">
+      <div className="px-6 pb-4 space-y-3 mt-3">
+        <div className="grid grid-cols-2 text-sm">
           <div className="flex items-center space-x-2 space-x-reverse">
-            <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))] " />
+            <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
             <span className="text-[hsl(var(--muted-foreground))]">العمر:</span>
             <span className="font-medium ml-1 mr-1">{player.age} سنة</span>
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <Trophy className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-            <span className="text-[hsl(var(--muted-foreground))] ">
+            <span className="text-[hsl(var(--muted-foreground))]">
               الرياضة:
             </span>
             <span className="font-medium ml-1 mr-1">{player.sport}</span>
+            
           </div>
         </div>
 
@@ -175,25 +153,15 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
           </div>
         )}
 
-        {/* {player.rating && (
+        {player.jop && (
           <div className="flex items-center space-x-2 space-x-reverse text-sm">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${
-                    i < player.rating!
-                      ? "text-yellow-400 fill-current"
-                      : "text-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="font-medium ml-1 mr-1">{player.rating}/5</span>
+            <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+            <span className="text-[hsl(var(--muted-foreground))]">العمل:</span>
+            <span className="font-medium ml-1 mr-1">{player.jop}</span>
           </div>
-        )} */}
+        )}
 
-        {(player.monthlySalary || player.annualContractValue) && (
+        {(player.monthlySalary || player.annualContractValue != null) && (
           <div className="bg-[hsl(var(--muted))] rounded-lg p-3 space-y-2">
             {player.monthlySalary && (
               <div className="flex items-center justify-between text-sm">
@@ -209,22 +177,21 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
               </div>
             )}
 
-            {player.annualContractValue !== null &&
-              player.annualContractValue !== undefined && (
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
-                    <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
-                      قيمة العقد السنوي:
-                    </span>
-                  </div>
-                  <span className="font-semibold text-[hsl(var(--primary))]">
-                    {player.annualContractValue === 0
-                      ? "غير محدد"
-                      : player.annualContractValue.toLocaleString()}
+            {player.annualContractValue != null && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
+                  <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
+                    قيمة العقد السنوي:
                   </span>
                 </div>
-              )}
+                <span className="font-semibold text-[hsl(var(--primary))]">
+                  {player.annualContractValue === 0
+                    ? "غير محدد"
+                    : player.annualContractValue.toLocaleString()}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -233,7 +200,7 @@ const PlayerCard = ({ player: player }: PlayerCardProps) => {
             <Clock className="w-4 h-4" />
             <span>موعد انتهاء الانتقال:</span>
             <span className="font-medium ml-2 mr-2">
-              {new Date(player.transferDeadline).toLocaleDateString("ar-en", {
+              {new Date(player.transferDeadline).toLocaleDateString("ar-EG", {
                 month: "long",
                 year: "numeric",
               })}

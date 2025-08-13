@@ -9,7 +9,7 @@ const ErrorMessage = ({ message }) => (
       <p className="text-gray-600">{message}</p>
       <button 
         onClick={() => window.location.reload()} 
-        className="mt-6 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+        className="mt-6 px-6 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#00183D]/90 transition-colors"
       >
         إعادة المحاولة
       </button>

@@ -1,17 +1,12 @@
 // components/profile/ProfileView.jsx
-import React from "react";
 import Image from "next/image";
 import {
-  FaUser,
-  FaEnvelope,
-  FaPhone,
   FaCalendar,
   FaCheckCircle,
-  FaMapMarkerAlt,
-  FaBriefcase,
-  FaGlobe,
+  FaEnvelope,
+  FaPhone,
+  FaUser,
   FaUserTag,
-  FaBirthdayCake,
 } from "react-icons/fa";
 
 const ProfileView = ({ user }) => {
@@ -102,15 +97,13 @@ const ProfileView = ({ user }) => {
         {/* Information grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <InfoItem icon={FaPhone} label="رقم الهاتف" value={user.phone} />
-        
-          <InfoItem icon={FaBriefcase} label="المهنة" value={user.occupation} />
-          
+
           <InfoItem
             icon={FaUserTag}
             label="النبذة التعريفية"
             value={user.bio}
           />
-         
+
           <InfoItem
             icon={FaCalendar}
             label="تاريخ إنشاء الحساب"

@@ -4,7 +4,7 @@ import Joi from "joi";
 export const UserSchema = Joi.object({
   _id: Joi.string().required(),
   name: Joi.string()
-    .min(1)
+    .min(3)
     .required()
     .messages({ "string.empty": "الاسم الكامل مطلوب" }),
   profileImage: Joi.string().uri().allow("").optional(),
@@ -62,6 +62,10 @@ export const ProfileFormSchema = Joi.object({
       "string.pattern.base":
         "كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، حرف كبير، حرف صغير، رقم، ورمز خاص",
     }),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("password"))
+    .required()
+    .messages({ "any.only": "كلمتا المرور غير متطابقتين" }),  
   address: Joi.string().allow("").optional(),
   occupation: Joi.string().allow("").optional(),
   website: Joi.string().uri().allow("").optional(),

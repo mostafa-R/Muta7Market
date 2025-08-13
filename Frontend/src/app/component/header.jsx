@@ -8,9 +8,11 @@ import {
   Menu as MenuIcon,
   Trophy,
   User,
+
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -39,7 +41,8 @@ const UserProfileDropdown = ({
   const router = useRouter();
   const [user, setUser] = useState({});
 
-  console.log(user);
+
+  
   // const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {
     const fetchUser = async () => {
@@ -68,25 +71,34 @@ const UserProfileDropdown = ({
     );
   }
 
+  
+
   return (
     <Menu as="div" className="relative inline-block text-center bg-primary">
-      <Menu.Button
-        className={`flex items-center justify-center rounded-full w-12 h-12 border border-[hsl(var(--muted))] hover:border-[hsl(var(--border))] transition-colors duration-200 ${
-          fullWidth ? "w-full" : ""
-        } ${className}`}
-        aria-label="فتح قائمة المستخدم"
-      >
-        {user?.profileImage || profileImage ? (
-          <img
-            src={user?.profileImage || profileImage}
-            alt="صورة المستخدم"
-            className="w-12 h-12 rounded-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <User className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-        )}
-      </Menu.Button>
+   
+
+<Menu.Button
+  className={`flex items-center justify-center rounded-full w-12 h-12 border border-[hsl(var(--muted))] hover:border-[hsl(var(--border))] transition-colors duration-200 ${
+    fullWidth ? "w-full" : ""
+  } ${className}`}
+  aria-label="فتح قائمة المستخدم"
+>
+  {user?.profileImage && user.profileImage.trim() !== "" ? (
+    <Image
+      src={user.profileImage}
+      alt="صورة المستخدم"
+      width={48}
+      height={48}
+      className="w-12 h-12 rounded-full object-cover"
+      unoptimized
+    />
+  ) : (
+    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+      <User className="w-6 h-6 text-gray-500" />
+    </div>
+  )}
+</Menu.Button>
+
 
       <Transition
         enter="transition ease-out duration-100"
@@ -158,15 +170,10 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
   const router = useRouter();
   const [user, setUser] = useState({});
 
-  // const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // const response = await axios.get(API_URL, {
-        //   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        // });
-        // setUser(response.data?.data?.user || {});
-
+       
         setUser(JSON.parse(localStorage.getItem("user")));
       } catch (error) {
         console.error(error);
@@ -195,7 +202,7 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
+    <div className="fixed inset-0  z-50 flex justify-end">
       <div className="bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] w-72 h-full p-6 flex flex-col space-y-4 shadow-card relative">
         <button
           type="button"
@@ -320,7 +327,7 @@ const Navbar = () => {
             ))}
           </div> */}
 
-          <div className="hidden md:flex items-center space-x-8 space-x-reverse">
+          <div className="hidden md:flex items-center space-x-8 ">
             {navItems.map((item) => (
               <NavItem
                 key={item.path}

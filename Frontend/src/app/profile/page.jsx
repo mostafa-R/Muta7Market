@@ -48,12 +48,13 @@ const UserProfile = () => {
       const response = await axios.get(`${API_URL}/auth/profile`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
+     
 
-      if (!response.data?.data?.user) {
+      if (!response.data?.user) {
         throw new Error("بيانات المستخدم غير متوفرة");
       }
 
-      const userData = response.data.data.user;
+      const userData = response.data.user;
       setUser(userData);
       reset({
         name: userData.name,
@@ -80,7 +81,7 @@ const UserProfile = () => {
       const response = await axios.get(`${API_URL}/user/notpaid`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      console.log(response.data);
+     
       setPendingPayments([response.data] || []);
     } catch (err) {
       setError("فشل جلب بيانات المستخدم. حاول مرة أخرى.");

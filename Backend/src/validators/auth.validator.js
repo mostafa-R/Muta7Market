@@ -72,10 +72,28 @@ export const changePasswordSchema = Joi.object({
 });
 
 export const updateProfileSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(50),
+  name: Joi.string().trim().min(2).max(50).messages({
+    "string.min": "Name must be at least 2 characters",
+    "string.max": "Name cannot exceed 50 characters",
+  }),
   phone: Joi.string()
     .pattern(/^(\+?\d{1,3}[- ]?)?\d{7,14}$/)
     .messages({
       "string.pattern.base": "Please provide a valid phone number",
     }),
+  bio: Joi.string().trim().max(200).messages({
+    "string.max": "Bio cannot exceed 200 characters",
+  }),
+  profileImage: Joi.string().uri().allow(null, "").messages({
+    "string.uri": "Profile image must be a valid URL",
+  }),
+  email: Joi.string().email().trim().messages({
+    "string.email": "Please provide a valid email address",
+  }),
+  oldPassword: Joi.string().when("newPassword", {
+    is: Joi.exist(),
+    then: Joi.required(),
+  }),
+  newPassword: Joi.string().min(8).max(128),
+  confirmPassword: Joi.string().valid(Joi.ref("newPassword")),
 });

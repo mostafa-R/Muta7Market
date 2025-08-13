@@ -12,8 +12,8 @@ const userSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters']
     },
     profileImage: {
-      type: String,
-      default: null
+      url: String,
+      public_id: String
     },
     email: {
       type: String,
@@ -74,7 +74,8 @@ const userSchema = new mongoose.Schema(
       default: true
     },
     bio: {
-      type: String
+      type: String,
+      default: ""
     }
     // preferences: {
     //   language: {

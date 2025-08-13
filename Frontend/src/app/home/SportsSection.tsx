@@ -146,6 +146,7 @@ const sports = [
   },
 ];
 
+
 const SportsSection = () => {
   // تقسيم الرياضات إلى صفين متساويين
   const half = Math.ceil(sports.length / 2);

@@ -1,10 +1,10 @@
-import { deleteFile, deleteFromCloudinary } from '../config/cloudinary.js';
-import Player from '../models/player.model.js';
-import ApiError from '../utils/ApiError.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import { buildSortQuery, paginate } from '../utils/helpers.js';
-import { sendInternalNotification } from './notification.controller.js';
+import { deleteFile, deleteFromCloudinary } from "../config/cloudinary.js";
+import { default as Player } from "../models/player.model.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import { buildSortQuery, paginate } from "../utils/helpers.js";
+import { sendInternalNotification } from "./notification.controller.js";
 
 // Create Player Profile
 // Create Player Profile
@@ -14,7 +14,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
 
   const exists = await Player.findOne({ user: userId });
   if (exists) throw new ApiError(400, "Player profile already exists");
-  
+
   const profileImage = req.files?.profileImage?.[0] || null; // ✅ matches multer field
   const documentFile = req.files?.document?.[0] || null; // ✅ matches multer field
 
@@ -69,7 +69,6 @@ export const createPlayer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, player, "Player profile created successfully"));
 });
 
-
 // Get All Players (with advanced filtering)
 export const getAllPlayers = asyncHandler(async (req, res) => {
   const {
@@ -86,7 +85,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     salaryMin,
     salaryMax,
     isPromoted,
-    game
+    game,
   } = req.query;
 
   // Build query
@@ -95,44 +94,62 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   // Handle search across name (English and Arabic), position, and skills
   if (search) {
     query.$or = [
-      { 'name.en': { $regex: search, $options: 'i' } },
-      { 'name.ar': { $regex: search, $options: 'i' } },
-      { position: { $regex: search, $options: 'i' } },
-      { skills: { $in: [new RegExp(search, 'i')] } }
+      { "name.en": { $regex: search, $options: "i" } },
+      { "name.ar": { $regex: search, $options: "i" } },
+      { position: { $regex: search, $options: "i" } },
+      { skills: { $in: [new RegExp(search, "i")] } },
     ];
   }
 
   // Add filters for nationality, jop, status, gender, and game
-  if (nationality) {query.nationality = { $regex: nationality, $options: 'i' };} // Case-insensitive
-  if (jop) {query.jop = jop;}
-  if (status) {query.status = status;}
-  if (gender) {query.gender = gender;}
-  if (game) {query.game = { $regex: game, $options: 'i' };} // Case-insensitive for game
+  if (nationality) {
+    query.nationality = { $regex: nationality, $options: "i" };
+  } // Case-insensitive
+  if (jop) {
+    query.jop = jop;
+  }
+  if (status) {
+    query.status = status;
+  }
+  if (gender) {
+    query.gender = gender;
+  }
+  if (game) {
+    query.game = { $regex: game, $options: "i" };
+  } // Case-insensitive for game
 
   // Handle age range filter
   if (ageMin || ageMax) {
     query.age = {};
-    if (ageMin) {query.age.$gte = parseInt(ageMin);}
-    if (ageMax) {query.age.$lte = parseInt(ageMax);}
+    if (ageMin) {
+      query.age.$gte = parseInt(ageMin);
+    }
+    if (ageMax) {
+      query.age.$lte = parseInt(ageMax);
+    }
   }
 
   // Handle salary range filter
   if (salaryMin || salaryMax) {
-    query['monthlySalary.amount'] = {};
-    if (salaryMin) {query['monthlySalary.amount'].$gte = parseInt(salaryMin);}
-    if (salaryMax) {query['monthlySalary.amount'].$lte = parseInt(salaryMax);}
+    query["monthlySalary.amount"] = {};
+    if (salaryMin) {
+      query["monthlySalary.amount"].$gte = parseInt(salaryMin);
+    }
+    if (salaryMax) {
+      query["monthlySalary.amount"].$lte = parseInt(salaryMax);
+    }
   }
 
   // Handle promotion status filter
   if (isPromoted !== undefined) {
-    if (isPromoted === 'true') {
-      query['isPromoted.status'] = true;
-      query['isPromoted.endDate'] = { $gt: new Date() };
+    if (isPromoted === "true") {
+      query["isPromoted.status"] = true;
+      query["isPromoted.endDate"] = { $gt: new Date() };
     } else {
       query.$or = [
-        { 'isPromoted.status': { $ne: true } },
-        { 'isPromoted.endDate': { $lte: new Date() } },
-        { isPromoted: { $exists: false } }
+        { "isPromoted.status": { $ne: true } },
+        { "isPromoted.endDate": { $lte: new Date() } },
+        { isPromoted: { $exists: false } },
       ];
     }
   }
@@ -144,9 +161,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   // Default sort: Promoted players first, then by creation date
   if (!sortBy) {
     sort = {
-      'isPromoted.status': -1,
-      'isPromoted.startDate': -1,
-      createdAt: -1
+      "isPromoted.status": -1,
+      "isPromoted.startDate": -1,
+      createdAt: -1,
     };
   }
 
@@ -157,9 +174,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
         .sort(sort)
         .limit(limitNum)
         .skip(skip)
-        .populate('user', 'name email')
+        .populate("user", "name email")
         .lean(),
-      Player.countDocuments(query)
+      Player.countDocuments(query),
     ]);
 
     // Check if no players are found
@@ -173,10 +190,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
               total: 0,
               pages: 0,
               page: parseInt(page),
-              limit: limitNum
-            }
+              limit: limitNum,
+            },
           },
-          'No players found for the given criteria'
+          "No players found for the given criteria"
         )
       );
     }
@@ -190,21 +207,21 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
             total,
             pages: Math.ceil(total / limitNum),
             page: parseInt(page),
-            limit: limitNum
-          }
+            limit: limitNum,
+          },
         },
-        'Players fetched successfully'
+        "Players fetched successfully"
       )
     );
   } catch (error) {
-    console.error('Error in getAllPlayers:', error);
+    console.error("Error in getAllPlayers:", error);
     res
       .status(500)
       .json(
         new ApiResponse(
           500,
           null,
-          'Internal server error while fetching players'
+          "Internal server error while fetching players"
         )
       );
   }
@@ -215,8 +232,8 @@ export const getPlayerById = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
 
   const player = await Player.findById(playerId).populate(
-    'user',
-    'name email phone'
+    "user",
+    "name email phone"
   );
 
   // if (!player || !player.isActive) {
@@ -231,7 +248,7 @@ export const getPlayerById = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, player, 'Player fetched successfully'));
+    .json(new ApiResponse(200, player, "Player fetched successfully"));
 });
 
 // Update Player Profile
@@ -413,12 +430,12 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
-  if (userRole !== 'admin' && player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, 'You can only delete your own profile');
+  if (userRole !== "admin" && player.user.toString() !== userId.toString()) {
+    throw new ApiError(403, "You can only delete your own profile");
   }
 
   // Delete all media files from Cloudinary
@@ -457,14 +474,14 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   // Send notification about profile deletion
   await sendInternalNotification(
     player.user,
-    'Profile Deleted',
-    'Your player profile has been deleted',
+    "Profile Deleted",
+    "Your player profile has been deleted",
     { playerId: player._id }
   );
 
   res
     .status(200)
-    .json(new ApiResponse(200, null, 'Player profile deleted successfully'));
+    .json(new ApiResponse(200, null, "Player profile deleted successfully"));
 });
 
 // Get My Player Profile
@@ -472,17 +489,17 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   const player = await Player.findOne({ user: userId }).populate(
-    'user',
-    'name email phone'
+    "user",
+    "name email phone"
   );
 
   if (!player) {
-    throw new ApiError(404, 'Player profile not found');
+    throw new ApiError(404, "Player profile not found");
   }
 
   res
     .status(200)
-    .json(new ApiResponse(200, player, 'Your profile fetched successfully'));
+    .json(new ApiResponse(200, player, "Your profile fetched successfully"));
 });
 
 // Upload Profile Image
@@ -491,18 +508,18 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   if (!req.file) {
-    throw new ApiError(400, 'Profile image is required');
+    throw new ApiError(400, "Profile image is required");
   }
 
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
   if (player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, 'You can only update your own profile');
+    throw new ApiError(403, "You can only update your own profile");
   }
 
   // Delete old image if exists
@@ -513,7 +530,7 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
   // Update with new image
   player.media.profileImage = {
     url: req.file.path,
-    publicId: req.file.filename
+    publicId: req.file.filename,
   };
 
   await player.save();
@@ -524,7 +541,7 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         player.media.profileImage,
-        'Profile image uploaded successfully'
+        "Profile image uploaded successfully"
       )
     );
 });
@@ -536,22 +553,22 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   const { mediaType } = req.params; // images, videos, documents
 
   if (!req.files || req.files.length === 0) {
-    throw new ApiError(400, 'Media files are required');
+    throw new ApiError(400, "Media files are required");
   }
 
-  if (!['images', 'videos', 'documents'].includes(mediaType)) {
-    throw new ApiError(400, 'Invalid media type');
+  if (!["images", "videos", "documents"].includes(mediaType)) {
+    throw new ApiError(400, "Invalid media type");
   }
 
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
   if (player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, 'You can only update your own profile');
+    throw new ApiError(403, "You can only update your own profile");
   }
 
   const uploadedFiles = [];
@@ -561,15 +578,15 @@ export const uploadMedia = asyncHandler(async (req, res) => {
       url: file.path,
       publicId: file.filename,
       title: file.originalname,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
     };
 
-    if (mediaType === 'videos') {
+    if (mediaType === "videos") {
       // You might want to get video duration here
       mediaItem.duration = 0; // Placeholder
     }
 
-    if (mediaType === 'documents') {
+    if (mediaType === "documents") {
       mediaItem.size = file.size;
       mediaItem.type = file.mimetype;
     }
@@ -592,19 +609,19 @@ export const deleteMedia = asyncHandler(async (req, res) => {
   const { playerId, mediaType, mediaId } = req.params;
   const userId = req.user._id;
 
-  if (!['images', 'videos', 'documents'].includes(mediaType)) {
-    throw new ApiError(400, 'Invalid media type');
+  if (!["images", "videos", "documents"].includes(mediaType)) {
+    throw new ApiError(400, "Invalid media type");
   }
 
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
   if (player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, 'You can only update your own profile');
+    throw new ApiError(403, "You can only update your own profile");
   }
 
   const mediaIndex = player.media[mediaType].findIndex(
@@ -612,7 +629,7 @@ export const deleteMedia = asyncHandler(async (req, res) => {
   );
 
   if (mediaIndex === -1) {
-    throw new ApiError(404, 'Media not found');
+    throw new ApiError(404, "Media not found");
   }
 
   const media = player.media[mediaType][mediaIndex];
@@ -628,35 +645,35 @@ export const deleteMedia = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, null, 'Media deleted successfully'));
+    .json(new ApiResponse(200, null, "Media deleted successfully"));
 });
 
 // Promote Player
 export const promotePlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
-  const { days, type = 'featured' } = req.body;
+  const { days, type = "featured" } = req.body;
 
   if (!days || days < 1) {
     throw new ApiError(
       400,
-      'Please specify valid number of days for promotion'
+      "Please specify valid number of days for promotion"
     );
   }
 
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
   if (player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, 'You can only promote your own profile');
+    throw new ApiError(403, "You can only promote your own profile");
   }
 
   if (player.isCurrentlyPromoted) {
-    throw new ApiError(400, 'Player is already promoted');
+    throw new ApiError(400, "Player is already promoted");
   }
 
   // Promote player (assuming this method exists in the model)
@@ -668,7 +685,7 @@ export const promotePlayer = asyncHandler(async (req, res) => {
       status: true,
       type,
       startDate: new Date(),
-      endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+      endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
     };
     await player.save();
   }
@@ -676,14 +693,14 @@ export const promotePlayer = asyncHandler(async (req, res) => {
   // Send notification about promotion
   await sendInternalNotification(
     userId,
-    'Profile Promoted',
+    "Profile Promoted",
     `Your player profile has been promoted for ${days} days!`,
     { playerId: player._id, days, type }
   );
 
   res
     .status(200)
-    .json(new ApiResponse(200, player, 'Player promoted successfully'));
+    .json(new ApiResponse(200, player, "Player promoted successfully"));
 });
 
 // Transfer Player
@@ -692,17 +709,17 @@ export const transferPlayer = asyncHandler(async (req, res) => {
   const { clubName, amount, transferDate } = req.body;
 
   if (!clubName || !amount) {
-    throw new ApiError(400, 'Club name and transfer amount are required');
+    throw new ApiError(400, "Club name and transfer amount are required");
   }
 
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
-  if (player.status === 'transferred') {
-    throw new ApiError(400, 'Player is already transferred');
+  if (player.status === "transferred") {
+    throw new ApiError(400, "Player is already transferred");
   }
 
   // Transfer player (assuming this method exists in the model)
@@ -710,12 +727,12 @@ export const transferPlayer = asyncHandler(async (req, res) => {
     await player.transfer(clubName, amount);
   } else {
     // Manual transfer logic
-    player.status = 'transferred';
+    player.status = "transferred";
     player.transferHistory.push({
       clubName,
       amount,
       transferDate: transferDate || new Date(),
-      type: 'transfer'
+      type: "transfer",
     });
     await player.save();
   }
@@ -723,14 +740,14 @@ export const transferPlayer = asyncHandler(async (req, res) => {
   // Send notification about transfer
   await sendInternalNotification(
     player.user,
-    'Player Transferred',
+    "Player Transferred",
     `Congratulations! You have been transferred to ${clubName}`,
     { playerId: player._id, clubName, amount }
   );
 
   res
     .status(200)
-    .json(new ApiResponse(200, player, 'Player transferred successfully'));
+    .json(new ApiResponse(200, player, "Player transferred successfully"));
 });
 
 // Update Player Statistics
@@ -742,15 +759,15 @@ export const updateStatistics = asyncHandler(async (req, res) => {
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
   if (
     player.user.toString() !== userId.toString() &&
-    req.user.role !== 'admin'
+    req.user.role !== "admin"
   ) {
-    throw new ApiError(403, 'You can only update your own statistics');
+    throw new ApiError(403, "You can only update your own statistics");
   }
 
   // Update statistics
@@ -768,7 +785,7 @@ export const updateStatistics = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         player.statistics,
-        'Player statistics updated successfully'
+        "Player statistics updated successfully"
       )
     );
 });
@@ -779,24 +796,24 @@ export const getPromotedPlayers = asyncHandler(async (req, res) => {
 
   const query = {
     isActive: true,
-    'isPromoted.status': true,
-    'isPromoted.endDate': { $gt: new Date() }
+    "isPromoted.status": true,
+    "isPromoted.endDate": { $gt: new Date() },
   };
 
   if (type) {
-    query['isPromoted.type'] = type;
+    query["isPromoted.type"] = type;
   }
 
   const players = await Player.find(query)
-    .sort({ 'isPromoted.startDate': -1 })
+    .sort({ "isPromoted.startDate": -1 })
     .limit(parseInt(limit))
-    .populate('user', 'name email')
+    .populate("user", "name email")
     .lean();
 
   res
     .status(200)
     .json(
-      new ApiResponse(200, players, 'Promoted players fetched successfully')
+      new ApiResponse(200, players, "Promoted players fetched successfully")
     );
 });
 
@@ -813,43 +830,55 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     skills,
     page = 1,
     limit = 10,
-    sortBy = 'relevance'
+    sortBy = "relevance",
   } = req.query;
 
   if (!search) {
-    throw new ApiError(400, 'Search query is required');
+    throw new ApiError(400, "Search query is required");
   }
 
   // Build search query
   const query = {
     isActive: true,
     $or: [
-      { 'name.en': { $regex: search, $options: 'i' } },
-      { 'name.ar': { $regex: search, $options: 'i' } },
-      { position: { $regex: search, $options: 'i' } },
-      { skills: { $in: [new RegExp(search, 'i')] } },
-      { previousClubs: { $in: [new RegExp(search, 'i')] } }
-    ]
+      { "name.en": { $regex: search, $options: "i" } },
+      { "name.ar": { $regex: search, $options: "i" } },
+      { position: { $regex: search, $options: "i" } },
+      { skills: { $in: [new RegExp(search, "i")] } },
+      { previousClubs: { $in: [new RegExp(search, "i")] } },
+    ],
   };
 
   // Apply additional filters
-  if (position) {query.position = position;}
-  if (nationality) {query.nationality = nationality;}
+  if (position) {
+    query.position = position;
+  }
+  if (nationality) {
+    query.nationality = nationality;
+  }
 
   if (ageMin || ageMax) {
     query.age = {};
-    if (ageMin) {query.age.$gte = parseInt(ageMin);}
-    if (ageMax) {query.age.$lte = parseInt(ageMax);}
+    if (ageMin) {
+      query.age.$gte = parseInt(ageMin);
+    }
+    if (ageMax) {
+      query.age.$lte = parseInt(ageMax);
+    }
   }
 
   if (salaryMin || salaryMax) {
-    query['monthlySalary.amount'] = {};
-    if (salaryMin) {query['monthlySalary.amount'].$gte = parseInt(salaryMin);}
-    if (salaryMax) {query['monthlySalary.amount'].$lte = parseInt(salaryMax);}
+    query["monthlySalary.amount"] = {};
+    if (salaryMin) {
+      query["monthlySalary.amount"].$gte = parseInt(salaryMin);
+    }
+    if (salaryMax) {
+      query["monthlySalary.amount"].$lte = parseInt(salaryMax);
+    }
   }
 
   if (skills) {
-    const skillsArray = skills.split(',').map((skill) => skill.trim());
+    const skillsArray = skills.split(",").map((skill) => skill.trim());
     query.skills = { $in: skillsArray };
   }
 
@@ -857,11 +886,19 @@ export const searchPlayers = asyncHandler(async (req, res) => {
   const { skip } = paginate(page, limit);
 
   // Sort options
-  let sort = { score: { $meta: 'textScore' } };
-  if (sortBy === 'date') {sort = { createdAt: -1 };}
-  if (sortBy === 'salary') {sort = { 'monthlySalary.amount': -1 };}
-  if (sortBy === 'age') {sort = { age: 1 };}
-  if (sortBy === 'views') {sort = { views: -1 };}
+  let sort = { score: { $meta: "textScore" } };
+  if (sortBy === "date") {
+    sort = { createdAt: -1 };
+  }
+  if (sortBy === "salary") {
+    sort = { "monthlySalary.amount": -1 };
+  }
+  if (sortBy === "age") {
+    sort = { age: 1 };
+  }
+  if (sortBy === "views") {
+    sort = { views: -1 };
+  }
 
   // Execute search
   const [players, total] = await Promise.all([
@@ -869,9 +906,9 @@ export const searchPlayers = asyncHandler(async (req, res) => {
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip)
-      .populate('user', 'name email')
+      .populate("user", "name email")
       .lean(),
-    Player.countDocuments(query)
+    Player.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -884,8 +921,8 @@ export const searchPlayers = asyncHandler(async (req, res) => {
           total,
           pages: Math.ceil(total / limit),
           page: parseInt(page),
-          limit: parseInt(limit)
-        }
+          limit: parseInt(limit),
+        },
       },
       `Found ${total} players matching your search`
     )
@@ -900,15 +937,15 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
   const player = await Player.findById(playerId);
 
   if (!player) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   // Check permissions
   if (
     player.user.toString() !== userId.toString() &&
-    req.user.role !== 'admin'
+    req.user.role !== "admin"
   ) {
-    throw new ApiError(403, 'You can only view analytics for your own profile');
+    throw new ApiError(403, "You can only view analytics for your own profile");
   }
 
   // Calculate analytics
@@ -922,16 +959,16 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
     mediaCount: {
       images: player.media?.images?.length || 0,
       videos: player.media?.videos?.length || 0,
-      documents: player.media?.documents?.length || 0
+      documents: player.media?.documents?.length || 0,
     },
     joinDate: player.createdAt,
-    lastUpdate: player.updatedAt
+    lastUpdate: player.updatedAt,
   };
 
   res
     .status(200)
     .json(
-      new ApiResponse(200, analytics, 'Player analytics fetched successfully')
+      new ApiResponse(200, analytics, "Player analytics fetched successfully")
     );
 });
 
@@ -942,7 +979,7 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
 
   const currentPlayer = await Player.findById(playerId);
   if (!currentPlayer) {
-    throw new ApiError(404, 'Player not found');
+    throw new ApiError(404, "Player not found");
   }
 
   const query = {
@@ -952,23 +989,23 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
       { position: currentPlayer.position },
       { nationality: currentPlayer.nationality },
       { skills: { $in: currentPlayer.skills || [] } },
-      { jop: currentPlayer.jop }
-    ]
+      { jop: currentPlayer.jop },
+    ],
   };
 
   // Add salary range filter
   if (currentPlayer.monthlySalary?.amount) {
     const salaryRange = currentPlayer.monthlySalary.amount * 0.3; // 30% range
-    query['monthlySalary.amount'] = {
+    query["monthlySalary.amount"] = {
       $gte: currentPlayer.monthlySalary.amount - salaryRange,
-      $lte: currentPlayer.monthlySalary.amount + salaryRange
+      $lte: currentPlayer.monthlySalary.amount + salaryRange,
     };
   }
 
   const similarPlayers = await Player.find(query)
     .sort({ createdAt: -1 })
     .limit(parseInt(limit))
-    .populate('user', 'name email')
+    .populate("user", "name email")
     .lean();
 
   res
@@ -977,7 +1014,7 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         similarPlayers,
-        'Similar players fetched successfully'
+        "Similar players fetched successfully"
       )
     );
 });
@@ -989,19 +1026,19 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
 
   const query = {
     isActive: true,
-    position: { $regex: position, $options: 'i' }
+    position: { $regex: position, $options: "i" },
   };
 
   const { skip } = paginate(page, limit);
 
   const [players, total] = await Promise.all([
     Player.find(query)
-      .sort({ 'isPromoted.status': -1, createdAt: -1 })
+      .sort({ "isPromoted.status": -1, createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip)
-      .populate('user', 'name email')
+      .populate("user", "name email")
       .lean(),
-    Player.countDocuments(query)
+    Player.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -1014,8 +1051,8 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
           total,
           pages: Math.ceil(total / limit),
           page: parseInt(page),
-          limit: parseInt(limit)
-        }
+          limit: parseInt(limit),
+        },
       },
       `Players in ${position} position fetched successfully`
     )
@@ -1028,20 +1065,20 @@ export const getFeaturedPlayers = asyncHandler(async (req, res) => {
 
   const query = {
     isActive: true,
-    'isPromoted.status': true,
-    'isPromoted.endDate': { $gt: new Date() }
+    "isPromoted.status": true,
+    "isPromoted.endDate": { $gt: new Date() },
   };
 
   const players = await Player.find(query)
-    .sort({ 'isPromoted.startDate': -1, views: -1 })
+    .sort({ "isPromoted.startDate": -1, views: -1 })
     .limit(parseInt(limit))
-    .populate('user', 'name email')
+    .populate("user", "name email")
     .lean();
 
   res
     .status(200)
     .json(
-      new ApiResponse(200, players, 'Featured players fetched successfully')
+      new ApiResponse(200, players, "Featured players fetched successfully")
     );
 });
 
@@ -1051,26 +1088,66 @@ const calculateProfileCompleteness = (player) => {
   const totalFields = 20; // Adjust based on your player model
 
   // Check required fields
-  if (player.name?.en) {completedFields++;}
-  if (player.position) {completedFields++;}
-  if (player.age) {completedFields++;}
-  if (player.nationality) {completedFields++;}
-  if (player.height) {completedFields++;}
-  if (player.weight) {completedFields++;}
-  if (player.preferredFoot) {completedFields++;}
-  if (player.monthlySalary?.amount) {completedFields++;}
-  if (player.media?.profileImage?.url) {completedFields++;}
-  if (player.skills?.length > 0) {completedFields++;}
-  if (player.previousClubs?.length > 0) {completedFields++;}
-  if (player.achievements?.length > 0) {completedFields++;}
-  if (player.languages?.length > 0) {completedFields++;}
-  if (player.bio?.en) {completedFields++;}
-  if (player.contactInfo?.phone) {completedFields++;}
-  if (player.contactInfo?.email) {completedFields++;}
-  if (player.media?.images?.length > 0) {completedFields++;}
-  if (player.media?.videos?.length > 0) {completedFields++;}
-  if (player.statistics) {completedFields++;}
-  if (player.jop) {completedFields++;}
+  if (player.name?.en) {
+    completedFields++;
+  }
+  if (player.position) {
+    completedFields++;
+  }
+  if (player.age) {
+    completedFields++;
+  }
+  if (player.nationality) {
+    completedFields++;
+  }
+  if (player.height) {
+    completedFields++;
+  }
+  if (player.weight) {
+    completedFields++;
+  }
+  if (player.preferredFoot) {
+    completedFields++;
+  }
+  if (player.monthlySalary?.amount) {
+    completedFields++;
+  }
+  if (player.media?.profileImage?.url) {
+    completedFields++;
+  }
+  if (player.skills?.length > 0) {
+    completedFields++;
+  }
+  if (player.previousClubs?.length > 0) {
+    completedFields++;
+  }
+  if (player.achievements?.length > 0) {
+    completedFields++;
+  }
+  if (player.languages?.length > 0) {
+    completedFields++;
+  }
+  if (player.bio?.en) {
+    completedFields++;
+  }
+  if (player.contactInfo?.phone) {
+    completedFields++;
+  }
+  if (player.contactInfo?.email) {
+    completedFields++;
+  }
+  if (player.media?.images?.length > 0) {
+    completedFields++;
+  }
+  if (player.media?.videos?.length > 0) {
+    completedFields++;
+  }
+  if (player.statistics) {
+    completedFields++;
+  }
+  if (player.jop) {
+    completedFields++;
+  }
 
   return Math.round((completedFields / totalFields) * 100);
 };

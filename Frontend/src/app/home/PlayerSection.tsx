@@ -24,6 +24,7 @@ interface Player {
   profileImage?: string;
   rating?: number;
   experience?: number;
+  jop?: string;
 }
 
 // واجهة لبيانات الـ API الخام
@@ -32,6 +33,7 @@ interface ApiPlayer {
   user: null | string;
   name: string;
   age: number;
+  jop: string;
   gender: string;
   nationality: string;
   category: string;
@@ -76,6 +78,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
+  jop: apiPlayer.jop,
 });
 
 // عنوان الـ API

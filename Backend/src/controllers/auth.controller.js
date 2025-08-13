@@ -55,7 +55,7 @@ export const register = asyncHandler(async (req, res) => {
     emailVerificationToken,
     emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     phoneVerificationOTP: phoneVerificationHashedOTP,
-    phoneVerificationExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
+    phoneVerificationExpires: Date.now() + 10 * 60 * 1000,
   });
 
   // Save user
@@ -122,7 +122,7 @@ export const login = asyncHandler(async (req, res) => {
 
   // Validate credentials
   if (!user || !(await user.comparePassword(password))) {
-    throw new ApiError(401, "Invalid credentials");
+    throw new ApiError(401, "Username or password is incorrect");
   }
 
   // Check if active
@@ -290,17 +290,36 @@ export const changePassword = asyncHandler(async (req, res) => {
     );
 });
 
-export const getProfile = asyncHandler(async (req, res) => {
-  const user = await userModel.findById(req.user.id).select("-password ");
+export const getProfile = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user.id).select("-password");
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+      message: "Profile retrieved successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, { user }, "Profile retrieved successfully"));
-});
+// export const getProfile = asyncHandler(async (req, res) => {
+
+//   const user = await userModel.findById(req.user.id).select("-password ");
+
+//   if (!user) {
+//     throw new ApiError(404, "User not found");
+//   }
+
+//   res
+//     .status(200)
+//     .json(new ApiResponse(200, { user }, "Profile retrieved successfully"));
+// });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
