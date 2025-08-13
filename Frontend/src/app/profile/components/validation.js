@@ -1,4 +1,3 @@
-
 import Joi from "joi";
 
 export const UserSchema = Joi.object({
@@ -40,53 +39,23 @@ export const PendingPaymentSchema = Joi.object({
   orderDate: Joi.date().iso().required(),
 });
 
-export const ProfileFormSchema = Joi.object({
-  name: Joi.string()
-    .min(1)
-    .required()
-    .messages({ "string.empty": "الاسم الكامل مطلوب" }),
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required()
-    .messages({
-      "string.email": "البريد الإلكتروني غير صالح",
-    }),
-  phone: Joi.string().allow("").optional(),
-  password: Joi.string()
-    .pattern(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-    )
-    .allow("")
-    .optional()
-    .messages({
-      "string.pattern.base":
-        "كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، حرف كبير، حرف صغير، رقم، ورمز خاص",
-    }),
-  confirmPassword: Joi.string()
-    .valid(Joi.ref("password"))
-    .required()
-    .messages({ "any.only": "كلمتا المرور غير متطابقتين" }),  
-  address: Joi.string().allow("").optional(),
-  occupation: Joi.string().allow("").optional(),
-  website: Joi.string().uri().allow("").optional(),
-  bio: Joi.string().allow("").optional(),
-  dateOfBirth: Joi.date().iso().allow(null).optional(),
-});
-
 export const PlayerSchema = Joi.object({
   _id: Joi.string().required(),
   user: Joi.string().allow(null).optional(), // جعل الحقل اختياريًا لتجنب الأخطاء
-  name: Joi.alternatives().try(
-    Joi.object({
-      en: Joi.string().min(1).allow("").optional().messages({
-        "string.min": "الاسم (بالإنجليزية) يجب أن يكون على الأقل حرفًا واحدًا",
+  name: Joi.alternatives()
+    .try(
+      Joi.object({
+        en: Joi.string().min(1).allow("").optional().messages({
+          "string.min":
+            "الاسم (بالإنجليزية) يجب أن يكون على الأقل حرفًا واحدًا",
+        }),
+        ar: Joi.string().min(1).allow("").optional().messages({
+          "string.min": "الاسم (بالعربية) يجب أن يكون على الأقل حرفًا واحدًا",
+        }),
       }),
-      ar: Joi.string().min(1).allow("").optional().messages({
-        "string.min": "الاسم (بالعربية) يجب أن يكون على الأقل حرفًا واحدًا",
-      }),
-    }),
-    Joi.string().allow("").optional() // دعم name كسلسلة نصية للتعامل مع البيانات القديمة
-  ).optional(),
+      Joi.string().allow("").optional() // دعم name كسلسلة نصية للتعامل مع البيانات القديمة
+    )
+    .optional(),
   age: Joi.number().integer().min(15).max(50).allow(null).optional().messages({
     "number.base": "العمر يجب أن يكون رقمًا",
     "number.min": "العمر يجب أن لا يقل عن 15",
@@ -101,17 +70,19 @@ export const PlayerSchema = Joi.object({
   jop: Joi.string().valid("player", "coach").allow(null).optional().messages({
     "any.only": "الفئة مطلوبة",
   }),
-  position: Joi.alternatives().try(
-    Joi.object({
-      en: Joi.string().allow("").optional().messages({
-        "string.max": "المنصب (بالإنجليزية) طويل جدًا",
+  position: Joi.alternatives()
+    .try(
+      Joi.object({
+        en: Joi.string().allow("").optional().messages({
+          "string.max": "المنصب (بالإنجليزية) طويل جدًا",
+        }),
+        ar: Joi.string().allow("").optional().messages({
+          "string.max": "المنصب (بالعربية) طويل جدًا",
+        }),
       }),
-      ar: Joi.string().allow("").optional().messages({
-        "string.max": "المنصب (بالعربية) طويل جدًا",
-      }),
-    }),
-    Joi.string().allow("").optional() // دعم position كسلسلة نصية للتعامل مع البيانات القديمة
-  ).optional(),
+      Joi.string().allow("").optional() // دعم position كسلسلة نصية للتعامل مع البيانات القديمة
+    )
+    .optional(),
   status: Joi.string()
     .valid("available", "contracted", "transferred")
     .allow(null)
@@ -230,9 +201,13 @@ export const PlayerSchema = Joi.object({
       phone: Joi.string().allow(null).optional().messages({
         "string.pattern.base": "رقم هاتف الوكيل غير صحيح",
       }),
-      email: Joi.string().allow(null).email({ tlds: false }).optional().messages({
-        "string.email": "بريد الوكيل غير صحيح",
-      }),
+      email: Joi.string()
+        .allow(null)
+        .email({ tlds: false })
+        .optional()
+        .messages({
+          "string.email": "بريد الوكيل غير صحيح",
+        }),
     }).optional(),
   }).optional(),
   game: Joi.string().min(2).allow("").optional().messages({
@@ -244,3 +219,54 @@ export const PlayerSchema = Joi.object({
   updatedAt: Joi.date().iso().allow(null).optional(),
 });
 
+export const ProfileFormSchema = Joi.object({
+  name: Joi.string().min(2).max(50).required().messages({
+    "string.empty": "الاسم الكامل مطلوب",
+    "string.min": "الاسم يجب أن يكون على الأقل حرفين",
+    "string.max": "الاسم يجب ألا يتجاوز 50 حرف",
+  }),
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .required()
+    .messages({
+      "string.email": "البريد الإلكتروني غير صالح",
+      "string.empty": "البريد الإلكتروني مطلوب",
+    }),
+  phone: Joi.string()
+    .pattern(/^(\+?\d{1,3}[- ]?)?\d{7,14}$/)
+    .allow("")
+    .optional()
+    .messages({
+      "string.pattern.base": "رقم الهاتف غير صالح",
+    }),
+  bio: Joi.string().max(200).allow("").optional().messages({
+    "string.max": "النبذة التعريفية يجب ألا تتجاوز 200 حرف",
+  }),
+  newPassword: Joi.string()
+    .min(8)
+    .pattern(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    )
+    .allow("")
+    .optional()
+    .messages({
+      "string.pattern.base":
+        "كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، حرف كبير، حرف صغير، رقم، ورمز خاص",
+      "string.min": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+    }),
+  confirmPassword: Joi.string().when("newPassword", {
+    is: Joi.string().min(1),
+    then: Joi.string().valid(Joi.ref("newPassword")).required().messages({
+      "any.only": "كلمتا المرور غير متطابقتين",
+      "string.empty": "تأكيد كلمة المرور مطلوب",
+    }),
+    otherwise: Joi.string().allow("").optional(),
+  }),
+  oldPassword: Joi.string().when("newPassword", {
+    is: Joi.string().min(1),
+    then: Joi.string().required().messages({
+      "string.empty": "كلمة المرور الحالية مطلوبة عند تغيير كلمة المرور",
+    }),
+    otherwise: Joi.string().allow("").optional(),
+  }),
+});

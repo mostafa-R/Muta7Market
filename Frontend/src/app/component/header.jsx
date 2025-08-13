@@ -8,99 +8,154 @@ import {
   Menu as MenuIcon,
   Trophy,
   User,
-
   Users,
   X,
+  Home,
+  Search,
+  UserCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
 
-// Zustand auth store (JS)
+// Zustand auth store
 const useAuthStore = create((set) => ({
   isLoggedIn: false,
+  user: null,
   setIsLoggedIn: (value) => set({ isLoggedIn: value }),
+  setUser: (user) => set({ user }),
   checkAuth: () => {
     const isLoggedIn =
       typeof window !== "undefined" &&
       localStorage.getItem("isLoggedIn") === "true";
-    set({ isLoggedIn });
+    const user =
+      typeof window !== "undefined"
+        ? JSON.parse(localStorage.getItem("user") || "null")
+        : null;
+    set({ isLoggedIn, user });
   },
 }));
 
-// User Profile Dropdown (JSX)
+// User Profile Dropdown - محسن للموبايل
 const UserProfileDropdown = ({
-  profileImage,
   handleLogout,
   fullWidth = false,
   className = "",
+  isMobile = false,
 }) => {
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, user } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState({});
-
-
-  
-  // const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/profile`;
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        setUser(JSON.parse(localStorage.getItem("user")));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    if (isLoggedIn) fetchUser();
-  }, [isLoggedIn]);
 
   if (!isLoggedIn) {
     return (
       <button
         type="button"
         onClick={() => router.push("/signin")}
-        className={`border border-[hsl(var(--border))] rounded px-4 py-2 text-sm flex items-center hover:bg-[hsl(var(--primary)/0.08)] transition focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] ${
-          fullWidth ? "w-full" : ""
-        } ${className}`}
+        className={`
+          ${fullWidth ? "w-full justify-center" : ""}
+          ${isMobile 
+            ? "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all"
+            : "border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
+          }
+          flex items-center gap-2
+          ${className}
+        `}
         aria-label="تسجيل الدخول"
       >
-        <User className="w-4 h-4 ml-2" />
+        <User className="w-4 h-4" />
         تسجيل الدخول
       </button>
     );
   }
 
-  
+  const getProfileImageUrl = () => {
+    if (!user?.profileImage) return null;
+    if (typeof user.profileImage === 'object' && user.profileImage.url) {
+      return user.profileImage.url;
+    }
+    if (typeof user.profileImage === 'string' && user.profileImage.trim() !== '') {
+      return user.profileImage;
+    }
+    return null;
+  };
 
+  const profileImageUrl = getProfileImageUrl();
+
+  // للموبايل - عرض مختلف
+  if (isMobile) {
+    return (
+      <div className="w-full space-y-3">
+        {/* User Info Card */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            {profileImageUrl ? (
+              <Image
+                src={profileImageUrl}
+                alt={user?.name || "صورة المستخدم"}
+                width={60}
+                height={60}
+                className="rounded-full border-2 border-white shadow-md"
+                unoptimized
+              />
+            ) : (
+              <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-md">
+                <User className="w-8 h-8 text-white" />
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="font-semibold text-gray-900">{user?.name || "المستخدم"}</p>
+              <p className="text-sm text-gray-600">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <Link
+          href="/profile"
+          className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
+        >
+          <UserCircle className="w-5 h-5 text-blue-600" />
+          <span className="font-medium">الملف الشخصي</span>
+        </Link>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-200"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="font-medium">تسجيل الخروج</span>
+        </button>
+      </div>
+    );
+  }
+
+  // للديسكتوب - القائمة المنسدلة
   return (
-    <Menu as="div" className="relative inline-block text-center bg-primary">
-   
-
-<Menu.Button
-  className={`flex items-center justify-center rounded-full w-12 h-12 border border-[hsl(var(--muted))] hover:border-[hsl(var(--border))] transition-colors duration-200 ${
-    fullWidth ? "w-full" : ""
-  } ${className}`}
-  aria-label="فتح قائمة المستخدم"
->
-  {user?.profileImage && user.profileImage.trim() !== "" ? (
-    <Image
-      src={user.profileImage}
-      alt="صورة المستخدم"
-      width={48}
-      height={48}
-      className="w-12 h-12 rounded-full object-cover"
-      unoptimized
-    />
-  ) : (
-    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-      <User className="w-6 h-6 text-gray-500" />
-    </div>
-  )}
-</Menu.Button>
-
+    <Menu as="div" className="relative">
+      <Menu.Button
+        className="flex items-center justify-center rounded-full w-10 h-10 lg:w-11 lg:h-11 border-2 border-gray-200 hover:border-gray-300 transition-all hover:shadow-md"
+        aria-label="فتح قائمة المستخدم"
+      >
+        {profileImageUrl ? (
+          <Image
+            src={profileImageUrl}
+            alt={user?.name || "صورة المستخدم"}
+            width={44}
+            height={44}
+            className="w-full h-full rounded-full object-cover"
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
+            <User className="w-5 h-5 text-white" />
+          </div>
+        )}
+      </Menu.Button>
 
       <Transition
+        as={Fragment}
         enter="transition ease-out duration-100"
         enterFrom="transform opacity-0 scale-95"
         enterTo="transform opacity-100 scale-100"
@@ -108,31 +163,45 @@ const UserProfileDropdown = ({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute left-0 mt-2 w-45 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-muted ring-opacity-5 focus:outline-none">
+        <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden">
+          {/* User Info */}
+          {user && (
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {user.name}
+              </p>
+              <p className="text-xs text-gray-600 truncate mt-0.5">
+                {user.email}
+              </p>
+            </div>
+          )}
+
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (
                 <Link
                   href="/profile"
                   className={`${
-                    active ? "bg-[hsl(var(--primary)/0.1)]" : ""
-                  } flex items-center px-4 py-2 text-sm text-gray-700`}
+                    active ? "bg-gray-100" : ""
+                  } flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors`}
                 >
-                  <User className="w-4 h-4 ml-2" />
+                  <UserCircle className="w-4 h-4" />
                   الملف الشخصي
                 </Link>
               )}
             </Menu.Item>
+
+            <div className="border-t my-1"></div>
+
             <Menu.Item>
               {({ active }) => (
                 <button
-                  type="button"
                   onClick={handleLogout}
                   className={`${
-                    active ? "bg-[hsl(var(--primary)/0.1)]" : ""
-                  } flex items-center w-full px-4 py-2 text-sm text-gray-700 text-right`}
+                    active ? "bg-red-50" : ""
+                  } flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 transition-colors`}
                 >
-                  <LogOut className="w-4 h-4 ml-2" />
+                  <LogOut className="w-4 h-4" />
                   تسجيل الخروج
                 </button>
               )}
@@ -144,102 +213,122 @@ const UserProfileDropdown = ({
   );
 };
 
-// Single nav item
-const NavItem = ({ item, isActive }) => {
-  const Icon = item.icon;
-  return (
-    <Link
-      href={item.path}
-      className={`flex items-center space-x-2 space-x-reverse px-3 py-2 rounded-md text-sm font-medium transition 
-      ${
-        isActive
-          ? "text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)]"
-          : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
-      }`}
-      aria-current={isActive ? "page" : undefined}
-    >
-      <Icon className="w-4 h-4 mr-2 ml-2" />
-      <span>{item.name}</span>
-    </Link>
-  );
-};
-
-// Mobile nav menu (no framer-motion)
+// Mobile Nav Menu - محسن بالكامل
 const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
-  const { isLoggedIn, setIsLoggedIn } = useAuthStore();
+  const { isLoggedIn, setIsLoggedIn, user } = useAuthStore();
   const router = useRouter();
-  const [user, setUser] = useState({});
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-       
-        setUser(JSON.parse(localStorage.getItem("user")));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    if (isLoggedIn) fetchUser();
-  }, [isLoggedIn]);
+  const [isClosing, setIsClosing] = useState(false);
 
   const handleLogout = useCallback(async () => {
-    localStorage.setItem("isLoggedIn", "false");
-    setIsLoggedIn(false);
-    await axios.post(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
-      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } },
-      { withCredentials: true }
-    );
-    router.push("/signin");
-  }, [router, setIsLoggedIn]);
+    try {
+      localStorage.clear();
+      setIsLoggedIn(false);
+      
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
+        {},
+        { withCredentials: true }
+      ).catch(() => {});
+      
+      router.push("/signin");
+      onClose();
+    } catch (error) {
+      console.error("Logout error:", error);
+      router.push("/signin");
+    }
+  }, [router, setIsLoggedIn, onClose]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+    // منع السكرول عند فتح القائمة
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   return (
-    <div className="fixed inset-0  z-50 flex justify-end">
-      <div className="bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] w-72 h-full p-6 flex flex-col space-y-4 shadow-card relative">
-        <button
-          type="button"
-          className="absolute top-4 left-4"
-          onClick={onClose}
-          aria-label="إغلاق القائمة"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        <div className="mt-8 flex flex-col space-y-4 text-[hsl(var(--muted-foreground))] bg-[#ffffff]">
-          {navItems.map((item) => {
-            const isActive = currentPath === item.path;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={onClose}
-                className={`flex items-center  space-x-3 px-4 py-3 rounded-lg transition
-                ${
-                  isActive
-                    ? "text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)]"
-                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
-                }`}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.name}</span>
-              </Link>
-            );
-          })}
-          <div className="pt-4 border-t border-[hsl(var(--border))]">
-            <UserProfileDropdown
-              profileImage={isLoggedIn ? user.profileImage : undefined}
-              handleLogout={handleLogout}
-              fullWidth
-            />
+    <div className="fixed inset-0 z-50 lg:hidden">
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black transition-opacity duration-300 ${
+          isClosing ? "opacity-0" : "opacity-50"
+        }`}
+        onClick={handleClose}
+      />
+
+      {/* Sidebar */}
+      <div
+        className={`
+        fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white shadow-2xl
+        transform transition-transform duration-300 ease-out
+        ${isClosing ? "translate-x-full" : "translate-x-0"}
+      `}
+      >
+        {/* Header */}
+        <div className="bg-[hsl(var(--primary))] p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-white font-bold text-lg">Muta7Market</span>
+            </div>
+            <button
+              onClick={handleClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              aria-label="إغلاق القائمة"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-col h-[calc(100%-80px)] overflow-y-auto">
+          {/* Navigation Items */}
+          <div className="flex-1 p-4 space-y-2">
+            {navItems.map((item) => {
+              const isActive = currentPath === item.path;
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={handleClose}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                    ${
+                      isActive
+                        ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 font-semibold shadow-sm"
+                        : "hover:bg-gray-50 text-gray-700"
+                    }
+                  `}
+                >
+                  <Icon
+                    className={`w-5 h-5 ${
+                      isActive ? "text-blue-600" : "text-gray-500"
+                    }`}
+                  />
+                  <span className="text-base">{item.name}</span>
+                  {isActive && (
+                    <div className="mr-auto w-1 h-6 bg-blue-600 rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* User Section */}
+          <div className="p-4 border-t bg-gray-50">
+            <UserProfileDropdown handleLogout={handleLogout} isMobile={true} />
           </div>
         </div>
       </div>
@@ -247,129 +336,138 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
   );
 };
 
-// Navbar
+// Main Navbar Component
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { checkAuth, isLoggedIn, setIsLoggedIn } = useAuthStore();
+  const { checkAuth, isLoggedIn, setIsLoggedIn, setUser } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
+  // تأثير السكرول
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const navItems = useMemo(
     () => [
-      { name: "الرئيسية", path: "/", icon: Trophy },
-      { name: "استكشف", path: "/sports", icon: Users },
+      { name: "الرئيسية", path: "/", icon: Home },
+      { name: "استكشف", path: "/sports", icon: Search },
       { name: "اللاعبون", path: "/players", icon: Users },
       { name: "المدربون", path: "/coaches", icon: Users },
-      ...(!isLoggedIn
-        ? []
-        : [{ name: "تسجيل الملف", path: "/register-profile", icon: FileText }]),
+      ...(isLoggedIn
+        ? [{ name: "تسجيل الملف", path: "/register-profile", icon: FileText }]
+        : []),
     ],
     [isLoggedIn]
   );
 
   const handleLogout = useCallback(async () => {
     try {
-      localStorage.setItem("isLoggedIn", "false");
-      const token = localStorage.getItem("token");
-      setIsLoggedIn(false);
-
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
-        {}, // مفيش بيانات في البودي
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
-
       localStorage.clear();
+      setIsLoggedIn(false);
+      setUser(null);
+
+      await axios
+        .post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
+          {},
+          { withCredentials: true }
+        )
+        .catch(() => {});
 
       router.push("/signin");
-    } catch (err) {
-      console.error("Logout error:", err.response?.data || err.message);
+    } catch (error) {
+      console.error("Logout error:", error);
+      router.push("/signin");
     }
-  }, [router, setIsLoggedIn]);
-
-  useEffect(() => {
-    navItems.forEach((item) => {
-      router.prefetch(item.path);
-    });
-  }, [navItems, router]);
-
-  const handleClose = useCallback(() => setIsOpen(false), []);
+  }, [router, setIsLoggedIn, setUser]);
 
   return (
-    <nav className="bg-[hsl(var(--card)/0.8)] text-[hsl(var(--card-foreground))] backdrop-blur-lg border-b border-[hsl(var(--border))] sticky top-0 z-50 transition-smooth">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link
-            href="/"
-            className="flex items-center space-x-2 space-x-reverse"
-          >
-            <div className="w-10 h-10 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center">
-              <Trophy className="w-6 h-6 text-[hsl(var(--primary-foreground))]" />
+    <>
+      <nav
+        className={`
+        sticky top-0 z-40 bg-white backdrop-blur-lg transition-all duration-300
+        ${
+          scrolled
+            ? "shadow-md border-b border-gray-200"
+            : "border-b border-gray-100"
+        }
+      `}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-10 h-10 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center group-hover:shadow-lg transition-all">
+                <Trophy className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-[hsl(var(--primary))] bg-clip-text text-transparent">
+                Muta7Market
+              </span>
+            </Link>
+
+            {/* Desktop Navigation - مخفي على الموبايل */}
+            <div className="hidden lg:flex items-center gap-2">
+              {navItems.map((item) => {
+                const isActive = pathname === item.path;
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
             </div>
-            <span className="text-xl font-bold mx-2">Muta7Market</span>
-          </Link>
 
-          {/* Desktop Navigation */}
-          {/* <div className="hidden md:flex items-center space-x-8 space-x-reverse">
-            {navItems.map((item) => (
-              <NavItem
-                key={item.path}
-                item={item}
-                isActive={pathname === item.path}
-              />
-            ))}
-          </div> */}
+            {/* Desktop User Controls - مخفي على الموبايل */}
+            <div className="hidden lg:flex items-center gap-4">
+              <UserProfileDropdown handleLogout={handleLogout} />
+            </div>
 
-          <div className="hidden md:flex items-center space-x-8 ">
-            {navItems.map((item) => (
-              <NavItem
-                key={item.path}
-                item={item}
-                isActive={pathname === item.path}
-                hidden={item.name === "تسجيل الملف" && isLoggedIn}
-              />
-            ))}
-          </div>
-
-          {/* Desktop Controls */}
-          <div className="hidden md:flex items-center space-x-4 space-x-reverse">
-            <UserProfileDropdown
-              profileImage={
-                isLoggedIn ? "https://example.com/user.jpg" : undefined
-              }
-              handleLogout={handleLogout}
-            />
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+            {/* Mobile Menu Button - يظهر فقط على الموبايل */}
             <button
               type="button"
-              className="p-2 rounded hover:bg-[hsl(var(--primary)/0.05)]"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={() => setIsOpen(true)}
               aria-label="فتح القائمة"
             >
-              <MenuIcon className="h-6 w-6" />
+              <MenuIcon className="h-6 w-6 text-gray-700" />
             </button>
           </div>
         </div>
-      </div>
+      </nav>
+
       {/* Mobile Menu */}
       {isOpen && (
         <MobileNavMenu
           navItems={navItems}
-          onClose={handleClose}
+          onClose={() => setIsOpen(false)}
           currentPath={pathname}
         />
       )}
-    </nav>
+    </>
   );
 };
 

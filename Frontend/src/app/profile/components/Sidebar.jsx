@@ -1,6 +1,6 @@
 // components/profile/Sidebar.jsx
 import React from "react";
-import { FaUser, FaLock, FaCalendar } from "react-icons/fa";
+import { FaUser, FaLock, FaCalendar, FaFileAlt } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 
 const Sidebar = ({
@@ -13,6 +13,7 @@ const Sidebar = ({
     { id: "profile", label: "الملف الشخصي", icon: FaUser },
     { id: "edit", label: "تعديل المعلومات", icon: FaLock },
     { id: "payments", label: "المدفوعات المعلقة", icon: FaCalendar },
+    { id: "playerProfile", label: "الملف الشخصي", icon: FaFileAlt },
   ];
 
   const handleItemClick = (sectionId) => {

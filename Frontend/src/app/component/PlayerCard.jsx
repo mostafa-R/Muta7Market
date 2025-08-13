@@ -26,8 +26,8 @@ const getStatusColor = (status) => {
 };
 
 // دالة للحصول على لون الفئة
-const getCategoryColor = (category) => {
-  switch (category) {
+const getCategoryColor = (jop) => {
+  switch (jop) {
     case "player":
       return "bg-blue-500";
     case "coach":
@@ -52,14 +52,14 @@ const getStatusText = (status) => {
 };
 
 // دالة للحصول على نص الفئة
-const getCategoryText = (category) => {
-  switch (category) {
+const getCategoryText = (jop) => {
+  switch (jop) {
     case "player":
       return "player";
     case "coach":
       return "coach";
     default:
-      return category;
+      return jop;
   }
 };
 
@@ -82,10 +82,10 @@ const PlayerCard = ({ player }) => {
                 </span>
                 <span
                   className={`text-white text-xs px-2 py-1 rounded-lg ${getCategoryColor(
-                    player.category
+                    player.jop
                   )}`}
                 >
-                  {getCategoryText(player.category)}
+                  {getCategoryText(player.jop)}
                 </span>
               </div>
             </div>
@@ -145,7 +145,8 @@ const PlayerCard = ({ player }) => {
           </div>
         </div>
 
-        {player.position && (
+   
+{player.position && (
           <div className="flex items-center space-x-2 space-x-reverse text-sm">
             <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
             <span className="text-[hsl(var(--muted-foreground))]">المركز:</span>
@@ -153,14 +154,9 @@ const PlayerCard = ({ player }) => {
           </div>
         )}
 
-        {player.jop && (
-          <div className="flex items-center space-x-2 space-x-reverse text-sm">
-            <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-            <span className="text-[hsl(var(--muted-foreground))]">العمل:</span>
-            <span className="font-medium ml-1 mr-1">{player.jop}</span>
-          </div>
-        )}
 
+
+        
         {(player.monthlySalary || player.annualContractValue != null) && (
           <div className="bg-[hsl(var(--muted))] rounded-lg p-3 space-y-2">
             {player.monthlySalary && (

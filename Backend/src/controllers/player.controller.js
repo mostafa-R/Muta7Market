@@ -486,7 +486,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
 
 // Get My Player Profile
 export const getMyProfile = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.user.id;
 
   const player = await Player.findOne({ user: userId }).populate(
     "user",
@@ -494,7 +494,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   );
 
   if (!player) {
-    throw new ApiError(404, "Player profile not found");
+   return res.status(404).json(new ApiResponse(404, null, "Player not found"));
   }
 
   res

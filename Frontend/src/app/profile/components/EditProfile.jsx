@@ -1,7 +1,6 @@
-// components/profile/EditProfile.jsx
 "use client";
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Upload, X } from "lucide-react";
 
 const EditProfile = ({
   register,
@@ -9,6 +8,9 @@ const EditProfile = ({
   errors,
   onSubmit,
   handleImageChange,
+  handleCancelImage,
+  imagePreview,
+  profileImage,
   error,
   success,
   isLoading,
@@ -24,22 +26,19 @@ const EditProfile = ({
     rows = 4,
   }) => {
     const [showPassword, setShowPassword] = useState(false);
-
     const togglePassword = () => setShowPassword((prev) => !prev);
 
     return (
       <div className="mb-6">
-        {/* Label */}
         <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
           <i className={`fas ${icon} text-purple-600`}></i>
           {label}
         </label>
 
-        {/* Input / Textarea */}
         {isTextarea ? (
           <textarea
             {...register(name)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] text-gray-500 focus:border-transparent transition-all resize-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] text-gray-700 focus:border-transparent transition-all resize-none"
             placeholder={placeholder}
             rows={rows}
             disabled={disabled}
@@ -49,7 +48,7 @@ const EditProfile = ({
             <input
               {...register(name)}
               type={type === "password" && showPassword ? "text" : type}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] focus:border-transparent transition-all pr-10"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] focus:border-transparent transition-all"
               placeholder={placeholder}
               disabled={disabled}
             />
@@ -57,7 +56,7 @@ const EditProfile = ({
               <button
                 type="button"
                 onClick={togglePassword}
-                className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -65,7 +64,6 @@ const EditProfile = ({
           </div>
         )}
 
-        {/* Error Message */}
         {errors?.[name] && (
           <p className="text-red-500 text-sm flex items-center gap-1 mt-2">
             <i className="fas fa-exclamation-circle"></i>
@@ -78,7 +76,6 @@ const EditProfile = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-      {/* Header */}
       <div className="bg-[#00183D] p-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <i className="fas fa-edit"></i>
@@ -86,9 +83,64 @@ const EditProfile = ({
         </h1>
       </div>
 
-      {/* Form Content */}
       <div className="p-6 lg:p-8">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Profile Image Section */}
+          <div className="bg-gray-50 p-6 rounded-xl">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <i className="fas fa-image text-purple-600"></i>
+              الصورة الشخصية
+            </h3>
+
+            <div className="space-y-4">
+              {/* معاينة الصورة */}
+              {imagePreview && (
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Profile Preview"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-purple-100"
+                  />
+                  {profileImage && (
+                    <button
+                      type="button"
+                      onClick={handleCancelImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* زر رفع الصورة */}
+              <div className="flex items-center gap-4">
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-[#00183D] rounded-xl hover:bg-purple-100 transition-colors">
+                    <Upload size={20} />
+                    <span>{profileImage ? "تغيير الصورة" : "اختر صورة"}</span>
+                  </div>
+                </label>
+
+                {profileImage && (
+                  <span className="text-sm text-green-600">
+                    تم اختيار: {profileImage.name}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-gray-500">
+                الصور المسموحة: JPG, PNG, GIF, WebP (حد أقصى 5 ميجابايت)
+              </p>
+            </div>
+          </div>
+          
           {/* Basic Information Section */}
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -125,16 +177,14 @@ const EditProfile = ({
               <i className="fas fa-info-circle text-purple-600"></i>
               معلومات إضافية
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <FormField
-                  icon="fa-user-tag"
-                  label="النبذة التعريفية"
-                  name="bio"
-                  placeholder="أكتب نبذة مختصرة عن نفسك..."
-                  isTextarea
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-6">
+              <FormField
+                icon="fa-user-tag"
+                label="النبذة التعريفية"
+                name="bio"
+                placeholder="أكتب نبذة مختصرة عن نفسك..."
+                isTextarea
+              />
             </div>
           </div>
 
@@ -147,41 +197,24 @@ const EditProfile = ({
             <FormField
               icon="fa-lock"
               label="كلمة المرور الجديدة"
-              name="password"
+              name="newPassword"
               type="password"
-              placeholder=" كلمة المرور الجديدة"
+              placeholder="كلمة المرور الجديدة (اختياري)"
             />
             <FormField
               icon="fa-lock"
-              label="تاكيد كلمة المرور الجديدة"
+              label="تأكيد كلمة المرور الجديدة"
               name="confirmPassword"
               type="password"
-              placeholder="تاكيد كلمة المرور الجديدة"
+              placeholder="تأكيد كلمة المرور الجديدة"
             />
-
             <FormField
               icon="fa-lock"
               label="كلمة المرور الحالية"
               name="oldPassword"
               type="password"
-              placeholder="كلمة المرور الحالية"
+              placeholder="كلمة المرور الحالية (مطلوبة عند تغيير كلمة المرور)"
             />
-          </div>
-
-          {/* Profile Image Section */}
-          <div className="bg-gray-50 p-6 rounded-xl">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <i className="fas fa-image text-purple-600"></i>
-              الصورة الشخصية
-            </h3>
-            <div className="flex items-center gap-4">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-purple-50 file:text-[#00183D] hover:file:bg-purple-100 cursor-pointer"
-              />
-            </div>
           </div>
 
           {/* Messages */}
@@ -198,17 +231,18 @@ const EditProfile = ({
             </div>
           )}
 
-          {/* Submit Button */}
+          {/* Submit Buttons */}
           <div className="flex justify-end gap-4">
             <button
               type="button"
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
+              onClick={() => window.location.reload()}
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-[#00183D] text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+              className="px-6 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#001a3d] transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
               disabled={isLoading}
             >
               {isLoading ? (

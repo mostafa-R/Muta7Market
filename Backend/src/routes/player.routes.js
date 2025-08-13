@@ -1,30 +1,19 @@
 import express from "express";
+import { uploadMixed } from "../config/cloudinary.js";
 import {
   createPlayer,
-  deletePlayer,
   getAllPlayers,
-  getFeaturedPlayers,
   getMyProfile,
-  getPlayerAnalytics,
   getPlayerById,
-  getPlayersByPosition,
-  getPromotedPlayers,
-  getSimilarPlayers,
-  promotePlayer,
-  searchPlayers,
-  transferPlayer,
   updatePlayer,
-  updateStatistics,
-  deleteMedia,
 } from "../controllers/player.controller.js";
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
+import { parseJsonFields } from "../middleware/parseJsonFields.js";
 import validate from "../middleware/validation.middleware.js";
 import {
   createPlayerSchema,
   updatePlayerSchema,
 } from "../validators/player.validator.js";
-import { uploadMixed } from "../config/cloudinary.js";
-import { parseJsonFields } from "../middleware/parseJsonFields.js";
 // import {
 //   uploadSingle,
 //   uploadMultiple,
@@ -32,19 +21,29 @@ import { parseJsonFields } from "../middleware/parseJsonFields.js";
 
 const router = express.Router();
 
+/**
+ * ======================
+ * Public Routes
+ * ======================
+ */
+
+// Get all players
 router.get("/", getAllPlayers);
-// Public routes (no authentication required)
-// Player profile management
-// createPlayer
-// find player by id 
+
+// Get my profile (only for verified users)
+router.get("/playerprofile", authMiddleware, verifiedOnly, getMyProfile);
+
+// Get player by ID (must be last in public routes to avoid overriding)
 router.get("/:id", getPlayerById);
 
+/**
+ * ======================
+ * Protected Routes
+ * ======================
+ */
 router.use(authMiddleware);
-// Player profile management
 
-
-
-// createPlayer
+// Create a new player
 router.post(
   "/createPlayer",
   verifiedOnly,
@@ -64,7 +63,7 @@ router.post(
   createPlayer
 );
 
-// updatePlayer
+// Update an existing player by ID
 router.patch(
   "/:id",
   verifiedOnly,

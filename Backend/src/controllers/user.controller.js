@@ -3,6 +3,8 @@ import playerModel from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import cloudinary from "../config/cloudinary.js   "
+import {deleteFromCloudinary  } from "../config/cloudinary.js";
+
 
 
 // export const update = async (req, res) => {
@@ -207,11 +209,30 @@ import cloudinary from "../config/cloudinary.js   "
 //   }
 // };
 
+// تأكد من المسار الصحيح
+
+
+
 export const update = async (req, res) => {
   try {
     const { id } = req.user;
     if (!id) {
       return res.status(401).json({ message: "You must be logged in" });
+    }
+
+    // Debugging logs - أزلها في الإنتاج
+    console.log("=== Update Request Debug ===");
+    console.log("req.body:", req.body);
+    console.log("req.files:", req.files);
+    console.log("req.file:", req.file); // في حالة single file
+    console.log("===========================");
+
+    // جلب المستخدم الحالي
+    const currentUser = await User.findById(id)
+      .select("+password +profileImage")
+      .lean();
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     const restrictedFields = [
@@ -232,7 +253,7 @@ export const update = async (req, res) => {
       "__v",
     ];
 
-    const specialFields = ["password"];
+    const specialFields = ["password", "profileImage"]; // أضف profileImage هنا
 
     const schemaFields = Object.keys(User.schema.paths);
     const allowedFields = schemaFields.filter(
@@ -243,16 +264,21 @@ export const update = async (req, res) => {
     const updates = {};
     const errors = {};
 
-    // معالجة الحقول العادية (كما هي)
+    // معالجة الحقول العادية
     for (const field of allowedFields) {
-      if (field in req.body) {
+      if (
+        field in req.body &&
+        req.body[field] !== undefined &&
+        req.body[field] !== null &&
+        req.body[field] !== ""
+      ) {
         const value = req.body[field];
+
         if (
           typeof value === "object" &&
           value !== null &&
           !Array.isArray(value)
         ) {
-          const currentUser = await User.findById(id).lean().select(field);
           updates[field] =
             currentUser && currentUser[field]
               ? { ...currentUser[field], ...value }
@@ -263,22 +289,68 @@ export const update = async (req, res) => {
       }
     }
 
-    if (req.files && req.files.profileImage) {
-      const file = req.files.profileImage[0];
-    
-      if (!file.mimetype.startsWith("image/")) {
+    // معالجة الصورة الشخصية - تحقق من جميع الاحتمالات
+    let imageFile = null;
+
+    // Check for file in different possible locations
+    if (req.files && req.files.profileImage && req.files.profileImage[0]) {
+      imageFile = req.files.profileImage[0];
+      console.log("Image found in req.files.profileImage[0]");
+    } else if (req.file) {
+      imageFile = req.file;
+      console.log("Image found in req.file");
+    } else if (req.files && Array.isArray(req.files) && req.files[0]) {
+      imageFile = req.files[0];
+      console.log("Image found in req.files[0]");
+    }
+
+    if (imageFile) {
+      console.log("Processing image file:", {
+        filename: imageFile.filename,
+        path: imageFile.path,
+        mimetype: imageFile.mimetype,
+      });
+
+      // التحقق من نوع الملف
+      if (!imageFile.mimetype || !imageFile.mimetype.startsWith("image/")) {
         return res
           .status(400)
           .json({ message: "Invalid image file. Must be an image." });
       }
-      updates.profileImage = file.path;
+
+      // حذف الصورة القديمة إذا وجدت
+      if (currentUser.profileImage && currentUser.profileImage.public_id) {
+        try {
+          console.log(
+            "Deleting old image:",
+            currentUser.profileImage.public_id
+          );
+          await deleteFromCloudinary(
+            currentUser.profileImage.public_id,
+            "image"
+          );
+        } catch (deleteError) {
+          console.error("Error deleting old image:", deleteError);
+          // المتابعة حتى لو فشل الحذف
+        }
+      }
+
+      // حفظ الصورة الجديدة ككائن
+      updates.profileImage = {
+        url: imageFile.path || imageFile.secure_url || imageFile.url, // Cloudinary قد يرجع القيمة في أماكن مختلفة
+        public_id: imageFile.filename || imageFile.public_id,
+      };
+
+      console.log("Image added to updates:", updates.profileImage);
     }
-    
-    if (req.body.phone) {
+
+    // معالجة رقم الهاتف
+    if (req.body.phone && req.body.phone !== currentUser.phone) {
       const phoneExists = await User.findOne({
         phone: req.body.phone,
         _id: { $ne: id },
       });
+
       if (phoneExists) {
         errors.phone = "Phone number already in use";
       } else {
@@ -289,19 +361,16 @@ export const update = async (req, res) => {
       }
     }
 
+    // معالجة كلمة المرور
     if (req.body.newPassword) {
       if (!req.body.oldPassword) {
         errors.password = "Old password is required to set new password";
       } else {
-        const user = await User.findById(id).select("+password");
-        if (!user) {
-          return res.status(404).json({ message: "User not found" });
-        }
-
         const isMatch = await bcrypt.compare(
           req.body.oldPassword,
-          user.password
+          currentUser.password
         );
+
         if (!isMatch) {
           errors.password = "Old password is incorrect";
         } else if (req.body.newPassword !== req.body.confirmPassword) {
@@ -315,31 +384,39 @@ export const update = async (req, res) => {
       }
     }
 
-    // Handle email update (with verification required)
-    if (req.body.email && req.body.email !== req.user.email) {
+    // معالجة البريد الإلكتروني
+    if (req.body.email && req.body.email.toLowerCase() !== currentUser.email) {
       const emailExists = await User.findOne({
         email: req.body.email.toLowerCase(),
         _id: { $ne: id },
       });
+
       if (emailExists) {
         errors.email = "Email already in use";
       } else {
-        // You might want to send verification email here
-        // For now, we'll just note that email change needs verification
         errors.email =
           "Email change requires verification. Please use the email change endpoint.";
       }
     }
 
-    // التحقق من الأخطاء والتحديث (كما هي)
+    // التحقق من الأخطاء
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({ message: "Validation errors", errors });
     }
+
+    // التحقق من وجود تحديثات
+    console.log("Updates object:", updates);
+    console.log("Updates keys:", Object.keys(updates));
+
     if (Object.keys(updates).length === 0) {
+      console.log("No updates found!");
       return res.status(400).json({ message: "No valid fields to update" });
     }
+
+    // إضافة وقت آخر تسجيل دخول
     updates.lastLogin = new Date();
 
+    // تنفيذ التحديث
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { $set: updates },
@@ -355,17 +432,22 @@ export const update = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // إرسال الاستجابة الناجحة
     const updatedFields = Object.keys(updates).filter(
       (key) => key !== "lastLogin"
     );
+
+    console.log("Update successful! Updated fields:", updatedFields);
+
     res.status(200).json({
       message: "User updated successfully",
       updatedFields,
       user: updatedUser,
     });
   } catch (error) {
-    console.error("Update error:", error.message); // تجنب تسجيل sensitive data
-    // معالجة الأخطاء (كما هي)
+    console.error("Update error:", error);
+
+    // معالجة أخطاء التحقق من الصحة
     if (error.name === "ValidationError") {
       const validationErrors = {};
       Object.keys(error.errors).forEach((key) => {
@@ -375,6 +457,8 @@ export const update = async (req, res) => {
         .status(400)
         .json({ message: "Validation error", errors: validationErrors });
     }
+
+    // معالجة أخطاء التكرار
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
@@ -382,9 +466,12 @@ export const update = async (req, res) => {
         errors: { [field]: `This ${field} is already in use` },
       });
     }
+
+    // خطأ عام
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 export const notPaied = async (req, res) => {
   try {

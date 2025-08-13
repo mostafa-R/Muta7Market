@@ -1,4 +1,3 @@
-// app/profile/page.jsx
 "use client";
 
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -17,9 +16,10 @@ import ProfileView from "./components/ProfileView";
 import Sidebar from "./components/Sidebar";
 // Import Schemas
 import { IoMdMenu } from "react-icons/io";
+import PlayerProfile from "./components/PlayerProfile";
 import { ProfileFormSchema } from "./components/validation.js";
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`;
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const UserProfile = () => {
   const [user, setUser] = useState(null);
@@ -27,10 +27,14 @@ const UserProfile = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [player, setPlayer] = useState(null);
+
   const router = useRouter();
 
   const {
@@ -44,11 +48,17 @@ const UserProfile = () => {
 
   const fetchUserData = useCallback(async () => {
     setIsLoading(true);
+    setError("");
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       const response = await axios.get(`${API_URL}/auth/profile`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
-     
 
       if (!response.data?.user) {
         throw new Error("بيانات المستخدم غير متوفرة");
@@ -56,80 +66,226 @@ const UserProfile = () => {
 
       const userData = response.data.user;
       setUser(userData);
+
+      // تعيين القيم في النموذج
       reset({
-        name: userData.name,
-        email: userData.email,
+        name: userData.name || "",
+        email: userData.email || "",
         phone: userData.phone || "",
-        address: userData.address || "",
-        occupation: userData.occupation || "",
-        website: userData.website || "",
         bio: userData.bio || "",
-        dateOfBirth: userData.dateOfBirth
-          ? new Date(userData.dateOfBirth).toISOString().split("T")[0]
-          : "",
+        newPassword: "",
+        confirmPassword: "",
+        oldPassword: "",
       });
+
+      // تعيين معاينة الصورة الحالية
+      if (userData.profileImage?.url) {
+        setImagePreview(userData.profileImage.url);
+      }
     } catch (err) {
-      setError("فشل جلب بيانات المستخدم. حاول مرة أخرى.");
-      console.log("خطأ في جلب البيانات");
+      console.error("Error fetching user data:", err);
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/login");
+      } else {
+        setError("فشل جلب بيانات المستخدم. حاول مرة أخرى.");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [reset]);
+  }, [reset, router]);
 
   const fetchPendingPayments = useCallback(async () => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
       const response = await axios.get(`${API_URL}/user/notpaid`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
-     
-      setPendingPayments([response.data] || []);
+
+      setPendingPayments(response.data ? [response.data] : []);
     } catch (err) {
-      setError("فشل جلب بيانات المستخدم. حاول مرة أخرى.");
-      console.log("خطاء في جلب البيانات");
+      console.error("Error fetching payments:", err);
     }
   }, []);
+
+  const fetchPlayerData = useCallback(async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await axios.get(`${API_URL}/players/playerprofile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // التحقق من وجود البيانات في الاستجابة
+      if (response.data && response.data.data) {
+        const playerData = response.data.data; // استخدام response.data.data
+        console.log("Player Data:", playerData);
+        setPlayer(playerData);
+      } else {
+        throw new Error("No player data found");
+      }
+
+      setError(""); // مسح أي أخطاء سابقة
+    } catch (err) {
+      console.error("Error fetching player data:", err);
+
+      // معالجة الأخطاء بشكل أفضل
+      if (err.response) {
+        if (err.response.status === 401) {
+          setError("غير مصرح لك بالوصول. يرجى تسجيل الدخول مرة أخرى.");
+          localStorage.removeItem("token");
+          router.push("/login");
+        } else if (err.response.status === 404) {
+          setError("لم يتم العثور على بيانات اللاعب.");
+        } else {
+          setError(err.response.data?.message || "حدث خطأ في جلب البيانات.");
+        }
+      } else if (err.request) {
+        setError("فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.");
+      } else {
+        setError(err.message || "حدث خطأ غير متوقع.");
+      }
+    } finally {
+      setIsLoading(false); // إيقاف التحميل في جميع الحالات
+    }
+  }, [router]);
 
   useEffect(() => {
     fetchUserData();
     fetchPendingPayments();
-  }, [fetchUserData]);
+    fetchPlayerData();
+  }, [fetchUserData, fetchPendingPayments, fetchPlayerData]);
 
   const onSubmit = useCallback(
     async (data) => {
       setError("");
       setSuccess("");
+      setIsUpdating(true);
+
       try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/login");
+          return;
+        }
+
         const formData = new FormData();
-        Object.keys(data).forEach((key) => {
-          if (data[key]) formData.append(key, data[key]);
-        });
-        if (profileImage) formData.append("profileImage", profileImage);
 
-        await axios.patch(`${API_URL}/user/update`, formData, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        if (data.name && data.name.trim()) {
+          formData.append("name", data.name.trim());
+        }
+
+        if (data.phone && data.phone.trim()) {
+          formData.append("phone", data.phone.trim());
+        }
+
+        if (data.bio) {
+          formData.append("bio", data.bio.trim());
+        }
+
+        if (data.newPassword && data.newPassword.trim()) {
+          formData.append("newPassword", data.newPassword);
+          formData.append("confirmPassword", data.confirmPassword);
+          formData.append("oldPassword", data.oldPassword);
+        }
+
+        if (profileImage) {
+          formData.append("profileImage", profileImage);
+        }
+
+        const response = await axios.patch(`${API_URL}/user/update`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
-        setSuccess("تم تحديث الملف الشخصي بنجاح!");
-        fetchUserData();
-        setShowConfirmModal(false);
+        if (response.data.user) {
+          setUser(response.data.user);
+
+          const updatedUser = {
+            ...response.data.user,
+            profileImage: response.data.user.profileImage || null,
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+
+          setSuccess("تم تحديث الملف الشخصي بنجاح!");
+
+          setProfileImage(null);
+
+          if (response.data.user.profileImage?.url) {
+            setImagePreview(response.data.user.profileImage.url);
+          }
+
+          setShowConfirmModal(false);
+
+          setTimeout(() => {
+            fetchUserData();
+          }, 1000);
+        }
       } catch (err) {
-        setError("فشل تحديث المعلومات. حاول مرة أخرى.");
-        console.log("خطأ في تحديث البيانات");
+        console.error("Update error:", err);
+
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+        } else if (err.response?.data?.errors) {
+          const validationErrors = err.response.data.errors;
+          const errorMessages = Object.values(validationErrors).join(", ");
+          setError(errorMessages);
+        } else if (err.response?.data?.message) {
+          setError(err.response.data.message);
+        } else {
+          setError("فشل تحديث المعلومات. حاول مرة أخرى.");
+        }
+      } finally {
+        setIsUpdating(false);
       }
     },
-    [profileImage, fetchUserData]
+    [profileImage, fetchUserData, reset, router]
   );
 
   const handleImageChange = useCallback((e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
       if (!file.type.startsWith("image/")) {
-        setError("يرجى تحميل ملف صورة صالح (مثل JPG أو PNG)");
+        setError("يرجى تحميل ملف صورة صالح (JPG, PNG, GIF, WebP)");
         return;
       }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setError("حجم الصورة يجب أن لا يتجاوز 5 ميجابايت");
+        return;
+      }
+
       setProfileImage(file);
+      setError("");
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   }, []);
+
+  const handleCancelImage = useCallback(() => {
+    setProfileImage(null);
+    if (user?.profileImage?.url) {
+      setImagePreview(user.profileImage.url);
+    } else {
+      setImagePreview(null);
+    }
+  }, [user]);
 
   if (isLoading) return <LoadingSpinner />;
   if (!user) return <ErrorMessage message="خطأ في تحميل البيانات" />;
@@ -145,13 +301,12 @@ const UserProfile = () => {
         />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          {/* Mobile Menu Button */}
           <button
             className="lg:hidden mb-4 p-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
             onClick={() => setIsSidebarOpen(true)}
             aria-label="فتح القائمة"
           >
-            <IoMdMenu className=" text-xl text-gray-700"></IoMdMenu>
+            <IoMdMenu className="text-xl text-gray-700" />
           </button>
 
           <div className="animate-fadeIn">
@@ -164,14 +319,26 @@ const UserProfile = () => {
                 errors={errors}
                 onSubmit={() => setShowConfirmModal(true)}
                 handleImageChange={handleImageChange}
+                handleCancelImage={handleCancelImage}
+                imagePreview={imagePreview}
+                profileImage={profileImage}
                 error={error}
                 success={success}
-                isLoading={isLoading}
+                isLoading={isUpdating}
               />
             )}
 
             {activeSection === "payments" && (
               <PaymentsSection payments={pendingPayments} router={router} />
+            )}
+            {activeSection === "playerProfile" && (
+              <PlayerProfile
+                player={player}
+                handleSubmit={onSubmit}
+                isLoading={isUpdating}
+                error={error}
+                success={success}
+              />
             )}
           </div>
         </main>
@@ -183,6 +350,7 @@ const UserProfile = () => {
           message="هل أنت متأكد من حفظ التغييرات؟"
           onConfirm={handleSubmit(onSubmit)}
           onCancel={() => setShowConfirmModal(false)}
+          isLoading={isUpdating}
         />
       )}
     </div>

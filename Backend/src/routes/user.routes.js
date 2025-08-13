@@ -1,7 +1,7 @@
 import { Router } from "express";
+import { uploadMixed } from "../config/cloudinary.js";
 import { notPaied, update } from "../controllers/user.controller.js";
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
-import { uploadMixed } from "../config/cloudinary.js";
 import validate from "../middleware/validation.middleware.js";
 import { updateProfileSchema } from "../validators/auth.validator.js";
 // import profileUpload from "../middleware/uploads/profileUpload.js";
@@ -17,7 +17,6 @@ userRoutes.patch(
   validate(updateProfileSchema),
   update
 );
-
 
 userRoutes.get("/notpaid", notPaied);
 
