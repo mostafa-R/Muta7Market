@@ -1,5 +1,4 @@
 import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
-import { PlayerSchema } from "./validation";
 
 const PaymentsSection = ({ payments, router }) => {
   // ترجمة القيم إلى العربية
@@ -25,19 +24,7 @@ const PaymentsSection = ({ payments, router }) => {
   };
 
   const PaymentCard = ({ payment }) => {
-    // التحقق من صحة البيانات باستخدام PlayerSchema
-    const { error } = PlayerSchema.validate(payment, { abortEarly: false });
-    if (error) {
-      console.error(
-        "Validation error in PaymentCard:",
-        error.details.map((detail) => ({
-          path: detail.path.join("."),
-          message: detail.message,
-        }))
-      );
-    }
-
-    // تحديد القيم الافتراضية للحقول المفقودة
+    // تحديد القيم الافتراضية للحقول المفقودة بدون validation غير ضروري
     const safePayment = {
       _id: payment._id || "",
       name:

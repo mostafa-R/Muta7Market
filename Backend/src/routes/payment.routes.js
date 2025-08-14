@@ -1,22 +1,22 @@
 // src/routes/payment.routes.js
 import { Router } from "express";
 
-import { authMiddleware } from "../middleware/auth.middleware.js";
 import {
-  initiatePayment,
-  paymentWebhook,
+  confirmReturn,
+  Getallorders,
   getPaymentById,
   getPaymentStatus,
   getPaymentStatusByTransaction,
-  confirmReturn,
+  initiatePayment,
+  paymentWebhook,
   refundPayment,
-  Getallorders,
 } from "../controllers/payment.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { paymentLimiter } from "../middleware/rateLimiter.middleware.js";
 const r = Router();
 
-
 r.post("/orders", Getallorders);
-r.post("/initiate", authMiddleware, initiatePayment);
+r.post("/initiate", paymentLimiter, authMiddleware, initiatePayment);
 
 // Webhook من Paylink (بدون Auth)
 r.post("/webhook", paymentWebhook);
@@ -35,6 +35,5 @@ r.get("/:id", authMiddleware, getPaymentById);
 
 // طلب استرجاع (اختياري؛ يتطلب Auth)
 r.post("/:id/refund", authMiddleware, refundPayment);
-
 
 export default r;

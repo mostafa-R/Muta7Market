@@ -3,62 +3,149 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { cloudinary } from "../config/cloudinary.js";
 import ApiError from "../utils/ApiError.js";
 
+// Helper functions to determine file types
+const isImage = (mimetype) => mimetype.startsWith("image/");
+const isVideo = (mimetype) => mimetype.startsWith("video/");
+const isDocument = (mimetype) =>
+  [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+  ].includes(mimetype);
+
+// Determine folder and resource type based on file
+const getFileParams = (file) => {
+  let folder = "sports-platform/";
+  let resource_type = "auto";
+  let format;
+
+  if (isImage(file.mimetype)) {
+    folder += "images";
+    resource_type = "image";
+  } else if (isVideo(file.mimetype)) {
+    folder += "videos";
+    resource_type = "video";
+  } else if (isDocument(file.mimetype)) {
+    folder += "documents";
+    resource_type = "raw";
+    // Preserve original file extension for documents
+    format = file.originalname.split(".").pop().toLowerCase();
+  } else {
+    folder += "others";
+    resource_type = "raw";
+  }
+
+  return { folder, resource_type, format };
+};
+
 // Cloudinary storage configuration
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: "players",
-    allowed_formats: [
-      "jpg",
-      "jpeg",
-      "png",
-      "gif",
-      "mp4",
-      "mov",
-      "avi",
-      "pdf",
-      "doc",
-      "docx",
-    ],
-    resource_type: "auto", // Automatically detect file type
+  params: async (req, file) => {
+    const { folder, resource_type, format } = getFileParams(file);
+
+    const params = {
+      folder,
+      resource_type,
+      allowed_formats: [
+        // Images
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "webp",
+        // Videos
+        "mp4",
+        "mov",
+        "avi",
+        "wmv",
+        "mkv",
+        // Documents
+        "pdf",
+        "doc",
+        "docx",
+        "txt",
+      ],
+    };
+
+    // Add format for documents to preserve extension
+    if (format && resource_type === "raw") {
+      params.format = format;
+    }
+
+    // Add transformation for images
+    if (isImage(file.mimetype)) {
+      params.transformation = [{ width: 1000, height: 1000, crop: "limit" }];
+    }
+
+    return params;
   },
 });
 
 // File filter
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
+    // Images
     "image/jpeg",
     "image/jpg",
     "image/png",
     "image/gif",
+    "image/webp",
+    // Videos
     "video/mp4",
     "video/quicktime",
     "video/x-msvideo",
+    "video/x-ms-wmv",
+    "video/x-matroska",
+    // Documents
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new ApiError(400, "Invalid file type"), false);
+    cb(
+      new ApiError(
+        400,
+        `Invalid file type: ${file.mimetype}. Allowed types: images, videos, documents`
+      ),
+      false
+    );
   }
 };
 
-// Create multer instance
-const upload = multer({
+// Create multer instance with mixed upload support
+export const uploadMixed = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 100 * 1024 * 1024, // 100MB limit
   },
 });
 
-// Export upload middlewares
-export const uploadSingle = (fieldName) => upload.single(fieldName);
+// Export individual upload middlewares
+export const uploadSingle = (fieldName) => uploadMixed.single(fieldName);
 export const uploadMultiple = (fieldName, maxCount) =>
-  upload.array(fieldName, maxCount);
-export const uploadFields = (fields) => upload.fields(fields);
+  uploadMixed.array(fieldName, maxCount);
+export const uploadFields = (fields) => uploadMixed.fields(fields);
 
-export default upload;
+// Helper function to delete files from Cloudinary
+export const deleteFromCloudinary = async (
+  publicId,
+  resource_type = "image"
+) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type,
+    });
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to delete file: ${error.message}`);
+  }
+};
+
+export default uploadMixed;

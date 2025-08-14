@@ -616,6 +616,7 @@ function RegisterProfileContent() {
                 <div className="text-center text-lg text-gray-700 mb-4">
                   ادفع الاشتراك لإكمال التفعيل
                 </div>
+                <PaymentBtn />
               </>
             )}
           </form>
