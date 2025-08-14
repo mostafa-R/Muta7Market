@@ -3,11 +3,13 @@ import { Button } from "@/app/component/ui/button";
 import axios from "axios";
 import { useFormik } from "formik";
 import { Save, X } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "sonner";
+import LoadingSpinner from "../component/LoadingSpinner";
+import { ContactInfoCard } from "./components/ContactInfoCard";
 import { FinancialInfoCard } from "./components/FinancialInfoCard";
 import { MediaUploadCard } from "./components/MediaUploadCard";
 import PaymentBtn from "./components/PaymentBtn";
@@ -17,7 +19,7 @@ import { SportsInfoCard } from "./components/SportsInfoCard";
 import { TermsCard } from "./components/TermsCard";
 import { TransferInfoCard } from "./components/TransferInfoCard";
 import { playerFormSchema } from "./types/schema";
-import LoadingSpinner from "../component/LoadingSpinner";
+import { validateWithJoi } from "./types/validateWithJoi";
 
 // Helpers to extract API messages consistently
 const getSuccessMessage = (response, fallback) => {
@@ -30,6 +32,19 @@ const getSuccessMessage = (response, fallback) => {
 };
 
 const getErrorMessage = (error, fallback) => {
+  const firstFromErrors = (() => {
+    try {
+      const errs = error?.response?.data?.errors;
+      if (errs && typeof errs === "object") {
+        const [k, arr] = Object.entries(errs)[0] || [];
+        if (k && Array.isArray(arr) && arr.length) {
+          return `${k}: ${arr[0]}`;
+        }
+      }
+    } catch {}
+    return null;
+  })();
+  if (firstFromErrors) return firstFromErrors;
   return (
     error?.response?.data?.message ||
     error?.response?.data?.msg ||
@@ -47,15 +62,30 @@ function getCookie(name) {
 }
 
 export default function RegisterProfile() {
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 4MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
-  const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/webm"];
-  const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+  const ALLOWED_VIDEO_TYPES = [
+    "video/mp4",
+    "video/mpeg",
+    "video/webm",
+    "video/quicktime", // mov
+    "video/x-msvideo", // avi
+    "video/x-ms-wmv", // wmv
+    "video/x-matroska", // mkv
+  ];
+  const ALLOWED_DOCUMENT_TYPES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/png",
+  ];
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [canPay, setCanPay] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const idParam = searchParams?.get("id");
   const [player, setPlayer] = useState(null);
   const [error, setError] = useState(null);
@@ -117,74 +147,251 @@ export default function RegisterProfile() {
 
   const handleSubmit = async (values) => {
     const token = localStorage.getItem("token");
-    if (!token) { toast.error("يرجى تسجيل الدخول"); return; }
-  
+    if (!token) {
+      toast.error("يرجى تسجيل الدخول");
+      return;
+    }
+    if (!API_URL) {
+      toast.error("إعدادات الخادم غير مضبوطة (API_URL)");
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const fd = new FormData();
-  
-      // files
-      if (values.profilePictureFile) fd.append("profileImage", values.profilePictureFile);
-      if (values.documentFile) {
-        fd.append("document", values.documentFile);
-        if (values.documentTitle) fd.append("documentTitle", values.documentTitle);
-      }
-  
+
+      const isUpdate = Boolean(idParam);
+      const url = isUpdate
+        ? `${API_URL}/players/${idParam}`
+        : `${API_URL}/players/createPlayer`;
+      const method = isUpdate ? "patch" : "post";
+
       // map experience -> expreiance (backend field name)
       const payload = { ...values };
       if (payload.experience !== undefined) {
         payload.expreiance = Number(payload.experience) || 0;
         delete payload.experience;
       }
-  
-      // nested objects that backend expects as objects:
-      const jsonKeys = [
+
+      // ensure numeric conversions for numeric fields
+      if (payload.age !== undefined && payload.age !== "") {
+        payload.age = Number(payload.age);
+      }
+      if (
+        payload.monthlySalary?.amount !== undefined &&
+        payload.monthlySalary.amount !== ""
+      ) {
+        payload.monthlySalary.amount = Number(payload.monthlySalary.amount);
+      }
+      if (
+        payload.yearSalary?.amount !== undefined &&
+        payload.yearSalary.amount !== ""
+      ) {
+        payload.yearSalary.amount = Number(payload.yearSalary.amount);
+      }
+      if (
+        payload.transferredTo?.amount !== undefined &&
+        payload.transferredTo.amount !== ""
+      ) {
+        payload.transferredTo.amount = Number(payload.transferredTo.amount);
+      }
+
+      // sanitize empty date fields to avoid cast errors on create
+      if (payload.contractEndDate === "") {
+        payload.contractEndDate = null;
+      }
+      if (payload.transferredTo) {
+        if (payload.transferredTo.date === "") {
+          payload.transferredTo.date = null;
+        }
+        if (payload.transferredTo.club === "") {
+          payload.transferredTo.club = null;
+        }
+      }
+
+      // remove UI-only fields and fields handled separately
+      const hasFiles = Boolean(
+        values.profilePictureFile || values.documentFile
+      );
+      delete payload.profilePictureFile;
+      delete payload.profilePicturePreview;
+      delete payload.agreeToTerms;
+      delete payload.documentFile;
+      delete payload.documentTitle;
+      delete payload.media; // handled by dedicated endpoints
+      delete payload.seo; // not part of backend schema
+
+      // If updating, strip empty-string numeric fields that Joi doesn't allow
+      if (isUpdate) {
+        if (
+          payload.monthlySalary &&
+          (payload.monthlySalary.amount === "" ||
+            payload.monthlySalary.amount == null)
+        ) {
+          delete payload.monthlySalary.amount;
+          if (Object.keys(payload.monthlySalary).length === 0)
+            delete payload.monthlySalary;
+        }
+        if (
+          payload.yearSalary &&
+          (payload.yearSalary.amount === "" ||
+            payload.yearSalary.amount == null)
+        ) {
+          delete payload.yearSalary.amount;
+          if (Object.keys(payload.yearSalary).length === 0)
+            delete payload.yearSalary;
+        }
+        if (payload.transferredTo) {
+          if (
+            payload.transferredTo.amount === "" ||
+            payload.transferredTo.amount == null
+          ) {
+            delete payload.transferredTo.amount;
+          }
+          if (
+            payload.transferredTo.club === "" &&
+            (payload.transferredTo.date === "" ||
+              payload.transferredTo.date == null) &&
+            payload.transferredTo.amount === undefined
+          ) {
+            delete payload.transferredTo;
+          }
+        }
+      }
+
+      // If no files involved, send JSON directly (backend expects nested objects)
+      if (!isUpdate) {
+        // Always use multipart for create route (multer + parseJsonFields)
+        const fdCreate = new FormData();
+        if (values.profilePictureFile)
+          fdCreate.append("profileImage", values.profilePictureFile);
+        // Prefer newly selected doc/video from MediaUploadCard; fallback to legacy fields
+        const firstDocFile =
+          values.media?.documents?.find((d) => d && d.file)?.file ||
+          values.documentFile ||
+          null;
+        const firstVideoFile =
+          values.media?.videos?.find((v) => v && v.file)?.file || null;
+        if (firstDocFile) {
+          fdCreate.append("document", firstDocFile);
+        }
+        if (firstVideoFile) {
+          fdCreate.append("playerVideo", firstVideoFile);
+        }
+
+        // Append primitives
+        Object.entries(payload).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && typeof v !== "object") {
+            fdCreate.append(k, v);
+          }
+        });
+
+        // Append nested objects as JSON for backend parser
+        [
+          "monthlySalary",
+          "yearSalary",
+          "transferredTo",
+          "socialLinks",
+          "isPromoted",
+          "contactInfo",
+        ].forEach((key) => {
+          if (payload[key] && typeof payload[key] === "object") {
+            fdCreate.append(key, JSON.stringify(payload[key]));
+          }
+        });
+
+        const resp = await axios.post(url, fdCreate, {
+          headers: { Authorization: `Bearer ${token}` },
+          onUploadProgress: (e) => {
+            if (e.total)
+              setUploadProgress(Math.round((e.loaded * 100) / e.total));
+          },
+        });
+
+        toast.success(getSuccessMessage(resp, "تم الإنشاء"));
+        setCanPay(true);
+        return;
+      }
+
+      // Otherwise build multipart FormData for file upload
+      const fd = new FormData();
+      if (values.profilePictureFile)
+        fd.append("profileImage", values.profilePictureFile);
+      // Update supports adding a single document; only send if it's newly selected
+      const updDocFile =
+        values.media?.documents?.find((d) => d && d.file)?.file ||
+        values.documentFile ||
+        null;
+      if (updDocFile) {
+        fd.append("document", updDocFile);
+      }
+      // Backend update does not process playerVideo; skip here
+
+      // For multipart, send only primitives to avoid nested parsing issues
+      Object.entries(payload).forEach(([k, v]) => {
+        if (
+          v !== undefined &&
+          v !== null &&
+          typeof v !== "object" // skip nested objects here
+        ) {
+          fd.append(k, v);
+        }
+      });
+      // And append nested objects as JSON so backend parseJsonFields can handle them
+      [
         "monthlySalary",
         "yearSalary",
         "transferredTo",
         "socialLinks",
         "isPromoted",
         "contactInfo",
-      ];
-  
-      // append primitives
-      Object.entries(payload).forEach(([k, v]) => {
-        if (["profilePictureFile","profilePicturePreview","documentFile","documentTitle","agreeToTerms","media","seo"].includes(k)) return;
-        if (jsonKeys.includes(k)) return; // handle below
-  
-        if (v !== undefined && v !== null) fd.append(k, v);
-      });
-  
-      // append JSON for nested objects
-      jsonKeys.forEach((k) => {
-        if (payload[k] !== undefined) {
-          fd.append(k, JSON.stringify(payload[k]));
+      ].forEach((key) => {
+        if (payload[key] && typeof payload[key] === "object") {
+          fd.append(key, JSON.stringify(payload[key]));
         }
       });
-  
-      const isUpdate = Boolean(idParam);
-      const url = isUpdate ? `${API_URL}/players/${idParam}` : `${API_URL}/players/createPlayer`;
-      const method = isUpdate ? "patch" : "post";
-  
-      const resp = await axios({
-        method, url, data: fd,
+
+      const uploadResp = await axios({
+        method,
+        url,
+        data: fd,
         headers: { Authorization: `Bearer ${token}` },
-        onUploadProgress: (e) => {  
-          if (e.total) setUploadProgress(Math.round((e.loaded*100)/e.total));
+        onUploadProgress: (e) => {
+          if (e.total)
+            setUploadProgress(Math.round((e.loaded * 100) / e.total));
         },
       });
-  
-      toast.success(getSuccessMessage(resp, isUpdate ? "تم التحديث" : "تم الإنشاء"));
+
+      // No follow-up PATCH: nested JSON is already included in multipart and parsed server-side
+
+      toast.success(
+        getSuccessMessage(uploadResp, isUpdate ? "تم التحديث" : "تم الإنشاء")
+      );
       if (!isUpdate) setCanPay(true);
     } catch (err) {
-      // show backend validation details to see exactly what's wrong
       console.error("ERR 400 payload details:", err?.response?.data);
-      toast.error(getErrorMessage(err, idParam ? "فشل التحديث" : "فشل الإنشاء"));
+      const msg = getErrorMessage(err, idParam ? "فشل التحديث" : "فشل الإنشاء");
+
+      // If profile already exists, try to fetch its ID and redirect to edit
+      if (err?.response?.status === 400 && /exists/i.test(String(msg))) {
+        try {
+          const token = localStorage.getItem("token");
+          const me = await axios.get(`${API_URL}/players/playerprofile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const pid = me?.data?.data?._id;
+          if (pid) {
+            toast.info("لديك ملف موجود مسبقًا، سيتم فتحه للتعديل");
+            router.replace(`/register-profile?id=${pid}`);
+            return;
+          }
+        } catch {}
+      }
+
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
-  
 
   const initialValues = {
     name: "",
@@ -193,16 +400,16 @@ export default function RegisterProfile() {
     nationality: "",
     jop: "",
     position: "",
-    status: "",
+    status: "available",
     experience: "",
-    monthlySalary: { amount: 0, currency: "$" },
-    yearSalary: { amount: 0, currency: "$" },
+    monthlySalary: { amount: 0, currency: "SAR" },
+    yearSalary: { amount: 0, currency: "SAR" },
     contractEndDate: "",
     transferredTo: { club: "", date: "", amount: "" },
     media: {
       profileImage: { url: "", publicId: "" },
-      videos: { url: "", publicId: "" },
-      documents: { url: "", publicId: "" },
+      videos: [],
+      documents: [],
     },
     socialLinks: { instagram: "", twitter: "", whatsapp: "", youtube: "" },
     isPromoted: { status: false, startDate: "", endDate: "", type: "" },
@@ -228,28 +435,9 @@ export default function RegisterProfile() {
     documentTitle: "",
   };
 
-  // const formik = useFormik({
-  //   initialValues,
-  //   validate: (values) => {
-  //     const { error } = playerFormSchema.validate(values, {
-  //       abortEarly: false,
-  //     });
-  //     if (!error) return {};
-  //     const errors = {};
-  //     error.details.forEach((detail) => {
-  //       const path = detail.path.join(".");
-  //       errors[path] = detail.message;
-  //     });
-  //     return errors;
-  //   },
-  //   validateOnChange: true,
-  //   validateOnBlur: true,
-  //   onSubmit: handleSubmit,
-  // });
-
   const formik = useFormik({
     initialValues,
-    validate: (values) => {},
+    validate: validateWithJoi(playerFormSchema),
     validateOnChange: true,
     validateOnBlur: true,
     onSubmit: handleSubmit,
@@ -268,6 +456,19 @@ export default function RegisterProfile() {
           });
           const player = response.data.data;
 
+          const existingVideos = Array.isArray(player.media?.videos)
+            ? player.media.videos
+            : player.media?.videos?.url
+            ? [player.media.videos]
+            : [];
+          const existingDocuments = Array.isArray(player.media?.documents)
+            ? player.media.documents
+            : player.media?.documents?.url
+            ? [player.media.documents]
+            : [];
+
+          const toDateInput = (d) => (d ? String(d).slice(0, 10) : "");
+
           const mergedValues = {
             ...initialValues,
             name: player.name || "",
@@ -276,32 +477,26 @@ export default function RegisterProfile() {
             nationality: player.nationality || "",
             jop: player.jop || "",
             position: player.position || "",
-            status: player.status || "",
+            status: player.status || "available",
             experience: player.expreiance ? Number(player.expreiance) || 0 : 0,
             monthlySalary: player.monthlySalary || {
               amount: 0,
               currency: "SAR",
             },
             yearSalary: player.yearSalary || { amount: 0, currency: "SAR" },
-            contractEndDate: player.contractEndDate || "",
-            transferredTo: player.transferredTo || {
-              club: "",
-              date: "",
-              amount: "",
+            contractEndDate: toDateInput(player.contractEndDate),
+            transferredTo: {
+              club: player.transferredTo?.club || "",
+              date: toDateInput(player.transferredTo?.date),
+              amount: player.transferredTo?.amount || "",
             },
             media: {
               profileImage: player.media?.profileImage || {
                 url: "",
                 publicId: "",
               },
-              videos: player.media?.videos || {
-                url: "",
-                publicId: "",
-              },
-              documents: player.media?.documents || {
-                url: "",
-                publicId: "",
-              },
+              videos: existingVideos,
+              documents: existingDocuments,
             },
             socialLinks: player.socialLinks || {
               instagram: "",
@@ -357,17 +552,30 @@ export default function RegisterProfile() {
     return null;
   };
 
-  // const handleFormSubmit = (e) => {
-  //   e.preventDefault();
-  //   formik.handleSubmit(e);
-  // };
-
   const handleResetForm = () => {
     formik.resetForm();
     setCanPay(false);
     setUploadProgress(0);
     setUploadStatus(null);
     toast.info("تم إعادة تعيين النموذج");
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const errors = await formik.validateForm();
+    if (errors && Object.keys(errors).length > 0) {
+      Object.keys(errors).forEach((path) =>
+        formik.setFieldTouched(path, true, true)
+      );
+      const firstError = errors[Object.keys(errors)[0]];
+      toast.error(
+        typeof firstError === "string"
+          ? firstError
+          : "يرجى مراجعة الحقول المطلوبة"
+      );
+      return;
+    }
+    formik.handleSubmit(e);
   };
 
   return (
@@ -401,9 +609,9 @@ export default function RegisterProfile() {
         )}
 
         {isLoading && <LoadingSpinner />}
-        
+
         {!isLoading && (
-          <form onSubmit={formik.handleSubmit} className="space-y-6 p-4 w-full">
+          <form onSubmit={handleFormSubmit} className="space-y-6 p-4 w-full">
             <PersonalInfoCard
               formik={formik}
               handleFileValidation={handleFileValidation}
@@ -413,6 +621,7 @@ export default function RegisterProfile() {
             <SportsInfoCard formik={formik} />
             <FinancialInfoCard formik={formik} />
             <TransferInfoCard formik={formik} />
+            <ContactInfoCard formik={formik} />
             <SocialLinksCard formik={formik} />
             <MediaUploadCard
               formik={formik}

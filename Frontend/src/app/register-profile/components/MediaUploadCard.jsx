@@ -18,6 +18,33 @@ export const MediaUploadCard = ({
   ALLOWED_DOCUMENT_TYPES,
   MAX_FILE_SIZE,
 }) => {
+  const removeVideoAt = (index) => {
+    const items = [...formik.values.media.videos];
+    const item = items[index];
+    if (!item) return;
+    // Revoke only local object URLs (newly selected files)
+    if (item.file && item.url?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(item.url);
+      } catch {}
+    }
+    items.splice(index, 1);
+    formik.setFieldValue("media.videos", items);
+  };
+
+  const removeDocumentAt = (index) => {
+    const items = [...formik.values.media.documents];
+    const item = items[index];
+    if (!item) return;
+    if (item.file && item.url?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(item.url);
+      } catch {}
+    }
+    items.splice(index, 1);
+    formik.setFieldValue("media.documents", items);
+  };
+
   return (
     <>
       <Card className="border-0 shadow-card bg-white">
@@ -74,7 +101,10 @@ export const MediaUploadCard = ({
               <Label>الفيديوهات المرفوعة:</Label>
               <ul className="list-disc pl-5 space-y-1">
                 {formik.values.media.videos.map((video, idx) => (
-                  <li key={video.publicId || idx}>
+                  <li
+                    key={video.publicId || idx}
+                    className="flex items-center gap-3"
+                  >
                     <a
                       href={video.url}
                       target="_blank"
@@ -83,6 +113,16 @@ export const MediaUploadCard = ({
                     >
                       {video.title}
                     </a>
+                    {video.file && (
+                      <button
+                        type="button"
+                        onClick={() => removeVideoAt(idx)}
+                        className="text-xs text-red-600 hover:underline"
+                        aria-label="إزالة الفيديو"
+                      >
+                        إزالة
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -145,7 +185,10 @@ export const MediaUploadCard = ({
               <Label>المستندات المرفوعة:</Label>
               <ul className="list-disc pl-5 space-y-1">
                 {formik.values.media.documents.map((doc, idx) => (
-                  <li key={doc.publicId || idx}>
+                  <li
+                    key={doc.publicId || idx}
+                    className="flex items-center gap-3"
+                  >
                     <a
                       href={doc.url}
                       target="_blank"
@@ -154,6 +197,16 @@ export const MediaUploadCard = ({
                     >
                       {doc.title}
                     </a>
+                    {doc.file && (
+                      <button
+                        type="button"
+                        onClick={() => removeDocumentAt(idx)}
+                        className="text-xs text-red-600 hover:underline"
+                        aria-label="إزالة المستند"
+                      >
+                        إزالة
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

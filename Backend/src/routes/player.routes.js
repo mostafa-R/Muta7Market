@@ -64,7 +64,6 @@ router.post(
   createPlayer
 );
 
-
 // Update an existing player by ID
 router.patch(
   "/:id",
@@ -72,6 +71,7 @@ router.patch(
   uploadMixed.fields([
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
+    { name: "playerVideo", maxCount: 1 },
   ]),
   parseJsonFields([
     "monthlySalary",

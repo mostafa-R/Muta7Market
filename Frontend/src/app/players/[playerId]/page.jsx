@@ -52,6 +52,21 @@ const PlayerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isVideoPopupOpen, setIsVideoPopupOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState(null);
+
+  const getFirstVideoUrl = () => {
+    const vids = player?.media?.videos;
+    if (Array.isArray(vids) && vids.length > 0) return vids[0]?.url || null;
+    if (vids && typeof vids === "object") return vids.url || null; // backward compatibility
+    return null;
+  };
+
+  const getFirstDocument = () => {
+    const docs = player?.media?.documents;
+    if (Array.isArray(docs) && docs.length > 0) return docs[0] || null;
+    if (docs && typeof docs === "object") return docs; // backward compatibility
+    return null;
+  };
 
   const handleSendMessage = async () => {
     const token = localStorage.getItem("token");
@@ -214,11 +229,7 @@ const PlayerProfile = () => {
 
             {/* Video Container */}
             <div className="relative bg-black aspect-video">
-              <video
-                controls
-                className="w-full h-full"
-                onLoadedData={() => setIsLoading(false)}
-              >
+              <video controls className="w-full h-full">
                 <source src={videoUrl} type="video/mp4" />
                 <p className="text-white text-center p-4">
                   عذراً، متصفحك لا يدعم تشغيل الفيديو.
@@ -272,15 +283,23 @@ const PlayerProfile = () => {
   };
 
   const handleWatchVideo = () => {
+    const url = getFirstVideoUrl();
+    if (!url) {
+      toast.error("لا يوجد فيديو متاح لهذا اللاعب");
+      return;
+    }
+    setCurrentVideoUrl(url);
     setIsVideoPopupOpen(true);
   };
 
   const handleDownloadFile = () => {
-    const fileUrl = player.media?.documents?.url; // تأكد من أن هذا هو المسار الصحيح
+    const doc = getFirstDocument();
+    const fileUrl = doc?.url;
     if (fileUrl) {
       const link = document.createElement("a");
       link.href = fileUrl;
-      link.download = "player-file.pdf"; // اسم الملف عند التحميل
+      const defaultName = doc?.title || "player-file";
+      link.download = defaultName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -291,6 +310,7 @@ const PlayerProfile = () => {
 
   const closeVideoPopup = () => {
     setIsVideoPopupOpen(false);
+    setCurrentVideoUrl(null);
   };
 
   const getStatusColor = (status) => {
@@ -600,7 +620,7 @@ const PlayerProfile = () => {
                   onClick={handleDownloadFile}
                 >
                   <Download className="w-4 h-4 ml-2" />
-                  تحميل الملف (PDF)
+                  تحميل الملف (أول مستند)
                 </Button>
 
                 <Button
@@ -643,10 +663,7 @@ const PlayerProfile = () => {
 
       {/* Video Popup */}
       {isVideoPopupOpen && (
-        <VideoPopup
-          videoUrl={player.media?.videos?.url}
-          onClose={closeVideoPopup}
-        />
+        <VideoPopup videoUrl={currentVideoUrl} onClose={closeVideoPopup} />
       )}
     </div>
   );

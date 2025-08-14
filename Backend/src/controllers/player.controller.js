@@ -48,25 +48,32 @@ export const createPlayer = asyncHandler(async (req, res) => {
           }
         : { url: null, publicId: null },
 
-      documents: documentFile
-        ? {
-            url: documentFile.path || documentFile.secure_url,
-            publicId: documentFile.filename || documentFile.public_id,
-          }
-        : {
-            url: null,
-            publicId: null,
-          },
-
       videos: playerVideo
-        ? {
-            url: playerVideo.path || playerVideo.secure_url,
-            publicId: playerVideo.filename || playerVideo.public_id,
-          }
-        : {
-            url: null,
-            publicId: null,
-          },
+        ? [
+            {
+              url: playerVideo.path || playerVideo.secure_url,
+              publicId: playerVideo.filename || playerVideo.public_id,
+              title: req.body.videoTitle || playerVideo.originalname || "video",
+              duration: 0,
+              uploadedAt: new Date(),
+            },
+          ]
+        : [],
+
+      documents: documentFile
+        ? [
+            {
+              url: documentFile.path || documentFile.secure_url,
+              publicId: documentFile.filename || documentFile.public_id,
+              title:
+                req.body.documentTitle ||
+                documentFile.originalname ||
+                "document",
+              type: documentFile.mimetype || "raw",
+              uploadedAt: new Date(),
+            },
+          ]
+        : [],
     },
   });
 
@@ -74,8 +81,6 @@ export const createPlayer = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, player, "Player profile created successfully"));
 });
-
-
 
 // Get All Players (with advanced filtering)
 export const getAllPlayers = asyncHandler(async (req, res) => {
@@ -274,7 +279,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
 
   // 1) تحديث الحقول النصية (نفس شكل create)
-  // لو الحقل موجود في req.body هنحدّثه، لو مش موجود مش هنلمسه
   if (req.body.name !== undefined) player.name = req.body.name;
   if (req.body.age !== undefined) player.age = req.body.age;
   if (req.body.gender !== undefined) player.gender = req.body.gender;
@@ -371,11 +375,12 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     }
   }
 
-  // 2) الملفات (نفس create): صورة بروفايل + مستند واحد اختياري
+  // 2) الملفات
   const profileImage = req.files?.profileImage?.[0] || null;
   const documentFile = req.files?.document?.[0] || null;
+  const playerVideo = req.files?.playerVideo?.[0] || null;
 
-  // صورة البروفايل: لو جت صورة جديدة → امسح القديمة وبدّلها
+  // صورة البروفايل
   if (profileImage) {
     if (player.media?.profileImage?.publicId) {
       await deleteFromCloudinary(player.media.profileImage.publicId, "image");
@@ -408,6 +413,25 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       publicId: documentFile.filename || documentFile.public_id,
       title: req.body.documentTitle || documentFile.originalname || "document",
       type: documentFile.mimetype || "raw",
+      uploadedAt: new Date(),
+    });
+  }
+
+  // فيديو: لو جالك ملف → اضف element جديد في videos
+  if (playerVideo) {
+    if (!player.media)
+      player.media = {
+        profileImage: { url: null, publicId: null },
+        videos: [],
+        documents: [],
+      };
+    if (!Array.isArray(player.media.videos)) player.media.videos = [];
+
+    player.media.videos.push({
+      url: playerVideo.path || playerVideo.secure_url,
+      publicId: playerVideo.filename || playerVideo.public_id,
+      title: req.body.videoTitle || playerVideo.originalname || "video",
+      duration: 0,
       uploadedAt: new Date(),
     });
   }
@@ -496,13 +520,12 @@ export const deletePlayer = asyncHandler(async (req, res) => {
 export const getMyProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  const player = await Player.findOne({ user: userId }).populate(
-    "user",
-    "name email phone"
-  ).select("+_id");
+  const player = await Player.findOne({ user: userId })
+    .populate("user", "name email phone")
+    .select("+_id");
 
   if (!player) {
-   return res.status(404).json(new ApiResponse(404, null, "Player not found"));
+    return res.status(404).json(new ApiResponse(404, null, "Player not found"));
   }
 
   res

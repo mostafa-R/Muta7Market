@@ -1,5 +1,28 @@
-import mongoose from 'mongoose';
-import { GENDER, PROFILE_STATUS } from '../config/constants.js';
+import mongoose from "mongoose";
+import { GENDER, PROFILE_STATUS } from "../config/constants.js";
+
+const mediaVideoSchema = new mongoose.Schema(
+  {
+    url: { type: String, default: null },
+    publicId: { type: String, default: null },
+    title: { type: String, default: null },
+    duration: { type: Number, default: 0, min: 0 },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
+const mediaDocumentSchema = new mongoose.Schema(
+  {
+    url: { type: String, default: null },
+    publicId: { type: String, default: null },
+    title: { type: String, default: null },
+    type: { type: String, default: null },
+    size: { type: Number, default: 0, min: 0 },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
 
 const playerSchema = new mongoose.Schema(
   {
@@ -72,12 +95,12 @@ const playerSchema = new mongoose.Schema(
         publicId: { type: String, default: null },
       },
       videos: {
-        url: { type: String, default: null },
-        publicId: { type: String, default: null },
+        type: [mediaVideoSchema],
+        default: [],
       },
       documents: {
-        url: { type: String, default: null },
-        publicId: { type: String, default: null },
+        type: [mediaDocumentSchema],
+        default: [],
       },
     },
     socialLinks: {
@@ -123,13 +146,13 @@ const playerSchema = new mongoose.Schema(
 );
 
 // Indexes for optimized queries
-playerSchema.index({ name: 'text', position: 'text' }); // Text search for name and position
+playerSchema.index({ name: "text", position: "text" }); // Text search for name and position
 playerSchema.index({ nationality: 1, jop: 1, status: 1 }); // Compound index for filtering
-playerSchema.index({ 'isPromoted.status': 1, 'isPromoted.endDate': 1 }); // Index for promoted players
+playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 }); // Index for promoted players
 playerSchema.index({ game: 1 }); // Index for game-based queries
 
 // Virtual for checking if promoted
-playerSchema.virtual('isCurrentlyPromoted').get(function () {
+playerSchema.virtual("isCurrentlyPromoted").get(function () {
   return (
     this.isPromoted.status &&
     this.isPromoted.endDate &&
@@ -138,12 +161,12 @@ playerSchema.virtual('isCurrentlyPromoted').get(function () {
 });
 
 // Method to promote player
-playerSchema.methods.promote = async function (days, type = 'featured') {
+playerSchema.methods.promote = async function (days, type = "featured") {
   this.isPromoted = {
     status: true,
     startDate: new Date(),
     endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
-    type
+    type,
   };
   return this.save();
 };
@@ -154,20 +177,16 @@ playerSchema.methods.transfer = async function (clubName, amount) {
   this.transferredTo = {
     club: clubName,
     date: new Date(),
-    amount
+    amount,
   };
   return this.save();
 };
 
-
-playerSchema.pre('validate', function (next) {
+playerSchema.pre("validate", function (next) {
   if (this.status) {
     this.status = this.status.toLowerCase();
   }
   next();
 });
 
-
-export default mongoose.model('Player', playerSchema);
-
-
+export default mongoose.model("Player", playerSchema);

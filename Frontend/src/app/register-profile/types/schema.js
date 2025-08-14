@@ -65,21 +65,7 @@ export const playerFormSchema = Joi.object({
       "number.min": "يجب أن لا يكون المبلغ سالبًا",
     }),
   }).optional(),
-  media: Joi.object({
-    profileImage: Joi.object({
-      url: Joi.string().allow("", null).optional(),
-      publicId: Joi.string().allow("", null).optional(),
-    }).optional(),
-    videos: Joi.object({
-      url: Joi.string().allow("", null).optional(),
-      publicId: Joi.string().allow("", null).optional(),
-    }).optional(),
 
-    documents: Joi.object({
-      url: Joi.string().allow("", null).optional(),
-      publicId: Joi.string().allow("", null).optional(),
-    }).optional(),
-  }).optional(),
   socialLinks: Joi.object({
     instagram: Joi.string()
       .allow("", null)
