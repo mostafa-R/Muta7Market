@@ -4,7 +4,7 @@ import axios from "axios";
 import { useFormik } from "formik";
 import { Save, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "sonner";
@@ -61,7 +61,7 @@ function getCookie(name) {
   return null;
 }
 
-export default function RegisterProfile() {
+function RegisterProfileContent() {
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
   const ALLOWED_VIDEO_TYPES = [
@@ -220,45 +220,6 @@ export default function RegisterProfile() {
       delete payload.media; // handled by dedicated endpoints
       delete payload.seo; // not part of backend schema
 
-      // If updating, strip empty-string numeric fields that Joi doesn't allow
-      if (isUpdate) {
-        if (
-          payload.monthlySalary &&
-          (payload.monthlySalary.amount === "" ||
-            payload.monthlySalary.amount == null)
-        ) {
-          delete payload.monthlySalary.amount;
-          if (Object.keys(payload.monthlySalary).length === 0)
-            delete payload.monthlySalary;
-        }
-        if (
-          payload.yearSalary &&
-          (payload.yearSalary.amount === "" ||
-            payload.yearSalary.amount == null)
-        ) {
-          delete payload.yearSalary.amount;
-          if (Object.keys(payload.yearSalary).length === 0)
-            delete payload.yearSalary;
-        }
-        if (payload.transferredTo) {
-          if (
-            payload.transferredTo.amount === "" ||
-            payload.transferredTo.amount == null
-          ) {
-            delete payload.transferredTo.amount;
-          }
-          if (
-            payload.transferredTo.club === "" &&
-            (payload.transferredTo.date === "" ||
-              payload.transferredTo.date == null) &&
-            payload.transferredTo.amount === undefined
-          ) {
-            delete payload.transferredTo;
-          }
-        }
-      }
-
-      // If no files involved, send JSON directly (backend expects nested objects)
       if (!isUpdate) {
         // Always use multipart for create route (multer + parseJsonFields)
         const fdCreate = new FormData();
@@ -562,12 +523,12 @@ export default function RegisterProfile() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const errors = await formik.validateForm();
-    if (errors && Object.keys(errors).length > 0) {
-      Object.keys(errors).forEach((path) =>
+    const _errors = await formik.validateForm();
+    if (_errors && Object.keys(_errors).length > 0) {
+      Object.keys(_errors).forEach((path) =>
         formik.setFieldTouched(path, true, true)
       );
-      const firstError = errors[Object.keys(errors)[0]];
+      const firstError = _errors[Object.keys(_errors)[0]];
       toast.error(
         typeof firstError === "string"
           ? firstError
@@ -662,5 +623,19 @@ export default function RegisterProfile() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RegisterProfile() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-12 min-h-screen bg-gray-50">
+          <LoadingSpinner />
+        </div>
+      }
+    >
+      <RegisterProfileContent />
+    </Suspense>
   );
 }
