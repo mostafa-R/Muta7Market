@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
 
 // واجهة Player المستخدمة في PlayerCard
@@ -33,6 +34,7 @@ interface Player {
   experience?: number;
   profileImage?: string;
   yearSalary?: number;
+  jop: string;
 }
 
 // واجهة لبيانات الـ API الخام
@@ -65,6 +67,7 @@ interface ApiPlayer {
     amount: number;
     currency: string;
   };
+  jop: string;
 }
 
 // دالة لتحويل بيانات الـ API إلى واجهة Player
@@ -86,6 +89,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   experience: apiPlayer.expreiance,
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   annualContractValue: apiPlayer.yearSalary?.amount,
+  jop: apiPlayer.jop,
 });
 
 // عنوان الـ API
@@ -162,16 +166,7 @@ export default function PlayersPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              جميع اللاعبين
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              جارٍ تحميل البيانات...
-            </p>
-          </div>
-        </div>
+        <LoadingSpinner />
       </div>
     );
   }

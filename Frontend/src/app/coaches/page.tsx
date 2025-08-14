@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
+
+// واجهة Player المستخدمة في PlayerCard
 
 // واجهة Player المستخدمة في PlayerCard
 interface Player {
@@ -31,6 +34,9 @@ interface Player {
   profilePicture?: string;
   rating?: number;
   experience?: number;
+  profileImage?: string;
+  yearSalary?: number;
+  jop: string;
 }
 
 // واجهة لبيانات الـ API الخام
@@ -53,6 +59,17 @@ interface ApiPlayer {
   views: number;
   isActive: boolean;
   contractEndDate?: string;
+  media?: {
+    profileImage?: {
+      url: string;
+      publicId: string;
+    };
+  };
+  yearSalary: {
+    amount: number;
+    currency: string;
+  };
+  jop: string;
 }
 
 // دالة لتحويل بيانات الـ API إلى واجهة Player
@@ -65,7 +82,6 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   nationality: apiPlayer.nationality,
   category: apiPlayer.category,
   monthlySalary: apiPlayer.monthlySalary?.amount,
-  annualContractValue: undefined,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
   sport: apiPlayer.game,
@@ -73,6 +89,9 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   profilePicture: undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
+  profileImage: apiPlayer.media?.profileImage?.url || undefined,
+  annualContractValue: apiPlayer.yearSalary?.amount,
+  jop: apiPlayer.jop,
 });
 
 // عنوان الـ API
@@ -154,9 +173,9 @@ export default function PlayersPage() {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               جميع المدربين
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              جارٍ تحميل البيانات...
-            </p>
+            <div>
+              <LoadingSpinner />
+            </div>
           </div>
         </div>
       </div>

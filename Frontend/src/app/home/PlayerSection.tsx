@@ -4,6 +4,7 @@ import { Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import PlayerCard from "../component/PlayerCard";
+import LoadingSpinner from "../component/LoadingSpinner";
 
 // واجهة Player المستخدمة في PlayerCard
 interface Player {
@@ -114,15 +115,15 @@ const PlayerSection = () => {
   // عرض حالة التحميل
   if (loading) {
     return (
-      <section className="py-16 bg-[hsl(var(--muted))]">
+      <section className="py-8 bg-[hsl(var(--muted))]">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
               اللاعبون المميزون
             </h2>
-            <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-              جارٍ تحميل البيانات...
-            </p>
+            <div>
+              <LoadingSpinner/>
+            </div>
           </div>
         </div>
       </section>
@@ -132,7 +133,7 @@ const PlayerSection = () => {
   // عرض حالة الخطأ
   if (error) {
     return (
-      <section className="py-16 bg-[hsl(var(--muted))]">
+      <section className="py-10 bg-[hsl(var(--muted))]">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
@@ -146,7 +147,7 @@ const PlayerSection = () => {
   }
 
   return (
-    <section className="py-16 bg-[hsl(var(--muted))]">
+    <section className="py-10  bg-[hsl(var(--muted))]">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">

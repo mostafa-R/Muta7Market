@@ -1,5 +1,6 @@
 "use client";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, FileText, Users } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const PlayerProfile = ({
@@ -59,7 +60,31 @@ const PlayerProfile = ({
 
   // تحقق مما إذا كانت بيانات اللاعب موجودة
   if (!player) {
-    return <div className="text-red-500">لا توجد بيانات للاعب.</div>;
+    return (
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-[#00183D] p-8">
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <i className="fas fa-user"></i>
+            الملف الشخصي
+          </h1>
+          <div className="bg-gray-50 p-6 rounded-xl">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 h-full">
+              <i className="fas fa-user text-[#00183D]"></i>
+              غير مسجل حتي الان
+            </h3>
+            <Link href="/register-profile">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-4 hover:bg-[hsl(var(--primary)/0.9)] transition"
+              >
+                <FileText className="w-5 h-5 ml-2" />
+                سجل الان
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // إعداد البيانات الأولية للحقول
@@ -220,9 +245,7 @@ const PlayerProfile = ({
             <button
               type="button"
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
-              onClick={() =>
-                router.push(`/register-profile?id=${player._id}`)
-              }
+              onClick={() => router.push(`/register-profile?id=${player._id}`)}
             >
               تعديل
             </button>

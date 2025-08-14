@@ -17,6 +17,7 @@ import { SportsInfoCard } from "./components/SportsInfoCard";
 import { TermsCard } from "./components/TermsCard";
 import { TransferInfoCard } from "./components/TransferInfoCard";
 import { playerFormSchema } from "./types/schema";
+import LoadingSpinner from "../component/LoadingSpinner";
 
 // Helpers to extract API messages consistently
 const getSuccessMessage = (response, fallback) => {
@@ -46,7 +47,7 @@ function getCookie(name) {
 }
 
 export default function RegisterProfile() {
-  const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 4MB
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
   const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/webm"];
   const ALLOWED_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"];
@@ -200,8 +201,8 @@ export default function RegisterProfile() {
     transferredTo: { club: "", date: "", amount: "" },
     media: {
       profileImage: { url: "", publicId: "" },
-      videos: [],
-      documents: [],
+      videos: { url: "", publicId: "" },
+      documents: { url: "", publicId: "" },
     },
     socialLinks: { instagram: "", twitter: "", whatsapp: "", youtube: "" },
     isPromoted: { status: false, startDate: "", endDate: "", type: "" },
@@ -293,8 +294,14 @@ export default function RegisterProfile() {
                 url: "",
                 publicId: "",
               },
-              videos: player.media?.videos || [],
-              documents: player.media?.documents || [],
+              videos: player.media?.videos || {
+                url: "",
+                publicId: "",
+              },
+              documents: player.media?.documents || {
+                url: "",
+                publicId: "",
+              },
             },
             socialLinks: player.socialLinks || {
               instagram: "",
@@ -346,7 +353,7 @@ export default function RegisterProfile() {
   const handleFileValidation = (file, allowedTypes, maxSize) => {
     if (!file) return "لم يتم اختيار ملف";
     if (!allowedTypes.includes(file.type)) return "نوع الملف غير مدعوم";
-    if (file.size > maxSize) return "حجم الملف كبير جدًا (الحد الأقصى 4MB)";
+    if (file.size > maxSize) return "حجم الملف كبير جدًا (الحد الأقصى 10MB)";
     return null;
   };
 
@@ -379,8 +386,6 @@ export default function RegisterProfile() {
           </p>
         </div>
 
-        {isLoading && <p className="text-center">جارٍ التحميل...</p>}
-
         {uploadProgress > 0 && (
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -395,6 +400,8 @@ export default function RegisterProfile() {
           </div>
         )}
 
+        {isLoading && <LoadingSpinner />}
+        
         {!isLoading && (
           <form onSubmit={formik.handleSubmit} className="space-y-6 p-4 w-full">
             <PersonalInfoCard

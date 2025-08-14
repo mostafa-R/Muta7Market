@@ -70,47 +70,15 @@ export const playerFormSchema = Joi.object({
       url: Joi.string().allow("", null).optional(),
       publicId: Joi.string().allow("", null).optional(),
     }).optional(),
-    videos: Joi.array()
-      .items(
-        Joi.object({
-          url: Joi.string().required().messages({
-            "string.empty": "رابط الفيديو مطلوب",
-          }),
-          publicId: Joi.string().required().messages({
-            "string.empty": "معرف الفيديو مطلوب",
-          }),
-          title: Joi.string().required().messages({
-            "string.empty": "عنوان الفيديو مطلوب",
-          }),
-          duration: Joi.number().min(0).required().messages({
-            "number.base": "يجب أن تكون مدة الفيديو رقمًا",
-            "number.min": "يجب أن تكون مدة الفيديو 0 أو أكثر",
-          }),
-          uploadedAt: Joi.string().isoDate().optional(),
-          file: Joi.any().optional(),
-        })
-      )
-      .optional(),
-    documents: Joi.array()
-      .items(
-        Joi.object({
-          url: Joi.string().required().messages({
-            "string.empty": "رابط المستند مطلوب",
-          }),
-          publicId: Joi.string().required().messages({
-            "string.empty": "معرف المستند مطلوب",
-          }),
-          title: Joi.string().required().messages({
-            "string.empty": "عنوان المستند مطلوب",
-          }),
-          type: Joi.string().required().messages({
-            "string.empty": "نوع المستند مطلوب",
-          }),
-          uploadedAt: Joi.string().isoDate().optional(),
-          file: Joi.any().optional(),
-        })
-      )
-      .optional(),
+    videos: Joi.object({
+      url: Joi.string().allow("", null).optional(),
+      publicId: Joi.string().allow("", null).optional(),
+    }).optional(),
+
+    documents: Joi.object({
+      url: Joi.string().allow("", null).optional(),
+      publicId: Joi.string().allow("", null).optional(),
+    }).optional(),
   }).optional(),
   socialLinks: Joi.object({
     instagram: Joi.string()
@@ -200,7 +168,7 @@ export const playerFormSchema = Joi.object({
   profilePicturePreview: Joi.string().allow("").optional(),
   profilePictureFile: Joi.any().optional(),
   agreeToTerms: Joi.boolean().valid(true).required().messages({
-    'any.only': 'يجب الموافقة على الشروط والأحكام',
-    'any.required': 'الموافقة على الشروط مطلوبة'
+    "any.only": "يجب الموافقة على الشروط والأحكام",
+    "any.required": "الموافقة على الشروط مطلوبة",
   }),
 });

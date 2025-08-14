@@ -50,6 +50,7 @@ router.post(
   uploadMixed.fields([
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
+    { name: "playerVideo", maxCount: 1 },
   ]),
   parseJsonFields([
     "monthlySalary",
@@ -62,6 +63,7 @@ router.post(
   validate(createPlayerSchema),
   createPlayer
 );
+
 
 // Update an existing player by ID
 router.patch(

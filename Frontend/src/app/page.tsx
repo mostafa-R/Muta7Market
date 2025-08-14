@@ -9,9 +9,9 @@ export default function Home() {
   return (
     <>
       <SimpleHero />
+      <PlayerSection />
       <AdBanner />
       <SportsSection />
-      <PlayerSection />
       <StartJourneySection />
     </> 
   );

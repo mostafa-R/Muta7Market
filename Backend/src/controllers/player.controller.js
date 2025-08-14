@@ -7,17 +7,20 @@ import { buildSortQuery, paginate } from "../utils/helpers.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
 // Create Player Profile
-// Create Player Profile
 
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
+  // تحقق مما إذا كان ملف اللاعب موجودًا بالفعل
   const exists = await Player.findOne({ user: userId });
   if (exists) throw new ApiError(400, "Player profile already exists");
 
-  const profileImage = req.files?.profileImage?.[0] || null; // ✅ matches multer field
-  const documentFile = req.files?.document?.[0] || null; // ✅ matches multer field
+  // استرجاع الملفات المرفوعة
+  const profileImage = req.files?.profileImage?.[0] || null; // صورة الملف الشخصي
+  const documentFile = req.files?.document?.[0] || null; // المستند
+  const playerVideo = req.files?.playerVideo?.[0] || null; // الفيديو
 
+  // إنشاء كائن اللاعب
   const player = await Player.create({
     user: userId,
     name: req.body.name,
@@ -46,21 +49,24 @@ export const createPlayer = asyncHandler(async (req, res) => {
         : { url: null, publicId: null },
 
       documents: documentFile
-        ? [
-            {
-              url: documentFile.path || documentFile.secure_url,
-              publicId: documentFile.filename || documentFile.public_id,
-              title:
-                req.body.documentTitle ||
-                documentFile.originalname ||
-                "document",
-              type: documentFile.mimetype || "raw",
-              uploadedAt: new Date(),
-            },
-          ]
-        : [],
+        ? {
+            url: documentFile.path || documentFile.secure_url,
+            publicId: documentFile.filename || documentFile.public_id,
+          }
+        : {
+            url: null,
+            publicId: null,
+          },
 
-      videos: [],
+      videos: playerVideo
+        ? {
+            url: playerVideo.path || playerVideo.secure_url,
+            publicId: playerVideo.filename || playerVideo.public_id,
+          }
+        : {
+            url: null,
+            publicId: null,
+          },
     },
   });
 
@@ -68,6 +74,8 @@ export const createPlayer = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, player, "Player profile created successfully"));
 });
+
+
 
 // Get All Players (with advanced filtering)
 export const getAllPlayers = asyncHandler(async (req, res) => {

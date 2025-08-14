@@ -7,10 +7,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 // Import Components
+import LoadingSpinner from "../component/LoadingSpinner";
 import ConfirmModal from "./components/ConfirmModal";
 import EditProfile from "./components/EditProfile";
 import ErrorMessage from "./components/ErrorMessage";
-import LoadingSpinner from "./components/LoadingSpinner";
 import PaymentsSection from "./components/PaymentsSection";
 import ProfileView from "./components/ProfileView";
 import Sidebar from "./components/Sidebar";
@@ -128,7 +128,7 @@ const UserProfile = () => {
       // التحقق من وجود البيانات في الاستجابة
       if (response.data && response.data.data) {
         const playerData = response.data.data; // استخدام response.data.data
-        console.log("Player Data:", playerData);
+
         setPlayer(playerData);
       } else {
         throw new Error("No player data found");

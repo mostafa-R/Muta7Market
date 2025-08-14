@@ -6,6 +6,8 @@ import Footer from "./component/Footer";
 import { Noto_Sans_Arabic } from "next/font/google";
 import Script from "next/script"; 
 import Navbar from "./component/header";
+import { Providers } from "./providers";
+import WhatsAppButton from "./component/WhatsAppButton";
 
 
 
@@ -45,9 +47,12 @@ export default function RootLayout({
           src="https://checkout-web-components.checkout.com/index.js"
           strategy="afterInteractive"
         /> */}
-        <Navbar />
-        {children}
-        <Footer />
+        <Providers>
+          <Navbar />
+          {children}
+          <WhatsAppButton/>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

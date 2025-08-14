@@ -8,11 +8,9 @@ function page() {
   return (
     <div className="">
       <SimpleHero />
+      <PlayerSection />
       <AdBanner />
       <SportsSection />
-    
-      <PlayerSection />
-
       <StartJourneySection />
     </div>
   );

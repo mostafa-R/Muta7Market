@@ -39,8 +39,6 @@ export const mixedStorage = new CloudinaryStorage({
   params: async (req, file) => {
     const folder = `sports-platform/${folderFor(file)}`;
 
-    // Decide resource_type
-    // Cloudinary can detect with "auto", لكن هنا بنثبّته أوتوماتيك حسب النوع
     const resource_type = isImage(file.mimetype)
       ? "image"
       : isVideo(file.mimetype)
@@ -49,7 +47,6 @@ export const mixedStorage = new CloudinaryStorage({
       ? "raw"
       : "auto";
 
-    // Allowed formats per type
     const allowed_formats = isImage(file.mimetype)
       ? ALLOWED_IMAGE_EXTS
       : isVideo(file.mimetype)
@@ -58,16 +55,22 @@ export const mixedStorage = new CloudinaryStorage({
       ? ALLOWED_DOC_EXTS
       : undefined;
 
-    // Transform only images
     const transformation = isImage(file.mimetype)
       ? [{ width: 1000, height: 1000, crop: "limit" }]
       : undefined;
+
+    // --- التعديل هنا علشان يحتفظ بامتداد الـ PDF أو DOC ---
+    let format;
+    if (isDoc(file.mimetype)) {
+      format = file.originalname.split(".").pop().toLowerCase();
+    }
 
     return {
       folder,
       resource_type,
       allowed_formats,
       transformation,
+      format, // إضافة الفورمات هنا
     };
   },
 });
@@ -76,7 +79,6 @@ export const mixedStorage = new CloudinaryStorage({
 export const uploadMixed = multer({
   storage: mixedStorage,
   limits: {
-    // اجمالي 120MB للطلب كله، غيّر على حسب احتياجك
     fileSize: 120 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
@@ -92,10 +94,10 @@ export const uploadMixed = multer({
   },
 });
 
-// Dedicated uploader for video-only endpoint (tشدّد على الحجم للفيديو)
+// Dedicated uploader for video-only endpoint
 export const uploadVideoOnly = multer({
-  storage: mixedStorage, // نفس الستوريج، هيعرف نوع الفيديو ويخلي resource_type=video
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB (عدّل حسب احتياجك)
+  storage: mixedStorage,
+  limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (isVideo(file.mimetype)) return cb(null, true);
     cb(new Error("Not a video! Please upload only videos."), false);

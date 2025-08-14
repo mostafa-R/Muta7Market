@@ -1,48 +1,48 @@
-import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import { cloudinary } from '../config/cloudinary.js';
-import ApiError from '../utils/ApiError.js';
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { cloudinary } from "../config/cloudinary.js";
+import ApiError from "../utils/ApiError.js";
 
 // Cloudinary storage configuration
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'players',
+    folder: "players",
     allowed_formats: [
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'mp4',
-      'mov',
-      'avi',
-      'pdf',
-      'doc',
-      'docx'
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "mp4",
+      "mov",
+      "avi",
+      "pdf",
+      "doc",
+      "docx",
     ],
-    resource_type: 'auto' // Automatically detect file type
-  }
+    resource_type: "auto", // Automatically detect file type
+  },
 });
 
 // File filter
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'video/mp4',
-    'video/quicktime',
-    'video/x-msvideo',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "video/mp4",
+    "video/quicktime",
+    "video/x-msvideo",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new ApiError(400, 'Invalid file type'), false);
+    cb(new ApiError(400, "Invalid file type"), false);
   }
 };
 
@@ -51,8 +51,8 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
-  }
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
 });
 
 // Export upload middlewares

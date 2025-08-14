@@ -74,7 +74,7 @@ const PlayerCard = ({ player }) => {
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-2">
                 <span
-                  className={`text-white text-xs px-2 py-1 rounded-lg ${getStatusColor(
+                  className={`text-white text-center text-xs px-2 py-1 rounded-lg ${getStatusColor(
                     player.status
                   )}`}
                 >
@@ -141,12 +141,10 @@ const PlayerCard = ({ player }) => {
               الرياضة:
             </span>
             <span className="font-medium ml-1 mr-1">{player.sport}</span>
-            
           </div>
         </div>
 
-   
-{player.position && (
+        {player.position && (
           <div className="flex items-center space-x-2 space-x-reverse text-sm">
             <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
             <span className="text-[hsl(var(--muted-foreground))]">المركز:</span>
@@ -154,9 +152,6 @@ const PlayerCard = ({ player }) => {
           </div>
         )}
 
-
-
-        
         {(player.monthlySalary || player.annualContractValue != null) && (
           <div className="bg-[hsl(var(--muted))] rounded-lg p-3 space-y-2">
             {player.monthlySalary && (
