@@ -43,14 +43,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
-        {/* <Script
-          src="https://checkout-web-components.checkout.com/index.js"
+        <Script
+          src="https://paylink.sa/assets/js/paylink.js"
           strategy="afterInteractive"
-        /> */}
+        />
         <Providers>
           <Navbar />
           {children}
-          <WhatsAppButton/>
+          <WhatsAppButton />
           <Footer />
         </Providers>
       </body>
