@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, Suspense } from "react";
 import { FiLock } from "react-icons/fi";
 import { toast } from "react-toastify";
+import LoadingSpinner from "../component/LoadingSpinner";
 
 // ------------------------------
 // Joi schema
