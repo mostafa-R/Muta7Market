@@ -7,6 +7,7 @@ import notificationRoutes from './notification.routes.js';
 import offerRoutes from './offer.routes.js';
 import playerRoutes from './player.routes.js';
 import userRoutes from './user.routes.js';
+import paymentRoutes from './payment.routes.js';
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.use('/players', playerRoutes);
 router.use('/coaches', coachRoutes);
 router.use('/offers', offerRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/payments', paymentRoutes);
 
 // Test Email Route
 router.get('/test-email', async (req, res) => {

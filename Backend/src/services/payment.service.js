@@ -1,415 +1,412 @@
+// src/services/payment.service.js
 import axios from "axios";
-import { PAYMENT_STATUS } from "../config/constants.js";
-import Invoice from "../models/invoice.model.js";
-import Payment from "../models/payment.model.js";
+import Payment from "../models/payment.model.js"; // ⬅️ شِلّنا named import
+import Player from "../models/player.model.js";
 import ApiError from "../utils/ApiError.js";
-import logger from "../utils/logger.js";
 
+// ===== حالات الدفع (تلقائية من الموديل) =====
+const PAYMENT_STATUS = (() => {
+  try {
+    const enumVals = Payment?.schema?.path("status")?.enumValues;
+    if (Array.isArray(enumVals) && enumVals.length) {
+      // بنبني خريطة UPPER -> actual value من الاسكيمة
+      const map = {};
+      for (const v of enumVals) map[v.toUpperCase()] = v;
+      // fallback مع أسماء متوقعة لو ناقصة
+      if (!map.PENDING)
+        map.PENDING =
+          enumVals.find((x) => x.toUpperCase() === "PENDING") || enumVals[0];
+      if (!map.COMPLETED)
+        map.COMPLETED =
+          enumVals.find((x) => x.toUpperCase() === "COMPLETED") || enumVals[0];
+      if (!map.FAILED)
+        map.FAILED =
+          enumVals.find((x) => x.toUpperCase() === "FAILED") || enumVals[0];
+      return map;
+    }
+  } catch (_) {
+    // Ignore error
+  }
+  // Fallback لو مفيش enum متعرف
+  return { PENDING: "PENDING", COMPLETED: "COMPLETED", FAILED: "FAILED" };
+})();
+
+// ========== Paylink Gateway ==========
+class PaylinkGateway {
+  constructor() {
+    this.base = process.env.PAYLINK_BASE_URL;
+    this.apiId = process.env.PAYLINK_API_ID;
+    this.secret = process.env.PAYLINK_SECRET;
+    this.token = null;
+    this.tokenExp = 0;
+  }
+
+  async _auth() {
+    console.log("🔐 [PAYLINK AUTH] Starting authentication...");
+    const now = Date.now();
+    if (this.token && now < this.tokenExp) {
+      console.log("✅ [PAYLINK AUTH] Using cached token");
+      return this.token;
+    }
+
+    console.log("🔄 [PAYLINK AUTH] Requesting new token from Paylink...");
+    const { data } = await axios.post(`${this.base}/api/auth`, {
+      apiId: this.apiId,
+      secretKey: this.secret,
+      persistToken: true,
+    });
+    console.log("📋 [PAYLINK AUTH] Auth response received:", {
+      hasToken: !!data?.id_token,
+      responseKeys: Object.keys(data || {})
+    });
+    
+    this.token = data?.id_token;
+    if (!this.token) {
+      console.log("❌ [PAYLINK AUTH] No token received in response");
+      throw new ApiError(500, "Paylink auth failed: missing token");
+    }
+    
+    this.tokenExp = now + 29 * 60 * 60 * 1000; // 29h
+    console.log("✅ [PAYLINK AUTH] Token obtained successfully");
+    return this.token;
+  }
+
+  async createCheckout({
+    amount,
+    currency,
+    orderId,
+    description,
+    customerEmail,
+    returnUrl,
+    cancelUrl,
+  }) {
+    console.log("🔄 [PAYLINK CHECKOUT] Creating checkout session...");
+    console.log("📋 [PAYLINK CHECKOUT] Request parameters:", {
+      amount,
+      currency,
+      orderId,
+      description,
+      customerEmail,
+      returnUrl,
+      cancelUrl
+    });
+
+    const token = await this._auth();
+
+    const body = {
+      orderNumber: String(orderId),
+      amount,
+      currency: currency || "SAR",
+      callBackUrl: returnUrl,
+      cancelUrl: cancelUrl || returnUrl,
+      clientName: description?.slice(0, 50) || "Customer",
+      clientEmail: customerEmail || "",
+      clientMobile: "0500000000",
+      products: [{ title: description || "Order", price: amount, qty: 1 }],
+    };
+
+    console.log("📋 [PAYLINK CHECKOUT] Request body to Paylink:", JSON.stringify(body, null, 2));
+
+    console.log("🔄 [PAYLINK CHECKOUT] Sending request to Paylink...");
+    const { data } = await axios.post(`${this.base}/api/addInvoice`, body, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log("📋 [PAYLINK CHECKOUT] Paylink response received:", JSON.stringify(data, null, 2));
+
+    if (!data?.url || !data?.transactionNo) {
+      console.log("❌ [PAYLINK CHECKOUT] Invalid response - missing URL or transaction number");
+      throw new ApiError(500, "Invalid Paylink response");
+    }
+
+    const result = { checkoutId: data.transactionNo, checkoutUrl: data.url, raw: data };
+    console.log("✅ [PAYLINK CHECKOUT] Checkout created successfully:", {
+      checkoutId: result.checkoutId,
+      checkoutUrl: result.checkoutUrl
+    });
+
+    return result;
+  }
+
+  async getInvoice(transactionNo) {
+    console.log("🔄 [PAYLINK INVOICE] Fetching invoice from Paylink...");
+    console.log("📋 [PAYLINK INVOICE] Transaction number:", transactionNo);
+
+    const token = await this._auth();
+    
+    console.log("🔄 [PAYLINK INVOICE] Sending GET request to Paylink...");
+    const { data } = await axios.get(
+      `${this.base}/api/getInvoice/${transactionNo}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    console.log("📋 [PAYLINK INVOICE] Invoice response received:", JSON.stringify(data, null, 2));
+    console.log("✅ [PAYLINK INVOICE] Invoice fetched successfully");
+    
+    return data;
+  }
+
+  async refundPayment(/* transactionId, amount */) {
+    // Placeholder للرافند
+    return { refundTransactionId: `paylink_ref_${Date.now()}` };
+  }
+}
+
+// ========== Payment Service ==========
 class PaymentService {
   constructor() {
     this.gateway = this.initializeGateway();
   }
 
   initializeGateway() {
-    // Initialize payment gateway based on environment variable
-    const gateway = process.env.PAYMENT_GATEWAY || "hyperpay";
-
+    const gateway = process.env.PAYMENT_GATEWAY || "paylink";
     switch (gateway) {
-      case "hyperpay":
-        return new HyperpayGateway();
-      case "paytabs":
-        return new PaytabsGateway();
+      case "paylink":
       default:
-        return new MockPaymentGateway();
+        return new PaylinkGateway();
     }
   }
 
-  async createPayment(paymentData) {
-    const payment = await Payment.create(paymentData);
-
-    // Generate invoice
-    await this.generateInvoice(payment);
-
-    return payment;
-  }
-
-  async initiatePayment(paymentId) {
-    const payment = await Payment.findById(paymentId);
-
-    if (!payment) {
-      throw new ApiError(404, "Payment not found");
-    }
-
-    if (payment.status !== PAYMENT_STATUS.PENDING) {
-      throw new ApiError(400, "Payment already processed");
-    }
-
-    // Check if payment expired
-    if (payment.expiresAt < new Date()) {
-      payment.status = PAYMENT_STATUS.FAILED;
-      payment.failureReason = "Payment expired";
-      await payment.save();
-      throw new ApiError(400, "Payment has expired");
-    }
-
-    try {
-      // Calculate total with VAT
-      const { totalAmount } = payment.calculateVAT();
-
-      // Create checkout session with payment gateway
-      const checkoutData = await this.gateway.createCheckout({
-        amount: totalAmount,
-        currency: payment.currency,
-        orderId: payment._id.toString(),
-        description: `Payment for ${payment.type}`,
-        customerEmail: payment.user.email,
-        returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
-        cancelUrl: `${process.env.FRONTEND_URL}/payment/cancel`,
-        webhookUrl: `${process.env.API_URL}/api/v1/payments/webhook`,
-      });
-
-      // Update payment with gateway response
-      payment.gatewayResponse.checkoutId = checkoutData.checkoutId;
-      payment.attempts.push({
-        status: "initiated",
-        reason: "Checkout created",
-      });
-      await payment.save();
-
-      return checkoutData.checkoutUrl;
-    } catch (error) {
-      logger.error("Payment initiation error:", error);
-
-      payment.attempts.push({
-        status: "failed",
-        reason: error.message,
-      });
-      await payment.save();
-
-      throw new ApiError(500, "Failed to initiate payment");
-    }
-  }
-
-  async verifyPayment(paymentId) {
-    const payment = await Payment.findById(paymentId);
-
-    if (!payment) {
-      throw new ApiError(404, "Payment not found");
-    }
-
-    try {
-      // Verify payment status with gateway
-      const result = await this.gateway.verifyPayment(
-        payment.gatewayResponse.checkoutId
-      );
-
-      if (result.success) {
-        payment.status = PAYMENT_STATUS.COMPLETED;
-        payment.completedAt = new Date();
-        payment.gatewayResponse.transactionId = result.transactionId;
-        payment.gatewayResponse.referenceNumber = result.referenceNumber;
-        payment.gatewayResponse.authCode = result.authCode;
-        payment.method = result.paymentMethod;
-
-        // Update invoice
-        const invoice = await Invoice.findOne({ payment: payment._id });
-        if (invoice) {
-          invoice.status = "paid";
-          invoice.paidAt = new Date();
-          await invoice.save();
-        }
-      } else {
-        payment.status = PAYMENT_STATUS.FAILED;
-        payment.failureReason = result.reason;
-      }
-
-      payment.attempts.push({
-        status: result.success ? "completed" : "failed",
-        reason: result.reason || "Payment verified",
-      });
-
-      await payment.save();
-
-      return payment;
-    } catch (error) {
-      logger.error("Payment verification error:", error);
-      throw new ApiError(500, "Failed to verify payment");
-    }
-  }
-
-  async handleWebhook(webhookData) {
-    try {
-      // Verify webhook signature
-      const isValid = await this.gateway.verifyWebhook(webhookData);
-      if (!isValid) {
-        throw new ApiError(400, "Invalid webhook signature");
-      }
-
-      const payment = await Payment.findOne({
-        "gatewayResponse.checkoutId": webhookData.checkoutId,
-      });
-
-      if (!payment) {
-        throw new ApiError(404, "Payment not found");
-      }
-
-      // Update payment status based on webhook data
-      if (webhookData.status === "success") {
-        payment.status = PAYMENT_STATUS.COMPLETED;
-        payment.completedAt = new Date();
-        payment.gatewayResponse.transactionId = webhookData.transactionId;
-      } else {
-        payment.status = PAYMENT_STATUS.FAILED;
-        payment.failureReason = webhookData.reason;
-      }
-
-      await payment.save();
-
-      // Process post-payment actions
-      if (payment.status === PAYMENT_STATUS.COMPLETED) {
-        await this.processPostPaymentActions(payment);
-      }
-
-      return { success: true };
-    } catch (error) {
-      logger.error("Webhook processing error:", error);
-      throw error;
-    }
-  }
-
-  async processPostPaymentActions(payment) {
-    // This will be called by the specific service handling the payment
-    // For example, offer service will activate the offer
-    // Player service will promote the player, etc.
-    logger.info(`Processing post-payment actions for payment ${payment._id}`);
-  }
-
-  async generateInvoice(payment) {
-    const invoice = new Invoice({
-      payment: payment._id,
-      user: payment.user,
-      invoiceNumber: payment.generateInvoiceNumber(),
-      billingInfo: {
-        name: payment.user.name,
-        email: payment.user.email,
-        phone: payment.user.phone,
-      },
-      items: [
-        {
-          description: {
-            en: `Payment for ${payment.type.replace(/_/g, " ")}`,
-            ar: this.getArabicDescription(payment.type),
-          },
-          quantity: 1,
-          unitPrice: payment.amount,
-          taxRate: 15,
-          total: payment.amount,
-        },
-      ],
-      ...payment.calculateVAT(),
+  // يبدأ جلسة دفع ويخزن الـ checkoutUrl/Id
+  initiatePayment = async (
+    paymentId,
+    { amount, currency, description, customerEmail, returnUrl, cancelUrl }
+  ) => {
+    console.log("🔄 [PAYMENT INITIATE] Starting payment initiation...");
+    console.log("📋 [PAYMENT INITIATE] Payment ID:", paymentId);
+    console.log("📋 [PAYMENT INITIATE] Request data:", {
+      amount,
+      currency,
+      description,
+      customerEmail,
+      returnUrl,
+      cancelUrl
     });
 
-    // Generate ZATCA compliant data
-    await invoice.generateZATCACompliantData();
-
-    return invoice.save();
-  }
-
-  async getPaymentHistory(userId, filters = {}) {
-    const query = { user: userId };
-
-    if (filters.status) {
-      query.status = filters.status;
-    }
-
-    if (filters.type) {
-      query.type = filters.type;
-    }
-
-    if (filters.from || filters.to) {
-      query.createdAt = {};
-      if (filters.from) {
-        query.createdAt.$gte = new Date(filters.from);
-      }
-      if (filters.to) {
-        query.createdAt.$lte = new Date(filters.to);
-      }
-    }
-
-    const payments = await Payment.find(query)
-      .sort({ createdAt: -1 })
-      .populate("relatedOffer", "title")
-      .populate("relatedPlayer", "name")
-      .populate("relatedCoach", "name");
-
-    return payments;
-  }
-
-  async refundPayment(paymentId, reason) {
     const payment = await Payment.findById(paymentId);
+    if (!payment) throw new ApiError(404, "Payment not found");
+    
+    console.log("📋 [PAYMENT INITIATE] Found payment in DB:", {
+      id: payment._id,
+      user: payment.user,
+      type: payment.type,
+      amount: payment.amount,
+      status: payment.status
+    });
 
+    console.log("🔄 [PAYMENT INITIATE] Creating checkout with gateway...");
+    const init = await this.gateway.createCheckout({
+      amount,
+      currency,
+      orderId: payment._id,
+      description,
+      customerEmail,
+      returnUrl,
+      cancelUrl,
+    });
+
+    console.log("✅ [PAYMENT INITIATE] Gateway response received:", {
+      checkoutId: init.checkoutId,
+      checkoutUrl: init.checkoutUrl,
+      hasRawData: !!init.raw
+    });
+
+    payment.gateway = "paylink";
+    payment.gatewayResponse = {
+      checkoutId: init.checkoutId,
+      checkoutUrl: init.checkoutUrl,
+      raw: init.raw || {},
+    };
+    payment.status = PAYMENT_STATUS.PENDING; // ← هيتم تحويلها للصيغة اللي في الموديل تلقائيًا
+    
+    console.log("💾 [PAYMENT INITIATE] Saving payment to DB...");
+    await payment.save();
+    console.log("✅ [PAYMENT INITIATE] Payment saved successfully");
+
+    return init;
+  };
+
+  // Webhook من Paylink
+  handleWebhook = async (body) => {
+    console.log("🔄 [WEBHOOK] Received webhook from Paylink");
+    console.log("📋 [WEBHOOK] Raw webhook body:", JSON.stringify(body, null, 2));
+    
+    const transactionNo =
+      body?.transactionNo || body?.TransactionNo || body?.transactionID;
+    console.log("📋 [WEBHOOK] Extracted transaction number:", transactionNo);
+    
+    if (!transactionNo)
+      throw new ApiError(400, "Missing transactionNo in webhook body");
+
+    console.log("🔄 [WEBHOOK] Fetching invoice from Paylink...");
+    const invoice = await this.gateway.getInvoice(transactionNo);
+    console.log("📋 [WEBHOOK] Paylink invoice response:", JSON.stringify(invoice, null, 2));
+    
+    const statusStr = String(
+      invoice?.orderStatus || invoice?.OrderStatus || ""
+    ).toUpperCase();
+    console.log("📋 [WEBHOOK] Payment status from Paylink:", statusStr);
+
+    const isPaid = statusStr === "PAID" || statusStr === "PAID PARTIALLY";
+    console.log("📋 [WEBHOOK] Is payment completed?", isPaid);
+
+    console.log("🔄 [WEBHOOK] Finding payment in database...");
+    const payment = await Payment.findOne({
+      "gatewayResponse.checkoutId": transactionNo,
+    });
     if (!payment) {
+      console.log("❌ [WEBHOOK] Payment not found for transaction:", transactionNo);
+      throw new ApiError(404, "Payment not found for this transaction");
+    }
+    
+    console.log("📋 [WEBHOOK] Found payment in DB:", {
+      id: payment._id,
+      user: payment.user,
+      type: payment.type,
+      amount: payment.amount,
+      currentStatus: payment.status
+    });
+
+    console.log("💾 [WEBHOOK] Updating payment with invoice data...");
+    payment.gatewayResponse = {
+      ...(payment.gatewayResponse || {}),
+      raw: invoice,
+    };
+
+    if (isPaid) {
+      console.log("✅ [WEBHOOK] Payment is completed - updating status to COMPLETED");
+      payment.status = PAYMENT_STATUS.COMPLETED;
+
+      // Activate player profile when payment is completed
+      console.log("🔄 [WEBHOOK] Attempting to activate player profile...");
+      try {
+        const player = await Player.findOne({ user: payment.user });
+        if (player) {
+          console.log("📋 [WEBHOOK] Found player profile:", {
+            playerId: player._id,
+            currentIsActive: player.isActive
+          });
+          
+          player.isActive = true;
+          await player.save();
+          console.log("✅ [WEBHOOK] Player profile activated successfully for user:", payment.user);
+        } else {
+          console.log("⚠️ [WEBHOOK] No player profile found for user:", payment.user);
+        }
+      } catch (error) {
+        console.error("❌ [WEBHOOK] Error activating player profile:", error.message);
+        // Don't throw error here to avoid breaking the payment process
+      }
+    } else if (statusStr === "CANCELLED" || statusStr === "FAILED") {
+      console.log("❌ [WEBHOOK] Payment failed/cancelled - updating status to FAILED");
+      payment.status = PAYMENT_STATUS.FAILED;
+    } else {
+      console.log("⚠️ [WEBHOOK] Payment status unknown:", statusStr);
+    }
+
+    console.log("💾 [WEBHOOK] Saving updated payment to DB...");
+    await payment.save();
+    console.log("✅ [WEBHOOK] Payment updated successfully");
+
+    const result = { ok: true, paymentId: payment._id, status: payment.status };
+    console.log("📋 [WEBHOOK] Returning result:", result);
+    return result;
+  };
+
+  // تأكيد يدوي بعد العودة من Paylink
+  confirmTransaction = async (transactionNo, pid) => {
+    console.log("🔄 [CONFIRM] Manual transaction confirmation started");
+    console.log("📋 [CONFIRM] Transaction number:", transactionNo);
+    console.log("📋 [CONFIRM] Payment ID (optional):", pid);
+
+    console.log("🔄 [CONFIRM] Fetching invoice from Paylink...");
+    const invoice = await this.gateway.getInvoice(transactionNo);
+    console.log("📋 [CONFIRM] Paylink invoice response:", JSON.stringify(invoice, null, 2));
+    
+    const statusStr = String(invoice?.orderStatus || "").toUpperCase();
+    console.log("📋 [CONFIRM] Payment status from Paylink:", statusStr);
+    
+    const isPaid = statusStr === "PAID";
+    console.log("📋 [CONFIRM] Is payment completed?", isPaid);
+
+    console.log("🔄 [CONFIRM] Finding payment in database...");
+    let payment = null;
+    if (pid) {
+      console.log("📋 [CONFIRM] Looking for payment by ID:", pid);
+      payment = await Payment.findById(pid);
+    }
+    if (!payment) {
+      console.log("📋 [CONFIRM] Looking for payment by checkout ID:", transactionNo);
+      payment = await Payment.findOne({
+        "gatewayResponse.checkoutId": transactionNo,
+      });
+    }
+    if (!payment) {
+      console.log("❌ [CONFIRM] Payment not found");
       throw new ApiError(404, "Payment not found");
     }
+    
+    console.log("📋 [CONFIRM] Found payment in DB:", {
+      id: payment._id,
+      user: payment.user,
+      type: payment.type,
+      amount: payment.amount,
+      currentStatus: payment.status
+    });
 
-    if (payment.status !== PAYMENT_STATUS.COMPLETED) {
-      throw new ApiError(400, "Only completed payments can be refunded");
-    }
+    console.log("💾 [CONFIRM] Updating payment with invoice data...");
+    payment.gatewayResponse = {
+      ...(payment.gatewayResponse || {}),
+      raw: invoice,
+    };
 
-    if (payment.refund?.status === "completed") {
-      throw new ApiError(400, "Payment already refunded");
-    }
+    if (isPaid) {
+      console.log("✅ [CONFIRM] Payment is completed - updating status to COMPLETED");
+      payment.status = PAYMENT_STATUS.COMPLETED;
 
-    try {
-      // Process refund with gateway
-      const refundResult = await this.gateway.refundPayment(
-        payment.gatewayResponse.transactionId,
-        payment.amount
-      );
-
-      payment.status = PAYMENT_STATUS.REFUNDED;
-      payment.refund = {
-        status: "completed",
-        amount: payment.amount,
-        reason,
-        refundedAt: new Date(),
-        transactionId: refundResult.refundTransactionId,
-      };
-
-      await payment.save();
-
-      // Update related entities (offers, promotions, etc.)
-      await this.processRefundActions(payment);
-
-      return payment;
-    } catch (error) {
-      logger.error("Refund error:", error);
-      throw new ApiError(500, "Failed to process refund");
-    }
-  }
-
-  async processRefundActions(payment) {
-    // Handle refund side effects based on payment type
-    switch (payment.type) {
-      case "promote_offer":
-        // Cancel offer promotion
-        if (payment.relatedOffer) {
-          payment.relatedOffer.promotion.isPromoted = false;
-          await payment.relatedOffer.save();
+      // Activate player profile when payment is confirmed
+      console.log("🔄 [CONFIRM] Attempting to activate player profile...");
+      try {
+        const player = await Player.findOne({ user: payment.user });
+        if (player) {
+          console.log("📋 [CONFIRM] Found player profile:", {
+            playerId: player._id,
+            currentIsActive: player.isActive
+          });
+          
+          player.isActive = true;
+          await player.save();
+          console.log("✅ [CONFIRM] Player profile activated successfully for user:", payment.user);
+        } else {
+          console.log("⚠️ [CONFIRM] No player profile found for user:", payment.user);
         }
-        break;
-      // Add other cases as needed
+      } catch (error) {
+        console.error("❌ [CONFIRM] Error activating player profile:", error.message);
+        // Don't throw error here to avoid breaking the payment process
+      }
+    } else {
+      console.log("⚠️ [CONFIRM] Payment not completed, status:", statusStr);
     }
-  }
 
-  getArabicDescription(type) {
-    const translations = {
-      add_offer: "دفع مقابل إضافة عرض",
-      promote_offer: "دفع مقابل ترويج العرض",
-      unlock_contact: "دفع مقابل عرض معلومات الاتصال",
-      promote_player: "دفع مقابل ترويج اللاعب",
-      promote_coach: "دفع مقابل ترويج المدرب",
-    };
+    console.log("💾 [CONFIRM] Saving updated payment to DB...");
+    await payment.save();
+    console.log("✅ [CONFIRM] Payment updated successfully");
 
-    return translations[type] || type;
-  }
+    const result = { ok: true, paymentId: payment._id, status: payment.status };
+    console.log("📋 [CONFIRM] Returning result:", result);
+    return result;
+  };
+
+  refundPayment = async (payment, amount) => {
+    const out = await this.gateway.refundPayment(
+      payment?.gatewayResponse?.transactionId,
+      amount
+    );
+    return out;
+  };
 }
 
-// Mock Payment Gateway for testing
-class MockPaymentGateway {
-  async createCheckout(data) {
-    return {
-      checkoutId: `mock_checkout_${Date.now()}`,
-      checkoutUrl: `https://mock-payment.test/checkout/${data.orderId}`,
-    };
-  }
-
-  async verifyPayment(_checkoutId) {
-    // Simulate success for testing
-    return {
-      success: true,
-      transactionId: `mock_txn_${Date.now()}`,
-      referenceNumber: `REF${Date.now()}`,
-      authCode: "AUTH123",
-      paymentMethod: "credit_card",
-    };
-  }
-
-  async verifyWebhook(_data) {
-    return true;
-  }
-
-  async refundPayment(_transactionId, _amount) {
-    return {
-      refundTransactionId: `mock_refund_${Date.now()}`,
-    };
-  }
-}
-
-// Hyperpay Gateway Implementation
-class HyperpayGateway {
-  constructor() {
-    this.baseUrl = process.env.HYPERPAY_BASE_URL;
-    this.accessToken = process.env.HYPERPAY_ACCESS_TOKEN;
-    this.entityId = process.env.HYPERPAY_ENTITY_ID;
-  }
-
-  async createCheckout(data) {
-    // Implement Hyperpay checkout creation
-    // This is a placeholder - implement according to Hyperpay API docs
-    try {
-      const response = await axios.post(
-        `${this.baseUrl}/v1/checkouts`,
-        {
-          entityId: this.entityId,
-          amount: data.amount.toFixed(2),
-          currency: data.currency,
-          paymentType: "DB",
-          merchantTransactionId: data.orderId,
-          customer: {
-            email: data.customerEmail,
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
-
-      return {
-        checkoutId: response.data.id,
-        checkoutUrl: `${this.baseUrl}/v1/paymentWidgets.js?checkoutId=${response.data.id}`,
-      };
-    } catch (error) {
-      throw new Error(`Hyperpay error: ${error.message}`);
-    }
-  }
-
-  async verifyPayment(_checkoutId) {
-    // Implement payment verification
-    // Placeholder implementation
-    return {
-      success: true,
-      transactionId: `hp_${Date.now()}`,
-      referenceNumber: `REF${Date.now()}`,
-      authCode: "AUTH123",
-      paymentMethod: "mada",
-    };
-  }
-
-  async verifyWebhook(_data) {
-    // Implement webhook verification
-    return true;
-  }
-
-  async refundPayment(_transactionId, _amount) {
-    // Implement refund
-    return {
-      refundTransactionId: `hp_refund_${Date.now()}`,
-    };
-  }
-}
-
-export default new PaymentService();
+const paymentService = new PaymentService();
+export default paymentService;
