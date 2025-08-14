@@ -40,6 +40,113 @@ const buildReturnUrls = (paymentId) => ({
   webhookUrl: `${API_URL}/api/v1/payments/webhook`,
 });
 
+export const Getallorders = asyncHandler(async (req, res) => {
+  // ⛔️ لا نعتمد على req.user إطلاقاً — إحضار كل الطلبات
+  const {
+    status,                 // PENDING | COMPLETED | FAILED
+    type,                   // add_offer | promote_offer | ...
+    from,                   // ISO date
+    to,                     // ISO date
+    q,                      // بحث في الوصف أو رقم المعاملة
+    sort = "-createdAt",    // مثال: -createdAt أو amount
+    page = 1,
+    limit = 10,
+    includeUser = "0",      // "1" لعمل populate محدود لليوزر
+    withStats = "1",        // "1" لإرجاع إحصائيات سريعة
+    selectRaw = "0",        // "1" لو عايز ترجّع gatewayResponse.raw
+  } = req.query || {};
+
+  const pageNum = Math.max(parseInt(page) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit) || 10, 1), 100);
+
+  // 🧭 فلتر عام على مستوى المجموعة كلها
+  const filter = {};
+
+  if (status) {
+    const up = String(status).toUpperCase();
+    if (!PAYMENT_STATUS[up]) throw new ApiError(400, "Invalid status filter");
+    filter.status = PAYMENT_STATUS[up];
+  }
+
+  if (type) filter.type = String(type);
+
+  if (from || to) {
+    filter.createdAt = {};
+    if (from) {
+      const d = new Date(from);
+      if (isNaN(d)) throw new ApiError(400, "Invalid 'from' date");
+      filter.createdAt.$gte = d;
+    }
+    if (to) {
+      const d = new Date(to);
+      if (isNaN(d)) throw new ApiError(400, "Invalid 'to' date");
+      filter.createdAt.$lte = d;
+    }
+  }
+
+  if (q && String(q).trim()) {
+    const s = String(q).trim();
+    filter.$or = [
+      { description: { $regex: s, $options: "i" } },
+      { "gatewayResponse.checkoutId": { $regex: s, $options: "i" } },
+    ];
+  }
+
+  const total = await Payment.countDocuments(filter);
+
+  const query = Payment.find(filter)
+    .sort(sort)
+    .skip((pageNum - 1) * limitNum)
+    .limit(limitNum);
+
+  // افتراضياً نخفي raw لتقليل البيانات الحساسة
+  if (selectRaw !== "1") query.select("-gatewayResponse.raw");
+
+  if (includeUser === "1") {
+    query.populate({ path: "user", select: "_id name email" });
+  }
+
+  const items = await query.lean();
+
+  let stats;
+  if (withStats === "1") {
+    const pipeline = [
+      { $match: filter },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          amountTotal: { $sum: "$amount" },
+        },
+      },
+    ];
+    const agg = await Payment.aggregate(pipeline);
+    stats = {
+      total,
+      byStatus: agg.reduce((acc, cur) => {
+        acc[cur._id] = { count: cur.count, amountTotal: cur.amountTotal };
+        return acc;
+      }, {}),
+    };
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        items,
+        stats,
+      },
+      "OK"
+    )
+  );
+});
+
+
 /**
  * POST /api/v1/payments/initiate
  * body: { paymentId? , currency? , description? , metadata? , type }
@@ -234,8 +341,6 @@ export const initiatePayment = asyncHandler(async (req, res) => {
   return res.status(200).json(response);
 });
 
-
-
 /**
  * POST /api/v1/payments/webhook
  * يستقبل إشعار Paylink ويُحدّث حالة الدفع
@@ -261,11 +366,7 @@ export const paymentWebhook = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, result, "Webhook processed successfully"));
 });
-export const Getallorders = asyncHandler(async (req, res) => {
 
-  //--------------------------------------------------------------------------------------
-
-  });
 /**
  * GET /api/v1/payments/:id
  * استعلام عن تفاصيل الدفع
