@@ -28,7 +28,6 @@ const PaymentsSection = ({ payments, router }) => {
     // التحقق من صحة البيانات باستخدام PlayerSchema
     const { error } = PlayerSchema.validate(payment, { abortEarly: false });
     if (error) {
-      
       console.error(
         "Validation error in PaymentCard:",
         error.details.map((detail) => ({
