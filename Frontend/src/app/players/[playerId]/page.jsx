@@ -85,6 +85,12 @@ const PlayerProfile = () => {
   };
 
   const handleRequestPhone = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
+
     const phone = player?.user?.phone;
     if (phone) {
       navigator.clipboard
@@ -101,6 +107,11 @@ const PlayerProfile = () => {
   };
 
   const handleSendEmail = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
     const email = player?.user?.email;
     if (email) {
       window.open(`mailto:${email}`, "_blank");
