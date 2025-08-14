@@ -14,8 +14,8 @@ import {
 } from "../controllers/payment.controller.js";
 const r = Router();
 
+r.get("/orders", Getallorders);
 
-r.post("/orders", Getallorders);
 r.post("/initiate", authMiddleware, initiatePayment);
 
 // Webhook من Paylink (بدون Auth)
