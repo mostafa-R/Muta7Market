@@ -5,7 +5,7 @@ import { ErrorMessage, Field, Form, Formik } from "formik";
 import Joi from "joi";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { FiLock } from "react-icons/fi";
 import { toast } from "react-toastify";
 
@@ -52,7 +52,7 @@ const pickMsg = (x) => {
   }
 };
 
-export default function OTPForResetPassword() {
+function OTPForResetPasswordContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [resendDisabled, setResendDisabled] = useState(false);
@@ -227,7 +227,7 @@ export default function OTPForResetPassword() {
                     id="otp"
                     placeholder="أدخل رمز التحقق (6 أرقام)"
                     maxLength="6"
-                    className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
+                    className="w-full rounded-md border border-[#e0e0e0] bg.white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
                     style={{ letterSpacing: "0.5em" }}
                     onInput={(e) => {
                       e.target.value = e.target.value.replace(/[^0-9]/g, "");
@@ -255,7 +255,7 @@ export default function OTPForResetPassword() {
                   name="password"
                   id="password"
                   placeholder="أدخل كلمة المرور الجديدة"
-                  className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md"
+                  className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline.none focus:border-[hsl(var(--primary))] focus:shadow-md"
                 />
                 <ErrorMessage
                   name="password"
@@ -277,7 +277,7 @@ export default function OTPForResetPassword() {
                   name="confirmPassword"
                   id="confirmPassword"
                   placeholder="أعد إدخال كلمة المرور"
-                  className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md"
+                  className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline.none focus:border-[hsl(var(--primary))] focus:shadow-md"
                 />
                 <ErrorMessage
                   name="confirmPassword"
@@ -298,7 +298,7 @@ export default function OTPForResetPassword() {
                 <button
                   type="submit"
                   disabled={formikSubmitting || isSubmitting}
-                  className="hover:shadow-form w-full rounded-md bg-[hsl(var(--primary))] py-3 px-8 text-center text-base font-semibold text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:bg-[hsl(var(--primary)/0.9)]"
+                  className="hover:shadow-form w-full rounded-md bg-[hsl(var(--primary))] py-3 px-8 text-center text-base font-semibold text-white outline.none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:bg-[hsl(var(--primary)/0.9)]"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">
@@ -334,7 +334,7 @@ export default function OTPForResetPassword() {
               <div className="text-center">
                 <Link
                   href="/signin"
-                  className="text-[hsl(var(--primary))] hover:underline text-sm font-medium transition-colors duration-200"
+                  className="text-[hsl(var(--primary))] hover:underline text-sm font-medium transition-colors.duration-200"
                 >
                   العودة لتسجيل الدخول
                 </Link>
@@ -364,7 +364,7 @@ export default function OTPForResetPassword() {
             <button
               type="button"
               disabled={resendDisabled}
-              className={`font-medium transition-colors duration-200 ${
+              className={`font-medium transition-colors.duration-200 ${
                 resendDisabled
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-[hsl(var(--primary))] hover:underline"
@@ -379,5 +379,13 @@ export default function OTPForResetPassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OTPForResetPassword() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center p-12 min-h-screen bg-gray-50"><LoadingSpinner /></div>}>
+      <OTPForResetPasswordContent />
+    </Suspense>
   );
 }
