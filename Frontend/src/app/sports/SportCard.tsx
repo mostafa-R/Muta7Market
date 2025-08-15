@@ -1,16 +1,29 @@
-import React from "react";
+import { ArrowRight, Search } from "lucide-react";
+
 import {
-  Trophy,
-  Users,
-  Dumbbell,
-  Waves,
-  Bike,
-  Target,
-  Zap,
-  Timer,
-  Search,
-  ArrowRight,
-} from "lucide-react";
+  FaBasketballBall,
+  FaBiking,
+  FaChessKnight,
+  FaDumbbell,
+  FaFistRaised,
+  FaFootballBall,
+  FaRunning,
+  FaSwimmer,
+  FaTableTennis,
+  FaVolleyballBall,
+} from "react-icons/fa";
+import {
+  GiArcheryTarget,
+  GiBoxingGlove,
+  GiGoalKeeper,
+  GiKimono,
+  GiMuscleUp,
+  GiSwordman,
+  GiTennisRacket,
+} from "react-icons/gi";
+import { IoGameControllerOutline } from "react-icons/io5";
+import { MdSportsGymnastics, MdSportsTennis } from "react-icons/md";
+
 import Link from "next/link";
 
 interface SportCardProps {
@@ -20,122 +33,122 @@ interface SportCardProps {
 function SportCard({ searchTerm }: SportCardProps) {
   const sports = [
     {
-      id: "football",
-      name: "كرة القدم",
-      icon: Trophy,
-      featured: true,
+      id: "handball",
+      name: "كرة اليد",
+      icon: FaFootballBall,
     },
     {
       id: "basketball",
       name: "كرة السلة",
-      icon: Target,
-    },
-    {
-      id: "tennis",
-      name: "التنس",
-      icon: Zap,
-    },
-    {
-      id: "swimming",
-      name: "السباحة",
-      icon: Waves,
-    },
-    {
-      id: "athletics",
-      name: "ألعاب القوى",
-      icon: Timer,
-      featured: true,
-    },
-    {
-      id: "cycling",
-      name: "ركوب الدراجات",
-      icon: Bike,
-    },
-    {
-      id: "weightlifting",
-      name: "رفع الأثقال",
-      icon: Dumbbell,
+      icon: FaBasketballBall,
     },
     {
       id: "volleyball",
       name: "الكرة الطائرة",
-      icon: Users,
-    },
-    {
-      id: "handball",
-      name: "كرة اليد",
-      icon: Users,
+      icon: FaVolleyballBall,
     },
     {
       id: "badminton",
       name: "الريشة الطائرة",
-      icon: Zap,
+      icon: GiTennisRacket,
+    },
+    {
+      id: "athletics",
+      name: "ألعاب القوى",
+      icon: FaRunning,
+    },
+    {
+      id: "tennis",
+      name: "التنس",
+      icon: MdSportsTennis,
+    },
+    {
+      id: "tabletennis",
+      name: "كرة الطاولة",
+      icon: FaTableTennis,
     },
     {
       id: "karate",
       name: "الكاراتيه",
-      icon: Dumbbell,
+      icon: GiKimono,
     },
     {
       id: "taekwondo",
       name: "التايكوندو",
-      icon: Dumbbell,
+      icon: FaFistRaised,
     },
     {
       id: "archery",
-      name: "السهام",
-      icon: Target,
+      name: "الرماية",
+      icon: GiArcheryTarget,
     },
     {
       id: "esports",
-      name: "الرياضات الإلكترونية",
-      icon: Zap,
+      name: "الألعاب الإلكترونية",
+      icon: IoGameControllerOutline,
     },
     {
       id: "judo",
       name: "الجودو",
-      icon: Dumbbell,
+      icon: GiKimono,
     },
     {
       id: "fencing",
       name: "المبارزة",
-      icon: Zap,
+      icon: GiSwordman,
+    },
+    {
+      id: "cycling",
+      name: "الدراجات",
+      icon: FaBiking,
     },
     {
       id: "squash",
       name: "الإسكواش",
-      icon: Target,
+      icon: GiTennisRacket,
+    },
+    {
+      id: "weightlifting",
+      name: "رفع الأثقال",
+      icon: FaDumbbell,
     },
     {
       id: "futsal",
       name: "كرة قدم الصالات",
-      icon: Trophy,
+      icon: GiGoalKeeper,
     },
     {
       id: "boxing",
       name: "الملاكمة",
-      icon: Dumbbell,
+      icon: GiBoxingGlove,
     },
     {
       id: "gymnastics",
       name: "الجمباز",
-      icon: Timer,
+      icon: MdSportsGymnastics,
     },
     {
       id: "billiards",
-      name: "البلياردو والسنوكر",
-      icon: Target,
+      name: "البلياردو",
+      icon: FaChessKnight,
     },
     {
       id: "wrestling",
       name: "المصارعة",
-      icon: Dumbbell,
+      icon: GiMuscleUp,
+    },
+    {
+      id: "swimming",
+      name: "السباحة",
+      icon: FaSwimmer,
     },
   ];
 
   // إزالة التكرار بناءً على id باستخدام reduce
   const uniqueSports = sports.reduce<typeof sports>((unique, sport) => {
-    return unique.find((item) => item.id === sport.id) ? unique : [...unique, sport];
+    return unique.find((item) => item.id === sport.id)
+      ? unique
+      : [...unique, sport];
   }, []);
 
   // فلترة الرياضات بناءً على مصطلح البحث
@@ -146,52 +159,52 @@ function SportCard({ searchTerm }: SportCardProps) {
   return (
     <>
       {/* Sports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12 ">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
         {filteredSports.map((sport) => {
           const Icon = sport.icon;
           return (
             <Link key={sport.id} href={`/sports/${sport.id}`}>
-              <div
-                className={`
-                  h-full relative overflow-hidden group transition-smooth border border-gray-200 rounded-2xl bg-[hsl(var(--card))] shadow-card
-                  ${sport.featured ? "ring-2 ring-[hsl(var(--primary)/0.5)]" : ""}
-                `}
-              >
-                {sport.featured && (
-                  <div className="absolute top-4 left-4 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-xs px-2 py-1 rounded-full font-semibold">
-                    مميز
-                  </div>
-                )}
+              <div className="h-full relative overflow-hidden group transition-all duration-300 ease-in-out border border-gray-200 rounded-2xl bg-[hsl(var(--card))] shadow-sm hover:shadow-lg hover:border-[hsl(var(--primary))] transform hover:-translate-y-1">
                 <div className="p-6">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center">
-                    <Icon className="w-8 h-8 text-white" />
+                  {/* Icon Container with improved styling */}
+                  <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                    <Icon className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
                   </div>
-                  <h3 className="text-lg line-clamp-1 font-bold text-[hsl(var(--card-foreground))] mb-2 group-hover:text-[hsl(var(--primary))] transition-colors text-center">
+
+                  {/* Sport Name with better typography */}
+                  <h3 className="text-lg font-bold text-[hsl(var(--card-foreground))] mb-4 group-hover:text-[hsl(var(--primary))] transition-colors duration-300 text-center leading-tight">
                     {sport.name}
                   </h3>
+
+                  {/* Action Button with enhanced styling */}
                   <button
                     type="button"
-                    className="w-full flex items-center justify-center border border-[hsl(var(--primary))] text-[hsl(var(--primary))] rounded-lg px-4 py-2 bg-transparent hover:bg-[hsl(var(--primary)/0.1)] group transition"
+                    className="w-full flex items-center justify-center border border-[hsl(var(--primary))] text-[hsl(var(--primary))] rounded-lg px-4 py-3 bg-transparent hover:bg-[hsl(var(--primary)/0.1)] group-hover:shadow-md transition-all duration-300 ease-in-out font-medium"
                   >
-                    <ArrowRight className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform duration-300" />
                     استكشف اللاعبين
                   </button>
                 </div>
+
+                {/* Subtle background pattern for visual interest */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-[hsl(var(--primary)/0.02)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               </div>
             </Link>
           );
         })}
       </div>
 
-      {/* No Results */}
+      {/* No Results with improved styling */}
       {filteredSports.length === 0 && (
-        <div className="text-center py-12">
-          <Search className="w-16 h-16 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-2">
+        <div className="text-center py-16">
+          <div className="w-20 h-20 mx-auto mb-6 bg-[hsl(var(--muted))] rounded-full flex items-center justify-center">
+            <Search className="w-10 h-10 text-[hsl(var(--muted-foreground))]" />
+          </div>
+          <h3 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-3">
             لم يتم العثور على نتائج
           </h3>
-          <p className="text-[hsl(var(--muted-foreground))]">
-            جرب البحث بكلمات مفتاحية أخرى
+          <p className="text-[hsl(var(--muted-foreground))] text-base leading-relaxed">
+            جرب البحث بكلمات مفتاحية أخرى أو تصفح جميع الرياضات المتاحة
           </p>
         </div>
       )}

@@ -1,243 +1,192 @@
 "use client";
-import {
-  Trophy,
-  Users,
-  Dumbbell,
-  Waves,
-  Bike,
-  Target,
-  Zap,
-  Timer,
-} from "lucide-react";
+import { Trophy } from "lucide-react";
 import Link from "next/link";
+import {
+  FaBasketballBall,
+  FaBiking,
+  FaChessKnight,
+  FaDumbbell,
+  FaFistRaised,
+  FaFootballBall,
+  FaRunning,
+  FaSwimmer,
+  FaTableTennis,
+  FaVolleyballBall,
+} from "react-icons/fa";
+import {
+  GiArcheryTarget,
+  GiBoxingGlove,
+  GiGoalKeeper,
+  GiKimono,
+  GiMuscleUp,
+  GiSwordman,
+  GiTennisRacket,
+} from "react-icons/gi";
+import { IoGameControllerOutline } from "react-icons/io5";
+import { MdSportsGymnastics, MdSportsTennis } from "react-icons/md";
 
 const sports = [
   {
     id: "handball",
     name: "كرة اليد",
-    icon: Users,
-    gradient: "from-teal-500 to-green-600",
+    icon: FaFootballBall,
   },
   {
     id: "basketball",
     name: "كرة السلة",
-    icon: Target,
-    gradient: "from-orange-500 to-red-600",
+    icon: FaBasketballBall,
   },
   {
     id: "volleyball",
     name: "الكرة الطائرة",
-    icon: Users,
-    gradient: "from-teal-500 to-green-600",
+    icon: FaVolleyballBall,
   },
   {
     id: "badminton",
     name: "الريشة الطائرة",
-    icon: Zap,
-    gradient: "from-yellow-500 to-orange-600",
+    icon: GiTennisRacket,
   },
   {
     id: "athletics",
     name: "ألعاب القوى",
-    icon: Timer,
-    gradient: "from-purple-500 to-pink-600",
+    icon: FaRunning,
   },
   {
     id: "tennis",
     name: "التنس",
-    icon: Zap,
-    gradient: "from-yellow-500 to-orange-600",
+    icon: MdSportsTennis,
   },
   {
     id: "tabletennis",
     name: "كرة الطاولة",
-    icon: Target,
-    gradient: "from-orange-500 to-red-600",
+    icon: FaTableTennis,
   },
   {
     id: "karate",
     name: "الكاراتيه",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
+    icon: GiKimono,
   },
   {
     id: "taekwondo",
     name: "التايكوندو",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
+    icon: FaFistRaised,
   },
   {
     id: "archery",
-    name: "السهام",
-    icon: Target,
-    gradient: "from-orange-500 to-red-600",
+    name: "الرماية",
+    icon: GiArcheryTarget,
   },
   {
     id: "esports",
-    name: "الرياضات الإلكترونية",
-    icon: Zap,
-    gradient: "from-yellow-500 to-orange-600",
+    name: "الألعاب الإلكترونية",
+    icon: IoGameControllerOutline,
   },
   {
     id: "judo",
     name: "الجودو",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
+    icon: GiKimono,
   },
   {
     id: "fencing",
     name: "المبارزة",
-    icon: Zap,
-    gradient: "from-yellow-500 to-orange-600",
+    icon: GiSwordman,
   },
   {
     id: "cycling",
-    name: "الدراجات الهوائية",
-    icon: Bike,
-    gradient: "from-indigo-500 to-blue-600",
+    name: "الدراجات",
+    icon: FaBiking,
   },
   {
     id: "squash",
     name: "الإسكواش",
-    icon: Target,
-    gradient: "from-orange-500 to-red-600",
+    icon: GiTennisRacket,
   },
   {
     id: "weightlifting",
     name: "رفع الأثقال",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
+    icon: FaDumbbell,
   },
   {
     id: "futsal",
     name: "كرة قدم الصالات",
-    icon: Trophy,
-    gradient: "from-green-500 to-emerald-600",
+    icon: GiGoalKeeper,
   },
   {
     id: "boxing",
     name: "الملاكمة",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
+    icon: GiBoxingGlove,
   },
   {
     id: "gymnastics",
     name: "الجمباز",
-    icon: Timer,
-    gradient: "from-purple-500 to-pink-600",
+    icon: MdSportsGymnastics,
   },
   {
     id: "billiards",
-    name: "البلياردو والسنوكر",
-    icon: Target,
-    gradient: "from-orange-500 to-red-600",
+    name: "البلياردو",
+    icon: FaChessKnight,
   },
   {
     id: "wrestling",
     name: "المصارعة",
-    icon: Dumbbell,
-    gradient: "from-gray-700 to-gray-900",
+    icon: GiMuscleUp,
   },
   {
     id: "swimming",
     name: "السباحة",
-    icon: Waves,
-    gradient: "from-blue-500 to-cyan-600",
+    icon: FaSwimmer,
   },
 ];
 
-
 const SportsSection = () => {
-  // تقسيم الرياضات إلى صفين متساويين
-  const half = Math.ceil(sports.length / 2);
-  const firstRow = sports.slice(0, half);
-  const secondRow = sports.slice(half);
-
   return (
-    <section className="py-16 bg-[hsl(var(--muted))]">
+    <section className="py-8 md:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
+        {/* Header Section */}
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
             استكشف الألعاب الرياضية
           </h2>
-          <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-            اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين المحترفين
+          <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين
+            المحترفين
           </p>
         </div>
 
-       <div className="flex flex-col gap-4">
-  {/* الصف الأول */}
-  <div className="flex flex-wrap gap-2 justify-center">
-    {firstRow.map((sport) => {
-      const Icon = sport.icon;
-      return (
-        <Link key={sport.id} href={`/sports/${sport.id}`}>
-          <div
-            className={`
-              flex flex-col items-center
-              min-w-[100px] w-24 h-24
-              overflow-hidden group transition-all duration-200
-              border border-gray-200 hover:border-[hsl(var(--primary))]
-              bg-white hover:bg-gray-50
-              rounded-lg
-              shadow-sm hover:shadow-md
-              cursor-pointer
-            `}
-          >
-            <div className="p-3 w-full h-full flex flex-col justify-center">
-              <div className="w-12 h-12 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
-                <Icon className="w-6 h-6 text-[hsl(var(--primary))] group-hover:scale-110 transition-transform" />
-              </div>
-              <h3 className="text-xs font-bold text-gray-800 group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-1 px-1">
-                {sport.name}
-              </h3>
-            </div>
-          </div>
-        </Link>
-      );
-    })}
-  </div>
+        {/* Sports Grid */}
+        <div className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-5 mb-12">
+          {sports.map((sport) => {
+            const Icon = sport.icon;
+            return (
+              <Link
+                key={sport.id}
+                href={`/sports/${sport.id}`}
+                className="group"
+              >
+                <div className="flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#00184d] transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105">
+                  {/* Icon Container */}
+                  <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                    <Icon className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
+                  </div>
 
-  {/* الصف الثاني */}
-  <div className="flex flex-wrap gap-2 justify-center">
-    {secondRow.map((sport) => {
-      const Icon = sport.icon;
-      return (
-        <Link key={sport.id} href={`/sports/${sport.id}`}>
-          <div
-            className={`
-              flex flex-col items-center
-              min-w-[100px] w-24 h-24
-              overflow-hidden group transition-all duration-200
-              border border-gray-200 hover:border-[hsl(var(--primary))]
-              bg-white hover:bg-gray-50
-              rounded-lg
-              shadow-sm hover:shadow-md
-              cursor-pointer
-            `}
-          >
-            <div className="p-2 w-full h-full flex flex-col justify-center">
-              <div className="w-12 h-12 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
-                <Icon className="w-6 h-6 text-[hsl(var(--primary))] group-hover:scale-110 transition-transform" />
-              </div>
-              <h3 className="text-xs font-bold text-gray-800 group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-1 px-1">
-                {sport.name}
-              </h3>
-            </div>
-          </div>
-        </Link>
-      );
-    })}
-  </div>
-</div>
+                  {/* Sport Name */}
+                  <h3 className="text-xs sm:text-sm md:text-base font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-300 text-center leading-tight px-1">
+                    {sport.name}
+                  </h3>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
 
-        <div className="text-center mt-12">
+        {/* CTA Button */}
+        <div className="text-center">
           <Link href="/sports">
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-4 hover:bg-[hsl(var(--primary)/0.9)] transition"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-[#00184d] to-[#00184d] hover:from-[#00184d] hover:to-[#00184d] text-white font-semibold rounded-xl text-base md:text-lg px-8 py-4 md:px-10 md:py-5 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#00184d]"
             >
-              <Trophy className="w-5 h-5 ml-2" />
+              <Trophy className="w-5 h-5 md:w-6 md:h-6 ml-3" />
               عرض جميع الرياضات
             </button>
           </Link>

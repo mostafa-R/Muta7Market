@@ -9,7 +9,7 @@ const mediaVideoSchema = new mongoose.Schema(
     duration: { type: Number, default: 0, min: 0 },
     uploadedAt: { type: Date, default: Date.now },
   },
-  { _id: true }
+  { _id: false }
 );
 
 const mediaDocumentSchema = new mongoose.Schema(
@@ -21,7 +21,7 @@ const mediaDocumentSchema = new mongoose.Schema(
     size: { type: Number, default: 0, min: 0 },
     uploadedAt: { type: Date, default: Date.now },
   },
-  { _id: true }
+  { _id: false }
 );
 
 const playerSchema = new mongoose.Schema(
@@ -94,13 +94,26 @@ const playerSchema = new mongoose.Schema(
         url: { type: String, default: null },
         publicId: { type: String, default: null },
       },
-      videos: {
-        type: [mediaVideoSchema],
-        default: [],
+      video: {
+        type: mediaVideoSchema,
+        default: () => ({
+          url: null,
+          publicId: null,
+          title: null,
+          duration: 0,
+          uploadedAt: null,
+        }),
       },
-      documents: {
-        type: [mediaDocumentSchema],
-        default: [],
+      document: {
+        type: mediaDocumentSchema,
+        default: () => ({
+          url: null,
+          publicId: null,
+          title: null,
+          type: null,
+          size: 0,
+          uploadedAt: null,
+        }),
       },
     },
     socialLinks: {

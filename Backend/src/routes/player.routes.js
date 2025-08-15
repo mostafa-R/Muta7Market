@@ -2,6 +2,7 @@ import express from "express";
 import { uploadMixed } from "../config/cloudinary.js";
 import {
   createPlayer,
+  deletePlayerProfile,
   getAllPlayers,
   getMyProfile,
   getPlayerById,
@@ -84,6 +85,9 @@ router.patch(
   validate(updatePlayerSchema),
   updatePlayer
 );
+
+// delete player profile
+router.delete("/delete-player-profile", verifiedOnly, deletePlayerProfile);
 
 // updatePlayer
 // router.patch(

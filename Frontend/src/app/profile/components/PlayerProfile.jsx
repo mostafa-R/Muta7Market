@@ -1,7 +1,9 @@
 "use client";
-import { Eye, EyeOff, FileText, Users } from "lucide-react";
+import axios from "axios";
+import { Eye, EyeOff, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const PlayerProfile = ({
   player,
@@ -121,6 +123,71 @@ const PlayerProfile = ({
   const handleFormSubmit = (e) => {
     e.preventDefault();
     handleSubmit(formData);
+  };
+
+  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`;
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeletePlayerProfile = async () => {
+    // Show confirmation dialog
+    const isConfirmed = window.confirm(
+      "هل أنت متأكد من حذف الملف الرياضي بشكل نهائي؟ سيتم حذف جميع بياناتك والصور والملفات ولا يمكن استعادتها."
+    );
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) {
+        toast.error("يجب عليك تسجيل الدخول أولاً");
+        setIsDeleting(false);
+        return;
+      }
+
+      // Show notification that deletion is in progress
+      toast.info("جاري حذف الملف الرياضي...");
+
+      const response = await axios.delete(
+        `${API_URL}/players/delete-player-profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("تم حذف الملف الرياضي بنجاح");
+
+        // Remove player data from local storage if stored there
+        localStorage.removeItem("playerProfile");
+
+        // Redirect to homepage after successful deletion
+        setTimeout(() => {
+          window.location.href = "/profile";
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Error deleting profile:", error);
+
+      if (error.response?.status === 404) {
+        toast.error("الملف الرياضي غير موجود");
+      } else if (error.response?.status === 403) {
+        toast.error("ليس لديك صلاحية لحذف هذا الملف");
+      } else {
+        toast.error(
+          error.response?.data?.message || "حدث خطأ أثناء حذف الملف الرياضي"
+        );
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -244,10 +311,28 @@ const PlayerProfile = ({
           <div className="flex justify-end gap-4">
             <button
               type="button"
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
+              className="px-6 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#001a3d] transition-colors"
               onClick={() => router.push(`/register-profile?id=${player._id}`)}
             >
               تعديل
+            </button>
+            <button
+              type="button"
+              className="px-6 py-3 bg-red-950 text-white rounded-xl hover:bg-red-900 transition-colors flex items-center gap-2"
+              onClick={handleDeletePlayerProfile}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <span className="inline-block animate-spin mr-2">⏳</span>
+                  جاري الحذف...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-trash-alt"></i>
+                  حذف الملف الرياضي
+                </>
+              )}
             </button>
             {/* {isEditing && (
               <button

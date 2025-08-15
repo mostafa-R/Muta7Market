@@ -1,9 +1,9 @@
-import { deleteFromCloudinary } from "../middleware/upload.middleware.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { processPlayerMedia } from "../utils/mediaUtils.js";
 
 // ================================
 // USER MANAGEMENT
@@ -288,53 +288,18 @@ export const createPlayer = asyncHandler(async (req, res) => {
     }
   }
 
-  // Handle file uploads
-  if (req.files) {
-    // Initialize media object if not exists
-    if (!playerData.media) {
-      playerData.media = {
-        profileImage: { url: "", publicId: "" },
-        videos: [],
-        documents: [],
-      };
+  // Handle file uploads using our centralized utility
+  try {
+    if (req.files && Object.keys(req.files).length > 0) {
+      // Process all media files
+      playerData.media = await processPlayerMedia(req.files);
     }
-
-    // Handle profile image
-    if (req.files.profileImage && req.files.profileImage[0]) {
-      const profileImage = req.files.profileImage[0];
-      playerData.media.profileImage = {
-        url: profileImage.path,
-        publicId: profileImage.filename,
-        type: profileImage.mimetype,
-        uploadedAt: new Date(),
-      };
-    }
-
-    // Handle video upload
-    if (req.files.playerVideo && req.files.playerVideo[0]) {
-      const video = req.files.playerVideo[0];
-      const videoData = {
-        url: video.path,
-        publicId: video.filename,
-        title: video.originalname,
-        type: video.mimetype,
-        uploadedAt: new Date(),
-      };
-      playerData.media.videos.push(videoData);
-    }
-
-    // Handle document upload
-    if (req.files.document && req.files.document[0]) {
-      const document = req.files.document[0];
-      const documentData = {
-        url: document.path,
-        publicId: document.filename,
-        title: document.originalname,
-        type: document.mimetype,
-        uploadedAt: new Date(),
-      };
-      playerData.media.documents.push(documentData);
-    }
+  } catch (error) {
+    console.error("Error processing media files:", error);
+    throw new ApiError(
+      500,
+      "Failed to process media files for player creation"
+    );
   }
 
   // Set default values
@@ -365,116 +330,23 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
 
   // Handle file uploads and replacements
-  if (req.files) {
-    // Initialize media object if not exists
-    if (!updates.media) {
-      updates.media = existingPlayer.media || {
-        profileImage: { url: "", publicId: "" },
-        videos: [],
-        documents: [],
-      };
-    }
+  try {
+    if (req.files && Object.keys(req.files).length > 0) {
+      // Process all media files using our centralized utility
+      const processedMedia = await processPlayerMedia(
+        req.files,
+        existingPlayer.media
+      );
 
-    // Handle profile image replacement
-    if (req.files.profileImage && req.files.profileImage[0]) {
-      // Delete old profile image if exists
-      if (existingPlayer.media?.profileImage?.publicId) {
-        try {
-          await deleteFromCloudinary(
-            existingPlayer.media.profileImage.publicId,
-            "image"
-          );
-        } catch (error) {
-          console.warn("Failed to delete old profile image:", error.message);
-        }
-      }
-
-      // Set new profile image
-      const profileImage = req.files.profileImage[0];
-      updates.media.profileImage = {
-        url: profileImage.path,
-        publicId: profileImage.filename,
-        type: profileImage.mimetype,
-        uploadedAt: new Date(),
-      };
+      // Update the media object in the updates
+      updates.media = processedMedia;
     } else {
-      // Keep existing profile image
-      updates.media.profileImage = existingPlayer.media?.profileImage || {
-        url: "",
-        publicId: "",
-      };
+      // No new files uploaded, keep existing media
+      updates.media = existingPlayer.media;
     }
-
-    // Handle video replacement
-    if (req.files.playerVideo && req.files.playerVideo[0]) {
-      // Delete old videos if exist
-      if (
-        existingPlayer.media?.videos &&
-        existingPlayer.media.videos.length > 0
-      ) {
-        for (const oldVideo of existingPlayer.media.videos) {
-          if (oldVideo.publicId) {
-            try {
-              await deleteFromCloudinary(oldVideo.publicId, "video");
-            } catch (error) {
-              console.warn("Failed to delete old video:", error.message);
-            }
-          }
-        }
-      }
-
-      // Set new video
-      const video = req.files.playerVideo[0];
-      updates.media.videos = [
-        {
-          url: video.path,
-          publicId: video.filename,
-          title: video.originalname,
-          type: video.mimetype,
-          uploadedAt: new Date(),
-        },
-      ];
-    } else {
-      // Keep existing videos
-      updates.media.videos = existingPlayer.media?.videos || [];
-    }
-
-    // Handle document replacement
-    if (req.files.document && req.files.document[0]) {
-      // Delete old documents if exist
-      if (
-        existingPlayer.media?.documents &&
-        existingPlayer.media.documents.length > 0
-      ) {
-        for (const oldDoc of existingPlayer.media.documents) {
-          if (oldDoc.publicId) {
-            try {
-              await deleteFromCloudinary(oldDoc.publicId, "raw");
-            } catch (error) {
-              console.warn("Failed to delete old document:", error.message);
-            }
-          }
-        }
-      }
-
-      // Set new document
-      const document = req.files.document[0];
-      updates.media.documents = [
-        {
-          url: document.path,
-          publicId: document.filename,
-          title: document.originalname,
-          type: document.mimetype,
-          uploadedAt: new Date(),
-        },
-      ];
-    } else {
-      // Keep existing documents
-      updates.media.documents = existingPlayer.media?.documents || [];
-    }
-  } else {
-    // No new files uploaded, keep existing media
-    updates.media = existingPlayer.media;
+  } catch (error) {
+    console.error("Error processing media files:", error);
+    throw new ApiError(500, "Failed to process media files for player update");
   }
 
   const updatedPlayer = await Player.findByIdAndUpdate(id, updates, {

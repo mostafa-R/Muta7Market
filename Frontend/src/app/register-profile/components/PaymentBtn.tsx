@@ -904,29 +904,58 @@ export default function PaymentBtn() {
 
   return (
     <>
-      <div className="space-y-4">
-        <button
-          onClick={startPayment}
-          disabled={loading}
-          className={`w-full py-4 px-6 rounded-2xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-lg ${
-            loading
-              ? "bg-gray-300 cursor-not-allowed text-gray-500"
-              : "bg-[#00183D] hover:bg-[#00183D] text-white hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
-          }`}
-        >
-          {loading && (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          )}
-          <CreditCard size={24} />
-          {loading ? "جارٍ التفعيل…" : "ادفع 55 USD - تفعيل الاشتراك"}
-        </button>
+      <div className="space-y-6">
+        <div className="relative">
+          <button
+            onClick={startPayment}
+            disabled={loading}
+            className={`w-full py-6 px-6 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-3 ${
+              loading
+                ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-[1.01] active:scale-[0.99]"
+            }`}
+          >
+            {loading && (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
+            <CreditCard size={22} />
+            {loading ? "جارٍ التفعيل…" : "ادفع 55 USD - تفعيل الاشتراك"}
+          </button>
 
-        <div className="text-center text-sm text-gray-500">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Shield size={16} />
-            <span>دفع آمن ومضمون</span>
+          {/* Floating animation element */}
+          <div className="absolute -top-3 -right-2 animate-bounce">
+            <div className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full shadow-md">
+              احصل على المزيد من الفرص!
+            </div>
           </div>
-          <p>نموذج دفع متقدم وآمن 100%</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-right">
+            <div className="flex-shrink-0 bg-blue-100 p-3 rounded-full">
+              <Shield size={24} className="text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-1">
+                دفع آمن ومضمون
+              </h4>
+              <p className="text-sm text-gray-600">
+                تتم معالجة المدفوعات بواسطة شريك موثوق به ومرخص من مؤسسة النقد
+                العربي السعودي
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-center mt-4 gap-2">
+            <img src="/visa.svg" alt="Visa" className="h-8 opacity-60" />
+            <img
+              src="/mastercard.svg"
+              alt="Mastercard"
+              className="h-8 opacity-60"
+            />
+            <img src="/mada.svg" alt="Mada" className="h-8 opacity-60" />
+            <img src="/stcpay.svg" alt="STC Pay" className="h-8 opacity-60" />
+          </div>
         </div>
       </div>
 

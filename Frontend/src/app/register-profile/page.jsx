@@ -2,13 +2,19 @@
 import { Button } from "@/app/component/ui/button";
 import axios from "axios";
 import { useFormik } from "formik";
-import { Save, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Save, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "sonner";
 import LoadingSpinner from "../component/LoadingSpinner";
+import {
+  cleanupMediaPreviews,
+  prepareMediaFormData,
+  processMediaResponse,
+} from "../utils/mediaUtils";
 import { ContactInfoCard } from "./components/ContactInfoCard";
 import { FinancialInfoCard } from "./components/FinancialInfoCard";
 import { MediaUploadCard } from "./components/MediaUploadCard";
@@ -32,221 +38,468 @@ const getSuccessMessage = (response, fallback) => {
 };
 
 const getErrorMessage = (error, fallback) => {
-  const firstFromErrors = (() => {
-    try {
-      const errs = error?.response?.data?.errors;
-      if (errs && typeof errs === "object") {
-        const [k, arr] = Object.entries(errs)[0] || [];
-        if (k && Array.isArray(arr) && arr.length) {
-          return `${k}: ${arr[0]}`;
-        }
-      }
-    } catch {}
-    return null;
-  })();
-  if (firstFromErrors) return firstFromErrors;
   return (
     error?.response?.data?.message ||
-    error?.response?.data?.msg ||
     error?.response?.data?.error ||
     error?.message ||
     fallback
   );
 };
 
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-  return null;
-}
+// Form sections for multi-step navigation
+const formSections = [
+  { id: "personal", title: "المعلومات الشخصية", icon: "👤" },
+  { id: "sports", title: "المعلومات الرياضية", icon: "🏆" },
+  { id: "financial", title: "المعلومات المالية", icon: "💰" },
+  { id: "transfer", title: "معلومات الانتقال", icon: "🔄" },
+  { id: "contact", title: "معلومات التواصل", icon: "📞" },
+  { id: "social", title: "روابط التواصل", icon: "🔗" },
+  { id: "media", title: "الوسائط والمستندات", icon: "📎" },
+  { id: "terms", title: "الشروط والأحكام", icon: "📝" },
+];
 
-function RegisterProfileContent() {
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
+export default function Page() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get("id");
+  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [canPay, setCanPay] = useState(false);
+  const [player, setPlayer] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState("rtl"); // Default RTL for Arabic
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screens
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Allowed file types
+  const ALLOWED_IMAGE_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+  ];
   const ALLOWED_VIDEO_TYPES = [
     "video/mp4",
-    "video/mpeg",
-    "video/webm",
-    "video/quicktime", // mov
-    "video/x-msvideo", // avi
-    "video/x-ms-wmv", // wmv
-    "video/x-matroska", // mkv
+    "video/quicktime",
+    "video/x-msvideo",
   ];
   const ALLOWED_DOCUMENT_TYPES = [
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "image/jpeg",
-    "image/png",
   ];
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState(null);
-  const [canPay, setCanPay] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const idParam = searchParams?.get("id");
-  const [player, setPlayer] = useState(null);
-  const [error, setError] = useState(null);
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-  // Re-add robust upload helper with fieldName support and cookie token
-  const uploadFile = async (file, endpoint, fieldName = "file") => {
-    const token = localStorage.getItem("token"); // FIX: use same source
-    if (!token) {
-      throw new Error("يرجى تسجيل الدخول");
-    }
-
-    const formData = new FormData();
-    formData.append(fieldName, file);
-
-    try {
-      setUploadStatus("جارٍ الرفع...");
-      const response = await axios.post(endpoint, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const progress = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setUploadProgress(progress);
-          }
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      age: "",
+      gender: "",
+      nationality: "",
+      jop: "",
+      jopSelected: false, // Track if user explicitly selected jop
+      position: "",
+      status: "",
+      statusSelected: false, // Track if user explicitly selected status
+      experience: "0",
+      monthlySalary: {
+        amount: "",
+        currency: "SAR",
+      },
+      yearSalary: {
+        amount: "",
+        currency: "SAR",
+      },
+      contractEndDate: "",
+      transferredTo: {
+        club: "",
+        date: "",
+        amount: "",
+      },
+      socialLinks: {
+        instagram: "",
+        twitter: "",
+        whatsapp: "",
+        youtube: "",
+      },
+      contactInfo: {
+        isHidden: true,
+        email: "",
+        phone: "",
+        agent: {
+          name: "",
+          phone: "",
+          email: "",
         },
-      });
-      setUploadStatus("تم رفع الملف بنجاح!");
-      setTimeout(() => setUploadStatus(null), 3000);
-      return response.data;
-    } catch (err) {
-      const message = getErrorMessage(err, "فشل في رفع الملف");
-      setUploadStatus("فشل في رفع الملف");
-      setTimeout(() => setUploadStatus(null), 3000);
-      throw new Error(message);
-    }
-  };
+      },
+      isPromoted: {
+        status: false,
+        startDate: "",
+        endDate: "",
+        type: "featured",
+      },
+      media: {
+        video: {
+          url: null,
+          publicId: null,
+          title: null,
+          duration: 0,
+          uploadedAt: null,
+        },
+        document: {
+          url: null,
+          publicId: null,
+          title: null,
+          type: null,
+          size: 0,
+          uploadedAt: null,
+        },
+      },
+      profilePicturePreview: "",
+      profilePictureFile: null,
+      documentFile: null,
+      game: "",
+      isActive: true,
+      agreeToTerms: false,
+    },
+    validateOnChange: true,
+    validateOnBlur: true,
+    validate: (values) => {
+      try {
+        // First use Joi for schema validation
+        validateWithJoi(values, playerFormSchema);
 
-  const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`;
+        // Additional manual validation for all required fields
+        const errors = {};
 
-  const appendFormData = (fd, data, parentKey = "") => {
-    if (data == null) return;
-    if (Array.isArray(data)) {
-      data.forEach((v, i) => appendFormData(fd, v, `${parentKey}[${i}]`));
-      return;
-    }
-    if (
-      typeof data === "object" &&
-      !(data instanceof File) &&
-      !(data instanceof Blob)
-    ) {
-      Object.entries(data).forEach(([k, v]) => {
-        appendFormData(fd, v, parentKey ? `${parentKey}[${k}]` : k);
-      });
-      return;
-    }
-    fd.append(parentKey, data);
-  };
+        console.log("Validating values:", values); // Debug logging
 
-  const handleSubmit = async (values) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("يرجى تسجيل الدخول");
-      return;
-    }
-    if (!API_URL) {
-      toast.error("إعدادات الخادم غير مضبوطة (API_URL)");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
-      const isUpdate = Boolean(idParam);
-      const url = isUpdate
-        ? `${API_URL}/players/${idParam}`
-        : `${API_URL}/players/createPlayer`;
-      const method = isUpdate ? "patch" : "post";
-
-      // map experience -> expreiance (backend field name)
-      const payload = { ...values };
-      if (payload.experience !== undefined) {
-        payload.expreiance = Number(payload.experience) || 0;
-        delete payload.experience;
-      }
-
-      // ensure numeric conversions for numeric fields
-      if (payload.age !== undefined && payload.age !== "") {
-        payload.age = Number(payload.age);
-      }
-      if (
-        payload.monthlySalary?.amount !== undefined &&
-        payload.monthlySalary.amount !== ""
-      ) {
-        payload.monthlySalary.amount = Number(payload.monthlySalary.amount);
-      }
-      if (
-        payload.yearSalary?.amount !== undefined &&
-        payload.yearSalary.amount !== ""
-      ) {
-        payload.yearSalary.amount = Number(payload.yearSalary.amount);
-      }
-      if (
-        payload.transferredTo?.amount !== undefined &&
-        payload.transferredTo.amount !== ""
-      ) {
-        payload.transferredTo.amount = Number(payload.transferredTo.amount);
-      }
-
-      // sanitize empty date fields to avoid cast errors on create
-      if (payload.contractEndDate === "") {
-        payload.contractEndDate = null;
-      }
-      if (payload.transferredTo) {
-        if (payload.transferredTo.date === "") {
-          payload.transferredTo.date = null;
+        // Personal section validation
+        if (!values.name || values.name.trim() === "") {
+          errors.name = "الاسم مطلوب";
         }
-        if (payload.transferredTo.club === "") {
-          payload.transferredTo.club = null;
+
+        if (!values.age || isNaN(Number(values.age))) {
+          errors.age = "العمر مطلوب ويجب أن يكون رقمًا";
+        } else if (Number(values.age) < 15 || Number(values.age) > 50) {
+          errors.age = "العمر يجب أن يكون بين 15 و 50 سنة";
         }
+
+        if (!values.gender) {
+          errors.gender = "الجنس مطلوب";
+        }
+
+        if (!values.nationality || values.nationality.trim() === "") {
+          errors.nationality = "الجنسية مطلوبة";
+        }
+
+        // Sports section validation
+        if (!values.game || values.game.trim() === "") {
+          errors.game = "الرياضة مطلوبة";
+        }
+
+        if (!values.jop) {
+          errors.jop = "الفئة مطلوبة";
+        }
+
+        if (!values.position) {
+          errors.position = "المركز/التخصص مطلوب";
+        }
+
+        if (!values.status) {
+          errors.status = "الحالة الحالية مطلوبة";
+        }
+
+        // Terms validation
+        if (!values.agreeToTerms) {
+          errors.agreeToTerms = "يجب الموافقة على الشروط والأحكام";
+        }
+
+        return errors;
+      } catch (err) {
+        return { [err.path[0]]: err.message };
+      }
+    },
+    onSubmit: async (values) => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("يرجى تسجيل الدخول");
+        return;
+      }
+      if (!API_URL) {
+        toast.error("إعدادات الخادم غير مضبوطة (API_URL)");
+        return;
       }
 
-      // remove UI-only fields and fields handled separately
-      const hasFiles = Boolean(
-        values.profilePictureFile || values.documentFile
-      );
-      delete payload.profilePictureFile;
-      delete payload.profilePicturePreview;
-      delete payload.agreeToTerms;
-      delete payload.documentFile;
-      delete payload.documentTitle;
-      delete payload.media; // handled by dedicated endpoints
-      delete payload.seo; // not part of backend schema
+      // Double-check terms agreement even within the submit handler
+      if (!values.agreeToTerms) {
+        toast.error("يجب الموافقة على الشروط والأحكام");
+        return;
+      }
 
-      if (!isUpdate) {
-        // Always use multipart for create route (multer + parseJsonFields)
-        const fdCreate = new FormData();
-        if (values.profilePictureFile)
-          fdCreate.append("profileImage", values.profilePictureFile);
-        // Prefer newly selected doc/video from MediaUploadCard; fallback to legacy fields
-        const firstDocFile =
-          values.media?.documents?.find((d) => d && d.file)?.file ||
+      try {
+        setIsLoading(true);
+        setUploadProgress(10); // Show initial progress
+
+        // Simulate progress for better UX since the API might not report progress correctly
+        const progressInterval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return prev;
+            }
+            return prev + Math.floor(Math.random() * 8) + 2;
+          });
+        }, 800);
+
+        const isUpdate = Boolean(idParam);
+        const url = isUpdate
+          ? `${API_URL}/players/${idParam}`
+          : `${API_URL}/players/createPlayer`;
+        const method = isUpdate ? "patch" : "post";
+
+        // Double check all required fields before proceeding
+        const requiredFieldsCheck = {
+          // Personal section
+          name: !values.name || values.name.trim() === "",
+          age:
+            !values.age ||
+            isNaN(Number(values.age)) ||
+            Number(values.age) < 15 ||
+            Number(values.age) > 50,
+          gender: !values.gender,
+          nationality: !values.nationality || values.nationality.trim() === "",
+
+          // Sports section
+          game: !values.game || values.game.trim() === "",
+          jop: !values.jop || !values.jopSelected, // Must have a value AND be explicitly selected
+          status: !values.status || !values.statusSelected, // Must have a value AND be explicitly selected
+          // position is optional, not checked
+
+          // Terms section
+          agreeToTerms: !values.agreeToTerms,
+        };
+
+        // Check for any validation errors
+        const errors = Object.entries(requiredFieldsCheck)
+          .filter(([_, hasError]) => hasError)
+          .map(([field]) => field);
+
+        if (errors.length > 0) {
+          // Determine which section to navigate to based on the first error
+          let sectionToNavigate = "personal"; // Default
+
+          if (["game", "jop", "status"].includes(errors[0])) {
+            sectionToNavigate = "sports";
+          } else if (errors[0] === "agreeToTerms") {
+            sectionToNavigate = "terms";
+          }
+
+          // Show error for the first field
+          const errorMessages = {
+            name: "الاسم مطلوب - يرجى إدخال اسمك",
+            age: "العمر مطلوب ويجب أن يكون بين 15 و 50",
+            gender: "الجنس مطلوب - يرجى اختيار الجنس",
+            nationality: "الجنسية مطلوبة - يرجى اختيار الجنسية",
+            game: "الرياضة مطلوبة - لا يمكن إنشاء الملف بدون اختيار رياضة",
+            jop: "الفئة مطلوبة - يرجى اختيار الفئة بشكل صريح",
+            status: "الحالة الحالية مطلوبة - يرجى اختيار الحالة بشكل صريح",
+            agreeToTerms: "يجب الموافقة على الشروط والأحكام",
+          };
+
+          toast.error(errorMessages[errors[0]]);
+          setCurrentStep(
+            formSections.findIndex(
+              (section) => section.id === sectionToNavigate
+            )
+          );
+          setIsLoading(false);
+          clearInterval(progressInterval);
+          return;
+        }
+
+        console.log(
+          "All required fields are valid, proceeding with submission"
+        );
+
+        // map experience -> expreiance (backend field name)
+        const payload = { ...values };
+        if (payload.experience !== undefined) {
+          payload.expreiance = Number(payload.experience) || 0;
+          delete payload.experience;
+        }
+
+        // ensure numeric conversions for numeric fields
+        if (payload.age !== undefined && payload.age !== "") {
+          payload.age = Number(payload.age);
+        }
+        if (
+          payload.monthlySalary?.amount !== undefined &&
+          payload.monthlySalary.amount !== ""
+        ) {
+          payload.monthlySalary.amount = Number(payload.monthlySalary.amount);
+        }
+        if (
+          payload.yearSalary?.amount !== undefined &&
+          payload.yearSalary.amount !== ""
+        ) {
+          payload.yearSalary.amount = Number(payload.yearSalary.amount);
+        }
+        if (
+          payload.transferredTo?.amount !== undefined &&
+          payload.transferredTo.amount !== ""
+        ) {
+          payload.transferredTo.amount = Number(payload.transferredTo.amount);
+        }
+
+        // Ensure contact info is properly formed
+        if (!payload.contactInfo) payload.contactInfo = {};
+        if (!payload.contactInfo.agent) payload.contactInfo.agent = {};
+
+        // Convert some fields to booleans to match backend expectations
+        payload.isActive = Boolean(payload.isActive);
+        if (payload.contactInfo) {
+          payload.contactInfo.isHidden = Boolean(payload.contactInfo.isHidden);
+        }
+        if (payload.isPromoted) {
+          payload.isPromoted.status = Boolean(payload.isPromoted.status);
+        }
+
+        // remove form-only fields that the API doesn't need
+        delete payload.agreeToTerms;
+        delete payload.profilePicturePreview;
+        delete payload.profilePictureFile;
+        delete payload.documentFile;
+
+        // If there are no files, we can send as JSON
+        // Ensure game field is properly set and not empty
+        if (!payload.game || payload.game.trim() === "") {
+          toast.error("الرياضة مطلوبة (Game field is required)");
+          setCurrentStep(
+            formSections.findIndex((section) => section.id === "sports")
+          );
+          setIsLoading(false);
+          clearInterval(progressInterval);
+          return;
+        }
+
+        // Log all key fields for debugging
+        console.log("Critical fields check:", {
+          name: payload.name,
+          age: payload.age,
+          gender: payload.gender,
+          game: payload.game,
+          jop: payload.jop,
+        });
+
+        const hasFiles =
+          values.profilePictureFile ||
           values.documentFile ||
-          null;
-        const firstVideoFile =
-          values.media?.videos?.find((v) => v && v.file)?.file || null;
-        if (firstDocFile) {
-          fdCreate.append("document", firstDocFile);
-        }
-        if (firstVideoFile) {
-          fdCreate.append("playerVideo", firstVideoFile);
+          values.media?.document?.file ||
+          values.media?.video?.file;
+
+        if (!hasFiles) {
+          try {
+            console.log("Sending JSON payload:", payload);
+            const resp = await axios({
+              method,
+              url,
+              data: payload,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            toast.success(getSuccessMessage(resp, "تم الإنشاء"));
+            setCanPay(true);
+            return;
+          } catch (error) {
+            console.error("JSON submission error:", error);
+            if (error.response) {
+              console.error("Error response:", error.response.data);
+              let errorMsg =
+                error.response.data?.message ||
+                error.response.data?.error ||
+                `خطأ ${error.response.status}`;
+              toast.error(`خطأ في إرسال البيانات: ${errorMsg}`);
+            }
+            setIsLoading(false);
+            clearInterval(progressInterval);
+            return;
+          }
         }
 
-        // Append primitives
+        // Otherwise build multipart FormData for file upload
+        const fd = new FormData();
+
+        // First, add all critical fields directly to ensure they're properly set
+        fd.append("name", payload.name || "");
+        fd.append("age", payload.age || "");
+        fd.append("gender", payload.gender || "");
+        fd.append("nationality", payload.nationality || "");
+        fd.append("game", payload.game || "");
+        fd.append("jop", payload.jop || "");
+        fd.append("position", payload.position || "");
+        fd.append("status", payload.status || "");
+        fd.append("expreiance", payload.expreiance || "0");
+
+        // Use our utility to handle media files
+        prepareMediaFormData(values, player?.media, fd);
+
+        // Show toast notifications for media updates
+        if (values.profilePictureFile && player?.media?.profileImage?.url) {
+          toast.info("سيتم استبدال الصورة الشخصية السابقة");
+        }
+
+        const hasNewDocument =
+          values.media?.document?.file || values.documentFile;
+        if (hasNewDocument && player?.media?.document?.url) {
+          toast.info("سيتم استبدال المستند السابق بالمستند الجديد");
+        }
+
+        const hasNewVideo = values.media?.video?.file;
+        if (hasNewVideo && player?.media?.video?.url) {
+          toast.info("سيتم استبدال الفيديو السابق بالفيديو الجديد");
+        }
+
+        // For multipart, send remaining primitive fields
         Object.entries(payload).forEach(([k, v]) => {
-          if (v !== undefined && v !== null && typeof v !== "object") {
-            fdCreate.append(k, v);
+          // Skip fields we've already added directly and objects
+          if (
+            ![
+              "name",
+              "age",
+              "gender",
+              "nationality",
+              "game",
+              "jop",
+              "position",
+              "status",
+              "expreiance",
+            ].includes(k) &&
+            v !== undefined &&
+            v !== null &&
+            typeof v !== "object"
+          ) {
+            fd.append(k, v);
           }
         });
 
-        // Append nested objects as JSON for backend parser
+        // And append nested objects as JSON so backend parseJsonFields can handle them
         [
           "monthlySalary",
           "yearSalary",
@@ -256,208 +509,176 @@ function RegisterProfileContent() {
           "contactInfo",
         ].forEach((key) => {
           if (payload[key] && typeof payload[key] === "object") {
-            fdCreate.append(key, JSON.stringify(payload[key]));
+            fd.append(key, JSON.stringify(payload[key]));
           }
         });
 
-        const resp = await axios.post(url, fdCreate, {
-          headers: { Authorization: `Bearer ${token}` },
-          onUploadProgress: (e) => {
-            if (e.total)
-              setUploadProgress(Math.round((e.loaded * 100) / e.total));
-          },
-        });
+        // Log payload for debugging
+        console.log("Sending payload:", JSON.stringify(payload));
 
-        toast.success(getSuccessMessage(resp, "تم الإنشاء"));
-        setCanPay(true);
-        return;
-      }
-
-      // Otherwise build multipart FormData for file upload
-      const fd = new FormData();
-      if (values.profilePictureFile)
-        fd.append("profileImage", values.profilePictureFile);
-      // Update supports adding a single document; only send if it's newly selected
-      const updDocFile =
-        values.media?.documents?.find((d) => d && d.file)?.file ||
-        values.documentFile ||
-        null;
-      if (updDocFile) {
-        fd.append("document", updDocFile);
-      }
-      // Backend update does not process playerVideo; skip here
-
-      // For multipart, send only primitives to avoid nested parsing issues
-      Object.entries(payload).forEach(([k, v]) => {
-        if (
-          v !== undefined &&
-          v !== null &&
-          typeof v !== "object" // skip nested objects here
-        ) {
-          fd.append(k, v);
+        // For debugging: Log FormData content
+        console.log("Form data entries:");
+        for (let pair of fd.entries()) {
+          console.log(pair[0], pair[1]);
         }
-      });
-      // And append nested objects as JSON so backend parseJsonFields can handle them
-      [
-        "monthlySalary",
-        "yearSalary",
-        "transferredTo",
-        "socialLinks",
-        "isPromoted",
-        "contactInfo",
-      ].forEach((key) => {
-        if (payload[key] && typeof payload[key] === "object") {
-          fd.append(key, JSON.stringify(payload[key]));
-        }
-      });
 
-      const uploadResp = await axios({
-        method,
-        url,
-        data: fd,
-        headers: { Authorization: `Bearer ${token}` },
-        onUploadProgress: (e) => {
-          if (e.total)
-            setUploadProgress(Math.round((e.loaded * 100) / e.total));
-        },
-      });
-
-      // No follow-up PATCH: nested JSON is already included in multipart and parsed server-side
-
-      toast.success(
-        getSuccessMessage(uploadResp, isUpdate ? "تم التحديث" : "تم الإنشاء")
-      );
-      if (!isUpdate) setCanPay(true);
-    } catch (err) {
-      console.error("ERR 400 payload details:", err?.response?.data);
-      const msg = getErrorMessage(err, idParam ? "فشل التحديث" : "فشل الإنشاء");
-
-      // If profile already exists, try to fetch its ID and redirect to edit
-      if (err?.response?.status === 400 && /exists/i.test(String(msg))) {
+        let resp;
         try {
-          const token = localStorage.getItem("token");
-          const me = await axios.get(`${API_URL}/players/playerprofile`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const pid = me?.data?.data?._id;
-          if (pid) {
-            toast.info("لديك ملف موجود مسبقًا، سيتم فتحه للتعديل");
-            router.replace(`/register-profile?id=${pid}`);
-            return;
+          console.log("About to send FormData request");
+
+          // Double check game field is properly set in FormData
+          const gameValue = fd.get("game");
+          console.log("Game field in FormData:", gameValue);
+
+          if (!gameValue || gameValue.trim() === "") {
+            // Explicitly add it again if missing
+            fd.set("game", payload.game || "");
+            console.log("Re-added game field:", payload.game);
           }
-        } catch {}
+
+          resp = await axios({
+            method,
+            url,
+            data: fd,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / (progressEvent.total || 100)
+              );
+              setUploadProgress(percentCompleted);
+            },
+          });
+
+          console.log("Success response:", resp.data);
+        } catch (error) {
+          console.error("API request error:", error);
+
+          if (error.response) {
+            console.error("Error response data:", error.response.data);
+            console.error("Error response status:", error.response.status);
+            console.error("Request URL:", url);
+            console.error("Request method:", method);
+
+            // Show detailed error message
+            let errorMessage = "خطأ في إرسال البيانات: ";
+            if (error.response.data && error.response.data.message) {
+              errorMessage += error.response.data.message;
+            } else if (error.response.data && error.response.data.error) {
+              errorMessage += error.response.data.error;
+            } else {
+              errorMessage += `خطأ ${error.response.status}`;
+            }
+
+            toast.error(errorMessage);
+          } else if (error.request) {
+            // Request was made but no response
+            console.error("No response received:", error.request);
+            toast.error("لم يتم تلقي رد من الخادم. تحقق من اتصالك بالإنترنت.");
+          } else {
+            // Error in request setup
+            console.error("Error setting up request:", error.message);
+            toast.error(`خطأ في إعداد الطلب: ${error.message}`);
+          }
+
+          // Clear loading state
+          setIsLoading(false);
+          clearInterval(progressInterval);
+          setUploadProgress(0);
+          setUploadStatus("error");
+          return; // Stop execution here
+        }
+
+        const respData = resp;
+
+        // Process the returned media data
+        if (respData.data?.data?.media) {
+          const processedMedia = processMediaResponse(respData.data.data.media);
+          setPlayer((prevPlayer) => ({
+            ...prevPlayer,
+            media: processedMedia,
+          }));
+        }
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        setUploadStatus("success");
+
+        toast.success(
+          getSuccessMessage(
+            respData,
+            isUpdate ? "تم التحديث بنجاح" : "تم الإنشاء بنجاح"
+          )
+        );
+        setCanPay(true);
+
+        // On successful profile creation, redirect to profile view
+        // if (!isUpdate) {
+        //   setTimeout(() => {
+        //     router.push("/profile");
+        //   }, 2000);
+        // }
+      } catch (error) {
+        console.error("Form submission error:", error);
+        setUploadStatus("error");
+        toast.error(
+          getErrorMessage(error, "حدث خطأ أثناء رفع البيانات. حاول مرة أخرى.")
+        );
+      } finally {
+        setIsLoading(false);
       }
-
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const initialValues = {
-    name: "",
-    age: "",
-    gender: "",
-    nationality: "",
-    jop: "",
-    position: "",
-    status: "available",
-    experience: "",
-    monthlySalary: { amount: 0, currency: "SAR" },
-    yearSalary: { amount: 0, currency: "SAR" },
-    contractEndDate: "",
-    transferredTo: { club: "", date: "", amount: "" },
-    media: {
-      profileImage: { url: "", publicId: "" },
-      videos: [],
-      documents: [],
     },
-    socialLinks: { instagram: "", twitter: "", whatsapp: "", youtube: "" },
-    isPromoted: { status: false, startDate: "", endDate: "", type: "" },
-    contactInfo: {
-      isHidden: true,
-      email: "",
-      phone: "",
-      agent: { name: "", phone: "", email: "" },
-    },
-    game: "",
-    isActive: false,
-    views: 0,
-    seo: {
-      metaTitle: { en: "", ar: "" },
-      metaDescription: { en: "", ar: "" },
-      keywords: [],
-    },
-    profilePicturePreview: "",
-    profilePictureFile: undefined,
-    agreeToTerms: false,
-
-    documentFile: undefined,
-    documentTitle: "",
-  };
-
-  const formik = useFormik({
-    initialValues,
-    validate: validateWithJoi(playerFormSchema),
-    validateOnChange: true,
-    validateOnBlur: true,
-    onSubmit: handleSubmit,
   });
 
+  // Load existing player data if editing
   useEffect(() => {
-    const fetchPlayer = async () => {
-      if (idParam) {
-        setIsLoading(true);
+    if (idParam && API_URL) {
+      const fetchPlayer = async () => {
         try {
+          setIsLoading(true);
           const token = localStorage.getItem("token");
+          if (!token) {
+            toast.error("يجب تسجيل الدخول أولاً");
+            router.push("/login");
+            return;
+          }
+
           const response = await axios.get(`${API_URL}/players/${idParam}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
+
           const player = response.data.data;
 
-          const existingVideos = Array.isArray(player.media?.videos)
-            ? player.media.videos
-            : player.media?.videos?.url
-            ? [player.media.videos]
-            : [];
-          const existingDocuments = Array.isArray(player.media?.documents)
-            ? player.media.documents
-            : player.media?.documents?.url
-            ? [player.media.documents]
-            : [];
-
-          const toDateInput = (d) => (d ? String(d).slice(0, 10) : "");
-
+          // Map backend expreiance to frontend experience field
           const mergedValues = {
-            ...initialValues,
+            ...formik.values,
             name: player.name || "",
-            age: player.age ? String(player.age) : "",
-            gender: player.gender,
+            age: player.age || "",
+            gender: player.gender || "",
             nationality: player.nationality || "",
             jop: player.jop || "",
+            jopSelected: true, // Mark as selected for existing players
             position: player.position || "",
-            status: player.status || "available",
-            experience: player.expreiance ? Number(player.expreiance) || 0 : 0,
+            status: player.status || "",
+            statusSelected: true, // Mark as selected for existing players
+            experience: player.expreiance?.toString() || "0",
+            contractEndDate: player.contractEndDate || "",
             monthlySalary: player.monthlySalary || {
-              amount: 0,
+              amount: "",
               currency: "SAR",
             },
-            yearSalary: player.yearSalary || { amount: 0, currency: "SAR" },
-            contractEndDate: toDateInput(player.contractEndDate),
-            transferredTo: {
-              club: player.transferredTo?.club || "",
-              date: toDateInput(player.transferredTo?.date),
-              amount: player.transferredTo?.amount || "",
+            yearSalary: player.yearSalary || {
+              amount: "",
+              currency: "SAR",
             },
-            media: {
-              profileImage: player.media?.profileImage || {
-                url: "",
-                publicId: "",
-              },
-              videos: existingVideos,
-              documents: existingDocuments,
+            transferredTo: player.transferredTo || {
+              club: "",
+              date: "",
+              amount: "",
             },
             socialLinks: player.socialLinks || {
               instagram: "",
@@ -465,18 +686,57 @@ function RegisterProfileContent() {
               whatsapp: "",
               youtube: "",
             },
-            isPromoted: {
-              status: player.isPromoted?.status || false,
-              startDate: player.isPromoted?.startDate || "",
-              endDate: player.isPromoted?.endDate || "",
-              type: player.isPromoted?.type || "",
-            },
             contactInfo: player.contactInfo || {
               isHidden: true,
               email: "",
               phone: "",
-              agent: { name: "", phone: "", email: "" },
+              agent: {
+                name: "",
+                phone: "",
+                email: "",
+              },
             },
+            isPromoted: player.isPromoted || {
+              status: false,
+              startDate: "",
+              endDate: "",
+              type: "featured",
+            },
+            media: player.media
+              ? {
+                  video: player.media.video || {
+                    url: null,
+                    publicId: null,
+                    title: null,
+                    duration: 0,
+                    uploadedAt: null,
+                  },
+                  document: player.media.document || {
+                    url: null,
+                    publicId: null,
+                    title: null,
+                    type: null,
+                    size: 0,
+                    uploadedAt: null,
+                  },
+                }
+              : {
+                  video: {
+                    url: null,
+                    publicId: null,
+                    title: null,
+                    duration: 0,
+                    uploadedAt: null,
+                  },
+                  document: {
+                    url: null,
+                    publicId: null,
+                    title: null,
+                    type: null,
+                    size: 0,
+                    uploadedAt: null,
+                  },
+                },
             game: player.game || "",
             isActive: player.isActive || false,
             views: player.views || 0,
@@ -500,11 +760,26 @@ function RegisterProfileContent() {
         } finally {
           setIsLoading(false);
         }
-      }
-    };
+      };
 
-    fetchPlayer();
+      fetchPlayer();
+    }
   }, [idParam, API_URL]);
+
+  // Cleanup function for media previews when component unmounts
+  useEffect(() => {
+    return () => {
+      // Cleanup any object URLs when component unmounts
+      if (formik.values.profilePicturePreview?.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(formik.values.profilePicturePreview);
+        } catch {}
+      }
+
+      // Use our utility to clean up all media previews
+      cleanupMediaPreviews(formik.values.media);
+    };
+  }, []);
 
   const handleFileValidation = (file, allowedTypes, maxSize) => {
     if (!file) return "لم يتم اختيار ملف";
@@ -523,119 +798,676 @@ function RegisterProfileContent() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const _errors = await formik.validateForm();
-    if (_errors && Object.keys(_errors).length > 0) {
-      Object.keys(_errors).forEach((path) =>
-        formik.setFieldTouched(path, true, true)
-      );
-      const firstError = _errors[Object.keys(_errors)[0]];
-      toast.error(
-        typeof firstError === "string"
-          ? firstError
-          : "يرجى مراجعة الحقول المطلوبة"
+
+    // Pre-submission validation for all required fields
+    // Personal section fields
+    if (!formik.values.name || formik.values.name.trim() === "") {
+      toast.error("الاسم مطلوب - يرجى إدخال اسمك");
+      formik.setFieldTouched("name", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "personal")
       );
       return;
     }
+
+    if (!formik.values.age || isNaN(Number(formik.values.age))) {
+      toast.error("العمر مطلوب ويجب أن يكون رقمًا");
+      formik.setFieldTouched("age", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "personal")
+      );
+      return;
+    } else if (
+      Number(formik.values.age) < 15 ||
+      Number(formik.values.age) > 50
+    ) {
+      toast.error("العمر يجب أن يكون بين 15 و 50 سنة");
+      formik.setFieldTouched("age", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "personal")
+      );
+      return;
+    }
+
+    if (!formik.values.gender) {
+      toast.error("الجنس مطلوب - يرجى اختيار الجنس");
+      formik.setFieldTouched("gender", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "personal")
+      );
+      return;
+    }
+
+    if (!formik.values.nationality || formik.values.nationality.trim() === "") {
+      toast.error("الجنسية مطلوبة - يرجى اختيار الجنسية");
+      formik.setFieldTouched("nationality", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "personal")
+      );
+      return;
+    }
+
+    console.log("Personal section validation passed");
+
+    // Sports section fields
+    if (!formik.values.game || formik.values.game.trim() === "") {
+      toast.error("الرياضة مطلوبة - يرجى اختيار رياضة");
+      formik.setFieldTouched("game", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "sports")
+      );
+      return;
+    }
+
+    // Check if the user has explicitly selected jop (category)
+    if (!formik.values.jopSelected) {
+      toast.error("الفئة مطلوبة - يرجى اختيار الفئة بشكل صريح");
+      formik.setFieldTouched("jop", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "sports")
+      );
+      return;
+    }
+
+    // Ensure jop has a valid value
+    if (
+      !formik.values.jop ||
+      !["player", "coach"].includes(formik.values.jop)
+    ) {
+      toast.error("الفئة مطلوبة - يرجى اختيار الفئة (لاعب/مدرب)");
+      formik.setFieldTouched("jop", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "sports")
+      );
+      return;
+    }
+
+    // Check if the user has explicitly selected status
+    if (!formik.values.statusSelected) {
+      toast.error("الحالة الحالية مطلوبة - يرجى اختيار الحالة بشكل صريح");
+      formik.setFieldTouched("status", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "sports")
+      );
+      return;
+    }
+
+    // Ensure status has a valid value
+    if (
+      !formik.values.status ||
+      !["available", "contracted", "transferred"].includes(formik.values.status)
+    ) {
+      toast.error("الحالة الحالية مطلوبة - يرجى اختيار الحالة الحالية");
+      formik.setFieldTouched("status", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "sports")
+      );
+      return;
+    }
+
+    console.log("Sports section validation passed");
+
+    // Terms and conditions agreement
+    if (!formik.values.agreeToTerms) {
+      toast.error("يجب الموافقة على الشروط والأحكام");
+      formik.setFieldTouched("agreeToTerms", true, true);
+      setCurrentStep(
+        formSections.findIndex((section) => section.id === "terms")
+      );
+      return;
+    }
+
+    // Get all required fields from all sections
+    const allRequiredFields = Object.values(sectionRequiredFields).flat();
+
+    // Mark all required fields as touched for validation
+    allRequiredFields.forEach((field) => {
+      formik.setFieldTouched(field, true, true);
+    });
+
+    // Run full form validation
+    const _errors = await formik.validateForm();
+
+    // Show the first error if any validation fails
+    if (_errors && Object.keys(_errors).length > 0) {
+      const errorField = Object.keys(_errors)[0];
+      const errorMessage = _errors[errorField];
+
+      toast.error(errorMessage || "يرجى مراجعة الحقول المطلوبة");
+
+      // Navigate to the appropriate section based on the error
+      if (errorField === "game") {
+        setCurrentStep(
+          formSections.findIndex((section) => section.id === "sports")
+        );
+      } else if (
+        ["name", "age", "gender", "nationality"].includes(errorField)
+      ) {
+        setCurrentStep(
+          formSections.findIndex((section) => section.id === "personal")
+        );
+      } else if (errorField === "agreeToTerms") {
+        setCurrentStep(
+          formSections.findIndex((section) => section.id === "terms")
+        );
+      }
+
+      return;
+    }
+
+    // If validation passes, submit the form
+    console.log("Form is valid, submitting...");
     formik.handleSubmit(e);
   };
 
+  // Define required fields per section
+  const sectionRequiredFields = {
+    personal: ["name", "age", "gender", "nationality"],
+    sports: ["game", "jop", "status"], // position is optional
+    financial: [], // Optional fields
+    transfer: [], // Optional fields
+    contact: [], // Optional fields
+    social: [], // Optional fields
+    media: [], // Optional fields
+    terms: ["agreeToTerms"],
+  };
+
+  // Enhanced validation for all fields
+  const validateFields = (fields, values) => {
+    const errors = {};
+
+    // Personal section validations
+    if (
+      fields.includes("name") &&
+      (!values.name || values.name.trim() === "")
+    ) {
+      errors.name = "الاسم مطلوب";
+    }
+
+    if (fields.includes("age")) {
+      if (!values.age || values.age === "") {
+        errors.age = "العمر مطلوب";
+      } else if (isNaN(Number(values.age))) {
+        errors.age = "العمر يجب أن يكون رقمًا";
+      } else if (Number(values.age) < 15 || Number(values.age) > 50) {
+        errors.age = "العمر يجب أن يكون بين 15 و 50 سنة";
+      }
+    }
+
+    if (fields.includes("gender") && !values.gender) {
+      errors.gender = "الجنس مطلوب";
+    }
+
+    if (
+      fields.includes("nationality") &&
+      (!values.nationality || values.nationality.trim() === "")
+    ) {
+      errors.nationality = "الجنسية مطلوبة";
+    }
+
+    // Sports section validations
+    if (
+      fields.includes("game") &&
+      (!values.game || values.game.trim() === "")
+    ) {
+      errors.game = "الرياضة مطلوبة";
+    }
+
+    // Strengthen jop validation - must be explicitly selected by user
+    if (fields.includes("jop")) {
+      if (!values.jopSelected) {
+        // If jop has not been explicitly selected by user
+        errors.jop = "الفئة مطلوبة - يرجى اختيار الفئة";
+      } else if (!values.jop || !["player", "coach"].includes(values.jop)) {
+        // If jop has an invalid value
+        errors.jop = "الفئة مطلوبة - يجب اختيار لاعب أو مدرب";
+      }
+    }
+
+    // Strengthen status validation - must be explicitly selected by user
+    if (fields.includes("status")) {
+      if (!values.statusSelected) {
+        // If status has not been explicitly selected by user
+        errors.status = "الحالة الحالية مطلوبة - يرجى اختيار الحالة";
+      } else if (
+        !values.status ||
+        !["available", "contracted", "transferred"].includes(values.status)
+      ) {
+        // If status has an invalid value
+        errors.status = "الحالة الحالية مطلوبة - يجب اختيار حالة صالحة";
+      }
+    }
+
+    // position is optional, no validation needed
+
+    // Terms section validation
+    if (fields.includes("agreeToTerms") && !values.agreeToTerms) {
+      errors.agreeToTerms = "يجب الموافقة على الشروط والأحكام";
+    }
+
+    return errors;
+  };
+
+  // Handle step navigation
+  const nextStep = async () => {
+    const currentSection = formSections[currentStep].id;
+    const requiredFields = sectionRequiredFields[currentSection] || [];
+
+    // Mark required fields as touched
+    requiredFields.forEach((field) => {
+      formik.setFieldTouched(field, true, true);
+    });
+
+    // Use both Joi validation and our custom validation
+    const _errors = await formik.validateForm();
+
+    // Add our custom validation
+    const customErrors = validateFields(requiredFields, formik.values);
+
+    // Merge errors
+    const mergedErrors = { ..._errors, ...customErrors };
+    const currentSectionErrors = {};
+
+    // Filter errors for current section only
+    if (mergedErrors && Object.keys(mergedErrors).length > 0) {
+      Object.keys(mergedErrors).forEach((path) => {
+        if (requiredFields.includes(path)) {
+          currentSectionErrors[path] = mergedErrors[path];
+        }
+      });
+    }
+
+    // Check if current section has validation errors
+    if (Object.keys(currentSectionErrors).length > 0) {
+      const firstError =
+        currentSectionErrors[Object.keys(currentSectionErrors)[0]];
+      toast.error(
+        typeof firstError === "string"
+          ? firstError
+          : "يرجى مراجعة الحقول المطلوبة في هذا القسم"
+      );
+      return;
+    }
+
+    // Proceed to next step if validation passes
+    if (currentStep < formSections.length - 1) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  // Get the current form section component
+  const renderFormSection = () => {
+    const section = formSections[currentStep];
+    switch (section.id) {
+      case "personal":
+        return (
+          <PersonalInfoCard
+            formik={formik}
+            handleFileValidation={handleFileValidation}
+            ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
+            MAX_FILE_SIZE={MAX_FILE_SIZE}
+          />
+        );
+      case "sports":
+        return <SportsInfoCard formik={formik} />;
+      case "financial":
+        return <FinancialInfoCard formik={formik} />;
+      case "transfer":
+        return <TransferInfoCard formik={formik} />;
+      case "contact":
+        return <ContactInfoCard formik={formik} />;
+      case "social":
+        return <SocialLinksCard formik={formik} />;
+      case "media":
+        return (
+          <MediaUploadCard
+            formik={formik}
+            handleFileValidation={handleFileValidation}
+            ALLOWED_VIDEO_TYPES={ALLOWED_VIDEO_TYPES}
+            ALLOWED_DOCUMENT_TYPES={ALLOWED_DOCUMENT_TYPES}
+            MAX_FILE_SIZE={MAX_FILE_SIZE}
+          />
+        );
+      case "terms":
+        return <TermsCard formik={formik} />;
+      default:
+        return null;
+    }
+  };
+
+  // Toggle direction between RTL and LTR
+  const toggleDirection = () => {
+    setDirection(direction === "rtl" ? "ltr" : "rtl");
+    document.documentElement.dir = direction === "rtl" ? "ltr" : "rtl";
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Toaster position="top-right" dir="rtl" />
-      <ToastContainer position="top-right" autoClose={3000} />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            {idParam ? "تعديل بياناتك" : "سجل بياناتك"}
-          </h1>
-          <p className="text-xl text-[#7e8c9a] max-w-2xl mx-auto">
-            {idParam
-              ? "قم بتعديل ملفك الشخصي الاحترافي"
-              : "أنشئ ملفك الشخصي الاحترافي وابدأ رحلتك الرياضية معنا"}
-          </p>
+    <div
+      className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100"
+      dir={direction}
+    >
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        rtl={direction === "rtl"}
+      />
+
+      {/* Language toggle button */}
+      <button
+        onClick={toggleDirection}
+        className="fixed top-4 left-4 z-50 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow text-xs"
+        aria-label="Toggle language direction"
+      >
+        {direction === "rtl" ? "English" : "العربية"}
+      </button>
+
+      <div className="container mx-auto pt-8 pb-20 px-4 md:px-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+          <div className="w-full md:w-auto mb-4 md:mb-0">
+            <h1
+              className={`text-3xl font-bold text-[#00183D] ${
+                direction === "rtl" ? "text-right" : "text-left"
+              }`}
+            >
+              {idParam ? "تعديل ملف لاعب" : "إنشاء ملف لاعب جديد"}
+            </h1>
+            <p
+              className={`text-gray-500 mt-1 ${
+                direction === "rtl" ? "text-right" : "text-left"
+              }`}
+            >
+              {direction === "rtl"
+                ? "أكمل المعلومات المطلوبة لإنشاء ملف شخصي"
+                : "Complete the required information to create a profile"}
+            </p>
+          </div>
+          <Link
+            href="/profile"
+            className="flex items-center text-[#00183D] hover:text-[#002c65] font-medium transition-colors"
+          >
+            {direction === "rtl" ? (
+              <>
+                العودة للملف الشخصي
+                <ArrowLeft className="w-4 h-4 mr-1" />
+              </>
+            ) : (
+              <>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Profile
+              </>
+            )}
+          </Link>
         </div>
 
-        {uploadProgress > 0 && (
-          <div className="mb-4">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
+        {/* Progress indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">
+              {direction === "rtl" ? "الخطوة" : "Step"} {currentStep + 1}/
+              {formSections.length}
+            </span>
+            <span className="text-sm font-medium text-gray-600">
+              {formSections[currentStep].title}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
+              style={{
+                width: `${((currentStep + 1) / formSections.length) * 100}%`,
+              }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Step indicators for larger screens */}
+        <div className="hidden md:flex mb-8 overflow-x-auto justify-between">
+          {formSections.map((section, index) => (
+            <button
+              key={section.id}
+              onClick={() => setCurrentStep(index)}
+              className={`flex flex-col items-center mx-1 min-w-[80px] ${
+                currentStep === index
+                  ? "text-blue-600 font-medium"
+                  : index < currentStep
+                  ? "text-green-600"
+                  : "text-gray-400"
+              }`}
+            >
               <div
-                className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-center mt-2">
-              {uploadStatus || `تقدم الرفع: ${uploadProgress}%`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg mb-1 ${
+                  currentStep === index
+                    ? "bg-blue-100 text-blue-600"
+                    : index < currentStep
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {section.icon}
+              </div>
+              <span className="text-xs whitespace-nowrap">{section.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner />
+            <p className="mt-4 text-gray-600">
+              {direction === "rtl"
+                ? "جاري تحميل البيانات..."
+                : "Loading data..."}
             </p>
           </div>
         )}
 
-        {isLoading && <LoadingSpinner />}
-
         {!isLoading && (
-          <form onSubmit={handleFormSubmit} className="space-y-6 p-4 w-full">
-            <PersonalInfoCard
-              formik={formik}
-              handleFileValidation={handleFileValidation}
-              ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
-              MAX_FILE_SIZE={MAX_FILE_SIZE}
-            />
-            <SportsInfoCard formik={formik} />
-            <FinancialInfoCard formik={formik} />
-            <TransferInfoCard formik={formik} />
-            <ContactInfoCard formik={formik} />
-            <SocialLinksCard formik={formik} />
-            <MediaUploadCard
-              formik={formik}
-              handleFileValidation={handleFileValidation}
-              ALLOWED_VIDEO_TYPES={ALLOWED_VIDEO_TYPES}
-              ALLOWED_DOCUMENT_TYPES={ALLOWED_DOCUMENT_TYPES}
-              MAX_FILE_SIZE={MAX_FILE_SIZE}
-            />
-            <TermsCard formik={formik} />
-            <div className="flex justify-center space-x-4">
-              <Button
-                type="submit"
-                disabled={formik.isSubmitting}
-                className="w-1/2 bg-[hsl(var(--primary))] text-white flex items-center justify-center"
-              >
-                <Save className="w-5 h-5 ml-2" />
-                {idParam ? "حفظ التغييرات" : "إنشاء الملف الشخصي"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResetForm}
-                className="w-1/2 border-gray-300 flex items-center justify-center"
-              >
-                <X className="w-5 h-5 ml-2" />
-                إلغاء
-              </Button>
-            </div>
-            {!idParam && canPay && (
-              <>
-                <div className="text-center text-lg text-gray-700 mb-4">
-                  ادفع الاشتراك لإكمال التفعيل
+          <form onSubmit={handleFormSubmit} className="w-full">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
+              {/* Form content */}
+              <div className="p-6 md:p-8">{renderFormSection()}</div>
+
+              {/* Navigation buttons */}
+              <div className="px-6 md:px-8 pb-6 md:pb-8 pt-4 border-t flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {currentStep > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={prevStep}
+                      className="flex-1 sm:flex-initial flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-colors duration-200"
+                    >
+                      {direction === "rtl" ? (
+                        <>
+                          الخطوة السابقة
+                          <ChevronRight className="w-4 h-4 mr-1" />
+                        </>
+                      ) : (
+                        <>
+                          <ChevronLeft className="w-4 h-4 mr-1" />
+                          Previous
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {currentStep === 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleResetForm}
+                      className="flex-1 sm:flex-initial flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-colors duration-200"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      {direction === "rtl" ? "إعادة تعيين" : "Reset"}
+                    </Button>
+                  )}
                 </div>
-                <PaymentBtn />
-              </>
+
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {currentStep < formSections.length - 1 ? (
+                    <Button
+                      type="button"
+                      onClick={nextStep}
+                      className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
+                    >
+                      {direction === "rtl" ? (
+                        <>
+                          الخطوة التالية
+                          <ChevronLeft className="w-4 h-4 mr-1" />
+                        </>
+                      ) : (
+                        <>
+                          Next
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={formik.isSubmitting}
+                      className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
+                    >
+                      <Save className="w-4 h-4 mr-1" />
+                      {idParam
+                        ? direction === "rtl"
+                          ? "حفظ التغييرات"
+                          : "Save Changes"
+                        : direction === "rtl"
+                        ? "إنشاء الملف الشخصي"
+                        : "Create Profile"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Upload progress indicator */}
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="mt-6 p-4 bg-white rounded-xl shadow-sm">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium">
+                    {direction === "rtl" ? "جاري الرفع..." : "Uploading..."}
+                  </span>
+                  <span className="text-sm font-medium">{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            {/* Success message with payment option */}
+            {!idParam && canPay && (
+              <div className="mt-6 p-6 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100 shadow-sm animate-fade-in">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-emerald-700">
+                      {direction === "rtl"
+                        ? "تم إنشاء الملف بنجاح!"
+                        : "Profile created successfully!"}
+                    </h3>
+                    <p className="text-emerald-600">
+                      {direction === "rtl"
+                        ? "يمكنك الآن تعزيز ظهور ملفك والحصول على المزيد من الفرص."
+                        : "You can now promote your profile to get more opportunities."}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <Suspense
+                    fallback={
+                      <div className="py-4 text-center text-gray-500">
+                        {direction === "rtl" ? "جاري التحميل..." : "Loading..."}
+                      </div>
+                    }
+                  >
+                    <PaymentBtn playerId={player?._id} />
+                  </Suspense>
+                </div>
+              </div>
             )}
           </form>
         )}
       </div>
-    </div>
-  );
-}
+      <Toaster position="top-right" />
 
-export default function RegisterProfile() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center p-12 min-h-screen bg-gray-50">
-          <LoadingSpinner />
+      {/* Fixed bottom navigation for mobile */}
+      {isMobile && !isLoading && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center z-10 shadow-lg">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 0}
+            className={`px-3 py-2 ${currentStep === 0 ? "opacity-50" : ""}`}
+          >
+            {direction === "rtl" ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <ChevronLeft className="w-5 h-5" />
+            )}
+          </Button>
+
+          <div className="text-center">
+            <span className="text-sm font-medium">
+              {currentStep + 1}/{formSections.length}
+            </span>
+          </div>
+
+          {currentStep < formSections.length - 1 ? (
+            <Button
+              type="button"
+              onClick={nextStep}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700"
+            >
+              {direction === "rtl" ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <ChevronRight className="w-5 h-5" />
+              )}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleFormSubmit}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700"
+              disabled={formik.isSubmitting}
+            >
+              <Save className="w-5 h-5" />
+            </Button>
+          )}
         </div>
-      }
-    >
-      <RegisterProfileContent />
-    </Suspense>
+      )}
+    </div>
   );
 }

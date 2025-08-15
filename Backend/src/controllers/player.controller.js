@@ -1,9 +1,13 @@
-import { deleteFile, deleteFromCloudinary } from "../config/cloudinary.js";
 import { default as Player } from "../models/player.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
+import {
+  deleteMediaFromCloudinary,
+  processPlayerMedia,
+  replaceMediaItem,
+} from "../utils/mediaUtils.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
 // Create Player Profile
@@ -11,75 +15,49 @@ import { sendInternalNotification } from "./notification.controller.js";
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  // تحقق مما إذا كان ملف اللاعب موجودًا بالفعل
-  const exists = await Player.findOne({ user: userId });
-  if (exists) throw new ApiError(400, "Player profile already exists");
+  try {
+    // تحقق مما إذا كان ملف اللاعب موجودًا بالفعل
+    const exists = await Player.findOne({ user: userId });
+    if (exists) throw new ApiError(400, "Player profile already exists");
 
-  // استرجاع الملفات المرفوعة
-  const profileImage = req.files?.profileImage?.[0] || null; // صورة الملف الشخصي
-  const documentFile = req.files?.document?.[0] || null; // المستند
-  const playerVideo = req.files?.playerVideo?.[0] || null; // الفيديو
+    // Process media files (profile image, videos, documents)
+    const media = await processPlayerMedia(req.files);
 
-  // إنشاء كائن اللاعب
-  const player = await Player.create({
-    user: userId,
-    name: req.body.name,
-    age: req.body.age,
-    gender: req.body.gender,
-    nationality: req.body.nationality,
-    jop: req.body.jop,
-    position: req.body.position,
-    status: req.body.status,
-    expreiance: req.body.expreiance,
-    monthlySalary: req.body.monthlySalary,
-    yearSalary: req.body.yearSalary,
-    contractEndDate: req.body.contractEndDate,
-    transferredTo: req.body.transferredTo,
-    socialLinks: req.body.socialLinks,
-    contactInfo: req.body.contactInfo,
-    game: req.body.game,
-    isActive: req.body.isActive,
+    // إنشاء كائن اللاعب
+    const player = await Player.create({
+      user: userId,
+      name: req.body.name,
+      age: req.body.age,
+      gender: req.body.gender,
+      nationality: req.body.nationality,
+      jop: req.body.jop,
+      position: req.body.position,
+      status: req.body.status,
+      expreiance: req.body.expreiance,
+      monthlySalary: req.body.monthlySalary,
+      yearSalary: req.body.yearSalary,
+      contractEndDate: req.body.contractEndDate,
+      transferredTo: req.body.transferredTo,
+      socialLinks: req.body.socialLinks,
+      contactInfo: req.body.contactInfo,
+      game: req.body.game,
+      isActive: req.body.isActive,
+      media,
+    });
 
-    media: {
-      profileImage: profileImage
-        ? {
-            url: profileImage.path || profileImage.secure_url,
-            publicId: profileImage.filename || profileImage.public_id,
-          }
-        : { url: null, publicId: null },
-
-      videos: playerVideo
-        ? [
-            {
-              url: playerVideo.path || playerVideo.secure_url,
-              publicId: playerVideo.filename || playerVideo.public_id,
-              title: req.body.videoTitle || playerVideo.originalname || "video",
-              duration: 0,
-              uploadedAt: new Date(),
-            },
-          ]
-        : [],
-
-      documents: documentFile
-        ? [
-            {
-              url: documentFile.path || documentFile.secure_url,
-              publicId: documentFile.filename || documentFile.public_id,
-              title:
-                req.body.documentTitle ||
-                documentFile.originalname ||
-                "document",
-              type: documentFile.mimetype || "raw",
-              uploadedAt: new Date(),
-            },
-          ]
-        : [],
-    },
-  });
-
-  res
-    .status(201)
-    .json(new ApiResponse(201, player, "Player profile created successfully"));
+    res
+      .status(201)
+      .json(
+        new ApiResponse(201, player, "Player profile created successfully")
+      );
+  } catch (error) {
+    // If there was an error, make sure to clean up any uploaded files
+    console.error("Error creating player profile:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Failed to create player profile"
+    );
+  }
 });
 
 // Get All Players (with advanced filtering)
@@ -375,65 +353,40 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     }
   }
 
-  // 2) الملفات
-  const profileImage = req.files?.profileImage?.[0] || null;
-  const documentFile = req.files?.document?.[0] || null;
-  const playerVideo = req.files?.playerVideo?.[0] || null;
+  // Process media files if any are provided
+  try {
+    if (req.files && Object.keys(req.files).length > 0) {
+      // If media doesn't exist, initialize it
+      if (!player.media) {
+        player.media = {
+          profileImage: { url: null, publicId: null },
+          videos: [],
+          documents: [],
+        };
+      }
 
-  // صورة البروفايل
-  if (profileImage) {
-    if (player.media?.profileImage?.publicId) {
-      await deleteFromCloudinary(player.media.profileImage.publicId, "image");
+      // Use the processPlayerMedia utility to handle media updates
+      // This will delete old files when needed and upload new ones
+      const updatedMedia = await processPlayerMedia(req.files, player.media);
+
+      // Update player's media object with the processed media
+      if (updatedMedia.profileImage) {
+        player.media.profileImage = updatedMedia.profileImage;
+      }
+
+      // Update single video if provided
+      if (updatedMedia.video && updatedMedia.video.url) {
+        player.media.video = updatedMedia.video;
+      }
+
+      // Update single document if provided
+      if (updatedMedia.document && updatedMedia.document.url) {
+        player.media.document = updatedMedia.document;
+      }
     }
-    if (!player.media)
-      player.media = {
-        profileImage: { url: null, publicId: null },
-        videos: [],
-        documents: [],
-      };
-
-    player.media.profileImage = {
-      url: profileImage.path || profileImage.secure_url,
-      publicId: profileImage.filename || profileImage.public_id,
-    };
-  }
-
-  // مستند: لو جالك ملف → اضف element جديد في documents
-  if (documentFile) {
-    if (!player.media)
-      player.media = {
-        profileImage: { url: null, publicId: null },
-        videos: [],
-        documents: [],
-      };
-    if (!Array.isArray(player.media.documents)) player.media.documents = [];
-
-    player.media.documents.push({
-      url: documentFile.path || documentFile.secure_url,
-      publicId: documentFile.filename || documentFile.public_id,
-      title: req.body.documentTitle || documentFile.originalname || "document",
-      type: documentFile.mimetype || "raw",
-      uploadedAt: new Date(),
-    });
-  }
-
-  // فيديو: لو جالك ملف → اضف element جديد في videos
-  if (playerVideo) {
-    if (!player.media)
-      player.media = {
-        profileImage: { url: null, publicId: null },
-        videos: [],
-        documents: [],
-      };
-    if (!Array.isArray(player.media.videos)) player.media.videos = [];
-
-    player.media.videos.push({
-      url: playerVideo.path || playerVideo.secure_url,
-      publicId: playerVideo.filename || playerVideo.public_id,
-      title: req.body.videoTitle || playerVideo.originalname || "video",
-      duration: 0,
-      uploadedAt: new Date(),
-    });
+  } catch (error) {
+    console.error("Error processing media files:", error);
+    throw new ApiError(500, "Failed to process media files");
   }
 
   // حفظ
@@ -459,61 +412,82 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
 
-  const player = await Player.findById(playerId);
+  try {
+    const player = await Player.findById(playerId);
 
-  if (!player) {
-    throw new ApiError(404, "Player not found");
-  }
+    if (!player) {
+      throw new ApiError(404, "Player not found");
+    }
 
-  // Check permissions
-  if (userRole !== "admin" && player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, "You can only delete your own profile");
-  }
+    // Check permissions
+    if (userRole !== "admin" && player.user.toString() !== userId.toString()) {
+      throw new ApiError(403, "You can only delete your own profile");
+    }
 
-  // Delete all media files from Cloudinary
-  if (player.media?.profileImage?.publicId) {
-    await deleteFile(player.media.profileImage.publicId);
-  }
+    // Delete all media files from Cloudinary using our centralized utility
+    if (player.media) {
+      // Delete profile image
+      if (player.media.profileImage?.publicId) {
+        await deleteMediaFromCloudinary(
+          player.media.profileImage.publicId,
+          "image"
+        ).catch((err) =>
+          console.warn("Failed to delete profile image:", err.message)
+        );
+      }
 
-  if (player.media?.images) {
-    for (const image of player.media.images) {
-      if (image.publicId) {
-        await deleteFile(image.publicId);
+      // Delete all images
+      if (player.media.images && player.media.images.length > 0) {
+        for (const image of player.media.images) {
+          if (image.publicId) {
+            await deleteMediaFromCloudinary(image.publicId, "image").catch(
+              (err) => console.warn("Failed to delete image:", err.message)
+            );
+          }
+        }
+      }
+
+      // Delete video
+      if (player.media.video && player.media.video.publicId) {
+        await deleteMediaFromCloudinary(
+          player.media.video.publicId,
+          "video"
+        ).catch((err) => console.warn("Failed to delete video:", err.message));
+      }
+
+      // Delete document
+      if (player.media.document && player.media.document.publicId) {
+        await deleteMediaFromCloudinary(
+          player.media.document.publicId,
+          "raw"
+        ).catch((err) =>
+          console.warn("Failed to delete document:", err.message)
+        );
       }
     }
+
+    // Soft delete
+    player.isActive = false;
+    await player.save();
+
+    // Send notification about profile deletion
+    await sendInternalNotification(
+      player.user,
+      "Profile Deleted",
+      "Your player profile has been deleted",
+      { playerId: player._id }
+    );
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, null, "Player profile deleted successfully"));
+  } catch (error) {
+    console.error("Error deleting player profile:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Failed to delete player profile"
+    );
   }
-
-  if (player.media?.videos) {
-    for (const video of player.media.videos) {
-      if (video.publicId) {
-        await deleteFile(video.publicId);
-      }
-    }
-  }
-
-  if (player.media?.documents) {
-    for (const doc of player.media.documents) {
-      if (doc.publicId) {
-        await deleteFile(doc.publicId);
-      }
-    }
-  }
-
-  // Soft delete
-  player.isActive = false;
-  await player.save();
-
-  // Send notification about profile deletion
-  await sendInternalNotification(
-    player.user,
-    "Profile Deleted",
-    "Your player profile has been deleted",
-    { playerId: player._id }
-  );
-
-  res
-    .status(200)
-    .json(new ApiResponse(200, null, "Player profile deleted successfully"));
 });
 
 // Get My Player Profile
@@ -538,8 +512,70 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
 
-  if (!req.file) {
-    throw new ApiError(400, "Profile image is required");
+  try {
+    if (!req.file) {
+      throw new ApiError(400, "Profile image is required");
+    }
+
+    const player = await Player.findById(playerId);
+
+    if (!player) {
+      throw new ApiError(404, "Player not found");
+    }
+
+    // Check permissions
+    if (player.user.toString() !== userId.toString()) {
+      throw new ApiError(403, "You can only update your own profile");
+    }
+
+    // Use our centralized media utility to handle image update
+    if (!player.media) {
+      player.media = {
+        profileImage: { url: null, publicId: null },
+        videos: [],
+        documents: [],
+      };
+    }
+
+    // Replace existing profile image
+    player.media.profileImage = await replaceMediaItem(
+      req.file,
+      player.media.profileImage,
+      "image"
+    );
+
+    await player.save();
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          player.media.profileImage,
+          "Profile image uploaded successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error uploading profile image:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Failed to upload profile image"
+    );
+  }
+});
+
+// Upload Media (Video or Document)
+export const uploadMedia = asyncHandler(async (req, res) => {
+  const playerId = req.params.id;
+  const userId = req.user._id;
+  const { mediaType } = req.params; // video or document
+
+  if (!req.files || req.files.length === 0) {
+    throw new ApiError(400, "Media file is required");
+  }
+
+  if (!["video", "document"].includes(mediaType)) {
+    throw new ApiError(400, "Invalid media type");
   }
 
   const player = await Player.findById(playerId);
@@ -553,130 +589,97 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only update your own profile");
   }
 
-  // Delete old image if exists
-  if (player.media?.profileImage?.publicId) {
-    await deleteFile(player.media.profileImage.publicId);
+  // We'll only use the first file even if multiple files are uploaded
+  const file = req.files[0];
+
+  // Delete the existing file if it exists
+  if (player.media[mediaType]?.publicId) {
+    const resourceType = mediaType === "video" ? "video" : "raw";
+    await deleteMediaFromCloudinary(
+      player.media[mediaType].publicId,
+      resourceType
+    ).catch((err) =>
+      console.warn(`Failed to delete old ${mediaType}:`, err.message)
+    );
   }
 
-  // Update with new image
-  player.media.profileImage = {
-    url: req.file.path,
-    publicId: req.file.filename,
+  // Create the new media item
+  const mediaItem = {
+    url: file.path,
+    publicId: file.filename,
+    title: file.originalname,
+    uploadedAt: new Date(),
+  };
+
+  if (mediaType === "video") {
+    mediaItem.duration = 0; // Placeholder
+  }
+
+  if (mediaType === "document") {
+    mediaItem.size = file.size;
+    mediaItem.type = file.mimetype;
+  }
+
+  // Replace the existing media item
+  player.media[mediaType] = mediaItem;
+  await player.save();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, mediaItem, `${mediaType} uploaded successfully`)
+    );
+});
+
+// Delete Media
+export const deleteMedia = asyncHandler(async (req, res) => {
+  const { playerId, mediaType } = req.params;
+  const userId = req.user._id;
+
+  if (!["video", "document"].includes(mediaType)) {
+    throw new ApiError(400, "Invalid media type");
+  }
+
+  const player = await Player.findById(playerId);
+
+  if (!player) {
+    throw new ApiError(404, "Player not found");
+  }
+
+  // Check permissions
+  if (player.user.toString() !== userId.toString()) {
+    throw new ApiError(403, "You can only update your own profile");
+  }
+
+  if (!player.media[mediaType] || !player.media[mediaType].publicId) {
+    throw new ApiError(404, `No ${mediaType} found to delete`);
+  }
+
+  // Delete from Cloudinary
+  const resourceType = mediaType === "video" ? "video" : "raw";
+  if (player.media[mediaType].publicId) {
+    await deleteMediaFromCloudinary(
+      player.media[mediaType].publicId,
+      resourceType
+    ).catch((err) =>
+      console.warn(`Failed to delete ${mediaType}:`, err.message)
+    );
+  }
+
+  // Reset the media item
+  player.media[mediaType] = {
+    url: null,
+    publicId: null,
+    title: null,
+    ...(mediaType === "video" ? { duration: 0 } : { type: null, size: 0 }),
+    uploadedAt: null,
   };
 
   await player.save();
 
   res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        player.media.profileImage,
-        "Profile image uploaded successfully"
-      )
-    );
-});
-
-// Upload Media (Images, Videos, Documents)
-export const uploadMedia = asyncHandler(async (req, res) => {
-  const playerId = req.params.id;
-  const userId = req.user._id;
-  const { mediaType } = req.params; // images, videos, documents
-
-  if (!req.files || req.files.length === 0) {
-    throw new ApiError(400, "Media files are required");
-  }
-
-  if (!["images", "videos", "documents"].includes(mediaType)) {
-    throw new ApiError(400, "Invalid media type");
-  }
-
-  const player = await Player.findById(playerId);
-
-  if (!player) {
-    throw new ApiError(404, "Player not found");
-  }
-
-  // Check permissions
-  if (player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, "You can only update your own profile");
-  }
-
-  const uploadedFiles = [];
-
-  for (const file of req.files) {
-    const mediaItem = {
-      url: file.path,
-      publicId: file.filename,
-      title: file.originalname,
-      uploadedAt: new Date(),
-    };
-
-    if (mediaType === "videos") {
-      // You might want to get video duration here
-      mediaItem.duration = 0; // Placeholder
-    }
-
-    if (mediaType === "documents") {
-      mediaItem.size = file.size;
-      mediaItem.type = file.mimetype;
-    }
-
-    player.media[mediaType].push(mediaItem);
-    uploadedFiles.push(mediaItem);
-  }
-
-  await player.save();
-
-  res
-    .status(200)
-    .json(
-      new ApiResponse(200, uploadedFiles, `${mediaType} uploaded successfully`)
-    );
-});
-
-// Delete Media
-export const deleteMedia = asyncHandler(async (req, res) => {
-  const { playerId, mediaType, mediaId } = req.params;
-  const userId = req.user._id;
-
-  if (!["images", "videos", "documents"].includes(mediaType)) {
-    throw new ApiError(400, "Invalid media type");
-  }
-
-  const player = await Player.findById(playerId);
-
-  if (!player) {
-    throw new ApiError(404, "Player not found");
-  }
-
-  // Check permissions
-  if (player.user.toString() !== userId.toString()) {
-    throw new ApiError(403, "You can only update your own profile");
-  }
-
-  const mediaIndex = player.media[mediaType].findIndex(
-    (item) => item._id.toString() === mediaId
-  );
-
-  if (mediaIndex === -1) {
-    throw new ApiError(404, "Media not found");
-  }
-
-  const media = player.media[mediaType][mediaIndex];
-
-  // Delete from Cloudinary
-  if (media.publicId) {
-    await deleteFile(media.publicId);
-  }
-
-  // Remove from array
-  player.media[mediaType].splice(mediaIndex, 1);
-  await player.save();
-
-  res
-    .status(200)
-    .json(new ApiResponse(200, null, "Media deleted successfully"));
+    .json(new ApiResponse(200, null, `${mediaType} deleted successfully`));
 });
 
 // Promote Player
@@ -988,9 +991,8 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
     skills: player.skills || [],
     statisticsOverview: player.statistics || {},
     mediaCount: {
-      images: player.media?.images?.length || 0,
-      videos: player.media?.videos?.length || 0,
-      documents: player.media?.documents?.length || 0,
+      video: player.media?.video?.url ? 1 : 0,
+      document: player.media?.document?.url ? 1 : 0,
     },
     joinDate: player.createdAt,
     lastUpdate: player.updatedAt,
@@ -1167,10 +1169,10 @@ const calculateProfileCompleteness = (player) => {
   if (player.contactInfo?.email) {
     completedFields++;
   }
-  if (player.media?.images?.length > 0) {
+  if (player.media?.video?.url) {
     completedFields++;
   }
-  if (player.media?.videos?.length > 0) {
+  if (player.media?.document?.url) {
     completedFields++;
   }
   if (player.statistics) {
@@ -1182,3 +1184,79 @@ const calculateProfileCompleteness = (player) => {
 
   return Math.round((completedFields / totalFields) * 100);
 };
+
+export const deletePlayerProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const player = await Player.findOne({ user: userId });
+
+  if (!player) {
+    throw new ApiError(404, "Player not found");
+  }
+
+  if (userId !== player.user.toString()) {
+    throw new ApiError(403, "You can only delete your own profile");
+  }
+
+  try {
+    // Delete all media files from Cloudinary first
+    if (player.media) {
+      // Delete profile image
+      if (player.media.profileImage?.publicId) {
+        await deleteMediaFromCloudinary(
+          player.media.profileImage.publicId,
+          "image"
+        ).catch((err) =>
+          console.warn("Failed to delete profile image:", err.message)
+        );
+      }
+
+      // Delete video
+      if (player.media.video && player.media.video.publicId) {
+        await deleteMediaFromCloudinary(
+          player.media.video.publicId,
+          "video"
+        ).catch((err) => console.warn("Failed to delete video:", err.message));
+      }
+
+      // Delete document
+      if (player.media.document && player.media.document.publicId) {
+        await deleteMediaFromCloudinary(
+          player.media.document.publicId,
+          "raw"
+        ).catch((err) =>
+          console.warn("Failed to delete document:", err.message)
+        );
+      }
+
+      // Delete any legacy images if they exist
+      if (player.media.images && player.media.images.length > 0) {
+        for (const image of player.media.images) {
+          if (image.publicId) {
+            await deleteMediaFromCloudinary(image.publicId, "image").catch(
+              (err) => console.warn("Failed to delete image:", err.message)
+            );
+          }
+        }
+      }
+    }
+
+    // Finally, remove player from the database completely
+    await Player.findByIdAndDelete(player._id);
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          null,
+          "Player profile and all related media permanently deleted"
+        )
+      );
+  } catch (error) {
+    console.error("Error completely deleting player profile:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Failed to delete player profile completely"
+    );
+  }
+});

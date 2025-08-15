@@ -55,16 +55,33 @@ const PlayerProfile = () => {
   const [currentVideoUrl, setCurrentVideoUrl] = useState(null);
 
   const getFirstVideoUrl = () => {
+    // Based on player model structure, videos are stored in player.media.video
+    const video = player?.media?.video;
+
+    // Handle video object directly
+    if (video && video.url) return video.url;
+
+    // Fallback to legacy structure if needed
     const vids = player?.media?.videos;
     if (Array.isArray(vids) && vids.length > 0) return vids[0]?.url || null;
-    if (vids && typeof vids === "object") return vids.url || null; // backward compatibility
+    if (vids && typeof vids === "object" && !Array.isArray(vids))
+      return vids.url || null;
+
     return null;
   };
 
   const getFirstDocument = () => {
+    // Based on player model structure, documents are stored in player.media.document
+    const doc = player?.media?.document;
+
+    // Handle document object directly
+    if (doc && doc.url) return doc;
+
+    // Fallback to legacy structure if needed
     const docs = player?.media?.documents;
     if (Array.isArray(docs) && docs.length > 0) return docs[0] || null;
-    if (docs && typeof docs === "object") return docs; // backward compatibility
+    if (docs && typeof docs === "object" && !Array.isArray(docs)) return docs;
+
     return null;
   };
 
@@ -295,6 +312,9 @@ const PlayerProfile = () => {
 
   const handleWatchVideo = () => {
     const url = getFirstVideoUrl();
+    console.log("Video URL:", url);
+    console.log("Player media:", player?.media);
+
     if (!url) {
       toast.error("لا يوجد فيديو متاح لهذا اللاعب");
       return;
@@ -305,11 +325,53 @@ const PlayerProfile = () => {
 
   const handleDownloadFile = () => {
     const doc = getFirstDocument();
+    console.log("Document:", doc);
+
     const fileUrl = doc?.url;
+    console.log("Document URL:", fileUrl);
+
     if (fileUrl) {
       const link = document.createElement("a");
       link.href = fileUrl;
-      const defaultName = doc?.title || "player-file";
+
+      // Extract original filename and extension
+      let filename = doc?.title || "";
+      let extension = "";
+
+      // Try to get extension from title if available
+      if (filename) {
+        const lastDotIndex = filename.lastIndexOf(".");
+        if (lastDotIndex !== -1) {
+          extension = filename.substring(lastDotIndex);
+        }
+      }
+
+      // If no extension found, try to determine from file type or URL
+      if (!extension) {
+        if (doc?.type === "application/pdf") {
+          extension = ".pdf";
+        } else if (doc?.type === "application/msword") {
+          extension = ".doc";
+        } else if (
+          doc?.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          extension = ".docx";
+        } else if (fileUrl.includes(".pdf")) {
+          extension = ".pdf";
+        } else if (fileUrl.includes(".doc")) {
+          extension = ".doc";
+        } else if (fileUrl.includes(".docx")) {
+          extension = ".docx";
+        }
+      }
+
+      // Set final filename with extension
+      const defaultName =
+        filename && !filename.includes(".")
+          ? `${filename}${extension}`
+          : filename || `player-file${extension}`;
+
       link.download = defaultName;
       document.body.appendChild(link);
       link.click();

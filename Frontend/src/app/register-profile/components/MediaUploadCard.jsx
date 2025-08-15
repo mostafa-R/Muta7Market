@@ -1,14 +1,9 @@
 // components/MediaUploadCard.jsx
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/component/ui/card";
+import { Badge } from "@/app/component/ui/badge";
+import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
-import { Label } from "@/app/component/ui/label";
 import { get } from "lodash";
-import { FiUpload } from "react-icons/fi";
+import { FiFile, FiFilePlus, FiUpload, FiVideo, FiX } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 
 export const MediaUploadCard = ({
@@ -18,202 +13,358 @@ export const MediaUploadCard = ({
   ALLOWED_DOCUMENT_TYPES,
   MAX_FILE_SIZE,
 }) => {
-  const removeVideoAt = (index) => {
-    const items = [...formik.values.media.videos];
-    const item = items[index];
-    if (!item) return;
-    // Revoke only local object URLs (newly selected files)
-    if (item.file && item.url?.startsWith("blob:")) {
+  const removeVideo = () => {
+    const video = formik.values.media.video;
+    if (video && video.file && video.url?.startsWith("blob:")) {
       try {
-        URL.revokeObjectURL(item.url);
+        URL.revokeObjectURL(video.url);
       } catch {}
     }
-    items.splice(index, 1);
-    formik.setFieldValue("media.videos", items);
+    formik.setFieldValue("media.video", {
+      url: null,
+      publicId: null,
+      title: null,
+      duration: 0,
+      uploadedAt: null,
+    });
   };
 
-  const removeDocumentAt = (index) => {
-    const items = [...formik.values.media.documents];
-    const item = items[index];
-    if (!item) return;
-    if (item.file && item.url?.startsWith("blob:")) {
+  const removeDocument = () => {
+    const document = formik.values.media.document;
+    if (document && document.file && document.url?.startsWith("blob:")) {
       try {
-        URL.revokeObjectURL(item.url);
+        URL.revokeObjectURL(document.url);
       } catch {}
     }
-    items.splice(index, 1);
-    formik.setFieldValue("media.documents", items);
+    formik.setFieldValue("media.document", {
+      url: null,
+      publicId: null,
+      title: null,
+      type: null,
+      size: 0,
+      uploadedAt: null,
+    });
   };
 
   return (
-    <>
-      <Card className="border-0 shadow-card bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 space-x-reverse">
-            <FiUpload className="w-5 h-5 text-primary mr-2 ml-2" />
-            <span>رفع فيديوهات رياضية (اختياري)</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="media-upload">اختيار ملفات الفيديو</Label>
+    <div className="space-y-12">
+      {/* Videos section */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <div className="bg-purple-50 p-2 rounded-full">
+            <FiVideo className="w-5 h-5 text-purple-600" />
+          </div>
+          <h2 className="text-xl font-semibold">رفع فيديوهات رياضية</h2>
+          <Badge variant="outline" className="mr-auto font-normal text-xs">
+            اختياري
+          </Badge>
+        </div>
+
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-50 transition-colors p-6">
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+              <FiUpload className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                يمكنك رفع فيديوهات بتنسيق MP4, MOV, AVI
+              </p>
+              <p className="text-xs text-gray-500">
+                الحد الأقصى للملف: 10 ميجابايت
+              </p>
+            </div>
+
             <Input
               id="media-upload"
               type="file"
               accept={ALLOWED_VIDEO_TYPES.join(",")}
               multiple
+              className="hidden"
               onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                const validFiles = files.filter((file) => {
-                  const error = handleFileValidation(
-                    file,
-                    ALLOWED_VIDEO_TYPES,
-                    MAX_FILE_SIZE
-                  );
-                  if (error) {
-                    formik.setFieldError("media.videos", error);
-                    return false;
-                  }
-                  return true;
-                });
-                const uploaded = validFiles.map((file) => ({
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const error = handleFileValidation(
+                  file,
+                  ALLOWED_VIDEO_TYPES,
+                  MAX_FILE_SIZE
+                );
+
+                if (error) {
+                  formik.setFieldError("media.video", error);
+                  return;
+                }
+
+                // If we already have a video with a local URL, revoke it
+                if (formik.values.media.video?.url?.startsWith("blob:")) {
+                  try {
+                    URL.revokeObjectURL(formik.values.media.video.url);
+                  } catch {}
+                }
+
+                // Set the new video
+                const videoData = {
                   url: URL.createObjectURL(file),
                   publicId: uuidv4(),
                   title: file.name,
                   duration: 0,
                   uploadedAt: new Date().toISOString(),
                   file,
-                }));
-                formik.setFieldValue("media.videos", [
-                  ...formik.values.media.videos,
-                  ...uploaded,
-                ]);
+                };
+
+                formik.setFieldValue("media.video", videoData);
               }}
             />
-            {get(formik.errors, "media.videos") && (
-              <div className="text-red-500 text-xs mt-1">
-                {get(formik.errors, "media.videos")}
-              </div>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById("media-upload")?.click()}
+              className="bg-white border-purple-200 text-purple-700 hover:bg-purple-50 transition-colors focus:ring-2 focus:ring-purple-200 focus:ring-opacity-50"
+            >
+              <FiUpload className="w-4 h-4 ml-2" />
+              اختيار فيديوهات
+            </Button>
           </div>
-          {formik.values.media.videos.length > 0 && (
-            <div className="space-y-2">
-              <Label>الفيديوهات المرفوعة:</Label>
-              <ul className="list-disc pl-5 space-y-1">
-                {formik.values.media.videos.map((video, idx) => (
-                  <li
-                    key={video.publicId || idx}
-                    className="flex items-center gap-3"
-                  >
-                    <a
-                      href={video.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {video.title}
-                    </a>
-                    {video.file && (
-                      <button
-                        type="button"
-                        onClick={() => removeVideoAt(idx)}
-                        className="text-xs text-red-600 hover:underline"
-                        aria-label="إزالة الفيديو"
-                      >
-                        إزالة
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card className="border-0 shadow-card bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 space-x-reverse">
-            <FiUpload className="w-5 h-5 text-primary mr-2 ml-2" />
-            <span>رفع مستندات داعمة (PDF أو صور) (اختياري)</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="document-upload">اختيار الملفات</Label>
+        {get(formik.errors, "media.video") && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="text-red-500 text-xs mt-2 bg-red-50 p-2 px-3 rounded-md border border-red-100"
+          >
+            {get(formik.errors, "media.video")}
+          </div>
+        )}
+
+        {/* Uploaded videos display */}
+        {formik.values.media.video?.url && (
+          <div className="space-y-3">
+            <h3 className="text-base font-medium flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+              الفيديو المرفوع
+            </h3>
+            <div>
+              <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group transition-all hover:shadow-md">
+                <div className="relative pt-[56.25%] bg-gray-900">
+                  {/* 16:9 aspect ratio */}
+                  {formik.values.media.video.url && (
+                    <video
+                      src={formik.values.media.video.url}
+                      className="absolute inset-0 w-full h-full object-contain"
+                      controls
+                      controlsList="nodownload"
+                    >
+                      Your browser does not support video playback.
+                    </video>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-800 truncate">
+                      {formik.values.media.video.title}
+                    </h4>
+                    <Badge
+                      variant={
+                        formik.values.media.video.file ? "secondary" : "outline"
+                      }
+                      className={`text-xs ${
+                        formik.values.media.video.file
+                          ? "bg-purple-100 text-purple-700"
+                          : ""
+                      }`}
+                    >
+                      {formik.values.media.video.file
+                        ? "جديد"
+                        : formik.values.media.video.publicId
+                        ? "تم الرفع"
+                        : "جاري المعالجة"}
+                    </Badge>
+                  </div>
+
+                  <div className="flex justify-end mt-2">
+                    <button
+                      type="button"
+                      onClick={removeVideo}
+                      className="flex items-center px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-xs font-medium transition-colors"
+                      aria-label="إزالة الفيديو"
+                    >
+                      <FiX className="w-3 h-3 mr-1" />
+                      إزالة
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Documents section */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <div className="bg-blue-50 p-2 rounded-full">
+            <FiFilePlus className="w-5 h-5 text-blue-600" />
+          </div>
+          <h2 className="text-xl font-semibold">رفع مستندات داعمة</h2>
+          <Badge variant="outline" className="mr-auto font-normal text-xs">
+            اختياري
+          </Badge>
+        </div>
+
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-50 transition-colors p-6">
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+              <FiFile className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                يمكنك رفع مستندات بتنسيق PDF أو DOC أو DOCX
+              </p>
+              <p className="text-xs text-gray-500">
+                الحد الأقصى للملف: 10 ميجابايت
+              </p>
+            </div>
+
             <Input
               id="document-upload"
               type="file"
               accept={ALLOWED_DOCUMENT_TYPES.join(",")}
               multiple
+              className="hidden"
               onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                const validFiles = files.filter((file) => {
-                  const error = handleFileValidation(
-                    file,
-                    ALLOWED_DOCUMENT_TYPES,
-                    MAX_FILE_SIZE
-                  );
-                  if (error) {
-                    formik.setFieldError("media.documents", error);
-                    return false;
-                  }
-                  return true;
-                });
-                const uploaded = validFiles.map((file) => ({
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const error = handleFileValidation(
+                  file,
+                  ALLOWED_DOCUMENT_TYPES,
+                  MAX_FILE_SIZE
+                );
+
+                if (error) {
+                  formik.setFieldError("media.document", error);
+                  return;
+                }
+
+                // If we already have a document with a local URL, revoke it
+                if (formik.values.media.document?.url?.startsWith("blob:")) {
+                  try {
+                    URL.revokeObjectURL(formik.values.media.document.url);
+                  } catch {}
+                }
+
+                // Set the new document
+                const documentData = {
                   url: URL.createObjectURL(file),
                   publicId: uuidv4(),
                   title: file.name,
                   type: file.type,
+                  size: file.size,
                   uploadedAt: new Date().toISOString(),
                   file,
-                }));
-                formik.setFieldValue("media.documents", [
-                  ...formik.values.media.documents,
-                  ...uploaded,
-                ]);
+                };
+
+                formik.setFieldValue("media.document", documentData);
               }}
             />
-            {get(formik.errors, "media.documents") && (
-              <div className="text-red-500 text-xs mt-1">
-                {get(formik.errors, "media.documents")}
-              </div>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                document.getElementById("document-upload")?.click()
+              }
+              className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50"
+            >
+              <FiFile className="w-4 h-4 ml-2" />
+              اختيار ملفات
+            </Button>
           </div>
-          {formik.values.media.documents.length > 0 && (
-            <div className="space-y-2">
-              <Label>المستندات المرفوعة:</Label>
-              <ul className="list-disc pl-5 space-y-1">
-                {formik.values.media.documents.map((doc, idx) => (
-                  <li
-                    key={doc.publicId || idx}
-                    className="flex items-center gap-3"
-                  >
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {doc.title}
-                    </a>
-                    {doc.file && (
+        </div>
+
+        {get(formik.errors, "media.document") && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="text-red-500 text-xs mt-2 bg-red-50 p-2 px-3 rounded-md border border-red-100"
+          >
+            {get(formik.errors, "media.document")}
+          </div>
+        )}
+
+        {/* Uploaded documents display */}
+        {formik.values.media.document?.url && (
+          <div className="space-y-3">
+            <h3 className="text-base font-medium flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+              المستند المرفوع
+            </h3>
+
+            <div>
+              {(() => {
+                const doc = formik.values.media.document;
+                // Extract file extension for icon display
+                const extension =
+                  doc.type?.split("/")[1] ||
+                  doc.title?.split(".").pop() ||
+                  doc.url?.split(".").pop() ||
+                  "unknown";
+
+                return (
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-blue-300 transition-all">
+                    <div className="p-4 flex items-center">
+                      <div className="relative w-14 h-14 flex-shrink-0 bg-blue-50 rounded-lg flex items-center justify-center mr-3">
+                        <FiFile className="w-6 h-6 text-blue-500" />
+                        <span className="absolute bottom-1 text-[8px] font-bold text-blue-600 uppercase">
+                          {extension}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-800 text-sm truncate mb-1">
+                          {doc.title}
+                        </h4>
+                        <div className="flex items-center flex-wrap gap-2">
+                          <Badge
+                            variant={doc.file ? "secondary" : "outline"}
+                            className={`text-xs ${
+                              doc.file ? "bg-blue-100 text-blue-700" : ""
+                            }`}
+                          >
+                            {doc.file
+                              ? "جديد"
+                              : doc.publicId
+                              ? "تم الرفع"
+                              : "جاري المعالجة"}
+                          </Badge>
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center"
+                          >
+                            <span>عرض</span>
+                          </a>
+                        </div>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => removeDocumentAt(idx)}
-                        className="text-xs text-red-600 hover:underline"
+                        onClick={removeDocument}
+                        className="flex-shrink-0 p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors"
                         aria-label="إزالة المستند"
                       >
-                        إزالة
+                        <FiX className="w-4 h-4" />
                       </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };

@@ -3,9 +3,14 @@ import { Card, CardContent } from "@/app/component/ui/card";
 import { Checkbox } from "@/app/component/ui/checkbox";
 import { Label } from "@/app/component/ui/label";
 import { get } from "lodash";
-
+import React from "react";
 
 export const TermsCard = ({ formik }) => {
+  // Force field touched when component renders to show validation immediately
+  React.useEffect(() => {
+    formik.setFieldTouched("agreeToTerms", true, false);
+  }, []);
+
   return (
     <>
       <Card className="border-0 shadow-card bg-white">
@@ -47,8 +52,6 @@ export const TermsCard = ({ formik }) => {
           </div>
         </CardContent>
       </Card>
-
-      
     </>
   );
 };
