@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Calendar,
   Clock,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 // دالة للحصول على لون الحالة
 const getStatusColor = (status) => {
@@ -37,27 +39,27 @@ const getCategoryColor = (jop) => {
   }
 };
 
-// دالة للحصول على نص الحالة (بالعربية)
-const getStatusText = (status) => {
+// دالة للحصول على نص الحالة
+const getStatusText = (status, t) => {
   switch (status) {
     case "Free Agent":
-      return "حر";
+      return t("player.status.freeAgent");
     case "Contracted":
-      return "متعاقد";
+      return t("player.status.contracted");
     case "Transferred":
-      return "منتقل";
+      return t("player.status.transferred");
     default:
       return status;
   }
 };
 
 // دالة للحصول على نص الفئة
-const getCategoryText = (jop) => {
+const getCategoryText = (jop, t) => {
   switch (jop) {
     case "player":
-      return "player";
+      return t("common.player");
     case "coach":
-      return "coach";
+      return t("common.coach");
     default:
       return jop;
   }
@@ -65,6 +67,8 @@ const getCategoryText = (jop) => {
 
 // المكون الرئيسي
 const PlayerCard = ({ player }) => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   return (
     <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card  h-[450px] w-[300px] flex flex-col min-h-0">
       <div className="flex-1 min-h-0 ">
@@ -79,14 +83,14 @@ const PlayerCard = ({ player }) => {
                       player.status
                     )}`}
                   >
-                    {getStatusText(player.status)}
+                    {getStatusText(player.status, t)}
                   </span>
                   <span
                     className={`text-white text-xs px-2 py-1 rounded-lg ${getCategoryColor(
                       player.jop
                     )}`}
                   >
-                    {getCategoryText(player.jop)}
+                    {getCategoryText(player.jop, t)}
                   </span>
                 </div>
               </div>
@@ -134,14 +138,16 @@ const PlayerCard = ({ player }) => {
             <div className="flex items-center space-x-2 space-x-reverse">
               <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
               <span className="text-[hsl(var(--muted-foreground))]">
-                العمر:
+                {t("player.age")}:
               </span>
-              <span className="font-medium ml-1 mr-1">{player.age} سنة</span>
+              <span className="font-medium ml-1 mr-1">
+                {player.age} {t("player.years")}
+              </span>
             </div>
             <div className="flex items-center space-x-2 space-x-reverse">
               <Trophy className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
               <span className="text-[hsl(var(--muted-foreground))]">
-                الرياضة:
+                {t("player.sport")}:
               </span>
               <span className="font-medium ml-1 mr-1">{player.sport}</span>
             </div>
@@ -151,7 +157,7 @@ const PlayerCard = ({ player }) => {
             <div className="flex items-center space-x-2 space-x-reverse text-sm">
               <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
               <span className="text-[hsl(var(--muted-foreground))]">
-                المركز:
+                {t("player.position")}:
               </span>
               <span className="font-medium ml-1 mr-1">{player.position}</span>
             </div>
@@ -164,7 +170,7 @@ const PlayerCard = ({ player }) => {
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
                     <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
-                      الراتب الشهري:
+                      {t("player.monthlySalary")}:
                     </span>
                   </div>
                   <span className="font-semibold text-[hsl(var(--primary))]">
@@ -178,13 +184,13 @@ const PlayerCard = ({ player }) => {
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
                     <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
-                      قيمة العقد السنوي:
+                      {t("player.annualContract")}:
                     </span>
                   </div>
                   <span className="font-semibold text-[hsl(var(--primary))]">
                     $
                     {player.annualContractValue === 0
-                      ? "غير محدد"
+                      ? t("player.notSpecified")
                       : player.annualContractValue.toLocaleString()}
                   </span>
                 </div>
@@ -195,12 +201,15 @@ const PlayerCard = ({ player }) => {
           {player.transferDeadline && (
             <div className="flex items-center space-x-2 space-x-reverse text-sm text-orange-600">
               <Clock className="w-4 h-4" />
-              <span>موعد انتهاء الانتقال:</span>
+              <span>{t("player.transferDeadline")}:</span>
               <span className="font-medium ml-2 mr-2">
-                {new Date(player.transferDeadline).toLocaleDateString("ar-EG", {
-                  month: "long",
-                  year: "numeric",
-                })}
+                {new Date(player.transferDeadline).toLocaleDateString(
+                  language === "ar" ? "ar-EG" : "en-US",
+                  {
+                    month: "long",
+                    year: "numeric",
+                  }
+                )}
               </span>
             </div>
           )}
@@ -216,7 +225,7 @@ const PlayerCard = ({ player }) => {
         border border-[hsl(var(--primary))] rounded-lg px-4 py-2 hover:bg-[hsl(var(--primary)/0.9)] hover:text-white transition flex items-center justify-center cursor-pointer"
           >
             <Eye className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
-            عرض الملف الشخصي
+            {t("player.viewProfile")}
           </button>
         </Link>
       </div>

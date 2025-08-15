@@ -6,6 +6,7 @@ import Joi from "joi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FiEye,
   FiEyeOff,
@@ -15,47 +16,57 @@ import {
   FiUser,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
+import { useLanguage } from "../../contexts/LanguageContext";
 import { Button } from "../component/ui/button";
 import { Input } from "../component/ui/input";
 
 // Backend-aligned Joi schema (simplified and corrected)
-const registerSchema = Joi.object({
-  name: Joi.string().trim().min(3).max(50).required().messages({
-    "string.empty": "Please provide your name",
-    "string.min": "Name must be at least 3 characters",
-  }),
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .lowercase()
-    .required()
-    .messages({
-      "string.email": "Please provide a valid email address",
-      "string.empty": "Please provide an email address",
-    }),
-  phone: Joi.string()
-    .pattern(/^\+?\d{8,15}$/)
-    .required()
-    .messages({
-      "string.empty": "Please provide a phone number",
-      "string.pattern.base": "Please provide a valid phone number",
-    }),
-  password: Joi.string()
-    .min(8)
-    .required()
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/)
-    .messages({
-      "string.min": "Password must be at least 8 characters",
-      "string.pattern.base":
-        "Password must contain at least one uppercase, one lowercase, one number and one special character",
-    }),
-  confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
-    "any.only": "Passwords do not match",
-    "string.empty": "Please confirm your password",
-  }),
-});
+const getRegisterSchema = (t) =>
+  Joi.object({
+    name: Joi.string()
+      .trim()
+      .min(3)
+      .max(50)
+      .required()
+      .messages({
+        "string.empty": t("validation.nameRequired"),
+        "string.min": t("validation.nameMinLength"),
+      }),
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .lowercase()
+      .required()
+      .messages({
+        "string.email": t("validation.emailInvalid"),
+        "string.empty": t("validation.emailRequired"),
+      }),
+    phone: Joi.string()
+      .pattern(/^\+?\d{8,15}$/)
+      .required()
+      .messages({
+        "string.empty": t("validation.phoneRequired"),
+        "string.pattern.base": t("validation.phoneInvalid"),
+      }),
+    password: Joi.string()
+      .min(8)
+      .required()
+      .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/)
+      .messages({
+        "string.min": t("validation.passwordMinLength"),
+        "string.pattern.base": t("validation.passwordPattern"),
+      }),
+    confirmPassword: Joi.string()
+      .valid(Joi.ref("password"))
+      .required()
+      .messages({
+        "any.only": t("validation.passwordsDoNotMatch"),
+        "string.empty": t("validation.confirmPasswordRequired"),
+      }),
+  });
 
 // Convert Joi validation to Formik-compatible function
-const validate = (values) => {
+const getValidate = (t) => (values) => {
+  const registerSchema = getRegisterSchema(t);
   const { error } = registerSchema.validate(values, { abortEarly: false });
   if (!error) return {};
 
@@ -73,9 +84,11 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
 
-  const successMessage = "تم إنشاء الحساب بنجاح. سيتم تحويلك لصفحة التحقق.";
-  const errorMessage = "حدث خطأ أثناء إنشاء الحساب. حاول مرة أخرى.";
+  const successMessage = t("auth.accountCreatedSuccessfully");
+  const errorMessage = t("auth.accountCreationError");
 
   const initialValues = {
     name: "",
@@ -118,7 +131,7 @@ export default function SignUp() {
         /email/i.test(apiError) &&
         /(taken|exists|registered)/i.test(apiError)
       ) {
-        setFieldError("email", "البريد الإلكتروني مستخدم بالفعل");
+        setFieldError("email", t("auth.emailAlreadyExists"));
       } else {
         const safeMessage =
           typeof apiError === "string" ? apiError : errorMessage;
@@ -133,7 +146,8 @@ export default function SignUp() {
 
   const messageText = typeof submitMessage === "string" ? submitMessage : "";
   const isSuccess =
-    messageText.includes("بنجاح") || messageText.includes("successfully");
+    messageText.includes(t("common.success")) ||
+    messageText.includes("successfully");
 
   const getPasswordStrength = (password) => {
     const checks = [
@@ -150,28 +164,35 @@ export default function SignUp() {
     else if (percent >= 60) color = "bg-green-500";
     else if (percent >= 40) color = "bg-yellow-500";
     else if (percent >= 20) color = "bg-orange-500";
-    const labelMap = ["ضعيفة", "ضعيفة", "متوسطة", "جيدة", "قوية", "قوية"];
+    const labelMap = [
+      t("auth.passwordStrength.weak"),
+      t("auth.passwordStrength.weak"),
+      t("auth.passwordStrength.medium"),
+      t("auth.passwordStrength.good"),
+      t("auth.passwordStrength.strong"),
+      t("auth.passwordStrength.strong"),
+    ];
     const label = labelMap[score] || "";
     return { score, percent, color, label };
   };
 
   return (
     <div
-      dir="rtl"
+      dir={language === "ar" ? "rtl" : "ltr"}
       className="flex items-center justify-center p-6 min-h-screen bg-gray-50 md:p-12"
     >
       <div className="mx-auto w-full max-w-[620px] bg-white rounded-xl shadow-xl p-6 md:p-8 border border-gray-100">
         <div className="mb-6 text-center">
           <h1 className="text-2xl md:text-3xl font-bold text-[#07074D]">
-            إنشاء حساب
+            {t("auth.createAccount")}
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            سجّل معلوماتك للبدء في رحلتك الرياضية
+            {t("auth.registerYourInfo")}
           </p>
         </div>
         <Formik
           initialValues={initialValues}
-          validate={validate}
+          validate={getValidate(t)}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting: formikSubmitting, values }) => (
@@ -182,7 +203,7 @@ export default function SignUp() {
                   htmlFor="name"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  الاسم
+                  {t("auth.fullName")}
                 </label>
                 <div className="relative">
                   <Field
@@ -190,7 +211,7 @@ export default function SignUp() {
                     type="text"
                     name="name"
                     id="name"
-                    placeholder="الاسم"
+                    placeholder={t("auth.fullName")}
                     autoComplete="name"
                     className="pl-10 pr-6 py-6 text-[#374151]"
                   />
@@ -209,7 +230,7 @@ export default function SignUp() {
                   htmlFor="phone"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  رقم الهاتف
+                  {t("auth.phoneNumber")}
                 </label>
                 <div className="relative">
                   <Field
@@ -217,7 +238,7 @@ export default function SignUp() {
                     type="tel"
                     name="phone"
                     id="phone"
-                    placeholder="مثال: 0551234567 أو +966551234567"
+                    placeholder={t("auth.phonePlaceholder")}
                     autoComplete="tel"
                     className="pl-10 pr-6 py-6 text-[#374151]"
                   />
@@ -236,7 +257,7 @@ export default function SignUp() {
                   htmlFor="email"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  البريد الالكترونى
+                  {t("auth.email")}
                 </label>
                 <div className="relative">
                   <Field
@@ -244,7 +265,7 @@ export default function SignUp() {
                     type="email"
                     name="email"
                     id="email"
-                    placeholder="name@example.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     autoComplete="email"
                     className="pl-10 pr-6 py-6 text-[#374151]"
                   />
@@ -263,7 +284,7 @@ export default function SignUp() {
                   htmlFor="password"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  كلمة المرور
+                  {t("auth.password")}
                 </label>
                 <div className="relative">
                   <Field
@@ -271,7 +292,7 @@ export default function SignUp() {
                     type={showPassword ? "text" : "password"}
                     name="password"
                     id="password"
-                    placeholder="كلمة المرور"
+                    placeholder={t("auth.password")}
                     autoComplete="new-password"
                     className="pl-10 pr-12 py-6 text-[#374151]"
                   />
@@ -279,7 +300,9 @@ export default function SignUp() {
                   <button
                     type="button"
                     aria-label={
-                      showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
+                      showPassword
+                        ? t("auth.hidePassword")
+                        : t("auth.showPassword")
                     }
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6B7280] hover:text-[#374151]"
@@ -307,7 +330,7 @@ export default function SignUp() {
                             />
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            قوة كلمة المرور: {label}
+                            {t("auth.passwordStrength.label")}: {label}
                           </div>
                         </div>
                       );
@@ -322,7 +345,7 @@ export default function SignUp() {
                   htmlFor="confirmPassword"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  تأكيد كلمة المرور
+                  {t("auth.confirmPassword")}
                 </label>
                 <div className="relative">
                   <Field
@@ -330,7 +353,7 @@ export default function SignUp() {
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     id="confirmPassword"
-                    placeholder="تأكيد كلمة المرور"
+                    placeholder={t("auth.confirmPassword")}
                     autoComplete="new-password"
                     className="pl-10 pr-12 py-6 text-[#374151]"
                   />
@@ -339,8 +362,8 @@ export default function SignUp() {
                     type="button"
                     aria-label={
                       showConfirmPassword
-                        ? "إخفاء تأكيد كلمة المرور"
-                        : "إظهار تأكيد كلمة المرور"
+                        ? t("auth.hideConfirmPassword")
+                        : t("auth.showConfirmPassword")
                     }
                     onClick={() => setShowConfirmPassword((v) => !v)}
                     className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6B7280] hover:text-[#374151]"
@@ -384,10 +407,10 @@ export default function SignUp() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      جاري التحقق
+                      {t("auth.verifying")}
                     </div>
                   ) : (
-                    "إنشاء حساب"
+                    t("auth.createAccount")
                   )}
                 </Button>
               </div>
@@ -398,7 +421,7 @@ export default function SignUp() {
                   href="/signin"
                   className="text-[#07074d] hover:underline text-sm"
                 >
-                  تسجيل الدخول
+                  {t("auth.signIn")}
                 </Link>
               </div>
 

@@ -1,5 +1,6 @@
-import { ArrowRight, Search } from "lucide-react";
+"use client";
 
+import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 import {
   FaBasketballBall,
   FaBiking,
@@ -24,122 +25,129 @@ import {
 import { IoGameControllerOutline } from "react-icons/io5";
 import { MdSportsGymnastics, MdSportsTennis } from "react-icons/md";
 
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useDirection } from "@/hooks/use-direction";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 interface SportCardProps {
   searchTerm: string;
 }
 
 function SportCard({ searchTerm }: SportCardProps) {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
+  const { classes } = useDirection();
+
   const sports = [
     {
       id: "handball",
-      name: "كرة اليد",
+      name: t("sports.handball"),
       icon: FaFootballBall,
     },
     {
       id: "basketball",
-      name: "كرة السلة",
+      name: t("sports.basketball"),
       icon: FaBasketballBall,
     },
     {
       id: "volleyball",
-      name: "الكرة الطائرة",
+      name: t("sports.volleyball"),
       icon: FaVolleyballBall,
     },
     {
       id: "badminton",
-      name: "الريشة الطائرة",
+      name: t("sports.badminton"),
       icon: GiTennisRacket,
     },
     {
       id: "athletics",
-      name: "ألعاب القوى",
+      name: t("sports.athletics"),
       icon: FaRunning,
     },
     {
       id: "tennis",
-      name: "التنس",
+      name: t("sports.tennis"),
       icon: MdSportsTennis,
     },
     {
       id: "tabletennis",
-      name: "كرة الطاولة",
+      name: t("sports.tabletennis"),
       icon: FaTableTennis,
     },
     {
       id: "karate",
-      name: "الكاراتيه",
+      name: t("sports.karate"),
       icon: GiKimono,
     },
     {
       id: "taekwondo",
-      name: "التايكوندو",
+      name: t("sports.taekwondo"),
       icon: FaFistRaised,
     },
     {
       id: "archery",
-      name: "الرماية",
+      name: t("sports.archery"),
       icon: GiArcheryTarget,
     },
     {
       id: "esports",
-      name: "الألعاب الإلكترونية",
+      name: t("sports.esports"),
       icon: IoGameControllerOutline,
     },
     {
       id: "judo",
-      name: "الجودو",
+      name: t("sports.judo"),
       icon: GiKimono,
     },
     {
       id: "fencing",
-      name: "المبارزة",
+      name: t("sports.fencing"),
       icon: GiSwordman,
     },
     {
       id: "cycling",
-      name: "الدراجات",
+      name: t("sports.cycling"),
       icon: FaBiking,
     },
     {
       id: "squash",
-      name: "الإسكواش",
+      name: t("sports.squash"),
       icon: GiTennisRacket,
     },
     {
       id: "weightlifting",
-      name: "رفع الأثقال",
+      name: t("sports.weightlifting"),
       icon: FaDumbbell,
     },
     {
       id: "futsal",
-      name: "كرة قدم الصالات",
+      name: t("sports.futsal"),
       icon: GiGoalKeeper,
     },
     {
       id: "boxing",
-      name: "الملاكمة",
+      name: t("sports.boxing"),
       icon: GiBoxingGlove,
     },
     {
       id: "gymnastics",
-      name: "الجمباز",
+      name: t("sports.gymnastics"),
       icon: MdSportsGymnastics,
     },
     {
       id: "billiards",
-      name: "البلياردو",
+      name: t("sports.billiards"),
       icon: FaChessKnight,
     },
     {
       id: "wrestling",
-      name: "المصارعة",
+      name: t("sports.wrestling"),
       icon: GiMuscleUp,
     },
     {
       id: "swimming",
-      name: "السباحة",
+      name: t("sports.swimming"),
       icon: FaSwimmer,
     },
   ];
@@ -181,8 +189,12 @@ function SportCard({ searchTerm }: SportCardProps) {
                     type="button"
                     className="w-full flex items-center justify-center border border-[hsl(var(--primary))] text-[hsl(var(--primary))] rounded-lg px-4 py-3 bg-transparent hover:bg-[hsl(var(--primary)/0.1)] group-hover:shadow-md transition-all duration-300 ease-in-out font-medium"
                   >
-                    <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform duration-300" />
-                    استكشف اللاعبين
+                    {isRTL ? (
+                      <ArrowLeft className="w-4 h-4 ml-2 group-hover:-translate-x-1 transition-transform duration-300" />
+                    ) : (
+                      <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform duration-300" />
+                    )}
+                    {t("sports.explorePlayers")}
                   </button>
                 </div>
 
@@ -201,10 +213,10 @@ function SportCard({ searchTerm }: SportCardProps) {
             <Search className="w-10 h-10 text-[hsl(var(--muted-foreground))]" />
           </div>
           <h3 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-3">
-            لم يتم العثور على نتائج
+            {t("errors.noResults")}
           </h3>
           <p className="text-[hsl(var(--muted-foreground))] text-base leading-relaxed">
-            جرب البحث بكلمات مفتاحية أخرى أو تصفح جميع الرياضات المتاحة
+            {t("errors.tryDifferentKeywords")}
           </p>
         </div>
       )}

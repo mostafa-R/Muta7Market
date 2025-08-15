@@ -1,24 +1,27 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Menu, Transition } from "@headlessui/react";
 import axios from "axios";
 import {
   FileText,
+  Home,
   LogOut,
   Menu as MenuIcon,
+  Search,
   Trophy,
   User,
+  UserCircle,
   Users,
   X,
-  Home,
-  Search,
-  UserCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { create } from "zustand";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 // Zustand auth store
 const useAuthStore = create((set) => ({
@@ -45,6 +48,7 @@ const UserProfileDropdown = ({
   className = "",
   isMobile = false,
 }) => {
+  const { t } = useTranslation();
   const { isLoggedIn, user } = useAuthStore();
   const router = useRouter();
 
@@ -55,27 +59,31 @@ const UserProfileDropdown = ({
         onClick={() => router.push("/signin")}
         className={`
           ${fullWidth ? "w-full justify-center" : ""}
-          ${isMobile 
-            ? "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all"
-            : "border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
+          ${
+            isMobile
+              ? "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all"
+              : "border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
           }
           flex items-center gap-2
           ${className}
         `}
-        aria-label="تسجيل الدخول"
+        aria-label={t("navbar.signin")}
       >
         <User className="w-4 h-4" />
-        تسجيل الدخول
+        {t("navbar.signin")}
       </button>
     );
   }
 
   const getProfileImageUrl = () => {
     if (!user?.profileImage) return null;
-    if (typeof user.profileImage === 'object' && user.profileImage.url) {
+    if (typeof user.profileImage === "object" && user.profileImage.url) {
       return user.profileImage.url;
     }
-    if (typeof user.profileImage === 'string' && user.profileImage.trim() !== '') {
+    if (
+      typeof user.profileImage === "string" &&
+      user.profileImage.trim() !== ""
+    ) {
       return user.profileImage;
     }
     return null;
@@ -93,7 +101,7 @@ const UserProfileDropdown = ({
             {profileImageUrl ? (
               <Image
                 src={profileImageUrl}
-                alt={user?.name || "صورة المستخدم"}
+                alt={user?.name || t("user.profileImage")}
                 width={60}
                 height={60}
                 className="rounded-full border-2 border-white shadow-md"
@@ -105,7 +113,9 @@ const UserProfileDropdown = ({
               </div>
             )}
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">{user?.name || "المستخدم"}</p>
+              <p className="font-semibold text-gray-900">
+                {user?.name || t("user.defaultName")}
+              </p>
               <p className="text-sm text-gray-600">{user?.email}</p>
             </div>
           </div>
@@ -117,7 +127,7 @@ const UserProfileDropdown = ({
           className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
         >
           <UserCircle className="w-5 h-5 text-blue-600" />
-          <span className="font-medium">الملف الشخصي</span>
+          <span className="font-medium">{t("user.profile")}</span>
         </Link>
 
         <button
@@ -125,7 +135,7 @@ const UserProfileDropdown = ({
           className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-200"
         >
           <LogOut className="w-5 h-5" />
-          <span className="font-medium">تسجيل الخروج</span>
+          <span className="font-medium">{t("user.signout")}</span>
         </button>
       </div>
     );
@@ -136,12 +146,12 @@ const UserProfileDropdown = ({
     <Menu as="div" className="relative">
       <Menu.Button
         className="flex items-center justify-center rounded-full w-10 h-10 lg:w-11 lg:h-11 border-2 border-gray-200 hover:border-gray-300 transition-all hover:shadow-md"
-        aria-label="فتح قائمة المستخدم"
+        aria-label={t("user.openMenu")}
       >
         {profileImageUrl ? (
           <Image
             src={profileImageUrl}
-            alt={user?.name || "صورة المستخدم"}
+            alt={user?.name || t("user.profileImage")}
             width={44}
             height={44}
             className="w-full h-full rounded-full object-cover"
@@ -186,7 +196,7 @@ const UserProfileDropdown = ({
                   } flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors`}
                 >
                   <UserCircle className="w-4 h-4" />
-                  الملف الشخصي
+                  {t("user.profile")}
                 </Link>
               )}
             </Menu.Item>
@@ -202,7 +212,7 @@ const UserProfileDropdown = ({
                   } flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 transition-colors`}
                 >
                   <LogOut className="w-4 h-4" />
-                  تسجيل الخروج
+                  {t("user.signout")}
                 </button>
               )}
             </Menu.Item>
@@ -215,6 +225,7 @@ const UserProfileDropdown = ({
 
 // Mobile Nav Menu - محسن بالكامل
 const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
+  const { t } = useTranslation();
   const { isLoggedIn, setIsLoggedIn, user } = useAuthStore();
   const router = useRouter();
   const [isClosing, setIsClosing] = useState(false);
@@ -223,13 +234,15 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
     try {
       localStorage.clear();
       setIsLoggedIn(false);
-      
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
-        {},
-        { withCredentials: true }
-      ).catch(() => {});
-      
+
+      await axios
+        .post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`,
+          {},
+          { withCredentials: true }
+        )
+        .catch(() => {});
+
       router.push("/signin");
       onClose();
     } catch (error) {
@@ -247,9 +260,9 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
 
   useEffect(() => {
     // منع السكرول عند فتح القائمة
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, []);
 
@@ -278,12 +291,14 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
               <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
                 <Trophy className="w-6 h-6 text-white" />
               </div>
-              <span className="text-white font-bold text-lg">Muta7Market</span>
+              <span className="text-white font-bold text-lg">
+                {t("brand.name")}
+              </span>
             </div>
             <button
               onClick={handleClose}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              aria-label="إغلاق القائمة"
+              aria-label={t("common.closeMenu")}
             >
               <X className="w-6 h-6 text-white" />
             </button>
@@ -328,6 +343,9 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
 
           {/* User Section */}
           <div className="p-4 border-t bg-gray-50">
+            <div className="mb-4">
+              <LanguageSwitcher isMobile={true} />
+            </div>
             <UserProfileDropdown handleLogout={handleLogout} isMobile={true} />
           </div>
         </div>
@@ -338,6 +356,8 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
 
 // Main Navbar Component
 const Navbar = () => {
+  const { t } = useTranslation();
+  const { language, isRTL } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -359,15 +379,21 @@ const Navbar = () => {
 
   const navItems = useMemo(
     () => [
-      { name: "الرئيسية", path: "/", icon: Home },
-      { name: "استكشف", path: "/sports", icon: Search },
-      { name: "اللاعبون", path: "/players", icon: Users },
-      { name: "المدربون", path: "/coaches", icon: Users },
+      { name: t("navbar.home"), path: "/", icon: Home },
+      { name: t("navbar.explore"), path: "/sports", icon: Search },
+      { name: t("navbar.players"), path: "/players", icon: Users },
+      { name: t("navbar.coaches"), path: "/coaches", icon: Users },
       ...(isLoggedIn
-        ? [{ name: "تسجيل الملف", path: "/register-profile", icon: FileText }]
+        ? [
+            {
+              name: t("navbar.registerProfile"),
+              path: "/register-profile",
+              icon: FileText,
+            },
+          ]
         : []),
     ],
-    [isLoggedIn]
+    [isLoggedIn, t]
   );
 
   const handleLogout = useCallback(async () => {
@@ -411,7 +437,7 @@ const Navbar = () => {
                 <Trophy className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-[hsl(var(--primary))] bg-clip-text text-transparent">
-                Muta7Market
+                {t("brand.name")}
               </span>
             </Link>
 
@@ -443,6 +469,7 @@ const Navbar = () => {
 
             {/* Desktop User Controls - مخفي على الموبايل */}
             <div className="hidden lg:flex items-center gap-4">
+              <LanguageSwitcher />
               <UserProfileDropdown handleLogout={handleLogout} />
             </div>
 
@@ -451,7 +478,7 @@ const Navbar = () => {
               type="button"
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={() => setIsOpen(true)}
-              aria-label="فتح القائمة"
+              aria-label={t("common.openMenu")}
             >
               <MenuIcon className="h-6 w-6 text-gray-700" />
             </button>

@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/component/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import {
   ArrowRight,
@@ -37,12 +38,15 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerProfile = () => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const params = useParams();
   const playerId = Array.isArray(params?.playerId)
     ? params?.playerId[0]
@@ -88,7 +92,7 @@ const PlayerProfile = () => {
   const handleSendMessage = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error(t("playerDetail.loginRequired"));
       return;
     }
 
@@ -97,14 +101,14 @@ const PlayerProfile = () => {
       const formattedNumber = phoneNumber.replace(/^0/, "");
       window.open(`https://wa.me/${formattedNumber}`, "_blank");
     } else {
-      toast.error("لا يوجد رقم هاتف متاح لهذا اللاعب");
+      toast.error(t("playerDetail.noPhoneAvailable"));
     }
   };
 
   const handleRequestPhone = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error(t("playerDetail.loginRequired"));
       return;
     }
 
@@ -113,48 +117,48 @@ const PlayerProfile = () => {
       navigator.clipboard
         .writeText(phone)
         .then(() => {
-          toast.success("تم نسخ رقم الهاتف");
+          toast.success(t("playerDetail.phoneCopied"));
         })
         .catch(() => {
-          toast.error("فشل في نسخ رقم الهاتف");
+          toast.error(t("playerDetail.failedToCopyPhone"));
         });
     } else {
-      toast.error("رقم الهاتف غير متاح حالياً");
+      toast.error(t("playerDetail.phoneNotAvailable"));
     }
   };
 
   const handleSendEmail = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error(t("playerDetail.loginRequired"));
       return;
     }
     const email = player?.user?.email;
     if (email) {
       window.open(`mailto:${email}`, "_blank");
-      toast.success("تم ارسال البريد الإلكتروني");
+      toast.success(t("playerDetail.emailSent"));
     } else {
-      toast.error("البريد الإلكتروني غير متاح");
+      toast.error(t("playerDetail.emailNotAvailable"));
     }
   };
 
   const handleShareProfile = async () => {
     const shareUrl = window.location.href;
-    const shareText = `تحقق من ملف اللاعب ${player.name}`;
+    const shareText = t("playerDetail.checkProfile", { name: player.name });
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `ملف ${player.name}`,
+          title: t("playerDetail.profileOf", { name: player.name }),
           text: shareText,
           url: shareUrl,
         });
       } catch {
-        // تجاهل الإلغاء
+        // Ignore cancellation
       }
     } else {
       navigator.clipboard.writeText(shareUrl).then(() => {
-        toast.success("تم نسخ رابط الملف الشخصي");
+        toast.success(t("playerDetail.profileLinkCopied"));
       });
     }
   };
@@ -162,7 +166,7 @@ const PlayerProfile = () => {
   useEffect(() => {
     const fetchPlayer = async () => {
       if (!playerId) {
-        setError("معرف اللاعب غير متوفر");
+        setError(t("playerDetail.playerIdNotAvailable"));
         setLoading(false);
         return;
       }
@@ -171,14 +175,14 @@ const PlayerProfile = () => {
         const response = await axios.get(`${API_URL}/${playerId}`);
         setPlayer(response.data.data);
       } catch (err) {
-        setError("فشل في جلب بيانات اللاعب. حاول مرة أخرى لاحقًا.");
+        setError(t("playerDetail.failedToFetchPlayer"));
       } finally {
         setLoading(false);
       }
     };
 
     fetchPlayer();
-  }, [playerId]);
+  }, [playerId, t]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -186,15 +190,18 @@ const PlayerProfile = () => {
 
   if (error || !player) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div
+        className="min-h-screen bg-background flex items-center justify-center"
+        dir={language === "ar" ? "rtl" : "ltr"}
+      >
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground">
-            {error || "اللاعب غير موجود"}
+            {error || t("playerDetail.playerNotFound")}
           </h1>
           <Link href="/players">
             <Button variant="default">
               <ArrowRight className="w-4 h-4 ml-2" />
-              العودة للاعبين
+              {t("playerDetail.backToPlayers")}
             </Button>
           </Link>
         </div>
@@ -203,6 +210,8 @@ const PlayerProfile = () => {
   }
 
   const VideoPopup = ({ videoUrl, onClose }) => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
     const popupRef = useRef();
 
     const handleClickOutside = (event) => {
@@ -230,6 +239,7 @@ const PlayerProfile = () => {
           <div
             ref={popupRef}
             className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-slideUp"
+            dir={language === "ar" ? "rtl" : "ltr"}
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-4 flex items-center justify-between">
@@ -238,9 +248,11 @@ const PlayerProfile = () => {
                   <Play className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">فيديو اللاعب</h2>
+                  <h2 className="text-xl font-bold">
+                    {t("playerDetail.playerVideo")}
+                  </h2>
                   <p className="text-sm text-gray-300">
-                    مشاهدة الأداء والمهارات
+                    {t("playerDetail.watchPerformanceAndSkills")}
                   </p>
                 </div>
               </div>
@@ -249,7 +261,7 @@ const PlayerProfile = () => {
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-white/20 rounded-full transition-colors duration-200"
-                aria-label="إغلاق"
+                aria-label={t("common.closeMenu")}
               >
                 <X className="w-6 h-6" />
               </button>
@@ -260,13 +272,13 @@ const PlayerProfile = () => {
               <video controls className="w-full h-full">
                 <source src={videoUrl} type="video/mp4" />
                 <p className="text-white text-center p-4">
-                  عذراً، متصفحك لا يدعم تشغيل الفيديو.
+                  {t("playerDetail.browserDoesNotSupportVideo")}
                   <a
                     href={videoUrl}
                     download
                     className="text-blue-400 underline mr-2"
                   >
-                    حمل الفيديو
+                    {t("playerDetail.downloadVideo")}
                   </a>
                 </p>
               </video>
@@ -277,7 +289,7 @@ const PlayerProfile = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Volume2 className="w-4 h-4" />
-                  <span>تأكد من تشغيل الصوت للحصول على أفضل تجربة</span>
+                  <span>{t("playerDetail.ensureSoundOn")}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -290,7 +302,7 @@ const PlayerProfile = () => {
                       }
                     }}
                     className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
-                    aria-label="ملء الشاشة"
+                    aria-label={t("playerDetail.fullscreen")}
                   >
                     <Maximize2 className="w-5 h-5" />
                   </button>
@@ -299,7 +311,7 @@ const PlayerProfile = () => {
                     onClick={onClose}
                     className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium"
                   >
-                    إغلاق
+                    {t("common.cancel")}
                   </button>
                 </div>
               </div>
@@ -316,7 +328,7 @@ const PlayerProfile = () => {
     console.log("Player media:", player?.media);
 
     if (!url) {
-      toast.error("لا يوجد فيديو متاح لهذا اللاعب");
+      toast.error(t("playerDetail.noVideoAvailable"));
       return;
     }
     setCurrentVideoUrl(url);
@@ -377,7 +389,7 @@ const PlayerProfile = () => {
       link.click();
       document.body.removeChild(link);
     } else {
-      toast.error("لا يوجد ملف لتحميله.");
+      toast.error(t("playerDetail.noFileToDownload"));
     }
   };
 
@@ -413,14 +425,17 @@ const PlayerProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div
+      className="min-h-screen bg-gray-100"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Link
             href="/players"
             className="hover:text-primary transition-colors"
           >
-            اللاعبين
+            {t("players.allPlayers")}
           </Link>
           <ArrowRight className="w-4 h-4" />
           <span className="text-foreground font-medium">{player.name}</span>
@@ -454,41 +469,53 @@ const PlayerProfile = () => {
                         )} text-white`}
                       >
                         {player.status === "available"
-                          ? "حر"
+                          ? t("player.status.freeAgent")
                           : player.status === "contracted"
-                          ? "متعاقد"
-                          : "منتقل"}
+                          ? t("player.status.contracted")
+                          : t("player.status.transferred")}
                       </Badge>
                       <Badge
                         className={`${getCategoryColor(
                           player.category
                         )} text-white`}
                       >
-                        {player.category === "player" ? "محترف" : "نخبة"}
+                        {player.category === "player"
+                          ? t("players.category.professional")
+                          : t("players.category.elite")}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">العمر:</span>
-                        <span className="font-medium">{player.age} سنة</span>
+                        <span className="text-muted-foreground">
+                          {t("player.age")}:
+                        </span>
+                        <span className="font-medium">
+                          {player.age} {t("player.years")}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">الجنسية:</span>
+                        <span className="text-muted-foreground">
+                          {t("playerDetail.nationality")}:
+                        </span>
                         <span className="font-medium">
                           {player.nationality}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Trophy className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">الرياضة:</span>
+                        <span className="text-muted-foreground">
+                          {t("player.sport")}:
+                        </span>
                         <span className="font-medium">{player.game}</span>
                       </div>
                       {player.position && (
                         <div className="flex items-center space-x-2">
                           <Star className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">المركز:</span>
+                          <span className="text-muted-foreground">
+                            {t("player.position")}:
+                          </span>
                           <span className="font-medium">{player.position}</span>
                         </div>
                       )}
@@ -503,7 +530,7 @@ const PlayerProfile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <DollarSign className="w-5 h-5 text-primary" />
-                  <span>المعلومات المالية والانتقالات</span>
+                  <span>{t("playerDetail.financialAndTransferInfo")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -512,12 +539,14 @@ const PlayerProfile = () => {
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-gray-700" />
                       <span className="text-gray-700 font-medium">
-                        الراتب الشهري
+                        {t("player.monthlySalary")}
                       </span>
                     </div>
                     <span className="text-2xl font-bold text-gray-800">
                       {player.monthlySalary.currency}{" "}
-                      {player.monthlySalary.amount.toLocaleString()}
+                      {player.monthlySalary.amount.toLocaleString(
+                        language === "ar" ? "ar-EG" : "en-US"
+                      )}
                     </span>
                   </div>
                 )}
@@ -526,12 +555,14 @@ const PlayerProfile = () => {
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-5 h-5 text-gray-700" />
                       <span className="text-gray-700 font-medium">
-                        قيمة العقد السنوي
+                        {t("player.annualContract")}
                       </span>
                     </div>
                     <span className="text-2xl font-bold text-gray-800">
                       {player.yearSalary.currency}{" "}
-                      {player.yearSalary.amount.toLocaleString()}
+                      {player.yearSalary.amount.toLocaleString(
+                        language === "ar" ? "ar-EG" : "en-US"
+                      )}
                     </span>
                   </div>
                 )}
@@ -540,14 +571,14 @@ const PlayerProfile = () => {
                     <div className="border-t pt-4 mt-4">
                       <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                         <ArrowRightLeft className="w-5 h-5 text-primary" />
-                        تفاصيل الانتقال
+                        {t("playerDetail.transferDetails")}
                       </h4>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-2">
                         <Building className="w-5 h-5 text-gray-700" />
                         <span className="text-gray-700 font-medium">
-                          النادي المنتقل إليه
+                          {t("playerDetail.transferredToClub")}
                         </span>
                       </div>
                       <span className="text-lg font-bold text-gray-800">
@@ -558,12 +589,12 @@ const PlayerProfile = () => {
                       <div className="flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-gray-700" />
                         <span className="text-gray-700 font-medium">
-                          تاريخ الانتقال
+                          {t("playerDetail.transferDate")}
                         </span>
                       </div>
                       <span className="text-lg font-bold text-gray-800">
                         {new Date(player.transferredTo.date).toLocaleDateString(
-                          "ar-EG",
+                          language === "ar" ? "ar-EG" : "en-US",
                           {
                             year: "numeric",
                             month: "long",
@@ -576,11 +607,14 @@ const PlayerProfile = () => {
                       <div className="flex items-center gap-2">
                         <Banknote className="w-5 h-5 text-gray-700" />
                         <span className="text-gray-700 font-medium">
-                          مبلغ الانتقال
+                          {t("playerDetail.transferAmount")}
                         </span>
                       </div>
                       <span className="text-2xl font-bold text-gray-800">
-                        {player.transferredTo.amount.toLocaleString()} $
+                        {player.transferredTo.amount.toLocaleString(
+                          language === "ar" ? "ar-EG" : "en-US"
+                        )}{" "}
+                        $
                       </span>
                     </div>
                   </>
@@ -590,12 +624,12 @@ const PlayerProfile = () => {
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5 text-gray-700" />
                       <span className="text-gray-700 font-medium">
-                        موعد انتهاء العقد
+                        {t("player.transferDeadline")}
                       </span>
                     </div>
                     <span className="text-lg font-bold text-gray-800">
                       {new Date(player.contractEndDate).toLocaleDateString(
-                        "ar-EG",
+                        language === "ar" ? "ar-EG" : "en-US",
                         {
                           year: "numeric",
                           month: "long",
@@ -614,16 +648,16 @@ const PlayerProfile = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Clock className="w-5 h-5 text-primary" />
-                    <span>تفاصيل العقد</span>
+                    <span>{t("playerDetail.contractDetails")}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-3 rounded-lg">
                     <Clock className="w-4 h-4" />
                     <span className="font-medium">
-                      موعد انتهاء العقد:{" "}
+                      {t("player.transferDeadline")}:{" "}
                       {new Date(player.contractEndDate).toLocaleDateString(
-                        "ar-EG",
+                        language === "ar" ? "ar-EG" : "en-US",
                         {
                           year: "numeric",
                           month: "long",
@@ -642,7 +676,7 @@ const PlayerProfile = () => {
             {/* Contact Actions */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
-                <CardTitle>تواصل مع اللاعب</CardTitle>
+                <CardTitle>{t("playerDetail.contactPlayer")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
@@ -651,7 +685,7 @@ const PlayerProfile = () => {
                   onClick={handleSendMessage}
                 >
                   <MessageCircle className="w-4 h-4 ml-2" />
-                  إرسال رسالة
+                  {t("playerDetail.sendMessage")}
                 </Button>
                 <Button
                   variant="outline"
@@ -659,7 +693,7 @@ const PlayerProfile = () => {
                   onClick={handleRequestPhone}
                 >
                   <Phone className="w-4 h-4 ml-2" />
-                  طلب رقم الهاتف
+                  {t("playerDetail.requestPhone")}
                 </Button>
                 <Button
                   variant="outline"
@@ -667,7 +701,7 @@ const PlayerProfile = () => {
                   onClick={handleSendEmail}
                 >
                   <Mail className="w-4 h-4 ml-2" />
-                  إرسال إيميل
+                  {t("playerDetail.sendEmail")}
                 </Button>
               </CardContent>
             </Card>
@@ -675,7 +709,7 @@ const PlayerProfile = () => {
             {/* Profile Actions */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
-                <CardTitle>إجراءات</CardTitle>
+                <CardTitle>{t("playerDetail.actions")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
@@ -684,7 +718,7 @@ const PlayerProfile = () => {
                   onClick={handleWatchVideo}
                 >
                   <Video className="w-4 h-4 ml-2" />
-                  فديو اللاعب
+                  {t("playerDetail.playerVideo")}
                 </Button>
 
                 <Button
@@ -693,7 +727,7 @@ const PlayerProfile = () => {
                   onClick={handleDownloadFile}
                 >
                   <Download className="w-4 h-4 ml-2" />
-                  تحميل الملف (أول مستند)
+                  {t("playerDetail.downloadFile")}
                 </Button>
 
                 <Button
@@ -702,7 +736,7 @@ const PlayerProfile = () => {
                   onClick={handleShareProfile}
                 >
                   <Share2 className="w-4 h-4 ml-2" />
-                  مشاركة الملف
+                  {t("playerDetail.shareProfile")}
                 </Button>
               </CardContent>
             </Card>
@@ -712,20 +746,26 @@ const PlayerProfile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Award className="w-5 h-5 text-primary" />
-                  <span>إحصائيات</span>
+                  <span>{t("playerDetail.statistics")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">سنوات الخبرة</span>
+                  <span className="text-muted-foreground">
+                    {t("playerDetail.yearsOfExperience")}
+                  </span>
                   <span className="font-semibold">
-                    {player.experience || "غير محدد"}
+                    {player.experience || t("player.notSpecified")}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">مرات المشاهدة</span>
+                  <span className="text-muted-foreground">
+                    {t("playerDetail.views")}
+                  </span>
                   <span className="font-semibold">
-                    {player.views || "15,678"}
+                    {player.views?.toLocaleString(
+                      language === "ar" ? "ar-EG" : "en-US"
+                    ) || "15,678"}
                   </span>
                 </div>
               </CardContent>

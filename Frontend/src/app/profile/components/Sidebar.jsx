@@ -1,6 +1,7 @@
+"use client";
 // components/profile/Sidebar.jsx
-import React from "react";
-import { FaUser, FaLock, FaCalendar, FaFileAlt } from "react-icons/fa";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { FaCalendar, FaFileAlt, FaLock, FaUser } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 
 const Sidebar = ({
@@ -8,12 +9,23 @@ const Sidebar = ({
   setActiveSection,
   isSidebarOpen,
   setIsSidebarOpen,
+  t,
 }) => {
+  const { language } = useLanguage();
+
   const menuItems = [
-    { id: "profile", label: "الملف الشخصي", icon: FaUser },
-    { id: "edit", label: "تعديل المعلومات", icon: FaLock },
-    { id: "payments", label: "المدفوعات المعلقة", icon: FaCalendar },
-    { id: "playerProfile", label: "الملف الشخصي", icon: FaFileAlt },
+    { id: "profile", label: t("profile.sidebarTitles.profile"), icon: FaUser },
+    { id: "edit", label: t("profile.sidebarTitles.edit"), icon: FaLock },
+    {
+      id: "payments",
+      label: t("profile.sidebarTitles.payments"),
+      icon: FaCalendar,
+    },
+    {
+      id: "playerProfile",
+      label: t("profile.sidebarTitles.playerProfile"),
+      icon: FaFileAlt,
+    },
   ];
 
   const handleItemClick = (sectionId) => {
@@ -46,15 +58,18 @@ const Sidebar = ({
           z-50 lg:z-30
           overflow-y-auto
         `}
+        dir={language === "ar" ? "rtl" : "ltr"}
       >
         <div className="p-6">
           {/* Mobile header */}
           <div className="flex justify-between items-center mb-8 lg:hidden">
-            <h2 className="text-2xl font-bold text-gray-800">القائمة</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {t("common.menu")}
+            </h2>
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="إغلاق القائمة"
+              aria-label={t("common.closeMenu")}
             >
               <IoMdClose size={24} />
             </button>
@@ -63,7 +78,7 @@ const Sidebar = ({
           {/* Desktop header */}
           <div className="hidden lg:block mb-8">
             <h2 className="text-xl xl:text-2xl font-bold text-gray-800">
-              لوحة التحكم
+              {t("profile.dashboard")}
             </h2>
           </div>
 

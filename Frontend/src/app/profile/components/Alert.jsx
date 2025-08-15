@@ -1,12 +1,17 @@
-import React from "react";
+"use client";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import {
   FaCheckCircle,
   FaExclamationCircle,
-  FaInfoCircle,
   FaExclamationTriangle,
+  FaInfoCircle,
 } from "react-icons/fa";
 
 const Alert = ({ type = "info", message, onClose, className = "" }) => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+
   const alertStyles = {
     success: {
       bg: "bg-green-50 border-green-200",
@@ -40,6 +45,7 @@ const Alert = ({ type = "info", message, onClose, className = "" }) => {
   return (
     <div
       className={`${style.bg} border rounded-lg p-4 mb-4 flex items-center justify-between ${className}`}
+      dir={language === "ar" ? "rtl" : "ltr"}
     >
       <div className="flex items-center">
         <IconComponent className={`${style.iconColor} ml-3 text-lg`} />
@@ -49,6 +55,7 @@ const Alert = ({ type = "info", message, onClose, className = "" }) => {
         <button
           onClick={onClose}
           className={`${style.text} hover:opacity-70 transition-opacity`}
+          aria-label={t("common.close")}
         >
           ×
         </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 // import { motion } from "framer-motion"; // removed to simplify
@@ -7,23 +8,26 @@ import Joi from "joi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiLock } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-// Joi schema
-const otpSchema = Joi.object({
-  otp: Joi.string()
-    .pattern(/^\d{6}$/)
-    .required()
-    .messages({
-      "string.empty": "Please enter OTP",
-      "string.pattern.base": "Please enter a valid OTP",
-    }),
-});
+// Joi schema - updated to use language context
+const getOtpSchema = (t) =>
+  Joi.object({
+    otp: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        "string.empty": t("otp.enterOtp"),
+        "string.pattern.base": t("otp.validOtp"),
+      }),
+  });
 
-// Joi to Formik validator
-const validate = (values) => {
-  const { error } = otpSchema.validate(values, { abortEarly: false });
+// Joi to Formik validator - updated to use language context
+const getValidate = (t) => (values) => {
+  const schema = getOtpSchema(t);
+  const { error } = schema.validate(values, { abortEarly: false });
   if (!error) return {};
 
   const errors = {};
@@ -36,6 +40,8 @@ const validate = (values) => {
 
 // Component
 export default function OTP() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const router = useRouter();
@@ -44,8 +50,8 @@ export default function OTP() {
     otp: "",
   };
 
-  const successMessage = "تم التحقق من الرمز بنجاح!";
-  const errorMessage = "رمز التحقق غير صالح. حاول مرة أخرى.";
+  const successMessage = t("otp.verificationSuccess");
+  const errorMessage = t("otp.invalidCode");
 
   const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/verify-email`;
 
@@ -99,9 +105,10 @@ export default function OTP() {
           toast.error(safeMsg);
         }
       } else if (error.request) {
-        setSubmitMessage("فشل في الاتصال بالخادم");
-        setStatus("فشل في الاتصال بالخادم");
-        toast.error("فشل في الاتصال بالخادم");
+        const networkErrorMsg = t("errors.networkError");
+        setSubmitMessage(networkErrorMsg);
+        setStatus(networkErrorMsg);
+        toast.error(networkErrorMsg);
       } else {
         setSubmitMessage(errorMessage);
         setStatus(errorMessage);
@@ -120,7 +127,10 @@ export default function OTP() {
     messageText.includes("بنجاح") || messageText.includes("successfully");
 
   return (
-    <div className="flex items-center justify-center p-12 min-h-screen bg-gray-50">
+    <div
+      className="flex items-center justify-center p-12 min-h-screen bg-gray-50"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <div
         className="mx-auto w-full max-w-[550px] bg-white rounded-lg shadow-lg p-8"
         // variants={formVariants}
@@ -129,15 +139,15 @@ export default function OTP() {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#07074D] mb-2">رمز التحقق</h1>
-          <p className="text-gray-600">
-            تم إرسال رمز التحقق إلى بريدك الإلكتروني
-          </p>
+          <h1 className="text-2xl font-bold text-[#07074D] mb-2">
+            {t("otp.verificationCode")}
+          </h1>
+          <p className="text-gray-600">{t("otp.codeSentToEmail")}</p>
         </div>
 
         <Formik
           initialValues={initialValues}
-          validate={validate}
+          validate={getValidate(t)}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting: formikSubmitting, status }) => (
@@ -148,14 +158,14 @@ export default function OTP() {
                   htmlFor="otp"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  otp
+                  {t("otp.verificationCode")}
                 </label>
                 <div className="relative">
                   <Field
                     type="tel"
                     name="otp"
                     id="otp"
-                    placeholder="رمز التحقق"
+                    placeholder={t("otp.enterCodePlaceholder")}
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     pattern="\d*"
@@ -208,10 +218,10 @@ export default function OTP() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      جاري التحقق
+                      {t("common.verifying")}
                     </div>
                   ) : (
-                    "التاكيد"
+                    t("common.confirm")
                   )}
                 </button>
               </div>
@@ -222,7 +232,7 @@ export default function OTP() {
                   href="/signin"
                   className="text-[hsl(var(--primary))] hover:underline text-sm font-medium"
                 >
-                  تسجيل الدخول
+                  {t("auth.signin")}
                 </Link>
               </div>
 
@@ -245,16 +255,16 @@ export default function OTP() {
         {/* Resend Code Option */}
         <div className="mt-6 text-center">
           <p className="text-gray-600 text-sm">
-            لم تستلم الرمز؟{" "}
+            {t("otp.didNotReceiveCode")}{" "}
             <button
               type="button"
               className="text-[hsl(var(--primary))] hover:underline font-medium"
               onClick={() => {
                 // Add resend OTP functionality here
-                toast.info("سيتم إرسال رمز جديد قريباً");
+                toast.info(t("otp.newCodeWillBeSent"));
               }}
             >
-              إعادة الإرسال
+              {t("otp.resend")}
             </button>
           </p>
         </div>

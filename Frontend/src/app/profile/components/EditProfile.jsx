@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
 import { Eye, EyeOff, Upload, X } from "lucide-react";
+import { useState } from "react";
 
 const EditProfile = ({
   register,
@@ -14,6 +14,8 @@ const EditProfile = ({
   error,
   success,
   isLoading,
+  t,
+  language,
 }) => {
   const FormField = ({
     icon,
@@ -79,7 +81,7 @@ const EditProfile = ({
       <div className="bg-[#00183D] p-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <i className="fas fa-edit"></i>
-          تعديل المعلومات الشخصية
+          {t("profile.editProfile")}
         </h1>
       </div>
 
@@ -89,7 +91,7 @@ const EditProfile = ({
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <i className="fas fa-image text-purple-600"></i>
-              الصورة الشخصية
+              {t("profile.profileImage")}
             </h3>
 
             <div className="space-y-4">
@@ -98,7 +100,7 @@ const EditProfile = ({
                 <div className="relative inline-block">
                   <img
                     src={imagePreview}
-                    alt="Profile Preview"
+                    alt={t("profile.profileImagePreview")}
                     className="w-32 h-32 rounded-full object-cover border-4 border-purple-100"
                   />
                   {profileImage && (
@@ -124,49 +126,53 @@ const EditProfile = ({
                   />
                   <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-[#00183D] rounded-xl hover:bg-purple-100 transition-colors">
                     <Upload size={20} />
-                    <span>{profileImage ? "تغيير الصورة" : "اختر صورة"}</span>
+                    <span>
+                      {profileImage
+                        ? t("profile.changeImage")
+                        : t("profile.chooseImage")}
+                    </span>
                   </div>
                 </label>
 
                 {profileImage && (
                   <span className="text-sm text-green-600">
-                    تم اختيار: {profileImage.name}
+                    {t("profile.selected")}: {profileImage.name}
                   </span>
                 )}
               </div>
 
               <p className="text-xs text-gray-500">
-                الصور المسموحة: JPG, PNG, GIF, WebP (حد أقصى 5 ميجابايت)
+                {t("profile.allowedImageFormats")}
               </p>
             </div>
           </div>
-          
+
           {/* Basic Information Section */}
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <i className="fas fa-user text-[#00183D]"></i>
-              المعلومات الأساسية
+              {t("profile.basicInformation")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 icon="fa-user"
-                label="الاسم الكامل"
+                label={t("profile.name")}
                 name="name"
-                placeholder="أدخل الاسم الكامل"
+                placeholder={t("profile.enterFullName")}
               />
               <FormField
                 icon="fa-envelope"
-                label="البريد الإلكتروني"
+                label={t("profile.email")}
                 name="email"
                 type="email"
-                placeholder="أدخل البريد الإلكتروني"
+                placeholder={t("profile.enterEmail")}
                 disabled={true}
               />
               <FormField
                 icon="fa-phone"
-                label="رقم الهاتف"
+                label={t("profile.phone")}
                 name="phone"
-                placeholder="أدخل رقم الهاتف"
+                placeholder={t("profile.enterPhone")}
               />
             </div>
           </div>
@@ -175,14 +181,14 @@ const EditProfile = ({
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <i className="fas fa-info-circle text-purple-600"></i>
-              معلومات إضافية
+              {t("profile.additionalInformation")}
             </h3>
             <div className="grid grid-cols-1 gap-6">
               <FormField
                 icon="fa-user-tag"
-                label="النبذة التعريفية"
+                label={t("profile.bio")}
                 name="bio"
-                placeholder="أكتب نبذة مختصرة عن نفسك..."
+                placeholder={t("profile.writeShortBio")}
                 isTextarea
               />
             </div>
@@ -192,28 +198,28 @@ const EditProfile = ({
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <i className="fas fa-lock text-purple-600"></i>
-              الأمان
+              {t("profile.security")}
             </h3>
             <FormField
               icon="fa-lock"
-              label="كلمة المرور الجديدة"
+              label={t("profile.newPassword")}
               name="newPassword"
               type="password"
-              placeholder="كلمة المرور الجديدة (اختياري)"
+              placeholder={t("profile.newPasswordOptional")}
             />
             <FormField
               icon="fa-lock"
-              label="تأكيد كلمة المرور الجديدة"
+              label={t("profile.confirmNewPassword")}
               name="confirmPassword"
               type="password"
-              placeholder="تأكيد كلمة المرور الجديدة"
+              placeholder={t("profile.confirmNewPassword")}
             />
             <FormField
               icon="fa-lock"
-              label="كلمة المرور الحالية"
+              label={t("profile.currentPassword")}
               name="oldPassword"
               type="password"
-              placeholder="كلمة المرور الحالية (مطلوبة عند تغيير كلمة المرور)"
+              placeholder={t("profile.currentPasswordRequired")}
             />
           </div>
 
@@ -238,7 +244,7 @@ const EditProfile = ({
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
               onClick={() => window.location.reload()}
             >
-              إلغاء
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -248,12 +254,12 @@ const EditProfile = ({
               {isLoading ? (
                 <>
                   <i className="fas fa-spinner fa-spin"></i>
-                  جاري الحفظ...
+                  {t("common.saving")}
                 </>
               ) : (
                 <>
                   <i className="fas fa-save"></i>
-                  حفظ التغييرات
+                  {t("common.save")}
                 </>
               )}
             </button>

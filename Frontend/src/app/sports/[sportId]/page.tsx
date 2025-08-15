@@ -1,50 +1,13 @@
 "use client";
 import PlayerCard from "@/app/component/PlayerCard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import { ArrowRight, Filter, Search, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import CTA from "./CTA";
-
-const sportNames: { [key: string]: string } = {
-  football: "كرة القدم",
-  handball: "كرة اليد",
-  basketball: "كرة السلة",
-  volleyball: "الكرة الطائرة",
-  badminton: "الريشة الطائرة",
-  athletics: "ألعاب القوى",
-  tennis: "التنس",
-  tabletennis: "كرة الطاولة",
-  karate: "الكاراتيه",
-  taekwondo: "التايكوندو",
-  archery: "السهام",
-  esports: "الرياضات الإلكترونية",
-  swimming: "السباحة",
-  judo: "الجودو",
-  fencing: "المبارزة",
-  cycling: "الدراجات الهوائية",
-  squash: "الإسكواش",
-  weightlifting: "رفع الأثقال",
-  futsal: "كرة قدم الصالات",
-  boxing: "الملاكمة",
-  gymnastics: "الجمباز",
-  billiards: "البلياردو والسنوكر",
-  wrestling: "المصارعة",
-};
-
-const statusOptions = [
-  { value: "all", label: "جميع الحالات" },
-  { value: "Free Agent", label: "حر" },
-  { value: "Contracted", label: "متعاقد" },
-  { value: "Transferred", label: "منتقل" },
-];
-
-const categoryOptions = [
-  { value: "all", label: "جميع الفئات" },
-  { value: "player", label: "لاعب" },
-  { value: "coach", label: "مدرب" },
-];
 
 // واجهة Player (مطابقة لـ PlayerCard)
 interface Player {
@@ -203,13 +166,25 @@ const SportDetailPage = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
 
-  const sportName = sportId ? sportNames[sportId.toLowerCase()] : "";
-  const apiSportName = sportName
-    ? Object.keys(sportNames)
-        .find((key) => sportNames[key] === sportName)
-        ?.toLowerCase()
-    : "";
+  const statusOptions = [
+    { value: "all", label: t("sports.statusOptions.all") },
+    { value: "Free Agent", label: t("sports.statusOptions.freeAgent") },
+    { value: "Contracted", label: t("sports.statusOptions.contracted") },
+    { value: "Transferred", label: t("sports.statusOptions.transferred") },
+  ];
+
+  const categoryOptions = [
+    { value: "all", label: t("sports.categoryOptions.all") },
+    { value: "player", label: t("sports.categoryOptions.player") },
+    { value: "coach", label: t("sports.categoryOptions.coach") },
+  ];
+
+  // Get sport name from translations
+  const sportName = sportId ? t(`sports.${sportId.toLowerCase()}`) : "";
+  const apiSportName = sportId?.toLowerCase() || "";
 
   // جلب البيانات باستخدام Axios
   useEffect(() => {
@@ -253,6 +228,7 @@ const SportDetailPage = () => {
       setError("الرياضة غير موجودة");
     }
   }, [apiSportName]);
+
   // تصفية اللاعبين
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.trim().toLowerCase();
@@ -273,10 +249,12 @@ const SportDetailPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--foreground))] mb-4">
-              جارٍ تحميل {sportName || "الرياضة"}
+              {t("sports.loadingTitle", {
+                sportName: sportName || t("sports.notFoundTitle"),
+              })}
             </h1>
             <p className="text-[hsl(var(--muted-foreground))]">
-              جارٍ تحميل البيانات...
+              {t("sports.loadingDescription")}
             </p>
           </div>
         </div>
@@ -290,12 +268,12 @@ const SportDetailPage = () => {
       <div className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))] mb-4">
-            {error || "الرياضة غير موجودة"}
+            {error || t("sports.notFoundTitle")}
           </h1>
           <Link href="/sports">
             <button className="inline-flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg px-6 py-3 text-lg font-semibold hover:bg-[hsl(var(--primary)/0.95)] transition">
-              <ArrowRight className="w-4 h-4 ml-2" />
-              العودة للرياضات
+              <ArrowRight className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />
+              {t("sports.backToSports")}
             </button>
           </Link>
         </div>
@@ -306,14 +284,18 @@ const SportDetailPage = () => {
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center space-x-2 space-x-reverse text-sm text-[hsl(var(--muted-foreground))] mb-6">
+        <div
+          className={`flex items-center space-x-2 ${
+            isRTL ? "space-x-reverse" : ""
+          } text-sm text-[hsl(var(--muted-foreground))] mb-6`}
+        >
           <Link
             href="/sports"
             className="hover:text-[hsl(var(--primary))] transition-colors"
           >
-            الرياضات
+            {t("sports.allSports")}
           </Link>
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
           <span className="text-[hsl(var(--foreground))] font-medium">
             {sportName}
           </span>
@@ -322,15 +304,19 @@ const SportDetailPage = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--foreground))] mb-4">
-            لاعبو {sportName}
+            {t("sports.explorePlayers")} {sportName}
           </h1>
-          <div className="flex items-center space-x-4 space-x-reverse">
+          <div
+            className={`flex items-center space-x-4 ${
+              isRTL ? "space-x-reverse" : ""
+            }`}
+          >
             <span className="inline-flex items-center bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] rounded-full px-3 py-1 text-sm font-semibold">
-              <Users className="w-4 h-4 ml-2" />
-              {players.length} لاعب مسجل
+              <Users className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />
+              {t("sports.playersCount", { count: players.length })}
             </span>
             <span className="inline-flex items-center border border-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-full px-3 py-1 text-sm font-semibold">
-              <Trophy className="w-4 h-4 ml-2" />
+              <Trophy className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />
               {sportName}
             </span>
           </div>
@@ -338,20 +324,32 @@ const SportDetailPage = () => {
 
         {/* Filters */}
         <div className="bg-[hsl(var(--card))] rounded-xl p-6 mb-8 border border-[hsl(var(--border))] shadow-card">
-          <div className="flex items-center space-x-4 space-x-reverse mb-4">
+          <div
+            className={`flex items-center space-x-4 ${
+              isRTL ? "space-x-reverse" : ""
+            } mb-4`}
+          >
             <Filter className="w-5 h-5 text-[hsl(var(--muted-foreground))]" />
-            <h3 className="text-lg font-semibold">فلترة النتائج</h3>
+            <h3 className="text-lg font-semibold">
+              {t("sports.filters.title")}
+            </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] w-4 h-4" />
+              <Search
+                className={`absolute ${
+                  isRTL ? "right-3" : "left-3"
+                } top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] w-4 h-4`}
+              />
               <input
                 type="text"
-                placeholder="ابحث باسم اللاعب أو الجنسية..."
+                placeholder={t("sports.filters.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 text-right w-full py-2 px-4 rounded-lg border border-[hsl(var(--border))] bg-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] transition"
+                className={`${
+                  isRTL ? "pr-10" : "pl-10"
+                } text-right w-full py-2 px-4 rounded-lg border border-[hsl(var(--border))] bg-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] transition`}
               />
             </div>
 
@@ -389,7 +387,7 @@ const SportDetailPage = () => {
               }}
               className="w-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-lg px-4 py-2 text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted-foreground)/0.06)] transition"
             >
-              مسح الفلاتر
+              {t("sports.filters.clearFilters")}
             </button>
           </div>
         </div>
@@ -397,13 +395,16 @@ const SportDetailPage = () => {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-[hsl(var(--muted-foreground))]">
-            عرض {filteredPlayers.length} من أصل {players.length} لاعب
+            {t("sports.results.showing", {
+              filtered: filteredPlayers.length,
+              total: players.length,
+            })}
           </p>
         </div>
 
         {/* Players Grid */}
         {filteredPlayers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="flex flex-wrap justify-center gap-6 mb-12">
             {filteredPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} />
             ))}
@@ -412,10 +413,10 @@ const SportDetailPage = () => {
           <div className="text-center py-12">
             <Search className="w-16 h-16 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-2">
-              لم يتم العثور على لاعبين
+              {t("sports.results.noResultsTitle")}
             </h3>
             <p className="text-[hsl(var(--muted-foreground))] mb-6">
-              جرب تغيير معايير البحث أو الفلاتر
+              {t("sports.results.noResultsDescription")}
             </p>
             <button
               type="button"
@@ -426,7 +427,7 @@ const SportDetailPage = () => {
               }}
               className="bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-lg px-6 py-2 text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted-foreground)/0.06)] transition"
             >
-              مسح جميع الفلاتر
+              {t("sports.results.clearAllFilters")}
             </button>
           </div>
         )}

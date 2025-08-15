@@ -1,10 +1,12 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import { joiResolver } from "@hookform/resolvers/joi";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 // Import Components
 import LoadingSpinner from "../component/LoadingSpinner";
@@ -17,11 +19,13 @@ import Sidebar from "./components/Sidebar";
 // Import Schemas
 import { IoMdMenu } from "react-icons/io";
 import PlayerProfile from "./components/PlayerProfile";
-import { ProfileFormSchema } from "./components/validation.js";
+import { createProfileFormSchema } from "./components/validation.js";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const UserProfile = () => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [user, setUser] = useState(null);
   const [pendingPayments, setPendingPayments] = useState([]);
   const [error, setError] = useState("");
@@ -43,7 +47,7 @@ const UserProfile = () => {
     formState: { errors },
     reset,
   } = useForm({
-    resolver: joiResolver(ProfileFormSchema),
+    resolver: joiResolver(createProfileFormSchema(t)),
   });
 
   const fetchUserData = useCallback(async () => {
@@ -52,7 +56,7 @@ const UserProfile = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/signin");
         return;
       }
 
@@ -61,13 +65,13 @@ const UserProfile = () => {
       });
 
       if (!response.data?.user) {
-        throw new Error("بيانات المستخدم غير متوفرة");
+        throw new Error(t("profile.userDataUnavailable"));
       }
 
       const userData = response.data.user;
       setUser(userData);
 
-      // تعيين القيم في النموذج
+      // Set values in the form
       reset({
         name: userData.name || "",
         email: userData.email || "",
@@ -78,7 +82,7 @@ const UserProfile = () => {
         oldPassword: "",
       });
 
-      // تعيين معاينة الصورة الحالية
+      // Set current image preview
       if (userData.profileImage?.url) {
         setImagePreview(userData.profileImage.url);
       }
@@ -86,14 +90,14 @@ const UserProfile = () => {
       console.error("Error fetching user data:", err);
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/signin");
       } else {
-        setError("فشل جلب بيانات المستخدم. حاول مرة أخرى.");
+        setError(t("profile.failedToFetchUserData"));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [reset, router]);
+  }, [reset, router, t]);
 
   const fetchPendingPayments = useCallback(async () => {
     try {
@@ -117,7 +121,7 @@ const UserProfile = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/signin");
         return;
       }
 
@@ -125,39 +129,40 @@ const UserProfile = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // التحقق من وجود البيانات في الاستجابة
+      // Check if data exists in the response
       if (response.data && response.data.data) {
-        const playerData = response.data.data; // استخدام response.data.data
-
+        const playerData = response.data.data;
         setPlayer(playerData);
       } else {
-        throw new Error("No player data found");
+        throw new Error(t("profile.noPlayerDataFound"));
       }
 
-      setError(""); // مسح أي أخطاء سابقة
+      setError(""); // Clear any previous errors
     } catch (err) {
       console.error("Error fetching player data:", err);
 
-      // معالجة الأخطاء بشكل أفضل
+      // Better error handling
       if (err.response) {
         if (err.response.status === 401) {
-          setError("غير مصرح لك بالوصول. يرجى تسجيل الدخول مرة أخرى.");
+          setError(t("profile.unauthorizedAccess"));
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/signin");
         } else if (err.response.status === 404) {
-          setError("لم يتم العثور على بيانات اللاعب.");
+          setError(t("profile.playerDataNotFound"));
         } else {
-          setError(err.response.data?.message || "حدث خطأ في جلب البيانات.");
+          setError(
+            err.response.data?.message || t("profile.errorFetchingData")
+          );
         }
       } else if (err.request) {
-        setError("فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.");
+        setError(t("profile.connectionFailed"));
       } else {
-        setError(err.message || "حدث خطأ غير متوقع.");
+        setError(err.message || t("profile.unexpectedError"));
       }
     } finally {
-      setIsLoading(false); // إيقاف التحميل في جميع الحالات
+      setIsLoading(false); // Stop loading in all cases
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     fetchUserData();
@@ -174,7 +179,7 @@ const UserProfile = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          router.push("/login");
+          router.push("/signin");
           return;
         }
 
@@ -217,7 +222,7 @@ const UserProfile = () => {
           };
           localStorage.setItem("user", JSON.stringify(updatedUser));
 
-          setSuccess("تم تحديث الملف الشخصي بنجاح!");
+          setSuccess(t("profile.profileUpdatedSuccessfully"));
 
           setProfileImage(null);
 
@@ -236,7 +241,7 @@ const UserProfile = () => {
 
         if (err.response?.status === 401) {
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/signin");
         } else if (err.response?.data?.errors) {
           const validationErrors = err.response.data.errors;
           const errorMessages = Object.values(validationErrors).join(", ");
@@ -244,39 +249,42 @@ const UserProfile = () => {
         } else if (err.response?.data?.message) {
           setError(err.response.data.message);
         } else {
-          setError("فشل تحديث المعلومات. حاول مرة أخرى.");
+          setError(t("profile.updateFailed"));
         }
       } finally {
         setIsUpdating(false);
       }
     },
-    [profileImage, fetchUserData, reset, router]
+    [profileImage, fetchUserData, router, t]
   );
 
-  const handleImageChange = useCallback((e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+  const handleImageChange = useCallback(
+    (e) => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
 
-      if (!file.type.startsWith("image/")) {
-        setError("يرجى تحميل ملف صورة صالح (JPG, PNG, GIF, WebP)");
-        return;
+        if (!file.type.startsWith("image/")) {
+          setError(t("profile.pleaseUploadValidImage"));
+          return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+          setError(t("profile.imageSizeLimitExceeded"));
+          return;
+        }
+
+        setProfileImage(file);
+        setError("");
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
       }
-
-      if (file.size > 5 * 1024 * 1024) {
-        setError("حجم الصورة يجب أن لا يتجاوز 5 ميجابايت");
-        return;
-      }
-
-      setProfileImage(file);
-      setError("");
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, []);
+    },
+    [t]
+  );
 
   const handleCancelImage = useCallback(() => {
     setProfileImage(null);
@@ -288,29 +296,35 @@ const UserProfile = () => {
   }, [user]);
 
   if (isLoading) return <LoadingSpinner />;
-  if (!user) return <ErrorMessage message="خطأ في تحميل البيانات" />;
+  if (!user) return <ErrorMessage message={t("profile.errorLoadingData")} />;
 
   return (
-    <div className="min-h-screen bg-[#ffffff]">
+    <div
+      className="min-h-screen bg-[#ffffff]"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <div className="flex relative">
         <Sidebar
           activeSection={activeSection}
           setActiveSection={setActiveSection}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
+          t={t}
         />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           <button
             className="lg:hidden mb-4 p-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
             onClick={() => setIsSidebarOpen(true)}
-            aria-label="فتح القائمة"
+            aria-label={t("common.openMenu")}
           >
             <IoMdMenu className="text-xl text-gray-700" />
           </button>
 
           <div className="animate-fadeIn">
-            {activeSection === "profile" && <ProfileView user={user} />}
+            {activeSection === "profile" && (
+              <ProfileView user={user} t={t} language={language} />
+            )}
 
             {activeSection === "edit" && (
               <EditProfile
@@ -325,11 +339,18 @@ const UserProfile = () => {
                 error={error}
                 success={success}
                 isLoading={isUpdating}
+                t={t}
+                language={language}
               />
             )}
 
             {activeSection === "payments" && (
-              <PaymentsSection payments={pendingPayments} router={router} />
+              <PaymentsSection
+                payments={pendingPayments}
+                router={router}
+                t={t}
+                language={language}
+              />
             )}
             {activeSection === "playerProfile" && (
               <PlayerProfile
@@ -339,6 +360,8 @@ const UserProfile = () => {
                 error={error}
                 success={success}
                 router={router}
+                t={t}
+                language={language}
               />
             )}
           </div>
@@ -347,11 +370,12 @@ const UserProfile = () => {
 
       {showConfirmModal && (
         <ConfirmModal
-          title="تأكيد التغييرات"
-          message="هل أنت متأكد من حفظ التغييرات؟"
+          title={t("profile.confirmChanges")}
+          message={t("profile.areYouSureToSaveChanges")}
           onConfirm={handleSubmit(onSubmit)}
           onCancel={() => setShowConfirmModal(false)}
           isLoading={isUpdating}
+          t={t}
         />
       )}
     </div>

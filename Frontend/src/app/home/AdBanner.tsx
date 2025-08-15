@@ -1,4 +1,11 @@
+"use client";
+
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
+
 const AdBanner = () => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   return (
     <section className="py-8 ">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,13 +22,13 @@ const AdBanner = () => {
           "
         >
           <div className="text-[hsl(var(--muted-foreground))] text-sm mb-2">
-            مساحة إعلانية
+            {t("ads.adSpace")}
           </div>
           <div className="text-lg font-semibold text-[hsl(var(--foreground))] mb-2">
-            اعلن هنا عن خدماتك الرياضية
+            {t("ads.advertiseHere")}
           </div>
           <div className="text-[hsl(var(--muted-foreground))] text-sm">
-            تواصل معنا لعرض إعلانك في هذه المساحة
+            {t("ads.contactUs")}
           </div>
         </div>
       </div>

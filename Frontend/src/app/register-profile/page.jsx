@@ -46,16 +46,16 @@ const getErrorMessage = (error, fallback) => {
   );
 };
 
-// Form sections for multi-step navigation
+// Form sections for multi-step navigation - titles hardcoded in Arabic
 const formSections = [
-  { id: "personal", title: "المعلومات الشخصية", icon: "👤" },
-  { id: "sports", title: "المعلومات الرياضية", icon: "🏆" },
-  { id: "financial", title: "المعلومات المالية", icon: "💰" },
-  { id: "transfer", title: "معلومات الانتقال", icon: "🔄" },
-  { id: "contact", title: "معلومات التواصل", icon: "📞" },
-  { id: "social", title: "روابط التواصل", icon: "🔗" },
-  { id: "media", title: "الوسائط والمستندات", icon: "📎" },
-  { id: "terms", title: "الشروط والأحكام", icon: "📝" },
+  { id: "personal", title: "معلومات شخصية", icon: "👤" },
+  { id: "sports", title: "معلومات رياضية", icon: "🏆" },
+  { id: "financial", title: "معلومات مالية", icon: "💰" },
+  { id: "transfer", title: "معلومات انتقال", icon: "🔄" },
+  { id: "contact", title: "معلومات الاتصال", icon: "📞" },
+  { id: "social", title: "روابط اجتماعية", icon: "🔗" },
+  { id: "media", title: "وسائط", icon: "📎" },
+  { id: "terms", title: "الشروط", icon: "📝" },
 ];
 
 export default function Page() {
@@ -70,7 +70,6 @@ export default function Page() {
   const [canPay, setCanPay] = useState(false);
   const [player, setPlayer] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
-  const [direction, setDirection] = useState("rtl"); // Default RTL for Arabic
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile screens
@@ -184,8 +183,6 @@ export default function Page() {
 
         // Additional manual validation for all required fields
         const errors = {};
-
-        console.log("Validating values:", values); // Debug logging
 
         // Personal section validation
         if (!values.name || values.name.trim() === "") {
@@ -331,10 +328,6 @@ export default function Page() {
           return;
         }
 
-        console.log(
-          "All required fields are valid, proceeding with submission"
-        );
-
         // map experience -> expreiance (backend field name)
         const payload = { ...values };
         if (payload.experience !== undefined) {
@@ -396,15 +389,6 @@ export default function Page() {
           return;
         }
 
-        // Log all key fields for debugging
-        console.log("Critical fields check:", {
-          name: payload.name,
-          age: payload.age,
-          gender: payload.gender,
-          game: payload.game,
-          jop: payload.jop,
-        });
-
         const hasFiles =
           values.profilePictureFile ||
           values.documentFile ||
@@ -413,7 +397,6 @@ export default function Page() {
 
         if (!hasFiles) {
           try {
-            console.log("Sending JSON payload:", payload);
             const resp = await axios({
               method,
               url,
@@ -428,9 +411,7 @@ export default function Page() {
             setCanPay(true);
             return;
           } catch (error) {
-            console.error("JSON submission error:", error);
             if (error.response) {
-              console.error("Error response:", error.response.data);
               let errorMsg =
                 error.response.data?.message ||
                 error.response.data?.error ||
@@ -513,29 +494,8 @@ export default function Page() {
           }
         });
 
-        // Log payload for debugging
-        console.log("Sending payload:", JSON.stringify(payload));
-
-        // For debugging: Log FormData content
-        console.log("Form data entries:");
-        for (let pair of fd.entries()) {
-          console.log(pair[0], pair[1]);
-        }
-
         let resp;
         try {
-          console.log("About to send FormData request");
-
-          // Double check game field is properly set in FormData
-          const gameValue = fd.get("game");
-          console.log("Game field in FormData:", gameValue);
-
-          if (!gameValue || gameValue.trim() === "") {
-            // Explicitly add it again if missing
-            fd.set("game", payload.game || "");
-            console.log("Re-added game field:", payload.game);
-          }
-
           resp = await axios({
             method,
             url,
@@ -551,18 +511,8 @@ export default function Page() {
               setUploadProgress(percentCompleted);
             },
           });
-
-          console.log("Success response:", resp.data);
         } catch (error) {
-          console.error("API request error:", error);
-
           if (error.response) {
-            console.error("Error response data:", error.response.data);
-            console.error("Error response status:", error.response.status);
-            console.error("Request URL:", url);
-            console.error("Request method:", method);
-
-            // Show detailed error message
             let errorMessage = "خطأ في إرسال البيانات: ";
             if (error.response.data && error.response.data.message) {
               errorMessage += error.response.data.message;
@@ -574,12 +524,8 @@ export default function Page() {
 
             toast.error(errorMessage);
           } else if (error.request) {
-            // Request was made but no response
-            console.error("No response received:", error.request);
             toast.error("لم يتم تلقي رد من الخادم. تحقق من اتصالك بالإنترنت.");
           } else {
-            // Error in request setup
-            console.error("Error setting up request:", error.message);
             toast.error(`خطأ في إعداد الطلب: ${error.message}`);
           }
 
@@ -621,7 +567,6 @@ export default function Page() {
         //   }, 2000);
         // }
       } catch (error) {
-        console.error("Form submission error:", error);
         setUploadStatus("error");
         toast.error(
           getErrorMessage(error, "حدث خطأ أثناء رفع البيانات. حاول مرة أخرى.")
@@ -847,8 +792,6 @@ export default function Page() {
       return;
     }
 
-    console.log("Personal section validation passed");
-
     // Sports section fields
     if (!formik.values.game || formik.values.game.trim() === "") {
       toast.error("الرياضة مطلوبة - يرجى اختيار رياضة");
@@ -905,8 +848,6 @@ export default function Page() {
       return;
     }
 
-    console.log("Sports section validation passed");
-
     // Terms and conditions agreement
     if (!formik.values.agreeToTerms) {
       toast.error("يجب الموافقة على الشروط والأحكام");
@@ -956,7 +897,6 @@ export default function Page() {
     }
 
     // If validation passes, submit the form
-    console.log("Form is valid, submitting...");
     formik.handleSubmit(e);
   };
 
@@ -1143,69 +1083,35 @@ export default function Page() {
     }
   };
 
-  // Toggle direction between RTL and LTR
-  const toggleDirection = () => {
-    setDirection(direction === "rtl" ? "ltr" : "rtl");
-    document.documentElement.dir = direction === "rtl" ? "ltr" : "rtl";
-  };
-
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100"
-      dir={direction}
+      dir="rtl"
     >
       <ToastContainer
         position="top-right"
         autoClose={5000}
         hideProgressBar={false}
         newestOnTop={true}
-        rtl={direction === "rtl"}
+        rtl={true}
       />
-
-      {/* Language toggle button */}
-      <button
-        onClick={toggleDirection}
-        className="fixed top-4 left-4 z-50 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow text-xs"
-        aria-label="Toggle language direction"
-      >
-        {direction === "rtl" ? "English" : "العربية"}
-      </button>
 
       <div className="container mx-auto pt-8 pb-20 px-4 md:px-6">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <div className="w-full md:w-auto mb-4 md:mb-0">
-            <h1
-              className={`text-3xl font-bold text-[#00183D] ${
-                direction === "rtl" ? "text-right" : "text-left"
-              }`}
-            >
-              {idParam ? "تعديل ملف لاعب" : "إنشاء ملف لاعب جديد"}
+            <h1 className="text-3xl font-bold text-[#00183D] text-right">
+              {idParam ? "تعديل ملف اللاعب" : "إنشاء ملف لاعب جديد"}
             </h1>
-            <p
-              className={`text-gray-500 mt-1 ${
-                direction === "rtl" ? "text-right" : "text-left"
-              }`}
-            >
-              {direction === "rtl"
-                ? "أكمل المعلومات المطلوبة لإنشاء ملف شخصي"
-                : "Complete the required information to create a profile"}
+            <p className="text-gray-500 mt-1 text-right">
+              أكمل المعلومات المطلوبة أدناه
             </p>
           </div>
           <Link
             href="/profile"
             className="flex items-center text-[#00183D] hover:text-[#002c65] font-medium transition-colors"
           >
-            {direction === "rtl" ? (
-              <>
-                العودة للملف الشخصي
-                <ArrowLeft className="w-4 h-4 mr-1" />
-              </>
-            ) : (
-              <>
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Profile
-              </>
-            )}
+            العودة إلى الملف الشخصي
+            <ArrowLeft className="w-4 h-4 mr-1" />
           </Link>
         </div>
 
@@ -1213,8 +1119,7 @@ export default function Page() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">
-              {direction === "rtl" ? "الخطوة" : "Step"} {currentStep + 1}/
-              {formSections.length}
+              الخطوة {currentStep + 1}/{formSections.length}
             </span>
             <span className="text-sm font-medium text-gray-600">
               {formSections[currentStep].title}
@@ -1263,11 +1168,7 @@ export default function Page() {
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
             <LoadingSpinner />
-            <p className="mt-4 text-gray-600">
-              {direction === "rtl"
-                ? "جاري تحميل البيانات..."
-                : "Loading data..."}
-            </p>
+            <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
           </div>
         )}
 
@@ -1287,17 +1188,8 @@ export default function Page() {
                       onClick={prevStep}
                       className="flex-1 sm:flex-initial flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-colors duration-200"
                     >
-                      {direction === "rtl" ? (
-                        <>
-                          الخطوة السابقة
-                          <ChevronRight className="w-4 h-4 mr-1" />
-                        </>
-                      ) : (
-                        <>
-                          <ChevronLeft className="w-4 h-4 mr-1" />
-                          Previous
-                        </>
-                      )}
+                      الخطوة السابقة
+                      <ChevronRight className="w-4 h-4 mr-1" />
                     </Button>
                   )}
                   {currentStep === 0 && (
@@ -1308,7 +1200,7 @@ export default function Page() {
                       className="flex-1 sm:flex-initial flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-colors duration-200"
                     >
                       <X className="w-4 h-4 mr-1" />
-                      {direction === "rtl" ? "إعادة تعيين" : "Reset"}
+                      إعادة تعيين
                     </Button>
                   )}
                 </div>
@@ -1320,17 +1212,8 @@ export default function Page() {
                       onClick={nextStep}
                       className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
                     >
-                      {direction === "rtl" ? (
-                        <>
-                          الخطوة التالية
-                          <ChevronLeft className="w-4 h-4 mr-1" />
-                        </>
-                      ) : (
-                        <>
-                          Next
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </>
-                      )}
+                      الخطوة التالية
+                      <ChevronLeft className="w-4 h-4 mr-1" />
                     </Button>
                   ) : (
                     <Button
@@ -1339,13 +1222,7 @@ export default function Page() {
                       className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
                     >
                       <Save className="w-4 h-4 mr-1" />
-                      {idParam
-                        ? direction === "rtl"
-                          ? "حفظ التغييرات"
-                          : "Save Changes"
-                        : direction === "rtl"
-                        ? "إنشاء الملف الشخصي"
-                        : "Create Profile"}
+                      {idParam ? "حفظ التغييرات" : "إنشاء الملف"}
                     </Button>
                   )}
                 </div>
@@ -1356,9 +1233,7 @@ export default function Page() {
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="mt-6 p-4 bg-white rounded-xl shadow-sm">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium">
-                    {direction === "rtl" ? "جاري الرفع..." : "Uploading..."}
-                  </span>
+                  <span className="text-sm font-medium">جاري الرفع...</span>
                   <span className="text-sm font-medium">{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -1392,14 +1267,10 @@ export default function Page() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-emerald-700">
-                      {direction === "rtl"
-                        ? "تم إنشاء الملف بنجاح!"
-                        : "Profile created successfully!"}
+                      تم إنشاء الملف بنجاح
                     </h3>
                     <p className="text-emerald-600">
-                      {direction === "rtl"
-                        ? "يمكنك الآن تعزيز ظهور ملفك والحصول على المزيد من الفرص."
-                        : "You can now promote your profile to get more opportunities."}
+                      يمكنك الترقية لزيادة الرؤية
                     </p>
                   </div>
                 </div>
@@ -1407,7 +1278,7 @@ export default function Page() {
                   <Suspense
                     fallback={
                       <div className="py-4 text-center text-gray-500">
-                        {direction === "rtl" ? "جاري التحميل..." : "Loading..."}
+                        جاري التحميل...
                       </div>
                     }
                   >
@@ -1431,11 +1302,7 @@ export default function Page() {
             disabled={currentStep === 0}
             className={`px-3 py-2 ${currentStep === 0 ? "opacity-50" : ""}`}
           >
-            {direction === "rtl" ? (
-              <ChevronRight className="w-5 h-5" />
-            ) : (
-              <ChevronLeft className="w-5 h-5" />
-            )}
+            <ChevronRight className="w-5 h-5" />
           </Button>
 
           <div className="text-center">
@@ -1450,11 +1317,7 @@ export default function Page() {
               onClick={nextStep}
               className="px-3 py-2 bg-blue-600 hover:bg-blue-700"
             >
-              {direction === "rtl" ? (
-                <ChevronLeft className="w-5 h-5" />
-              ) : (
-                <ChevronRight className="w-5 h-5" />
-              )}
+              <ChevronLeft className="w-5 h-5" />
             </Button>
           ) : (
             <Button

@@ -1,12 +1,15 @@
+"use client";
 // components/common/ConfirmModal.jsx
-import React, { useState, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FiAlertCircle,
-  FiCheckCircle,
-  FiXCircle,
-  FiInfo,
   FiAlertTriangle,
+  FiCheckCircle,
+  FiInfo,
   FiX,
+  FiXCircle,
 } from "react-icons/fi";
 
 const ConfirmModal = ({
@@ -18,14 +21,20 @@ const ConfirmModal = ({
   error = null,
   success = null,
   type = "confirm", // confirm, warning, error, success, info
-  confirmText = "تأكيد",
-  cancelText = "إلغاء",
+  confirmText,
+  cancelText,
   showCloseButton = true,
   autoClose = false,
   autoCloseDelay = 3000,
   validationErrors = null, // للأخطاء من API
 }) => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [isClosing, setIsClosing] = useState(false);
+
+  // Use translation keys for default text
+  const defaultConfirmText = confirmText || t("common.confirm");
+  const defaultCancelText = cancelText || t("common.cancel");
 
   // Auto close functionality
   useEffect(() => {
@@ -114,6 +123,7 @@ const ConfirmModal = ({
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={handleClose}
+      dir={language === "ar" ? "rtl" : "ltr"}
     >
       <div
         className={`
@@ -132,7 +142,7 @@ const ConfirmModal = ({
           <button
             onClick={handleClose}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="إغلاق"
+            aria-label={t("common.close")}
           >
             <FiX className="w-5 h-5" />
           </button>
@@ -159,7 +169,7 @@ const ConfirmModal = ({
         {validationErrors && Object.keys(validationErrors).length > 0 && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <h4 className="text-sm font-semibold text-red-800 mb-2">
-              يرجى تصحيح الأخطاء التالية:
+              {t("profile.pleaseCorrectErrors")}
             </h4>
             <ul className="space-y-1">
               {Object.entries(validationErrors).map(([field, error]) => (
@@ -208,7 +218,7 @@ const ConfirmModal = ({
                 }
               `}
             >
-              {cancelText}
+              {defaultCancelText}
             </button>
             <button
               onClick={handleConfirm}
@@ -245,10 +255,10 @@ const ConfirmModal = ({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span>جاري المعالجة...</span>
+                  <span>{t("common.processing")}</span>
                 </>
               ) : (
-                confirmText
+                defaultConfirmText
               )}
             </button>
           </div>
@@ -261,7 +271,7 @@ const ConfirmModal = ({
               onClick={handleClose}
               className="px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all active:scale-95 font-medium"
             >
-              حسناً
+              {t("common.ok")}
             </button>
           </div>
         )}

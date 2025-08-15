@@ -1,6 +1,8 @@
 "use client";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import {
   FaBasketballBall,
   FaBiking,
@@ -139,17 +141,19 @@ const sports = [
 ];
 
 const SportsSection = () => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+
   return (
     <section className="py-8 md:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            استكشف الألعاب الرياضية
+            {t("home.exploreAllSports")}
           </h2>
           <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين
-            المحترفين
+            {t("sports.description")}
           </p>
         </div>
 
@@ -171,7 +175,7 @@ const SportsSection = () => {
 
                   {/* Sport Name */}
                   <h3 className="text-xs sm:text-sm md:text-base font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-300 text-center leading-tight px-1">
-                    {sport.name}
+                    {t(`sports.${sport.id}`)}
                   </h3>
                 </div>
               </Link>
@@ -187,7 +191,7 @@ const SportsSection = () => {
               className="inline-flex items-center justify-center bg-gradient-to-r from-[#00184d] to-[#00184d] hover:from-[#00184d] hover:to-[#00184d] text-white font-semibold rounded-xl text-base md:text-lg px-8 py-4 md:px-10 md:py-5 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#00184d]"
             >
               <Trophy className="w-5 h-5 md:w-6 md:h-6 ml-3" />
-              عرض جميع الرياضات
+              {t("home.viewAll")} {t("sports.allSports")}
             </button>
           </Link>
         </div>

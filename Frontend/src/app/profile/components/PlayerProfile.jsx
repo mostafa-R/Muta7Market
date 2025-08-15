@@ -13,6 +13,8 @@ const PlayerProfile = ({
   success,
   router,
   onChange,
+  t,
+  language,
 }) => {
   const [isEditing, setIsEditing] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -67,12 +69,12 @@ const PlayerProfile = ({
         <div className="bg-[#00183D] p-8">
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <i className="fas fa-user"></i>
-            الملف الشخصي
+            {t("profile.profile")}
           </h1>
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 h-full">
               <i className="fas fa-user text-[#00183D]"></i>
-              غير مسجل حتي الان
+              {t("profile.notRegisteredYet")}
             </h3>
             <Link href="/register-profile">
               <button
@@ -80,7 +82,7 @@ const PlayerProfile = ({
                 className="inline-flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-4 hover:bg-[hsl(var(--primary)/0.9)] transition"
               >
                 <FileText className="w-5 h-5 ml-2" />
-                سجل الان
+                {t("profile.registerNow")}
               </button>
             </Link>
           </div>
@@ -131,9 +133,7 @@ const PlayerProfile = ({
 
   const handleDeletePlayerProfile = async () => {
     // Show confirmation dialog
-    const isConfirmed = window.confirm(
-      "هل أنت متأكد من حذف الملف الرياضي بشكل نهائي؟ سيتم حذف جميع بياناتك والصور والملفات ولا يمكن استعادتها."
-    );
+    const isConfirmed = window.confirm(t("profile.confirmDeletePlayerProfile"));
 
     if (!isConfirmed) {
       return;
@@ -144,13 +144,13 @@ const PlayerProfile = ({
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) {
-        toast.error("يجب عليك تسجيل الدخول أولاً");
+        toast.error(t("profile.mustLoginFirst"));
         setIsDeleting(false);
         return;
       }
 
       // Show notification that deletion is in progress
-      toast.info("جاري حذف الملف الرياضي...");
+      toast.info(t("profile.deletingPlayerProfile"));
 
       const response = await axios.delete(
         `${API_URL}/players/delete-player-profile`,
@@ -163,7 +163,7 @@ const PlayerProfile = ({
       );
 
       if (response.status === 200) {
-        toast.success("تم حذف الملف الرياضي بنجاح");
+        toast.success(t("profile.playerProfileDeletedSuccessfully"));
 
         // Remove player data from local storage if stored there
         localStorage.removeItem("playerProfile");
@@ -177,12 +177,12 @@ const PlayerProfile = ({
       console.error("Error deleting profile:", error);
 
       if (error.response?.status === 404) {
-        toast.error("الملف الرياضي غير موجود");
+        toast.error(t("profile.playerProfileNotFound"));
       } else if (error.response?.status === 403) {
-        toast.error("ليس لديك صلاحية لحذف هذا الملف");
+        toast.error(t("profile.noPermissionToDelete"));
       } else {
         toast.error(
-          error.response?.data?.message || "حدث خطأ أثناء حذف الملف الرياضي"
+          error.response?.data?.message || t("profile.errorDeletingProfile")
         );
       }
     } finally {
@@ -195,7 +195,7 @@ const PlayerProfile = ({
       <div className="bg-[#00183D] p-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <i className="fas fa-user"></i>
-          الملف الشخصي للاعب
+          {t("profile.playerProfile")}
         </h1>
       </div>
 
@@ -205,72 +205,72 @@ const PlayerProfile = ({
           <div className="bg-gray-50 p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <i className="fas fa-user text-[#00183D]"></i>
-              معلومات اللاعب
+              {t("profile.playerInformation")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                label="الاسم الكامل"
+                label={t("profile.name")}
                 value={formData.name}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="name"
               />
               <FormField
-                label="العمر"
+                label={t("player.age")}
                 value={formData.age}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="age"
               />
               <FormField
-                label="الجنس"
+                label={t("profile.gender")}
                 value={formData.gender}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="gender"
               />
               <FormField
-                label="الجنسية"
+                label={t("playerDetail.nationality")}
                 value={formData.nationality}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="nationality"
               />
               <FormField
-                label="الوظيفة"
+                label={t("profile.job")}
                 value={formData.jop}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="jop"
               />
               <FormField
-                label="المركز"
+                label={t("player.position")}
                 value={formData.position}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="position"
               />
               <FormField
-                label="حالة اللاعب"
+                label={t("profile.playerStatus")}
                 value={formData.status}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="status"
               />
               <FormField
-                label="الخبرة"
+                label={t("profile.experience")}
                 value={formData.expreiance}
                 onChange={handleChange}
                 isDisabled={!isEditing}
                 name="expreiance"
               />
               <FormField
-                label="الراتب الشهري"
+                label={t("player.monthlySalary")}
                 value={`${formData.monthlySalary} $`}
                 isDisabled={true} // لا يمكن تعديل الراتب
               />
               <FormField
-                label="الراتب السنوي"
+                label={t("player.annualContract")}
                 value={`${formData.yearSalary} $`}
                 isDisabled={true} // لا يمكن تعديل الراتب
               />
@@ -314,7 +314,7 @@ const PlayerProfile = ({
               className="px-6 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#001a3d] transition-colors"
               onClick={() => router.push(`/register-profile?id=${player._id}`)}
             >
-              تعديل
+              {t("common.edit")}
             </button>
             <button
               type="button"
@@ -325,12 +325,12 @@ const PlayerProfile = ({
               {isDeleting ? (
                 <>
                   <span className="inline-block animate-spin mr-2">⏳</span>
-                  جاري الحذف...
+                  {t("profile.deleting")}
                 </>
               ) : (
                 <>
                   <i className="fas fa-trash-alt"></i>
-                  حذف الملف الرياضي
+                  {t("profile.deletePlayerProfile")}
                 </>
               )}
             </button>

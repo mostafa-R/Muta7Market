@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { motion } from "framer-motion";
@@ -7,24 +8,32 @@ import Joi from "joi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiMail } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-// Joi validation schema
-const forgotPasswordSchema = Joi.object({
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required()
-    .messages({
-      "string.email": "يرجى إدخال بريد إلكتروني صحيح",
-      "string.empty": "البريد الإلكتروني مطلوب",
-      "any.required": "البريد الإلكتروني مطلوب",
-    }),
-});
+// Joi validation schema - We'll update this with i18n in the component
+const getForgotPasswordSchema = (language) =>
+  Joi.object({
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .required()
+      .messages({
+        "string.email":
+          language === "ar"
+            ? "يرجى إدخال بريد إلكتروني صحيح"
+            : "Please enter a valid email",
+        "string.empty":
+          language === "ar" ? "البريد الإلكتروني مطلوب" : "Email is required",
+        "any.required":
+          language === "ar" ? "البريد الإلكتروني مطلوب" : "Email is required",
+      }),
+  });
 
-// Validate function
-const validate = (values) => {
-  const { error } = forgotPasswordSchema.validate(values, {
+// Validate function - We'll use language inside the component
+const getValidate = (language) => (values) => {
+  const schema = getForgotPasswordSchema(language);
+  const { error } = schema.validate(values, {
     abortEarly: false,
   });
   if (!error) return {};
@@ -38,7 +47,8 @@ const validate = (values) => {
 };
 
 export default function ForgotPassword() {
-  const [language, setLanguage] = useState("ar");
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const router = useRouter();
@@ -68,10 +78,12 @@ export default function ForgotPassword() {
 
       // التحقق من النجاح الحقيقي: status 200 و success true
       if (response.status === 200 && response.data.success) {
-        setSubmitMessage(
-          "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني!"
-        );
-        toast.success("تم إرسال رابط إعادة تعيين كلمة المرور بنجاح!");
+        const successMsg =
+          language === "ar"
+            ? "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني!"
+            : "Password reset link has been sent to your email!";
+        setSubmitMessage(successMsg);
+        toast.success(successMsg);
 
         // توجيه بعد تأخير للسماح للمستخدم بقراءة الرسالة
         setTimeout(() => {
@@ -152,16 +164,14 @@ export default function ForgotPassword() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#07074D] mb-2">
-            إعادة تعيين كلمة المرور
+            {t("auth.resetPassword")}
           </h1>
-          <p className="text-gray-600">
-            أدخل بريدك الإلكتروني لإرسال رابط إعادة تعيين كلمة المرور
-          </p>
+          <p className="text-gray-600">{t("auth.resetPasswordDescription")}</p>
         </div>
 
         <Formik
           initialValues={initialValues}
-          validate={validate}
+          validate={getValidate(language)}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting: formikSubmitting, status }) => (
@@ -172,14 +182,18 @@ export default function ForgotPassword() {
                   htmlFor="email"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  البريد الإلكتروني
+                  {t("forms.emailPlaceholder")}
                 </label>
                 <div className="relative">
                   <Field
                     type="email"
                     name="email"
                     id="email"
-                    placeholder="أدخل بريدك الإلكتروني"
+                    placeholder={
+                      language === "ar"
+                        ? "أدخل بريدك الإلكتروني"
+                        : "Enter your email address"
+                    }
                     className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200"
                   />
                   <FiMail className="absolute top-1/2 right-3 transform -translate-y-1/2 text-[#6B7280]" />
@@ -227,10 +241,10 @@ export default function ForgotPassword() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      جاري الإرسال...
+                      {t("common.loading")}
                     </>
                   ) : (
-                    "إرسال"
+                    t("forms.submitButton")
                   )}
                 </button>
               </div>
@@ -241,7 +255,8 @@ export default function ForgotPassword() {
                   href="/signin"
                   className="text-[hsl(var(--primary))] hover:underline text-sm transition-colors duration-200 font-medium"
                 >
-                  العودة إلى تسجيل الدخول
+                  {t("common.back")}{" "}
+                  {language === "ar" ? "إلى تسجيل الدخول" : "to login"}
                 </Link>
               </div>
 
@@ -265,12 +280,14 @@ export default function ForgotPassword() {
         {/* Additional Help */}
         <div className="mt-6 text-center">
           <p className="text-gray-600 text-sm">
-            تذكرت كلمة المرور؟{" "}
+            {language === "ar"
+              ? "تذكرت كلمة المرور؟"
+              : "Remembered your password?"}{" "}
             <Link
               href="/signin"
               className="text-[hsl(var(--primary))] hover:underline font-medium"
             >
-              تسجيل الدخول
+              {language === "ar" ? "تسجيل الدخول" : "Sign In"}
             </Link>
           </p>
         </div>

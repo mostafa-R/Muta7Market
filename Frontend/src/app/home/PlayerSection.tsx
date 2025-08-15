@@ -3,8 +3,9 @@ import axios from "axios";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import PlayerCard from "../component/PlayerCard";
+import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
+import PlayerCard from "../component/PlayerCard";
 
 // واجهة Player المستخدمة في PlayerCard
 interface Player {
@@ -86,7 +87,9 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerSection = () => {
-  // إعداد الحالات
+  const { t } = useTranslation();
+
+  // Setup states
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +107,7 @@ const PlayerSection = () => {
         setPlayers(fetchedPlayers);
         setLoading(false);
       } catch (err) {
-        setError("فشل في جلب بيانات اللاعبين. حاول مرة أخرى لاحقًا.");
+        setError(t("errors.fetchPlayersFailed"));
         setLoading(false);
       }
     };
@@ -119,10 +122,10 @@ const PlayerSection = () => {
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
-              اللاعبون المميزون
+              {t("home.featuredPlayers")}
             </h2>
             <div>
-              <LoadingSpinner/>
+              <LoadingSpinner />
             </div>
           </div>
         </div>
@@ -137,7 +140,7 @@ const PlayerSection = () => {
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
-              اللاعبون المميزون
+              {t("home.featuredPlayers")}
             </h2>
             <p className="text-xl text-red-500 max-w-2xl mx-auto">{error}</p>
           </div>
@@ -151,10 +154,10 @@ const PlayerSection = () => {
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
-            اللاعبون المميزون
+            {t("home.featuredPlayers")}
           </h2>
           <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-            تعرف على أبرز المواهب الرياضية المسجلة في منصتنا
+            {t("home.featuredPlayersDescription")}
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-6">
@@ -169,7 +172,7 @@ const PlayerSection = () => {
               className="inline-flex items-center justify-center bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg text-lg px-8 py-4 hover:bg-[hsl(var(--primary)/0.9)] transition"
             >
               <Users className="w-5 h-5 ml-2" />
-              عرض جميع اللاعبين
+              {t("home.viewAllPlayers")}
             </button>
           </Link>
         </div>

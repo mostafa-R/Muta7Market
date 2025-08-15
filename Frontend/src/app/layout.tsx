@@ -2,21 +2,28 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-import Footer from "./component/Footer";
 import { Noto_Sans_Arabic } from "next/font/google";
-import Script from "next/script"; 
+import Script from "next/script";
+import Footer from "./component/Footer";
 import Navbar from "./component/header";
-import { Providers } from "./providers";
 import WhatsAppButton from "./component/WhatsAppButton";
+import { Providers } from "./providers";
 
-
+// Language support needs to be server-side only imports
+export const metadata: Metadata = {
+  title: "Muta7market",
+  description: "Muta7market - Sports Marketplace",
+  icons: {
+    icon: "/trophy.png",
+  },
+};
 
 const notoSansArabic = Noto_Sans_Arabic({
   subsets: ["arabic"], // Ensure Arabic subset is loaded
   weight: ["300", "400", "500", "600", "700", "800", "900"], // Desired font weights
   display: "swap", // Fallback strategy
+  variable: "--font-arabic",
 });
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,20 +35,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Muta7market",
-  description: "Muta7market",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Lang and direction are set client-side via JavaScript in LanguageProvider
   return (
-    <html lang="ar" className={notoSansArabic.className}>
+    <html lang="en" dir="ltr" className={`${notoSansArabic.variable}`}>
+      <head>
+        {/* Default metadata, will be overridden by client-side language selection */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Script
           src="https://paylink.sa/assets/js/paylink.js"
@@ -49,7 +56,7 @@ export default function RootLayout({
         />
         <Providers>
           <Navbar />
-          {children}
+          <main className="min-h-screen">{children}</main>
           <WhatsAppButton />
           <Footer />
         </Providers>

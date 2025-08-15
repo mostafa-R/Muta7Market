@@ -1,3 +1,5 @@
+"use client";
+
 import AdBanner from "./AdBanner";
 import PlayerSection from "./PlayerSection";
 import SimpleHero from "./SimpleHero";

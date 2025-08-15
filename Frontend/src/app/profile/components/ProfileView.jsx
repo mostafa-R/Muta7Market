@@ -1,3 +1,4 @@
+"use client";
 // components/profile/ProfileView.jsx
 import Image from "next/image";
 import {
@@ -9,7 +10,7 @@ import {
   FaUserTag,
 } from "react-icons/fa";
 
-const ProfileView = ({ user }) => {
+const ProfileView = ({ user, t, language }) => {
   // Helper function to get profile image URL
   const getProfileImageUrl = () => {
     if (!user?.profileImage) return null;
@@ -43,7 +44,7 @@ const ProfileView = ({ user }) => {
       <Icon
         className={`mt-1 flex-shrink-0 ${
           isStatus
-            ? value === "مفعّل" || value === "نشط"
+            ? value === t("profile.activated") || value === t("profile.active")
               ? "text-green-500"
               : "text-red-500"
             : "text-gray-500"
@@ -51,7 +52,7 @@ const ProfileView = ({ user }) => {
       />
       <div className="flex-1">
         <span className="text-gray-600 text-sm font-medium">{label}:</span>
-        {isLink && value && value !== "غير محدد" ? (
+        {isLink && value && value !== t("common.notSpecified") ? (
           <a
             href={value}
             target="_blank"
@@ -62,7 +63,7 @@ const ProfileView = ({ user }) => {
           </a>
         ) : (
           <span className="block text-gray-900 break-words">
-            {value || "غير محدد"}
+            {value || t("common.notSpecified")}
           </span>
         )}
       </div>
@@ -75,7 +76,7 @@ const ProfileView = ({ user }) => {
       <div className="bg-[#00183D] p-6 lg:p-8">
         <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white flex items-center gap-3">
           <FaUser className="text-2xl lg:text-3xl" />
-          الملف الشخصي
+          {t("profile.profile")}
         </h1>
       </div>
 
@@ -88,7 +89,7 @@ const ProfileView = ({ user }) => {
               <div className="w-[120px] h-[120px] rounded-full overflow-hidden border-4 border-gray-200 shadow-lg">
                 <Image
                   src={profileImageUrl}
-                  alt={user?.name || "صورة المستخدم"}
+                  alt={user?.name || t("profile.userImage")}
                   width={120}
                   height={120}
                   className="w-full h-full object-cover"
@@ -124,18 +125,18 @@ const ProfileView = ({ user }) => {
 
           <div className="text-center sm:text-right flex-1">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-              {user?.name || "اسم المستخدم"}
+              {user?.name || t("profile.userName")}
             </h2>
             <p className="text-gray-600 flex items-center justify-center sm:justify-start gap-2">
               <FaEnvelope className="text-sm" />
-              {user?.email || "البريد الإلكتروني"}
+              {user?.email || t("profile.email")}
             </p>
             {user?.role && (
               <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
                 {user.role === "admin"
-                  ? "مدير"
+                  ? t("profile.admin")
                   : user.role === "user"
-                  ? "مستخدم"
+                  ? t("profile.user")
                   : user.role}
               </span>
             )}
@@ -144,114 +145,83 @@ const ProfileView = ({ user }) => {
 
         {/* Information grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InfoItem icon={FaPhone} label="رقم الهاتف" value={user?.phone} />
+          <InfoItem
+            icon={FaPhone}
+            label={t("profile.phone")}
+            value={user?.phone}
+          />
 
           <InfoItem
             icon={FaUserTag}
-            label="النبذة التعريفية"
+            label={t("profile.bio")}
             value={user?.bio}
           />
 
           <InfoItem
             icon={FaCalendar}
-            label="تاريخ إنشاء الحساب"
+            label={t("profile.accountCreationDate")}
             value={
               user?.createdAt
-                ? new Date(user.createdAt).toLocaleDateString("ar-EG", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : "غير محدد"
+                ? new Date(user.createdAt).toLocaleDateString(
+                    language === "ar" ? "ar-EG" : "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  )
+                : t("common.notSpecified")
             }
           />
 
           <InfoItem
             icon={FaCalendar}
-            label="آخر تسجيل دخول"
+            label={t("profile.lastLogin")}
             value={
               user?.lastLogin
-                ? new Date(user.lastLogin).toLocaleDateString("ar-EG", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "غير متوفر"
+                ? new Date(user.lastLogin).toLocaleDateString(
+                    language === "ar" ? "ar-EG" : "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )
+                : t("common.notAvailable")
             }
           />
 
           <InfoItem
             icon={FaCheckCircle}
-            label="حالة البريد الإلكتروني"
-            value={user?.isEmailVerified ? "مفعّل" : "غير مفعّل"}
+            label={t("profile.emailStatus")}
+            value={
+              user?.isEmailVerified
+                ? t("profile.activated")
+                : t("profile.notActivated")
+            }
             isStatus
           />
 
           <InfoItem
             icon={FaCheckCircle}
-            label="حالة رقم الهاتف"
-            value={user?.isPhoneVerified ? "مفعّل" : "غير مفعّل"}
+            label={t("profile.phoneStatus")}
+            value={
+              user?.isPhoneVerified
+                ? t("profile.activated")
+                : t("profile.notActivated")
+            }
             isStatus
           />
 
           <InfoItem
             icon={FaCheckCircle}
-            label="حالة الحساب"
-            value={user?.isActive ? "نشط" : "غير نشط"}
+            label={t("profile.accountStatus")}
+            value={user?.isActive ? t("profile.active") : t("profile.inactive")}
             isStatus
           />
         </div>
-
-        {/* Additional Stats Section */}
-        {/* {user && (
-          <div className="mt-8 pt-8 border-t">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              إحصائيات الحساب
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {user.isEmailVerified && user.isPhoneVerified
-                    ? "100%"
-                    : user.isEmailVerified || user.isPhoneVerified
-                    ? "50%"
-                    : "0%"}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">اكتمال الملف</div>
-              </div>
-
-              <div className="bg-green-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {user.isActive ? "نشط" : "غير نشط"}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">حالة الحساب</div>
-              </div>
-
-              <div className="bg-purple-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {user.role === "admin" ? "مدير" : "مستخدم"}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">نوع الحساب</div>
-              </div>
-
-              <div className="bg-orange-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {user.createdAt
-                    ? Math.floor(
-                        (new Date() - new Date(user.createdAt)) /
-                          (1000 * 60 * 60 * 24)
-                      )
-                    : 0}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  يوم منذ التسجيل
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
       </div>
     </div>
   );

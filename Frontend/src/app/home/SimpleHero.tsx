@@ -29,7 +29,6 @@
 //             </button>
 //           </div> */}
 
-          
 //         </div>
 //       </div>
 //     </section>
@@ -38,13 +37,16 @@
 
 // export default SimpleHero;
 
+"use client";
 
-
+import { useTranslation } from "react-i18next";
 
 const SimpleHero = () => {
+  const { t } = useTranslation();
+
   return (
-    <section className="relative pt-12 text-white mb-10  overflow-hidden">
-      {/* خلفية بالصورة الأولى */}
+    <section className="relative pt-12 text-white mb-10 overflow-hidden">
+      {/* Hero Background Image */}
       <div
         className="absolute inset-0"
         style={{
@@ -58,18 +60,17 @@ const SimpleHero = () => {
         }}
       />
 
-      {/* طبقة شفافة إضافية للتحسين البصري */}
+      {/* Additional transparent layer for visual enhancement */}
       <div className="absolute inset-0 bg-black/20" />
 
-      {/* المحتوى الأصلي */}
+      {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 drop-shadow-2xl">
-            منصة تسويق الرياضيين
+            {t("hero.title")}
           </h1>
           <p className="text-xl md:text-2xl text-gray-200 mb-10 leading-relaxed max-w-3xl mx-auto drop-shadow-lg">
-            منصة شاملة لعرض وتسويق اللاعبين والمدربين من جميع الرياضات. انضم
-            لمجتمع الرياضيين وشارك موهبتك مع العالم واحتفل بإنجازاتك الرياضية.
+            {t("hero.description")}
           </p>
         </div>
       </div>

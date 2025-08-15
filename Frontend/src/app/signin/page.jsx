@@ -6,32 +6,39 @@ import Joi from "joi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import { toast } from "react-toastify";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 // -----------------------------------
 // Joi Validation Schema
 // -----------------------------------
-const loginSchema = Joi.object({
-  email: Joi.string()
-    .required()
-    .email({ tlds: { allow: false } })
-    .messages({
-      "string.email": "يرجى إدخال بريد إلكتروني صحيح",
-      "string.empty": "البريد الإلكتروني مطلوب",
-      "any.required": "البريد الإلكتروني مطلوب",
-    }),
-  password: Joi.string().required().min(8).messages({
-    "string.empty": "كلمة المرور مطلوبة",
-    "string.min": "كلمة المرور يجب أن تكون على الأقل 8 أحرف",
-    "any.required": "كلمة المرور مطلوبة",
-  }),
-});
+const getLoginSchema = (t) =>
+  Joi.object({
+    email: Joi.string()
+      .required()
+      .email({ tlds: { allow: false } })
+      .messages({
+        "string.email": t("validation.emailInvalid"),
+        "string.empty": t("validation.emailRequired"),
+        "any.required": t("validation.emailRequired"),
+      }),
+    password: Joi.string()
+      .required()
+      .min(8)
+      .messages({
+        "string.empty": t("validation.passwordRequired"),
+        "string.min": t("validation.passwordMinLength"),
+        "any.required": t("validation.passwordRequired"),
+      }),
+  });
 
 // -----------------------------------
 // Validate Function
 // -----------------------------------
-const validate = (values) => {
+const getValidate = (t) => (values) => {
+  const loginSchema = getLoginSchema(t);
   const { error } = loginSchema.validate(values, { abortEarly: false });
   if (!error) return {};
 
@@ -46,15 +53,15 @@ const validate = (values) => {
 // -----------------------------------
 // Helper Function to Handle Login Success
 // -----------------------------------
-const handleLoginSuccess = (responseData) => {
+const handleLoginSuccess = (responseData, t) => {
   try {
     // استخراج البيانات من الاستجابة
     const userData = responseData.data?.user || responseData.user;
     const token = responseData.data?.token || responseData.token;
-    
+
     if (!userData || !token) {
       console.error("Invalid response structure:", responseData);
-      throw new Error("بيانات غير صحيحة من السيرفر");
+      throw new Error(t("auth.invalidServerData"));
     }
 
     // تحضير بيانات المستخدم للحفظ
@@ -79,14 +86,14 @@ const handleLoginSuccess = (responseData) => {
     localStorage.setItem("user", JSON.stringify(userToStore));
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("token", token);
-    
+
     // حفظ وقت انتهاء الجلسة (اختياري - 7 أيام مثلاً)
     const expirationTime = new Date();
     expirationTime.setDate(expirationTime.getDate() + 7);
     localStorage.setItem("tokenExpiration", expirationTime.toISOString());
 
     console.log("Login successful, user data stored:", userToStore);
-    
+
     return true;
   } catch (error) {
     console.error("Error handling login success:", error);
@@ -101,6 +108,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
 
   const initialValues = {
     email: "",
@@ -132,10 +141,10 @@ export default function Login() {
       // التحقق من نجاح الاستجابة
       if (res.data && (res.data.success || res.data.data)) {
         // معالجة البيانات وحفظها
-        const loginSuccessful = handleLoginSuccess(res.data);
+        const loginSuccessful = handleLoginSuccess(res.data, t);
 
         if (loginSuccessful) {
-          toast.success("تم تسجيل الدخول بنجاح!");
+          toast.success(t("auth.loginSuccess"));
 
           // تأخير قليل قبل التوجيه للسماح بظهور رسالة النجاح
           setTimeout(() => {
@@ -143,10 +152,10 @@ export default function Login() {
             window.location.href = "/";
           }, 500);
         } else {
-          throw new Error("فشل في معالجة بيانات تسجيل الدخول");
+          throw new Error(t("auth.loginDataProcessingFailed"));
         }
       } else {
-        throw new Error("استجابة غير صحيحة من السيرفر");
+        throw new Error(t("auth.invalidServerResponse"));
       }
     } catch (error) {
       console.error("Login Error:", error);
@@ -164,55 +173,55 @@ export default function Login() {
                 setFieldError(field, errorMessage);
               });
             } else {
-              setStatus(data.message || "البيانات المدخلة غير صحيحة");
-              toast.error(data.message || "البيانات المدخلة غير صحيحة");
+              setStatus(data.message || t("auth.invalidInputData"));
+              toast.error(data.message || t("auth.invalidInputData"));
             }
             break;
 
           case 401:
             // بيانات الدخول غير صحيحة
-            setStatus("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-            toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+            setStatus(t("auth.invalidCredentials"));
+            toast.error(t("auth.invalidCredentials"));
             break;
 
           case 403:
             // الحساب محظور أو غير مفعل
-            setStatus(data.message || "الحساب غير مفعل أو محظور");
-            toast.error(data.message || "الحساب غير مفعل أو محظور");
+            setStatus(data.message || t("auth.accountBlocked"));
+            toast.error(data.message || t("auth.accountBlocked"));
             break;
 
           case 404:
             // المستخدم غير موجود
-            setStatus("لا يوجد حساب بهذا البريد الإلكتروني");
-            toast.error("لا يوجد حساب بهذا البريد الإلكتروني");
+            setStatus(t("auth.userNotFound"));
+            toast.error(t("auth.userNotFound"));
             break;
 
           case 429:
             // محاولات كثيرة
-            setStatus("محاولات كثيرة، يرجى المحاولة لاحقاً");
-            toast.error("محاولات كثيرة، يرجى المحاولة لاحقاً");
+            setStatus(t("auth.tooManyAttempts"));
+            toast.error(t("auth.tooManyAttempts"));
             break;
 
           case 500:
           case 502:
           case 503:
             // خطأ في السيرفر
-            setStatus("حدث خطأ في السيرفر، يرجى المحاولة لاحقاً");
-            toast.error("حدث خطأ في السيرفر، يرجى المحاولة لاحقاً");
+            setStatus(t("auth.serverError"));
+            toast.error(t("auth.serverError"));
             break;
 
           default:
-            setStatus(data.message || "حدث خطأ غير متوقع");
-            toast.error(data.message || "حدث خطأ غير متوقع");
+            setStatus(data.message || t("auth.unexpectedError"));
+            toast.error(data.message || t("auth.unexpectedError"));
         }
       } else if (error.request) {
         // لم يتم الحصول على استجابة من السيرفر
-        setStatus("فشل في الاتصال بالخادم، تحقق من اتصالك بالإنترنت");
-        toast.error("فشل في الاتصال بالخادم، تحقق من اتصالك بالإنترنت");
+        setStatus(t("auth.connectionFailed"));
+        toast.error(t("auth.connectionFailed"));
       } else {
         // خطأ آخر
-        setStatus(error.message || "حدث خطأ غير متوقع");
-        toast.error(error.message || "حدث خطأ غير متوقع");
+        setStatus(error.message || t("auth.unexpectedError"));
+        toast.error(error.message || t("auth.unexpectedError"));
       }
     } finally {
       setIsSubmitting(false);
@@ -223,7 +232,7 @@ export default function Login() {
   return (
     <div
       className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 font-sans-ar"
-      dir="rtl"
+      dir={language === "ar" ? "rtl" : "ltr"}
     >
       <div className="w-full max-w-md">
         {/* Card Container */}
@@ -233,15 +242,17 @@ export default function Login() {
             <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
               <FiLock className="text-3xl text-[hsl(var(--primary))]" />
             </div>
-            <h1 className="text-3xl font-bold text-white">مرحباً بعودتك</h1>
-            <p className="text-white/90 mt-2">سجل دخولك للمتابعة</p>
+            <h1 className="text-3xl font-bold text-white">
+              {t("auth.welcomeBack")}
+            </h1>
+            <p className="text-white/90 mt-2">{t("auth.loginToContinue")}</p>
           </div>
 
           {/* Form */}
           <div className="p-8">
             <Formik
               initialValues={initialValues}
-              validate={validate}
+              validate={getValidate(t)}
               onSubmit={handleSubmit}
             >
               {({
@@ -257,7 +268,7 @@ export default function Login() {
                       htmlFor="email"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
-                      البريد الإلكتروني
+                      {t("auth.email")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 flex items-center pointer-events-none start-0 ps-3">
@@ -271,7 +282,7 @@ export default function Login() {
                         type="email"
                         name="email"
                         id="email"
-                        placeholder="example@email.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         autoComplete="email"
                         className={`w-full rounded-lg border ${
                           errors.email && touched.email
@@ -293,7 +304,7 @@ export default function Login() {
                       htmlFor="password"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
-                      كلمة المرور
+                      {t("auth.password")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 flex items-center pointer-events-none start-0 ps-3">
@@ -309,7 +320,7 @@ export default function Login() {
                         type={showPassword ? "text" : "password"}
                         name="password"
                         id="password"
-                        placeholder="••••••••"
+                        placeholder={t("auth.passwordPlaceholder")}
                         autoComplete="current-password"
                         className={`w-full rounded-lg border ${
                           errors.password && touched.password
@@ -323,8 +334,8 @@ export default function Login() {
                         className="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                         aria-label={
                           showPassword
-                            ? "إخفاء كلمة المرور"
-                            : "إظهار كلمة المرور"
+                            ? t("auth.hidePassword")
+                            : t("auth.showPassword")
                         }
                       >
                         {showPassword ? (
@@ -347,7 +358,7 @@ export default function Login() {
                       href="/forgetpassword"
                       className="text-sm text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 font-medium transition-colors"
                     >
-                      نسيت كلمة المرور؟
+                      {t("auth.forgotPassword")}
                     </Link>
                   </div>
 
@@ -386,10 +397,10 @@ export default function Login() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        جاري تسجيل الدخول...
+                        {t("auth.loggingIn")}
                       </span>
                     ) : (
-                      "تسجيل الدخول"
+                      t("auth.login")
                     )}
                   </button>
 
@@ -399,18 +410,20 @@ export default function Login() {
                       <div className="w-full border-t border-gray-200"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-gray-500">أو</span>
+                      <span className="px-4 bg-white text-gray-500">
+                        {t("common.or")}
+                      </span>
                     </div>
                   </div>
 
                   {/* Sign Up Link */}
                   <div className="text-center">
-                    <span className="text-gray-600">ليس لديك حساب؟</span>{" "}
+                    <span className="text-gray-600">{t("auth.noAccount")}</span>{" "}
                     <Link
                       href="/signup"
                       className="font-semibold text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors"
                     >
-                      سجل الآن
+                      {t("auth.signUpNow")}
                     </Link>
                   </div>
                 </Form>
@@ -422,19 +435,19 @@ export default function Login() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
-            بتسجيل دخولك، فإنك توافق على{" "}
+            {t("auth.byLoggingIn")}{" "}
             <Link
               href="/terms"
               className="text-[hsl(var(--primary))] hover:underline"
             >
-              الشروط والأحكام
+              {t("common.termsAndConditions")}
             </Link>{" "}
-            و{" "}
+            {t("common.and")}{" "}
             <Link
               href="/privacy"
               className="text-[hsl(var(--primary))] hover:underline"
             >
-              سياسة الخصوصية
+              {t("common.privacyPolicy")}
             </Link>
           </p>
         </div>
@@ -442,4 +455,3 @@ export default function Login() {
     </div>
   );
 }
-  

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
 
@@ -98,6 +99,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?jop=coach`;
 
 export default function PlayersPage() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -119,13 +121,13 @@ export default function PlayersPage() {
         setPlayers(fetchedPlayers);
         setLoading(false);
       } catch (err) {
-        setError("فشل في جلب بيانات اللاعبين. حاول مرة أخرى لاحقًا.");
+        setError(t("errors.fetchPlayersFailed"));
         setLoading(false);
       }
     };
 
     fetchPlayers();
-  }, []);
+  }, [t]);
 
   // Get unique values for filters
   const uniqueSports = [...new Set(players.map((player) => player.sport))];
@@ -171,7 +173,7 @@ export default function PlayersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              جميع المدربين
+              {t("coaches.allCoaches")}
             </h1>
             <div>
               <LoadingSpinner />
@@ -189,14 +191,14 @@ export default function PlayersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              جميع المدربين
+              {t("coaches.allCoaches")}
             </h1>
             <p className="text-xl text-red-500 max-w-3xl mx-auto mb-6">
               {error}
             </p>
             <Link href="/">
               <button className="bg-primary text-white rounded px-4 py-2 text-sm flex items-center hover:bg-primary/90 transition">
-                العودة للرئيسية
+                {t("common.backToHome")}
               </button>
             </Link>
           </div>
@@ -210,19 +212,23 @@ export default function PlayersPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            جميع المدربين
+            {t("coaches.allCoaches")}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
-            اكتشف مواهب رياضية متنوعة من جميع أنحاء العالم العربي
+            {t("coaches.discoverTalents")}
           </p>
           <div className="flex items-center justify-center space-x-4 space-x-reverse">
             <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
               <Users className="w-4 h-4" />
-              <span>{players.length} لاعب مسجل</span>
+              <span>
+                {players.length} {t("coaches.registeredCoaches")}
+              </span>
             </span>
             <span className="inline-flex items-center border border-border text-foreground rounded-full px-3 py-1 text-sm font-semibold">
               <Trophy className="w-4 h-4" />
-              <span>{uniqueSports.length} رياضة</span>
+              <span>
+                {uniqueSports.length} {t("coaches.sports")}
+              </span>
             </span>
           </div>
         </div>
@@ -231,7 +237,9 @@ export default function PlayersPage() {
         <div className="bg-card rounded-xl p-6 mb-8 border shadow-card">
           <div className="flex items-center space-x-4 space-x-reverse mb-6">
             <SlidersHorizontal className="w-5 h-5 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">فلترة وبحث</h3>
+            <h3 className="text-lg font-semibold">
+              {t("coaches.filterAndSearch")}
+            </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {/* Search */}
@@ -239,7 +247,7 @@ export default function PlayersPage() {
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <input
                 type="text"
-                placeholder="ابحث باسم اللاعب، الجنسية أو الرياضة..."
+                placeholder={t("coaches.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pr-10 text-right w-full py-2 px-4 rounded-lg border border-border bg-white"
@@ -251,7 +259,7 @@ export default function PlayersPage() {
               onChange={(e) => setSportFilter(e.target.value)}
               className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
             >
-              <option value="all">جميع الرياضات</option>
+              <option value="all">{t("coaches.allSports")}</option>
               {uniqueSports.map((sport) => (
                 <option key={sport} value={sport}>
                   {sport}
@@ -264,10 +272,16 @@ export default function PlayersPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
             >
-              <option value="all">جميع الحالات</option>
-              <option value="Free Agent">حر</option>
-              <option value="Contracted">متعاقد</option>
-              <option value="Transferred">منتقل</option>
+              <option value="all">{t("coaches.statusOptions.all")}</option>
+              <option value="Free Agent">
+                {t("coaches.statusOptions.freeAgent")}
+              </option>
+              <option value="Contracted">
+                {t("coaches.statusOptions.contracted")}
+              </option>
+              <option value="Transferred">
+                {t("coaches.statusOptions.transferred")}
+              </option>
             </select>
             {/* Category Filter */}
             <select
@@ -275,10 +289,12 @@ export default function PlayersPage() {
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
             >
-              <option value="all">جميع الفئات</option>
-              <option value="Elite">نخبة</option>
-              <option value="Professional">محترف</option>
-              <option value="Amateur">هاوي</option>
+              <option value="all">{t("coaches.allCategories")}</option>
+              <option value="Elite">{t("coaches.category.elite")}</option>
+              <option value="Professional">
+                {t("coaches.category.professional")}
+              </option>
+              <option value="Amateur">{t("coaches.category.amateur")}</option>
             </select>
             {/* Nationality Filter */}
             <select
@@ -286,7 +302,7 @@ export default function PlayersPage() {
               onChange={(e) => setNationalityFilter(e.target.value)}
               className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
             >
-              <option value="all">جميع الجنسيات</option>
+              <option value="all">{t("coaches.allNationalities")}</option>
               {uniqueNationalities.map((nationality) => (
                 <option key={nationality} value={nationality}>
                   {nationality}
@@ -302,12 +318,12 @@ export default function PlayersPage() {
               onClick={clearAllFilters}
             >
               <Filter className="w-4 h-4 ml-2" />
-              مسح جميع الفلاتر
+              {t("coaches.clearAllFilters")}
             </button>
             <Link href="/register-profile">
               <button className="bg-primary text-white rounded px-4 py-2 text-sm flex items-center hover:bg-primary/90 transition">
                 <UserPlus className="w-4 h-4 ml-2" />
-                سجل كمدرب
+                {t("user.registerAsCoach")}
               </button>
             </Link>
           </div>
@@ -316,18 +332,21 @@ export default function PlayersPage() {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            عرض {filteredPlayers.length} من أصل {players.length} لاعب
+            {t("coaches.showingResults", {
+              filtered: filteredPlayers.length,
+              total: players.length,
+            })}
           </p>
           {filteredPlayers.length !== players.length && (
             <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
-              تم تطبيق فلاتر
+              {t("coaches.filtersApplied")}
             </span>
           )}
         </div>
 
         {/* Players Grid */}
         {filteredPlayers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="flex flex-wrap justify-center gap-6">
             {filteredPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} />
             ))}
@@ -336,10 +355,10 @@ export default function PlayersPage() {
           <div className="text-center py-12">
             <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">
-              لم يتم العثور على لاعبين
+              {t("sports.results.noResultsTitle")}
             </h3>
             <p className="text-muted-foreground mb-6">
-              جرب تغيير معايير البحث أو الفلاتر للعثور على لاعبين
+              {t("coaches.tryChangingFilters")}
             </p>
             <button
               type="button"
@@ -347,7 +366,7 @@ export default function PlayersPage() {
               onClick={clearAllFilters}
             >
               <Filter className="w-4 h-4 ml-2" />
-              مسح جميع الفلاتر
+              {t("coaches.clearAllFilters")}
             </button>
           </div>
         )}

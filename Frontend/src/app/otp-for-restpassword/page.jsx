@@ -1,39 +1,49 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import Joi from "joi";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, Suspense } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiLock } from "react-icons/fi";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../component/LoadingSpinner";
 
 // ------------------------------
-// Joi schema
+// Joi schema with language support
 // ------------------------------
-const otpSchema = Joi.object({
-  otp: Joi.string()
-    .pattern(/^\d{6}$/)
-    .required()
-    .messages({
-      "string.empty": "الرجاء إدخال رمز التحقق",
-      "string.pattern.base": "الرجاء إدخال رمز تحقق صحيح مكون من 6 أرقام",
-      "any.required": "رمز التحقق مطلوب",
-    }),
-  password: Joi.string().min(8).required().messages({
-    "string.empty": "الرجاء إدخال كلمة المرور",
-    "string.min": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
-  }),
-  confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
-    "any.only": "كلمة المرور وتأكيدها غير متطابقين",
-    "string.empty": "الرجاء إدخال تأكيد كلمة المرور",
-  }),
-});
+const getOtpSchema = (t) =>
+  Joi.object({
+    otp: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        "string.empty": t("otp.pleaseEnterOtp"),
+        "string.pattern.base": t("otp.pleaseEnterValid6DigitCode"),
+        "any.required": t("otp.otpRequired"),
+      }),
+    password: Joi.string()
+      .min(8)
+      .required()
+      .messages({
+        "string.empty": t("auth.pleaseEnterPassword"),
+        "string.min": t("auth.passwordMinLength"),
+      }),
+    confirmPassword: Joi.string()
+      .valid(Joi.ref("password"))
+      .required()
+      .messages({
+        "any.only": t("auth.passwordsDoNotMatch"),
+        "string.empty": t("auth.pleaseConfirmPassword"),
+      }),
+  });
 
-const validate = (values) => {
-  const { error } = otpSchema.validate(values, { abortEarly: false });
+const getValidate = (t) => (values) => {
+  const schema = getOtpSchema(t);
+  const { error } = schema.validate(values, { abortEarly: false });
   if (!error) return {};
   const errors = {};
   for (const d of error.details) errors[d.path[0]] = d.message;
@@ -54,6 +64,8 @@ const pickMsg = (x) => {
 };
 
 function OTPForResetPasswordContent() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [resendDisabled, setResendDisabled] = useState(false);
@@ -104,7 +116,7 @@ function OTPForResetPasswordContent() {
         const msg =
           pickMsg(data?.error) ||
           pickMsg(data?.message) ||
-          "فشل في إرسال رمز التحقق الجديد";
+          t("otp.failedToSendNewCode");
         toast.error(msg);
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -113,11 +125,9 @@ function OTPForResetPasswordContent() {
         return;
       }
 
-      toast.success(
-        pickMsg(data?.message) || "تم إرسال رمز التحقق الجديد بنجاح!"
-      );
+      toast.success(pickMsg(data?.message) || t("otp.newCodeSentSuccessfully"));
     } catch {
-      toast.error("فشل في إرسال رمز التحقق الجديد");
+      toast.error(t("otp.failedToSendNewCode"));
       clearInterval(intervalRef.current);
       intervalRef.current = null;
       setResendDisabled(false);
@@ -161,7 +171,7 @@ function OTPForResetPasswordContent() {
         const msg =
           pickMsg(data?.error) ||
           pickMsg(data?.message) ||
-          "حدث خطأ أثناء إعادة التعيين";
+          t("auth.resetPasswordError");
         setFieldError("otp", msg);
         setStatus(msg);
         setSubmitMessage(msg);
@@ -169,7 +179,7 @@ function OTPForResetPasswordContent() {
       }
 
       const successMsg =
-        pickMsg(data?.message) || "تم إعادة تعيين كلمة المرور بنجاح!";
+        pickMsg(data?.message) || t("auth.passwordResetSuccess");
       setSubmitMessage(successMsg);
       toast.success(successMsg);
       resetForm();
@@ -180,7 +190,7 @@ function OTPForResetPasswordContent() {
         pickMsg(data?.error) ||
         pickMsg(data?.message) ||
         pickMsg(data) ||
-        "حدث خطأ غير متوقع";
+        t("errors.unexpectedError");
       setFieldError("otp", msg);
       setStatus(msg);
       setSubmitMessage(msg);
@@ -193,22 +203,20 @@ function OTPForResetPasswordContent() {
   return (
     <div
       className="flex items-center justify-center p-12 min-h-screen bg-gray-50"
-      dir="rtl"
+      dir={language === "ar" ? "rtl" : "ltr"}
     >
       <div className="mx-auto w-full max-w-[550px] bg-white rounded-lg shadow-lg p-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#07074D] mb-2">
-            إعادة تعيين كلمة المرور
+            {t("auth.resetPassword")}
           </h1>
-          <p className="text-gray-600">
-            تم إرسال رمز التحقق إلى بريدك الإلكتروني
-          </p>
+          <p className="text-gray-600">{t("otp.codeSentToEmail")}</p>
         </div>
 
         <Formik
           initialValues={initialValues}
-          validate={validate}
+          validate={getValidate(t)}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting: formikSubmitting, status }) => (
@@ -219,14 +227,14 @@ function OTPForResetPasswordContent() {
                   htmlFor="otp"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  رمز التحقق
+                  {t("otp.verificationCode")}
                 </label>
                 <div className="relative">
                   <Field
                     type="text"
                     name="otp"
                     id="otp"
-                    placeholder="أدخل رمز التحقق (6 أرقام)"
+                    placeholder={t("otp.enter6DigitCode")}
                     maxLength="6"
                     className="w-full rounded-md border border-[#e0e0e0] bg.white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
                     style={{ letterSpacing: "0.5em" }}
@@ -249,13 +257,13 @@ function OTPForResetPasswordContent() {
                   htmlFor="password"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  كلمة المرور الجديدة
+                  {t("auth.newPassword")}
                 </label>
                 <Field
                   type="password"
                   name="password"
                   id="password"
-                  placeholder="أدخل كلمة المرور الجديدة"
+                  placeholder={t("auth.enterNewPassword")}
                   className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline.none focus:border-[hsl(var(--primary))] focus:shadow-md"
                 />
                 <ErrorMessage
@@ -271,13 +279,13 @@ function OTPForResetPasswordContent() {
                   htmlFor="confirmPassword"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  تأكيد كلمة المرور
+                  {t("auth.confirmPassword")}
                 </label>
                 <Field
                   type="password"
                   name="confirmPassword"
                   id="confirmPassword"
-                  placeholder="أعد إدخال كلمة المرور"
+                  placeholder={t("auth.reEnterPassword")}
                   className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline.none focus:border-[hsl(var(--primary))] focus:shadow-md"
                 />
                 <ErrorMessage
@@ -323,10 +331,10 @@ function OTPForResetPasswordContent() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      جاري التحقق...
+                      {t("common.verifying")}
                     </div>
                   ) : (
-                    "تأكيد وإعادة التعيين"
+                    t("auth.confirmAndReset")
                   )}
                 </button>
               </div>
@@ -337,7 +345,7 @@ function OTPForResetPasswordContent() {
                   href="/signin"
                   className="text-[hsl(var(--primary))] hover:underline text-sm font-medium transition-colors.duration-200"
                 >
-                  العودة لتسجيل الدخول
+                  {t("auth.backToLogin")}
                 </Link>
               </div>
 
@@ -361,7 +369,7 @@ function OTPForResetPasswordContent() {
         {/* Resend OTP */}
         <div className="mt-6 text-center">
           <p className="text-gray-600 text-sm">
-            لم تستلم الرمز؟{" "}
+            {t("otp.didNotReceiveCode")}{" "}
             <button
               type="button"
               disabled={resendDisabled}
@@ -373,8 +381,8 @@ function OTPForResetPasswordContent() {
               onClick={handleResendOTP}
             >
               {resendDisabled
-                ? `إعادة الإرسال (${resendCountdown})`
-                : "إعادة الإرسال"}
+                ? `${t("otp.resend")} (${resendCountdown})`
+                : t("otp.resend")}
             </button>
           </p>
         </div>
@@ -384,8 +392,15 @@ function OTPForResetPasswordContent() {
 }
 
 export default function OTPForResetPassword() {
+  // Using Suspense with a language-aware component
   return (
-    <Suspense fallback={<div className="flex items-center justify-center p-12 min-h-screen bg-gray-50"><LoadingSpinner /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-12 min-h-screen bg-gray-50">
+          <LoadingSpinner />
+        </div>
+      }
+    >
       <OTPForResetPasswordContent />
     </Suspense>
   );
