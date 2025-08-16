@@ -860,7 +860,7 @@ export default function PaymentBtn() {
     const promise = (async () => {
       const body = {
         type: "promote_player",
-        currency: "USD",
+        currency: "SAR",
         description: "Player Registration Subscription",
         metadata: {
           name: user?.name || "",
@@ -904,7 +904,8 @@ export default function PaymentBtn() {
 
       setPaymentId(pId);
       setPaymentUrl(url);
-      setShowPaymentModal(true);
+      // Open Paylink hosted page directly in same tab for best UX
+      window.location.href = url;
       return "تم إنشاء الفاتورة بنجاح";
     })();
 
