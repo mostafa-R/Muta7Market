@@ -42,11 +42,11 @@ export const NOTIFICATION_TYPES = {
 };
 
 export const PRICING = {
-  ADD_OFFER: 100, // SAR
-  PROMOTE_OFFER_PER_DAY: 50, // SAR
-  UNLOCK_CONTACT: 25, // SAR
-  ACTIVATE_USER: 200, // SAR - one-time activation to view all players' contacts
-  PROMOTE_PLAYER: 155, // USD - for player registration
+  ADD_OFFER: 55, // SAR
+  PROMOTE_OFFER_PER_DAY: 55, // SAR
+  UNLOCK_CONTACT: 55, // SAR
+  ACTIVATE_USER: 55, // SAR - one-time activation to view all players' contacts
+  PROMOTE_PLAYER: 55, // USD - for player registration
   PROMOTE_COACH: 55, // USD - for coach registration
 };
 

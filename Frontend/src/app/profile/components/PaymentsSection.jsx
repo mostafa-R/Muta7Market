@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
 import { toast } from "react-toastify";
 
-const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
+const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language }) => {
   let isUserInactive = false;
   try {
     const u = JSON.parse(typeof window !== 'undefined' ? (localStorage.getItem('user') || '{}') : '{}');
@@ -193,15 +193,23 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
     };
 
     if (isPaymentRecord) {
-      const STATIC_PRICING = {
-        add_offer: Number(process.env.NEXT_PUBLIC_PRICE_ADD_OFFER) || 100,
-        promote_offer: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_OFFER) || 50,
-        unlock_contact: Number(process.env.NEXT_PUBLIC_PRICE_UNLOCK_CONTACT) || 25,
-        activate_user: Number(process.env.NEXT_PUBLIC_PRICE_ACTIVATE_USER) || 200,
-        promote_player: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_PLAYER) || 155,
-        promote_coach: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_COACH) || 55,
+      const STATIC_PRICING = pricing || {
+        ADD_OFFER: Number(process.env.NEXT_PUBLIC_PRICE_ADD_OFFER),
+        PROMOTE_OFFER_PER_DAY: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_OFFER),
+        UNLOCK_CONTACT: Number(process.env.NEXT_PUBLIC_PRICE_UNLOCK_CONTACT),
+        ACTIVATE_USER: Number(process.env.NEXT_PUBLIC_PRICE_ACTIVATE_USER),
+        PROMOTE_PLAYER: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_PLAYER),
+        PROMOTE_COACH: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_COACH),
       };
-      const displayAmount = STATIC_PRICING[safePayment.type] ?? safePayment.amount;
+      const typeToKey = {
+        add_offer: 'ADD_OFFER',
+        promote_offer: 'PROMOTE_OFFER_PER_DAY',
+        unlock_contact: 'UNLOCK_CONTACT',
+        activate_user: 'ACTIVATE_USER',
+        promote_player: 'PROMOTE_PLAYER',
+        promote_coach: 'PROMOTE_COACH',
+      };
+      const displayAmount = STATIC_PRICING[typeToKey[safePayment.type]] ?? safePayment.amount;
       const status = String(safePayment.status || "").toLowerCase();
       const canPay = ["pending", "failed", "cancelled", "canceled"].includes(status);
       return (
@@ -210,9 +218,9 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
             <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
               {safePayment.type?.split("_")[0]?.[0]?.toUpperCase() || "P"}
             </div>
-            <div className="w-full">
-              <div className="text-left">
-                <h3 className="font-semibold text-lg">
+            <div className="w-full flex">
+              <div className="flex-1">
+                <h3 className="font-b text-lg">
                   {t("payment.type", { defaultValue: "Type" })}: {safePayment.type}
                 </h3>
                 <div className="text-white/80 text-sm">
@@ -220,7 +228,7 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
                 </div>
               </div>
             </div>
-            <div className="text-right">
+            <div className="flex ">
               <div className="text-2xl font-bold">{displayAmount} {safePayment.currency}</div>
             </div>
           </div>

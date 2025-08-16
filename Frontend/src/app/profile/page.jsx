@@ -30,6 +30,7 @@ const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [pendingPayments, setPendingPayments] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [pricing, setPricing] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -160,6 +161,15 @@ const UserProfile = () => {
     }
   }, []);
 
+  const fetchPricing = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/config/pricing`);
+      setPricing(res.data?.data || null);
+    } catch (e) {
+      // ignore; frontend will fallback
+    }
+  }, []);
+
   const fetchPlayerData = useCallback(async () => {
     setIsLoading(true);
     setError("");
@@ -214,7 +224,8 @@ const UserProfile = () => {
     fetchUserData();
     fetchPendingPayments();
     fetchPlayerData();
-  }, [fetchUserData, fetchPendingPayments, fetchPlayerData]);
+    fetchPricing();
+  }, [fetchUserData, fetchPendingPayments, fetchPlayerData, fetchPricing]);
 
   // Handle Paylink return (/?pid=...&paid=1)
   useEffect(() => {
@@ -446,6 +457,7 @@ const UserProfile = () => {
               <PaymentsSection
                 payments={pendingPayments}
                 invoices={invoices}
+                pricing={pricing}
                 router={router}
                 t={t}
                 language={language}

@@ -8,6 +8,7 @@ import offerRoutes from './offer.routes.js';
 import playerRoutes from './player.routes.js';
 import userRoutes from './user.routes.js';
 import paymentRoutes from './payment.routes.js';
+import { PRICING } from '../config/constants.js';
 
 const router = Router();
 
@@ -20,6 +21,14 @@ router.use('/coaches', coachRoutes);
 router.use('/offers', offerRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payments', paymentRoutes);
+
+// Public pricing endpoint for frontend to fetch static prices
+router.get('/config/pricing', (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: PRICING,
+  });
+});
 
 // Test Email Route
 router.get('/test-email', async (req, res) => {
