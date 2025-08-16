@@ -744,7 +744,7 @@ const PlayerProfile = () => {
               <CardContent className="space-y-4">
                 {!isUserActive && (
                   <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                    {t("Available for paid user") || "Activate your account to view contact information. One-time payment (55 SAR)."}
+                    { "Activate your account to view contact information. One-time payment (55 SAR)."}
                   </div>
                 )}
                 <Button

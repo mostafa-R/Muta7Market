@@ -50,6 +50,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* OneSignal SDK */}
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+        />
+        <Script id="onesignal-init" strategy="afterInteractive">
+          {`
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+              appId: "b8f45ad2-ae38-46e2-a160-069a90d04b92",
+            });
+          });
+        `}
+        </Script>
+
         <Script
           src="https://paylink.sa/assets/js/paylink.js"
           strategy="afterInteractive"

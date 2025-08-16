@@ -629,16 +629,12 @@ export const simulateSuccess = asyncHandler(async (req, res) => {
   };
   payment.status = PAYMENT_STATUS.COMPLETED;
 
-  // Activate entities based on type (mimic production behavior)
+  // Activate player profile if exists (mimic production behavior)
   try {
-    if (payment.type === "activate_user") {
-      await User.findByIdAndUpdate(payment.user, { isActive: true });
-    } else if (payment.type === "promote_player") {
-      const player = await Player.findOne({ user: payment.user });
-      if (player) {
-        player.isActive = true;
-        await player.save();
-      }
+    const player = await Player.findOne({ user: payment.user });
+    if (player) {
+      player.isActive = true;
+      await player.save();
     }
   } catch {}
 
