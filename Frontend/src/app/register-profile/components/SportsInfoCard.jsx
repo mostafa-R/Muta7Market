@@ -14,15 +14,18 @@ import {
 } from "@/app/component/ui/select";
 import { get } from "lodash";
 import { Trophy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { sportsOptions } from "../types/constants";
 
 export const SportsInfoCard = ({ formik }) => {
+  const { t } = useTranslation();
+
   return (
     <Card className="border-0 shadow-card bg-white">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2 space-x-reverse">
           <Trophy className="w-5 h-5 text-primary mr-2 ml-2" />
-          <span>المعلومات الرياضية</span>
+          <span>{t("registerProfile.form.sportsInfo.title")}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -34,7 +37,8 @@ export const SportsInfoCard = ({ formik }) => {
               className="flex items-center text-base font-medium"
             >
               <span className="flex items-center">
-                الرياضة <span className="text-red-500 mx-1">*</span>
+                {t("registerProfile.form.sportsInfo.sport")}{" "}
+                <span className="text-red-500 mx-1">*</span>
               </span>
             </Label>
             <Select
@@ -57,12 +61,16 @@ export const SportsInfoCard = ({ formik }) => {
                     : "border-gray-200 hover:border-blue-400"
                 }`}
               >
-                <SelectValue placeholder="اختر رياضتك" />
+                <SelectValue
+                  placeholder={t(
+                    "registerProfile.form.sportsInfo.sportPlaceholder"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent className="max-h-80">
                 {sportsOptions.map((sport) => (
                   <SelectItem key={sport.value} value={sport.value}>
-                    {sport.label}
+                    {t(sport.name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -75,7 +83,7 @@ export const SportsInfoCard = ({ formik }) => {
             ) : (
               !formik.values.gameSelected && (
                 <div className="text-gray-500 text-xs mt-1">
-                  يرجى اختيار الرياضة التي تمارسها
+                  {t("registerProfile.form.sportsInfo.sportPlaceholder")}
                 </div>
               )
             )}
@@ -87,7 +95,7 @@ export const SportsInfoCard = ({ formik }) => {
               htmlFor="position"
               className="flex items-center text-base font-medium"
             >
-              <span>المركز/التخصص</span>
+              <span>{t("registerProfile.form.sportsInfo.position")}</span>
               <span className="text-xs text-gray-500 mr-2">(اختياري)</span>
             </Label>
             <input
@@ -96,11 +104,13 @@ export const SportsInfoCard = ({ formik }) => {
               value={formik.values.position || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              placeholder="مثال: مهاجم، حارس مرمى، مدرب لياقة"
+              placeholder={t(
+                "registerProfile.form.sportsInfo.positionPlaceholder"
+              )}
               className="w-full h-11 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
             />
             <div className="text-gray-500 text-xs mt-1">
-              أدخل تخصصك الرياضي أو مركزك في الفريق
+              {t("registerProfile.form.sportsInfo.positionPlaceholder")}
             </div>
           </div>
 
@@ -111,7 +121,8 @@ export const SportsInfoCard = ({ formik }) => {
               className="flex items-center text-base font-medium"
             >
               <span className="flex items-center">
-                الفئة <span className="text-red-500 mx-1">*</span>
+                {t("registerProfile.form.sportsInfo.category")}{" "}
+                <span className="text-red-500 mx-1">*</span>
               </span>
             </Label>
             <Select
@@ -134,14 +145,18 @@ export const SportsInfoCard = ({ formik }) => {
                     : "border-gray-200 hover:border-blue-400"
                 }`}
               >
-                <SelectValue placeholder="اختر فئتك" />
+                <SelectValue
+                  placeholder={t(
+                    "registerProfile.form.sportsInfo.categoryPlaceholder"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="player" className="py-2 text-base">
-                  لاعب
+                  {t("registerProfile.form.sportsInfo.player")}
                 </SelectItem>
                 <SelectItem value="coach" className="py-2 text-base">
-                  مدرب
+                  {t("registerProfile.form.sportsInfo.coach")}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -153,7 +168,7 @@ export const SportsInfoCard = ({ formik }) => {
             ) : (
               !formik.values.jopSelected && (
                 <div className="text-gray-500 text-xs mt-1">
-                  يرجى تحديد الفئة التي تنتمي إليها
+                  {t("registerProfile.form.sportsInfo.categoryPlaceholder")}
                 </div>
               )
             )}
@@ -166,7 +181,8 @@ export const SportsInfoCard = ({ formik }) => {
               className="flex items-center text-base font-medium"
             >
               <span className="flex items-center">
-                الحالة الحالية <span className="text-red-500 mx-1">*</span>
+                {t("registerProfile.form.sportsInfo.currentStatus")}{" "}
+                <span className="text-red-500 mx-1">*</span>
               </span>
             </Label>
             <Select
@@ -189,17 +205,21 @@ export const SportsInfoCard = ({ formik }) => {
                     : "border-gray-200 hover:border-blue-400"
                 }`}
               >
-                <SelectValue placeholder="اختر حالتك" />
+                <SelectValue
+                  placeholder={t(
+                    "registerProfile.form.sportsInfo.currentStatusPlaceholder"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="available" className="py-2 text-base">
-                  حر (بحث عن فريق)
+                  {t("registerProfile.form.sportsInfo.available")}
                 </SelectItem>
                 <SelectItem value="contracted" className="py-2 text-base">
-                  متعاقد
+                  {t("registerProfile.form.sportsInfo.contracted")}
                 </SelectItem>
                 <SelectItem value="transferred" className="py-2 text-base">
-                  منتقل مؤخرًا
+                  {t("registerProfile.form.sportsInfo.transferred")}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -211,7 +231,9 @@ export const SportsInfoCard = ({ formik }) => {
             ) : (
               !formik.values.statusSelected && (
                 <div className="text-gray-500 text-xs mt-1">
-                  يرجى اختيار حالتك التعاقدية الحالية
+                  {t(
+                    "registerProfile.form.sportsInfo.currentStatusPlaceholder"
+                  )}
                 </div>
               )
             )}
@@ -223,7 +245,7 @@ export const SportsInfoCard = ({ formik }) => {
               htmlFor="experience"
               className="flex items-center text-base font-medium"
             >
-              <span>سنوات الخبرة</span>
+              <span>{t("registerProfile.form.sportsInfo.experience")}</span>
               <span className="text-xs text-gray-500 mr-2">(اختياري)</span>
             </Label>
             <input
@@ -235,7 +257,9 @@ export const SportsInfoCard = ({ formik }) => {
               value={formik.values.experience || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              placeholder="عدد سنوات ممارسة الرياضة"
+              placeholder={t(
+                "registerProfile.form.sportsInfo.experiencePlaceholder"
+              )}
               className="w-full h-11 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
             />
             {get(formik.touched, "experience") &&
@@ -245,7 +269,7 @@ export const SportsInfoCard = ({ formik }) => {
               </div>
             ) : (
               <div className="text-gray-500 text-xs mt-1">
-                أدخل عدد سنوات خبرتك في هذه الرياضة
+                {t("registerProfile.form.sportsInfo.experiencePlaceholder")}
               </div>
             )}
           </div>
@@ -271,10 +295,11 @@ export const SportsInfoCard = ({ formik }) => {
               </svg>
             </div>
             <div>
-              <h4 className="font-medium text-blue-800 mb-1">معلومات مهمة</h4>
+              <h4 className="font-medium text-blue-800 mb-1">
+                {t("registerProfile.form.sportsInfo.importantInfo")}
+              </h4>
               <p className="text-sm text-blue-700">
-                تأكد من اختيار جميع الحقول المطلوبة (المميزة بعلامة *) بشكل
-                صريح، حتى لو كانت القيم الافتراضية تناسبك.
+                {t("registerProfile.form.sportsInfo.importantInfoText")}
               </p>
             </div>
           </div>

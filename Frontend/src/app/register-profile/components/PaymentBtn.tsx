@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 type UserLS = {
@@ -35,6 +36,7 @@ const PaymentModal = ({
   paymentUrl: string;
   onSuccess: () => void;
 }) => {
+  const { t } = useTranslation();
   const [selectedMethod, setSelectedMethod] = useState("credit_card");
   const [formData, setFormData] = useState({
     cardNumber: "",
@@ -103,9 +105,9 @@ const PaymentModal = ({
               <CreditCard size={28} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">إتمام الدفع</h2>
+              <h2 className="text-2xl font-bold">{t("payment.title")}</h2>
               <p className="text-white/90 text-sm mt-1">
-                أكمل عملية الدفع لتفعيل اشتراكك
+                {t("payment.subtitle")}
               </p>
             </div>
           </div>
@@ -122,16 +124,20 @@ const PaymentModal = ({
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    تسجيل لاعب محترف
+                    {t("payment.summary.title")}
                   </h3>
-                  <p className="text-sm text-gray-600">اشتراك</p>
+                  <p className="text-sm text-gray-600">
+                    {t("payment.summary.type")}
+                  </p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-[#00183D]">55 USD</div>
+                <div className="text-3xl font-bold text-[#00183D]">
+                  {t("payment.summary.amount")}
+                </div>
                 <div className="flex items-center gap-2 text-green-600 text-sm mt-1">
                   <Shield size={14} />
-                  <span>دفع آمن</span>
+                  <span>{t("payment.summary.securePayment")}</span>
                 </div>
               </div>
             </div>
@@ -140,7 +146,7 @@ const PaymentModal = ({
           {/* Payment Methods */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              اختر طريقة الدفع
+              {t("payment.methods.title")}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               <button
@@ -163,9 +169,11 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      بطاقة ائتمان
+                      {t("payment.methods.creditCard.title")}
                     </h4>
-                    <p className="text-xs text-gray-600">Visa, Mastercard</p>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.creditCard.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "credit_card" && (
@@ -192,8 +200,12 @@ const PaymentModal = ({
                     <CreditCard size={20} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 text-sm">مدى</h4>
-                    <p className="text-xs text-gray-600">Mada Card</p>
+                    <h4 className="font-semibold text-gray-900 text-sm">
+                      {t("payment.methods.mada.title")}
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.mada.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "mada" && (
@@ -221,9 +233,11 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      STC Pay
+                      {t("payment.methods.stcPay.title")}
                     </h4>
-                    <p className="text-xs text-gray-600">محفظة رقمية</p>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.stcPay.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "stc_pay" && (
@@ -251,9 +265,11 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      Apple Pay
+                      {t("payment.methods.applePay.title")}
                     </h4>
-                    <p className="text-xs text-gray-600">آبل باي</p>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.applePay.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "apple_pay" && (
@@ -281,9 +297,11 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      urPay
+                      {t("payment.methods.urpay.title")}
                     </h4>
-                    <p className="text-xs text-gray-600">يور باي</p>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.urpay.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "urpay" && (
@@ -311,9 +329,11 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      Alinma Pay
+                      {t("payment.methods.alinmaPay.title")}
                     </h4>
-                    <p className="text-xs text-gray-600">الإنماء باي</p>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.alinmaPay.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "alinma_pay" && (
@@ -341,9 +361,11 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      بنك الرياض
+                      {t("payment.methods.riyadhBank.title")}
                     </h4>
-                    <p className="text-xs text-gray-600">Riyadh Bank</p>
+                    <p className="text-xs text-gray-600">
+                      {t("payment.methods.riyadhBank.subtitle")}
+                    </p>
                   </div>
                 </div>
                 {selectedMethod === "riyadh_bank" && (
@@ -371,10 +393,10 @@ const PaymentModal = ({
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      تحويل بنكي
+                      {t("payment.methods.bankTransfer.title")}
                     </h4>
                     <p className="text-xs text-gray-600">
-                      جميع البنوك السعودية
+                      {t("payment.methods.bankTransfer.subtitle")}
                     </p>
                   </div>
                 </div>
@@ -393,15 +415,15 @@ const PaymentModal = ({
                 <h4 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <CreditCard size={20} className="text-[#00183D]" />
                   {selectedMethod === "mada"
-                    ? "معلومات بطاقة مدى"
-                    : "معلومات البطاقة"}
+                    ? t("payment.form.madaInfo")
+                    : t("payment.form.cardInfo")}
                 </h4>
 
                 <div className="space-y-5">
                   {/* Card Number */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      رقم البطاقة
+                      {t("payment.form.cardNumber")}
                     </label>
                     <div className="relative">
                       <input
@@ -413,7 +435,7 @@ const PaymentModal = ({
                             formatCardNumber(e.target.value)
                           )
                         }
-                        placeholder="1234 5678 9012 3456"
+                        placeholder={t("payment.form.cardNumberPlaceholder")}
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00183D]/20 focus:border-[#00183D] transition-all text-lg font-mono"
                         maxLength={19}
                         required
@@ -429,7 +451,7 @@ const PaymentModal = ({
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">
-                        تاريخ الانتهاء
+                        {t("payment.form.expiryDate")}
                       </label>
                       <div className="relative">
                         <input
@@ -441,7 +463,7 @@ const PaymentModal = ({
                               formatExpiryDate(e.target.value)
                             )
                           }
-                          placeholder="MM/YY"
+                          placeholder={t("payment.form.expiryDatePlaceholder")}
                           className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00183D]/20 focus:border-[#00183D] transition-all text-lg font-mono"
                           maxLength={5}
                           required
@@ -454,7 +476,7 @@ const PaymentModal = ({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">
-                        رمز الأمان
+                        {t("payment.form.cvv")}
                       </label>
                       <div className="relative">
                         <input
@@ -466,7 +488,7 @@ const PaymentModal = ({
                               e.target.value.replace(/\D/g, "")
                             )
                           }
-                          placeholder="123"
+                          placeholder={t("payment.form.cvvPlaceholder")}
                           className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00183D]/20 focus:border-[#00183D] transition-all text-lg font-mono"
                           maxLength={4}
                           required
@@ -482,7 +504,7 @@ const PaymentModal = ({
                   {/* Cardholder Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      اسم حامل البطاقة
+                      {t("payment.form.cardholderName")}
                     </label>
                     <div className="relative">
                       <input
@@ -491,7 +513,9 @@ const PaymentModal = ({
                         onChange={(e) =>
                           handleInputChange("holderName", e.target.value)
                         }
-                        placeholder="الاسم كما يظهر على البطاقة"
+                        placeholder={t(
+                          "payment.form.cardholderNamePlaceholder"
+                        )}
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00183D]/20 focus:border-[#00183D] transition-all text-lg"
                         required
                       />
@@ -509,19 +533,19 @@ const PaymentModal = ({
               <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-6">
                 <h4 className="font-semibold text-purple-900 mb-4 flex items-center gap-2">
                   <Phone size={20} />
-                  الدفع عبر STC Pay
+                  {t("payment.stcPay.title")}
                 </h4>
                 <div className="bg-white rounded-xl p-5">
                   <div className="text-center py-6">
                     <div className="text-6xl mb-4">📱</div>
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      ادفع بسهولة عبر STC Pay
+                      {t("payment.stcPay.subtitle")}
                     </h5>
                     <p className="text-sm text-gray-600 mb-4">
-                      سيتم توجيهك لتطبيق STC Pay لإتمام عملية الدفع بأمان
+                      {t("payment.stcPay.description")}
                     </p>
                     <div className="bg-purple-100 rounded-lg p-3 text-sm text-purple-800">
-                      💡 تأكد من تثبيت تطبيق STC Pay على هاتفك
+                      💡 {t("payment.stcPay.tip")}
                     </div>
                   </div>
                 </div>
@@ -532,19 +556,19 @@ const PaymentModal = ({
               <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-6">
                 <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Shield size={20} />
-                  الدفع عبر Apple Pay
+                  {t("payment.applePay.title")}
                 </h4>
                 <div className="bg-white rounded-xl p-5">
                   <div className="text-center py-6">
                     <div className="text-6xl mb-4">🍎</div>
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      ادفع بلمسة واحدة
+                      {t("payment.applePay.subtitle")}
                     </h5>
                     <p className="text-sm text-gray-600 mb-4">
-                      استخدم Touch ID أو Face ID لإتمام عملية الدفع بسرعة وأمان
+                      {t("payment.applePay.description")}
                     </p>
                     <div className="bg-blue-100 rounded-lg p-3 text-sm text-blue-800">
-                      📲 متاح على أجهزة iPhone و iPad و Mac
+                      📲 {t("payment.applePay.tip")}
                     </div>
                   </div>
                 </div>
@@ -557,26 +581,23 @@ const PaymentModal = ({
               <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6">
                 <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
                   <Building2 size={20} />
-                  {selectedMethod === "urpay" && "الدفع عبر urPay"}
-                  {selectedMethod === "alinma_pay" && "الدفع عبر الإنماء باي"}
-                  {selectedMethod === "riyadh_bank" && "الدفع عبر بنك الرياض"}
+                  {selectedMethod === "urpay" && t("payment.bankApps.title")}
+                  {selectedMethod === "alinma_pay" &&
+                    t("payment.bankApps.title")}
+                  {selectedMethod === "riyadh_bank" &&
+                    t("payment.bankApps.title")}
                 </h4>
                 <div className="bg-white rounded-xl p-5">
                   <div className="text-center py-6">
                     <div className="text-6xl mb-4">🏦</div>
                     <h5 className="font-semibold text-gray-900 mb-2">
-                      {selectedMethod === "urpay" &&
-                        "ادفع عبر محفظة urPay الرقمية"}
-                      {selectedMethod === "alinma_pay" &&
-                        "ادفع عبر تطبيق الإنماء"}
-                      {selectedMethod === "riyadh_bank" &&
-                        "ادفع عبر تطبيق بنك الرياض"}
+                      {t("payment.bankApps.description")}
                     </h5>
                     <p className="text-sm text-gray-600 mb-4">
-                      سيتم توجيهك لتطبيق البنك لإتمام عملية الدفع بأمان تام
+                      {t("payment.bankApps.description")}
                     </p>
                     <div className="bg-green-100 rounded-lg p-3 text-sm text-green-800">
-                      ✅ دفع آمن ومعتمد من البنك المركزي السعودي
+                      ✅ {t("payment.bankApps.tip")}
                     </div>
                   </div>
                 </div>
@@ -587,37 +608,45 @@ const PaymentModal = ({
               <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6">
                 <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
                   <Building2 size={20} />
-                  تفاصيل التحويل البنكي
+                  {t("payment.bankTransfer.title")}
                 </h4>
                 <div className="bg-white rounded-xl p-5 space-y-3">
                   <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600">اسم البنك:</span>
+                    <span className="text-gray-600">
+                      {t("payment.bankTransfer.bankName")}
+                    </span>
                     <span className="font-semibold text-gray-900">
-                      البنك الأهلي السعودي
+                      {t("payment.bankTransfer.bankValue")}
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600">رقم الحساب:</span>
+                    <span className="text-gray-600">
+                      {t("payment.bankTransfer.accountNumber")}
+                    </span>
                     <span className="font-mono text-gray-900">
-                      SA1234567890123456789
+                      {t("payment.bankTransfer.accountValue")}
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600">اسم المستفيد:</span>
+                    <span className="text-gray-600">
+                      {t("payment.bankTransfer.beneficiary")}
+                    </span>
                     <span className="font-semibold text-gray-900">
-                      شركة موقع اللاعبين
+                      {t("payment.bankTransfer.beneficiaryValue")}
                     </span>
                   </div>
                   <div className="flex justify-between py-2">
-                    <span className="text-gray-600">المبلغ:</span>
+                    <span className="text-gray-600">
+                      {t("payment.bankTransfer.amount")}
+                    </span>
                     <span className="font-bold text-[#00183D] text-lg">
-                      55 USD
+                      {t("payment.bankTransfer.amountValue")}
                     </span>
                   </div>
                 </div>
                 <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
                   <p className="text-sm text-yellow-800 font-medium">
-                    📱 يرجى إرسال إيصال التحويل عبر الواتساب: 966501234567
+                    📱 {t("payment.bankTransfer.whatsappNote")}
                   </p>
                 </div>
               </div>
@@ -627,12 +656,12 @@ const PaymentModal = ({
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <h4 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 <Mail size={20} className="text-[#00183D]" />
-                معلومات الاتصال
+                {t("payment.form.contactInfo")}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    البريد الإلكتروني
+                    {t("payment.form.email")}
                   </label>
                   <div className="relative">
                     <input
@@ -641,7 +670,7 @@ const PaymentModal = ({
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      placeholder="example@email.com"
+                      placeholder={t("payment.form.emailPlaceholder")}
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00183D]/20 focus:border-[#00183D] transition-all"
                       required
                     />
@@ -653,7 +682,7 @@ const PaymentModal = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    رقم الهاتف
+                    {t("payment.form.phone")}
                   </label>
                   <div className="relative">
                     <input
@@ -662,7 +691,7 @@ const PaymentModal = ({
                       onChange={(e) =>
                         handleInputChange("phone", e.target.value)
                       }
-                      placeholder="966501234567"
+                      placeholder={t("payment.form.phonePlaceholder")}
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00183D]/20 focus:border-[#00183D] transition-all"
                       required
                     />
@@ -689,17 +718,17 @@ const PaymentModal = ({
                 {isProcessing ? (
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                    جارٍ معالجة الدفع...
+                    {t("payment.submit.processing")}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-3">
                     <CreditCard size={22} />
                     {selectedMethod === "credit_card" ||
                     selectedMethod === "mada"
-                      ? "ادفع 55 USD الآن"
+                      ? t("payment.submit.payNow")
                       : selectedMethod === "bank_transfer"
-                      ? "تأكيد التحويل"
-                      : "ادفع 55 USD"}
+                      ? t("payment.submit.confirmTransfer")
+                      : t("payment.submit.pay")}
                   </div>
                 )}
               </button>
@@ -714,12 +743,10 @@ const PaymentModal = ({
               </div>
               <div>
                 <h4 className="font-semibold text-green-900 mb-2">
-                  الأمان والحماية
+                  {t("payment.security.title")}
                 </h4>
                 <p className="text-sm text-green-700 leading-relaxed">
-                  جميع المعاملات محمية بتشفير SSL 256-bit وتتم معالجتها عبر
-                  Paylink.sa المعتمد من البنك المركزي السعودي. بياناتك آمنة
-                  100%.
+                  {t("payment.security.description")}
                 </p>
               </div>
             </div>
@@ -738,6 +765,8 @@ const SuccessModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
 
   return (
@@ -748,11 +777,10 @@ const SuccessModal = ({
             <CheckCircle className="text-green-600" size={40} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            تم الدفع بنجاح! 🎉
+            {t("payment.success.title")}
           </h2>
           <p className="text-gray-600 leading-relaxed">
-            تم تفعيل اشتراكك بنجاح. يمكنك الآن الاستفادة من جميع المزايا
-            والخدمات المتاحة.
+            {t("payment.success.description")}
           </p>
         </div>
 
@@ -760,7 +788,7 @@ const SuccessModal = ({
           onClick={onClose}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
         >
-          متابعة إلى الملف الشخصي
+          {t("payment.success.button")}
         </button>
       </div>
     </div>
@@ -768,6 +796,7 @@ const SuccessModal = ({
 };
 
 export default function PaymentBtn() {
+  const { t } = useTranslation();
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
   const FRONT_BASE =
@@ -919,7 +948,9 @@ export default function PaymentBtn() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             )}
             <CreditCard size={22} />
-            {loading ? "جارٍ التفعيل…" : "ادفع 55 USD - تفعيل الاشتراك"}
+            {loading
+              ? "جارٍ التفعيل…"
+              : t("registerProfile.success.upgradeButton")}
           </button>
 
           {/* Floating animation element */}

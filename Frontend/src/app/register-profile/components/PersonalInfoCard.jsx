@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/component/ui/avatar";
 import { Input } from "@/app/component/ui/input";
 import { get } from "lodash";
 import { Camera, Upload, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../../component/ui/button";
 import { Label } from "../../component/ui/label";
 import { RadioGroup, RadioGroupItem } from "../../component/ui/radio-group";
@@ -21,6 +22,8 @@ export const PersonalInfoCard = ({
   ALLOWED_IMAGE_TYPES,
   MAX_FILE_SIZE,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       {/* Card title */}
@@ -28,7 +31,9 @@ export const PersonalInfoCard = ({
         <div className="bg-blue-50 p-2 rounded-full">
           <User className="w-5 h-5 text-blue-600" />
         </div>
-        <h2 className="text-xl font-semibold">المعلومات الشخصية</h2>
+        <h2 className="text-xl font-semibold">
+          {t("registerProfile.form.personalInfo.title")}
+        </h2>
       </div>
 
       <div className="space-y-6">
@@ -48,7 +53,7 @@ export const PersonalInfoCard = ({
               htmlFor="profile-picture"
               className="text-sm font-medium block mb-2"
             >
-              الصورة الشخصية
+              {t("registerProfile.form.personalInfo.profilePicture")}
             </Label>
             <div className="mt-2 flex flex-col sm:flex-row gap-2 items-center justify-center sm:justify-start">
               <Input
@@ -96,10 +101,10 @@ export const PersonalInfoCard = ({
                 className="bg-white hover:bg-blue-50 border-blue-200 transition-colors flex-shrink-0"
               >
                 <Upload className="w-4 h-4 ml-2" />
-                رفع صورة
+                {t("registerProfile.form.personalInfo.uploadImage")}
               </Button>
               <p className="text-xs text-gray-500">
-                JPG, PNG أو GIF (حد أقصى 10MB)
+                {t("registerProfile.form.personalInfo.allowedImageFormats")}
               </p>
             </div>
             {get(formik.errors, "profilePictureFile") && (
@@ -117,17 +122,19 @@ export const PersonalInfoCard = ({
         {/* Personal information form fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
-            label="الاسم الكامل"
+            label={t("registerProfile.form.personalInfo.fullName")}
             name="name"
-            placeholder="أدخل اسمك الكامل"
+            placeholder={t(
+              "registerProfile.form.personalInfo.fullNamePlaceholder"
+            )}
             required
             formik={formik}
           />
           <FormField
-            label="العمر"
+            label={t("registerProfile.form.personalInfo.age")}
             name="age"
             type="number"
-            placeholder="أدخل عمرك"
+            placeholder={t("registerProfile.form.personalInfo.agePlaceholder")}
             required
             formik={formik}
           />
@@ -135,7 +142,8 @@ export const PersonalInfoCard = ({
           {/* Gender selection with improved radio buttons */}
           <div className="space-y-3">
             <Label htmlFor="gender-group" className="flex items-center">
-              الجنس <span className="text-red-500 mr-1">*</span>
+              {t("registerProfile.form.personalInfo.gender")}{" "}
+              <span className="text-red-500 mr-1">*</span>
             </Label>
             <RadioGroup
               id="gender-group"
@@ -147,13 +155,13 @@ export const PersonalInfoCard = ({
               <div className="flex items-center space-x-2 space-x-reverse px-4 py-2 border rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer">
                 <RadioGroupItem value="male" id="male" />
                 <Label htmlFor="male" className="cursor-pointer">
-                  ذكر
+                  {t("registerProfile.form.personalInfo.male")}
                 </Label>
               </div>
               <div className="flex items-center space-x-2 space-x-reverse px-4 py-2 border rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer">
                 <RadioGroupItem value="female" id="female" />
                 <Label htmlFor="female" className="cursor-pointer">
-                  أنثى
+                  {t("registerProfile.form.personalInfo.female")}
                 </Label>
               </div>
             </RadioGroup>
@@ -171,7 +179,8 @@ export const PersonalInfoCard = ({
           {/* Nationality selection with improved styling */}
           <div className="space-y-2">
             <Label htmlFor="nationality" className="flex items-center">
-              الجنسية <span className="text-red-500 mr-1">*</span>
+              {t("registerProfile.form.personalInfo.nationality")}{" "}
+              <span className="text-red-500 mr-1">*</span>
             </Label>
             <Select
               value={formik.values.nationality}
@@ -184,12 +193,16 @@ export const PersonalInfoCard = ({
                 id="nationality"
                 className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50"
               >
-                <SelectValue placeholder="اختر جنسيتك" />
+                <SelectValue
+                  placeholder={t(
+                    "registerProfile.form.personalInfo.nationalityPlaceholder"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent className="max-h-80">
                 {nationalities.map((nationality) => (
-                  <SelectItem key={nationality} value={nationality}>
-                    {nationality}
+                  <SelectItem key={nationality.id} value={nationality.value}>
+                    {t(nationality.name)}
                   </SelectItem>
                 ))}
               </SelectContent>

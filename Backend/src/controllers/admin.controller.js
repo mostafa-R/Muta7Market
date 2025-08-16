@@ -373,7 +373,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   if (soft === "true") {
     // Soft delete - just deactivate
     const player = await Player.findByIdAndUpdate(
-      id,
+      id, 
       { isActive: false, deletedAt: new Date() },
       { new: true }
     ).populate("user", "name email phone");

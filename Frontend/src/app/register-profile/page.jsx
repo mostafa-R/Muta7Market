@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Save, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "sonner";
@@ -46,19 +47,32 @@ const getErrorMessage = (error, fallback) => {
   );
 };
 
-// Form sections for multi-step navigation - titles hardcoded in Arabic
-const formSections = [
-  { id: "personal", title: "معلومات شخصية", icon: "👤" },
-  { id: "sports", title: "معلومات رياضية", icon: "🏆" },
-  { id: "financial", title: "معلومات مالية", icon: "💰" },
-  { id: "transfer", title: "معلومات انتقال", icon: "🔄" },
-  { id: "contact", title: "معلومات الاتصال", icon: "📞" },
-  { id: "social", title: "روابط اجتماعية", icon: "🔗" },
-  { id: "media", title: "وسائط", icon: "📎" },
-  { id: "terms", title: "الشروط", icon: "📝" },
-];
-
 export default function Page() {
+  const { t } = useTranslation();
+
+  // Form sections for multi-step navigation - using translations
+  const formSections = [
+    {
+      id: "personal",
+      title: t("registerProfile.sections.personal"),
+      icon: "👤",
+    },
+    { id: "sports", title: t("registerProfile.sections.sports"), icon: "🏆" },
+    {
+      id: "financial",
+      title: t("registerProfile.sections.financial"),
+      icon: "💰",
+    },
+    {
+      id: "transfer",
+      title: t("registerProfile.sections.transfer"),
+      icon: "🔄",
+    },
+    { id: "contact", title: t("registerProfile.sections.contact"), icon: "📞" },
+    { id: "social", title: t("registerProfile.sections.social"), icon: "🔗" },
+    { id: "media", title: t("registerProfile.sections.media"), icon: "📎" },
+    { id: "terms", title: t("registerProfile.sections.terms"), icon: "📝" },
+  ];
   const router = useRouter();
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
@@ -1100,17 +1114,19 @@ export default function Page() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <div className="w-full md:w-auto mb-4 md:mb-0">
             <h1 className="text-3xl font-bold text-[#00183D] text-right">
-              {idParam ? "تعديل ملف اللاعب" : "إنشاء ملف لاعب جديد"}
+              {idParam
+                ? t("registerProfile.editPlayerProfile")
+                : t("registerProfile.createNewPlayerProfile")}
             </h1>
             <p className="text-gray-500 mt-1 text-right">
-              أكمل المعلومات المطلوبة أدناه
+              {t("registerProfile.completeRequiredInformation")}
             </p>
           </div>
           <Link
             href="/profile"
             className="flex items-center text-[#00183D] hover:text-[#002c65] font-medium transition-colors"
           >
-            العودة إلى الملف الشخصي
+            {t("registerProfile.backToProfile")}
             <ArrowLeft className="w-4 h-4 mr-1" />
           </Link>
         </div>
@@ -1119,7 +1135,8 @@ export default function Page() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">
-              الخطوة {currentStep + 1}/{formSections.length}
+              {t("registerProfile.progress.step")} {currentStep + 1}/
+              {formSections.length}
             </span>
             <span className="text-sm font-medium text-gray-600">
               {formSections[currentStep].title}
@@ -1168,7 +1185,9 @@ export default function Page() {
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
             <LoadingSpinner />
-            <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
+            <p className="mt-4 text-gray-600">
+              {t("registerProfile.loadingData")}
+            </p>
           </div>
         )}
 
@@ -1188,7 +1207,7 @@ export default function Page() {
                       onClick={prevStep}
                       className="flex-1 sm:flex-initial flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-colors duration-200"
                     >
-                      الخطوة السابقة
+                      {t("registerProfile.navigation.previousStep")}
                       <ChevronRight className="w-4 h-4 mr-1" />
                     </Button>
                   )}
@@ -1200,7 +1219,7 @@ export default function Page() {
                       className="flex-1 sm:flex-initial flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-colors duration-200"
                     >
                       <X className="w-4 h-4 mr-1" />
-                      إعادة تعيين
+                      {t("registerProfile.navigation.resetForm")}
                     </Button>
                   )}
                 </div>
@@ -1212,7 +1231,7 @@ export default function Page() {
                       onClick={nextStep}
                       className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
                     >
-                      الخطوة التالية
+                      {t("registerProfile.navigation.nextStep")}
                       <ChevronLeft className="w-4 h-4 mr-1" />
                     </Button>
                   ) : (
@@ -1222,7 +1241,9 @@ export default function Page() {
                       className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
                     >
                       <Save className="w-4 h-4 mr-1" />
-                      {idParam ? "حفظ التغييرات" : "إنشاء الملف"}
+                      {idParam
+                        ? t("registerProfile.navigation.saveChanges")
+                        : t("registerProfile.navigation.createProfile")}
                     </Button>
                   )}
                 </div>
@@ -1233,8 +1254,13 @@ export default function Page() {
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="mt-6 p-4 bg-white rounded-xl shadow-sm">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium">جاري الرفع...</span>
-                  <span className="text-sm font-medium">{uploadProgress}%</span>
+                  <span className="text-sm font-medium">
+                    {t("registerProfile.upload.progress")}
+                  </span>
+                  <span className="text-sm font-medium">
+                    {uploadProgress}
+                    {t("registerProfile.upload.percent")}
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -1267,10 +1293,10 @@ export default function Page() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-emerald-700">
-                      تم إنشاء الملف بنجاح
+                      {t("registerProfile.success.title")}
                     </h3>
                     <p className="text-emerald-600">
-                      يمكنك الترقية لزيادة الرؤية
+                      {t("registerProfile.success.description")}
                     </p>
                   </div>
                 </div>

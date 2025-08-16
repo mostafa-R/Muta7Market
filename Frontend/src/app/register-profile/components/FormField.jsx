@@ -3,6 +3,7 @@ import { Input } from "@/app/component/ui/input";
 import { Label } from "@/app/component/ui/label";
 import { get } from "lodash";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const FormField = ({
   label,
@@ -12,10 +13,16 @@ export const FormField = ({
   required,
   formik,
 }) => {
+  const { t } = useTranslation();
   const { values, errors, touched, handleChange, handleBlur } = formik;
   const [isFocused, setIsFocused] = useState(false);
   const hasError = get(touched, name) && get(errors, name);
   const fieldValue = get(values, name) || "";
+
+  // Handle translation for label and placeholder
+  const translatedLabel = typeof label === "string" ? t(label) : label;
+  const translatedPlaceholder =
+    typeof placeholder === "string" ? t(placeholder) : placeholder;
 
   return (
     <div className="space-y-2">
@@ -23,14 +30,15 @@ export const FormField = ({
         htmlFor={name}
         className="flex items-center text-sm font-medium mb-1"
       >
-        {label} {required && <span className="text-red-500 mr-1">*</span>}
+        {translatedLabel}{" "}
+        {required && <span className="text-red-500 mr-1">*</span>}
       </Label>
       <div className="relative">
         <Input
           id={name}
           name={name}
           type={type}
-          placeholder={placeholder}
+          placeholder={translatedPlaceholder}
           value={fieldValue}
           onChange={handleChange}
           onBlur={(e) => {

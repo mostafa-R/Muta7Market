@@ -4,8 +4,11 @@ import { Checkbox } from "@/app/component/ui/checkbox";
 import { Label } from "@/app/component/ui/label";
 import { get } from "lodash";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export const TermsCard = ({ formik }) => {
+  const { t } = useTranslation();
+
   // Force field touched when component renders to show validation immediately
   React.useEffect(() => {
     formik.setFieldTouched("agreeToTerms", true, false);
@@ -29,18 +32,10 @@ export const TermsCard = ({ formik }) => {
                 htmlFor="terms"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                أوافق على{" "}
-                <span className="text-primary hover:underline cursor-pointer">
-                  الشروط والأحكام
-                </span>{" "}
-                و
-                <span className="text-primary hover:underline cursor-pointer">
-                  {" "}
-                  سياسة الخصوصية
-                </span>
+                {t("registerProfile.form.terms.agreeToTerms")}
               </Label>
               <p className="text-xs text-muted-foreground mt-1">
-                بتسجيلك تُوافق على عرض بياناتك للأندية والمدربين المهتمين
+                {t("registerProfile.form.terms.description")}
               </p>
               {get(formik.touched, "agreeToTerms") &&
                 get(formik.errors, "agreeToTerms") && (

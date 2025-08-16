@@ -368,6 +368,145 @@
       "social": "Social Links",
       "media": "Media & Documents",
       "terms": "Terms & Conditions"
+    },
+    "form": {
+      "personalInfo": {
+        "title": "Personal Information",
+        "profilePicture": "Profile Picture",
+        "uploadImage": "Upload Image",
+        "chooseImage": "Choose Image",
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Enter your full name",
+        "age": "Age",
+        "agePlaceholder": "Enter your age",
+        "gender": "Gender",
+        "male": "Male",
+        "female": "Female",
+        "nationality": "Nationality",
+        "nationalityPlaceholder": "Select your nationality",
+        "allowedImageFormats": "JPG, PNG or GIF (max 10MB)"
+      },
+      "sportsInfo": {
+        "title": "Sports Information",
+        "sport": "Sport",
+        "sportPlaceholder": "Choose your sport",
+        "position": "Position/Specialization",
+        "positionPlaceholder": "Example: Forward, Goalkeeper, Fitness Coach",
+        "category": "Category",
+        "categoryPlaceholder": "Choose your category",
+        "player": "Player",
+        "coach": "Coach",
+        "currentStatus": "Current Status",
+        "currentStatusPlaceholder": "Choose your current status",
+        "available": "Available (Looking for team)",
+        "contracted": "Contracted",
+        "transferred": "Recently Transferred",
+        "experience": "Years of Experience",
+        "experiencePlaceholder": "Number of years practicing this sport",
+        "importantInfo": "Important Information",
+        "importantInfoText": "Make sure to select all required fields (marked with *) explicitly, even if the default values suit you."
+      },
+      "financialInfo": {
+        "title": "Financial Information (Optional)",
+        "monthlySalary": "Monthly Salary Required (in Riyals)",
+        "monthlySalaryPlaceholder": "Example: 5000",
+        "annualContract": "Annual Contract Value (in Riyals)",
+        "annualContractPlaceholder": "Example: 60000",
+        "contractEndDate": "Current Contract End Date"
+      },
+      "transferInfo": {
+        "title": "Transfer Information (Optional)",
+        "transferredToClub": "Club Transferred To",
+        "transferredToClubPlaceholder": "Name of the club transferred to",
+        "transferDate": "Transfer Date",
+        "transferAmount": "Transfer Value (in Riyals)",
+        "transferAmountPlaceholder": "Transfer amount"
+      },
+      "contactInfo": {
+        "title": "Contact Information",
+        "hideContactInfo": "Hide contact information from everyone",
+        "email": "Email",
+        "emailPlaceholder": "Email address",
+        "phone": "Phone Number",
+        "phonePlaceholder": "Phone number",
+        "agentInfo": "Agent Information (Optional)",
+        "agentName": "Agent Name",
+        "agentNamePlaceholder": "Agent name",
+        "agentPhone": "Agent Phone",
+        "agentPhonePlaceholder": "Agent phone number",
+        "agentEmail": "Agent Email",
+        "agentEmailPlaceholder": "Agent email address"
+      },
+      "socialLinks": {
+        "title": "Social Media Links",
+        "instagram": "Instagram",
+        "instagramPlaceholder": "Instagram link",
+        "twitter": "Twitter",
+        "twitterPlaceholder": "Twitter link",
+        "whatsapp": "WhatsApp",
+        "whatsappPlaceholder": "WhatsApp number",
+        "youtube": "YouTube",
+        "youtubePlaceholder": "YouTube link"
+      },
+      "mediaUpload": {
+        "title": "Media & Documents",
+        "sportsVideos": {
+          "title": "Upload Sports Videos",
+          "description": "You can upload videos in MP4, MOV, AVI format",
+          "maxSize": "Maximum file size: 10 MB",
+          "selectVideos": "Choose Videos",
+          "uploadedVideo": "Uploaded Video",
+          "new": "New",
+          "uploaded": "Uploaded",
+          "processing": "Processing",
+          "view": "View",
+          "remove": "Remove"
+        },
+        "supportingDocuments": {
+          "title": "Upload Supporting Documents",
+          "description": "You can upload documents in PDF, DOC or DOCX format",
+          "maxSize": "Maximum file size: 10 MB",
+          "selectFiles": "Choose Files",
+          "uploadedDocument": "Uploaded Document"
+        }
+      },
+      "terms": {
+        "title": "Terms & Conditions",
+        "agreeToTerms": "I agree to the Terms and Conditions and Privacy Policy",
+        "description": "By registering, you agree to display your data to interested clubs and coaches"
+      }
+    },
+    "validation": {
+      "nameRequired": "Name is required - please enter your name",
+      "ageRequired": "Age is required and must be a number",
+      "ageRange": "Age must be between 15 and 50",
+      "genderRequired": "Gender is required - please select gender",
+      "nationalityRequired": "Nationality is required - please select nationality",
+      "sportRequired": "Sport is required - please select a sport",
+      "categoryRequired": "Category is required - please select category explicitly",
+      "statusRequired": "Current status is required - please select status explicitly",
+      "termsRequired": "You must agree to the Terms and Conditions",
+      "sportRequiredForProfile": "Sport is required - cannot create profile without selecting sport"
+    },
+    "navigation": {
+      "previousStep": "Previous Step",
+      "nextStep": "Next Step",
+      "resetForm": "Reset",
+      "createProfile": "Create Profile",
+      "saveChanges": "Save Changes"
+    },
+    "progress": {
+      "step": "Step",
+      "of": "of"
+    },
+    "success": {
+      "title": "Profile Created Successfully",
+      "description": "You can now upgrade to get more visibility",
+      "upgradeButton": "Pay 55 USD - Activate Subscription"
+    },
+    "upload": {
+      "progress": "Uploading...",
+      "percent": "%"
     }
   },
   "players": {
@@ -513,5 +652,131 @@
     "invalidAgentPhoneNumber": "Invalid agent phone number",
     "invalidAgentEmail": "Invalid agent email",
     "sportMinLength": "Sport must be at least 2 characters"
+  },
+  "payment": {
+    "title": "Complete Payment",
+    "subtitle": "Complete the payment process to activate your subscription",
+    "summary": {
+      "title": "Professional Player Registration",
+      "type": "Subscription",
+      "amount": "55 USD",
+      "securePayment": "Secure Payment"
+    },
+    "methods": {
+      "title": "Choose Payment Method",
+      "creditCard": {
+        "title": "Credit Card",
+        "subtitle": "Visa, Mastercard"
+      },
+      "mada": {
+        "title": "Mada",
+        "subtitle": "Mada Card"
+      },
+      "stcPay": {
+        "title": "STC Pay",
+        "subtitle": "Digital Wallet"
+      },
+      "applePay": {
+        "title": "Apple Pay",
+        "subtitle": "Apple Pay"
+      },
+      "urpay": {
+        "title": "urPay",
+        "subtitle": "urPay"
+      },
+      "alinmaPay": {
+        "title": "Alinma Pay",
+        "subtitle": "Alinma App"
+      },
+      "riyadhBank": {
+        "title": "Riyadh Bank",
+        "subtitle": "Riyadh Bank"
+      },
+      "bankTransfer": {
+        "title": "Bank Transfer",
+        "subtitle": "All Saudi Banks"
+      }
+    },
+    "form": {
+      "cardInfo": "Card Information",
+      "madaInfo": "Mada Card Information",
+      "cardNumber": "Card Number",
+      "cardNumberPlaceholder": "1234 5678 9012 3456",
+      "expiryDate": "Expiry Date",
+      "expiryDatePlaceholder": "MM/YY",
+      "cvv": "Security Code",
+      "cvvPlaceholder": "123",
+      "cardholderName": "Cardholder Name",
+      "cardholderNamePlaceholder": "Name as it appears on the card",
+      "contactInfo": "Contact Information",
+      "email": "Email",
+      "emailPlaceholder": "example@email.com",
+      "phone": "Phone",
+      "phonePlaceholder": "966501234567"
+    },
+    "stcPay": {
+      "title": "Pay via STC Pay",
+      "subtitle": "Pay easily via STC Pay",
+      "description": "You will be redirected to the STC Pay app to complete the payment securely",
+      "tip": "Make sure you have the STC Pay app installed on your phone"
+    },
+    "applePay": {
+      "title": "Pay via Apple Pay",
+      "subtitle": "Pay with one touch",
+      "description": "Use Touch ID or Face ID to complete payment quickly and securely",
+      "tip": "Available on iPhone, iPad and Mac devices"
+    },
+    "bankApps": {
+      "title": "Pay via Bank App",
+      "description": "You will be redirected to the bank app to complete the payment securely",
+      "tip": "Secure payment approved by the Saudi Central Bank"
+    },
+    "bankTransfer": {
+      "title": "Bank Transfer Details",
+      "bankName": "Bank Name:",
+      "bankValue": "Saudi National Bank",
+      "accountNumber": "Account Number:",
+      "accountValue": "SA1234567890123456789",
+      "beneficiary": "Beneficiary:",
+      "beneficiaryValue": "Muta7Market Company",
+      "amount": "Amount:",
+      "amountValue": "55 USD",
+      "whatsappNote": "Please send the transfer receipt via WhatsApp: 966501234567"
+    },
+    "security": {
+      "title": "Security & Protection",
+      "description": "All transactions are protected by 256-bit SSL encryption and processed through Paylink.sa, approved by the Saudi Central Bank. Your data is 100% secure."
+    },
+    "submit": {
+      "payNow": "Pay 55 USD Now",
+      "confirmTransfer": "Confirm Transfer",
+      "processing": "Processing Payment...",
+      "pay": "Pay 55 USD"
+    },
+    "success": {
+      "title": "Payment Successful! 🎉",
+      "description": "Your subscription has been successfully activated. You can now enjoy all available features and services.",
+      "button": "Continue to Profile"
+    }
+  },
+  "nationalities": {
+    "saudi": "Saudi Arabia",
+    "uae": "United Arab Emirates",
+    "egypt": "Egypt",
+    "morocco": "Morocco",
+    "kuwait": "Kuwait",
+    "qatar": "Qatar",
+    "bahrain": "Bahrain",
+    "oman": "Oman",
+    "jordan": "Jordan",
+    "lebanon": "Lebanon",
+    "syria": "Syria",
+    "iraq": "Iraq",
+    "libya": "Libya",
+    "tunisia": "Tunisia",
+    "algeria": "Algeria",
+    "sudan": "Sudan",
+    "yemen": "Yemen",
+    "other": "Other"
   }
 }

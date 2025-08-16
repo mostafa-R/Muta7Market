@@ -3,6 +3,7 @@ import { Badge } from "@/app/component/ui/badge";
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
 import { get } from "lodash";
+import { useTranslation } from "react-i18next";
 import { FiFile, FiFilePlus, FiUpload, FiVideo, FiX } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 
@@ -13,6 +14,8 @@ export const MediaUploadCard = ({
   ALLOWED_DOCUMENT_TYPES,
   MAX_FILE_SIZE,
 }) => {
+  const { t } = useTranslation();
+
   const removeVideo = () => {
     const video = formik.values.media.video;
     if (video && video.file && video.url?.startsWith("blob:")) {
@@ -54,7 +57,9 @@ export const MediaUploadCard = ({
           <div className="bg-purple-50 p-2 rounded-full">
             <FiVideo className="w-5 h-5 text-purple-600" />
           </div>
-          <h2 className="text-xl font-semibold">رفع فيديوهات رياضية</h2>
+          <h2 className="text-xl font-semibold">
+            {t("registerProfile.form.mediaUpload.sportsVideos.title")}
+          </h2>
           <Badge variant="outline" className="mr-auto font-normal text-xs">
             اختياري
           </Badge>
@@ -67,10 +72,10 @@ export const MediaUploadCard = ({
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                يمكنك رفع فيديوهات بتنسيق MP4, MOV, AVI
+                {t("registerProfile.form.mediaUpload.sportsVideos.description")}
               </p>
               <p className="text-xs text-gray-500">
-                الحد الأقصى للملف: 10 ميجابايت
+                {t("registerProfile.form.mediaUpload.sportsVideos.maxSize")}
               </p>
             </div>
 
@@ -122,7 +127,7 @@ export const MediaUploadCard = ({
               className="bg-white border-purple-200 text-purple-700 hover:bg-purple-50 transition-colors focus:ring-2 focus:ring-purple-200 focus:ring-opacity-50"
             >
               <FiUpload className="w-4 h-4 ml-2" />
-              اختيار فيديوهات
+              {t("registerProfile.form.mediaUpload.sportsVideos.selectVideos")}
             </Button>
           </div>
         </div>
@@ -142,7 +147,7 @@ export const MediaUploadCard = ({
           <div className="space-y-3">
             <h3 className="text-base font-medium flex items-center gap-2">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
-              الفيديو المرفوع
+              {t("registerProfile.form.mediaUpload.sportsVideos.uploadedVideo")}
             </h3>
             <div>
               <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group transition-all hover:shadow-md">
@@ -176,10 +181,14 @@ export const MediaUploadCard = ({
                       }`}
                     >
                       {formik.values.media.video.file
-                        ? "جديد"
+                        ? t("registerProfile.form.mediaUpload.sportsVideos.new")
                         : formik.values.media.video.publicId
-                        ? "تم الرفع"
-                        : "جاري المعالجة"}
+                        ? t(
+                            "registerProfile.form.mediaUpload.sportsVideos.uploaded"
+                          )
+                        : t(
+                            "registerProfile.form.mediaUpload.sportsVideos.processing"
+                          )}
                     </Badge>
                   </div>
 
@@ -191,7 +200,9 @@ export const MediaUploadCard = ({
                       aria-label="إزالة الفيديو"
                     >
                       <FiX className="w-3 h-3 mr-1" />
-                      إزالة
+                      {t(
+                        "registerProfile.form.mediaUpload.sportsVideos.remove"
+                      )}
                     </button>
                   </div>
                 </div>
@@ -207,7 +218,9 @@ export const MediaUploadCard = ({
           <div className="bg-blue-50 p-2 rounded-full">
             <FiFilePlus className="w-5 h-5 text-blue-600" />
           </div>
-          <h2 className="text-xl font-semibold">رفع مستندات داعمة</h2>
+          <h2 className="text-xl font-semibold">
+            {t("registerProfile.form.mediaUpload.supportingDocuments.title")}
+          </h2>
           <Badge variant="outline" className="mr-auto font-normal text-xs">
             اختياري
           </Badge>
@@ -220,10 +233,14 @@ export const MediaUploadCard = ({
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                يمكنك رفع مستندات بتنسيق PDF أو DOC أو DOCX
+                {t(
+                  "registerProfile.form.mediaUpload.supportingDocuments.description"
+                )}
               </p>
               <p className="text-xs text-gray-500">
-                الحد الأقصى للملف: 10 ميجابايت
+                {t(
+                  "registerProfile.form.mediaUpload.supportingDocuments.maxSize"
+                )}
               </p>
             </div>
 
@@ -278,7 +295,9 @@ export const MediaUploadCard = ({
               className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50"
             >
               <FiFile className="w-4 h-4 ml-2" />
-              اختيار ملفات
+              {t(
+                "registerProfile.form.mediaUpload.supportingDocuments.selectFiles"
+              )}
             </Button>
           </div>
         </div>
@@ -298,7 +317,9 @@ export const MediaUploadCard = ({
           <div className="space-y-3">
             <h3 className="text-base font-medium flex items-center gap-2">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
-              المستند المرفوع
+              {t(
+                "registerProfile.form.mediaUpload.supportingDocuments.uploadedDocument"
+              )}
             </h3>
 
             <div>
@@ -333,10 +354,16 @@ export const MediaUploadCard = ({
                             }`}
                           >
                             {doc.file
-                              ? "جديد"
+                              ? t(
+                                  "registerProfile.form.mediaUpload.sportsVideos.new"
+                                )
                               : doc.publicId
-                              ? "تم الرفع"
-                              : "جاري المعالجة"}
+                              ? t(
+                                  "registerProfile.form.mediaUpload.sportsVideos.uploaded"
+                                )
+                              : t(
+                                  "registerProfile.form.mediaUpload.sportsVideos.processing"
+                                )}
                           </Badge>
                           <a
                             href={doc.url}
@@ -344,7 +371,11 @@ export const MediaUploadCard = ({
                             rel="noopener noreferrer"
                             className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center"
                           >
-                            <span>عرض</span>
+                            <span>
+                              {t(
+                                "registerProfile.form.mediaUpload.sportsVideos.view"
+                              )}
+                            </span>
                           </a>
                         </div>
                       </div>
