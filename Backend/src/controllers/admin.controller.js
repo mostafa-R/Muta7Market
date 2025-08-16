@@ -84,6 +84,7 @@ export const createUser = asyncHandler(async (req, res) => {
     role = "user",
     phone,
     isActive = true,
+    isEmailVerified = true,
   } = req.body;
 
   // Check if user already exists
@@ -102,7 +103,7 @@ export const createUser = asyncHandler(async (req, res) => {
     role,
     phone,
     isActive,
-    isEmailVerified: true, // Admin created users are auto-verified
+    isEmailVerified,
     isPhoneVerified: true,
   });
 
@@ -270,52 +271,46 @@ export const getPlayerById = asyncHandler(async (req, res) => {
 
 // ✅ Create Player (Admin)
 export const createPlayer = asyncHandler(async (req, res) => {
-  const playerData = req.body;
+  const { email, ...playerData } = req.body; // استخراج الـ email والبيانات الأخرى
 
-  // If user ID is provided, check if user exists
-  if (playerData.user) {
-    const user = await User.findById(playerData.user);
-    if (!user) {
-      throw new ApiError(404, "User not found");
+  // الخطوة 1: التحقق من وجود الـ email في الطلب
+  if (!email) {
+    throw new ApiError(400, 'Email is required to associate the player with a user');
+  }
+
+  // الخطوة 2: البحث عن المستخدم بواسطة الـ email
+  const user = await User.findOne({ email }).select('_id name email phone'); // حدد الحقول الضرورية للأداء
+  if (!user) {
+    throw new ApiError(404, 'User not found with the provided email');
+  }
+
+  // الخطوة 3: التعامل مع الملفات إذا وجدت
+  let media = {}; // افتراضيًا، media فارغ إذا لم يكن هناك ملفات
+  if (req.files && Object.keys(req.files).length > 0) {
+    try {
+      media = await processPlayerMedia(req.files, {}); // لا يوجد media سابق لأنه إنشاء جديد
+    } catch (error) {
+      console.error('Error processing media files:', error);
+      throw new ApiError(500, 'Failed to process media files for player creation');
     }
   }
 
-  // Check if player already exists for this user
-  if (playerData.user) {
-    const existingPlayer = await Player.findOne({ user: playerData.user });
-    if (existingPlayer) {
-      throw new ApiError(400, "Player profile already exists for this user");
-    }
-  }
+  // الخطوة 4: إنشاء اللاعب الجديد
+  const newPlayer = new Player({
+    ...playerData, // البيانات الأخرى من req.body (مثل name, age, إلخ)
+    user: user._id, // ربط اللاعب بالمستخدم
+    media, // إضافة الميديا المعالجة
+  });
 
-  // Handle file uploads using our centralized utility
-  try {
-    if (req.files && Object.keys(req.files).length > 0) {
-      // Process all media files
-      playerData.media = await processPlayerMedia(req.files);
-    }
-  } catch (error) {
-    console.error("Error processing media files:", error);
-    throw new ApiError(
-      500,
-      "Failed to process media files for player creation"
-    );
-  }
+  const savedPlayer = await newPlayer.save(); // حفظ في قاعدة البيانات
 
-  // Set default values
-  playerData.isActive =
-    playerData.isActive !== undefined ? playerData.isActive : true;
-  playerData.views = 0;
-
-  const player = await Player.create(playerData);
-
-  const createdPlayer = await Player.findById(player._id)
-    .populate("user", "name email phone")
+  // الخطوة 5: populate المستخدم للإرجاع
+  const populatedPlayer = await Player.findById(savedPlayer._id)
+    .populate('user', 'name email phone')
     .lean();
 
-  res
-    .status(201)
-    .json(new ApiResponse(201, createdPlayer, "Player created successfully"));
+  // الخطوة 6: إرجاع الرد
+  res.status(201).json(new ApiResponse(201, populatedPlayer, 'Player created successfully'));
 });
 
 // ✅ Update Player (Admin)

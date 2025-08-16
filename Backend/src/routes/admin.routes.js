@@ -85,14 +85,41 @@ router.get("/players", validateQuery(getPlayersQuerySchema), getAllPlayers);
 router.get("/players/:id", getPlayerById);
 
 // Create a new player (with file upload support)
+// http://localhost:5000/api/v1/admin/players
+// router.post(
+//   "/players",
+//   (req, res) => {
+//     console.log(req.body);
+//   }
+//   // uploadMixed.fields([
+//   //   { name: "profileImage", maxCount: 1 },
+//   //   { name: "document", maxCount: 1 },
+//   //   { name: "playerVideo", maxCount: 1 },
+//   // ]),
+//   // parseJsonFields,
+//   // (req ,res ) => {
+//   //   console.log("we");
+//   // }
+//   // validate(createPlayerSchema),
+//   // createPlayer
+// );
+
 router.post(
   "/players",
+  // verifiedOnly,
   uploadMixed.fields([
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
     { name: "playerVideo", maxCount: 1 },
   ]),
-  parseJsonFields,
+  parseJsonFields([
+    "monthlySalary",
+    "yearSalary",
+    "transferredTo",
+    "socialLinks",
+    "isPromoted",
+    "contactInfo",
+  ]),
   validate(createPlayerSchema),
   createPlayer
 );
