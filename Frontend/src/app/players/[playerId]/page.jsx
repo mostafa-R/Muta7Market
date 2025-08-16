@@ -93,7 +93,7 @@ const PlayerProfile = () => {
 
   const handleSendMessage = async () => {
     if (!isUserActive) {
-      toast.error(t("playerDetail.activationRequired"));
+      toast.error(t("Play Details available for paid user"));
       return;
     }
     const token = localStorage.getItem("token");
@@ -106,7 +106,7 @@ const PlayerProfile = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user && user.isActive === false) {
-        toast.error(t("playerDetail.activationRequired"));
+        toast.error(t("Available for paid user"));
         return;
       }
     } catch {}
@@ -122,7 +122,7 @@ const PlayerProfile = () => {
 
   const handleRequestPhone = () => {
     if (!isUserActive) {
-      toast.error(t("playerDetail.activationRequired"));
+      toast.error(t("Available for paid user"));
       return;
     }
     const token = localStorage.getItem("token");
@@ -134,7 +134,7 @@ const PlayerProfile = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user && user.isActive === false) {
-        toast.error(t("playerDetail.activationRequired"));
+        toast.error(t("Available for paid user"));
         return;
       }
     } catch {}
@@ -156,7 +156,7 @@ const PlayerProfile = () => {
 
   const handleSendEmail = () => {
     if (!isUserActive) {
-      toast.error(t("playerDetail.activationRequired"));
+      toast.error(t("Available for paid user"));
       return;
     }
     const token = localStorage.getItem("token");
@@ -167,7 +167,7 @@ const PlayerProfile = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user && user.isActive === false) {
-        toast.error(t("playerDetail.activationRequired"));
+        toast.error(t("Available for paid user"));
         return;
       }
     } catch {}
@@ -737,17 +737,14 @@ const PlayerProfile = () => {
             {/* Contact Actions */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
+                {}
                 <CardTitle>{t("playerDetail.contactPlayer")}</CardTitle>
-                {!isUserActive && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {t("playerDetail.availableForPaidUsers") || "Available for paid users"}
-                  </p>
-                )}
+             
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isUserActive && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-sm">
-                    {t("playerDetail.activationRequired") || "Activate your account to view contact information. One-time payment (55 SAR)."}
+                  <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
+                    {t("Available for paid user") || "Activate your account to view contact information. One-time payment (55 SAR)."}
                   </div>
                 )}
                 <Button

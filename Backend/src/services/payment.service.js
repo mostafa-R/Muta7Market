@@ -2,6 +2,7 @@
 import axios from "axios";
 import Payment from "../models/payment.model.js"; // ⬅️ شِلّنا named import
 import Player from "../models/player.model.js";
+import Invoice from "../models/invoice.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 
@@ -304,6 +305,41 @@ class PaymentService {
             console.log("✅ [WEBHOOK] Player profile activated for user:", payment.user);
           }
         }
+
+        // Create invoice for PAID payment (idempotent)
+        const existingInvoice = await Invoice.findOne({ payment: payment._id });
+        if (!existingInvoice) {
+          console.log("🧾 [WEBHOOK] Creating invoice for paid payment...");
+          const { subtotal, vatAmount, totalAmount } =
+            typeof payment.calculateVAT === "function"
+              ? payment.calculateVAT()
+              : { subtotal: payment.amount, vatAmount: 0, totalAmount: payment.amount };
+
+          const invoiceDoc = await Invoice.create({
+            payment: payment._id,
+            user: payment.user,
+            invoiceNumber: typeof payment.generateInvoiceNumber === "function" ? payment.generateInvoiceNumber() : `INV-${Date.now()}`,
+            billingInfo: {},
+            items: [
+              {
+                description: {
+                  en: payment.description || `Payment: ${payment.type}`,
+                  ar: payment.description || `دفع: ${payment.type}`,
+                },
+                quantity: 1,
+                unitPrice: payment.amount,
+                total: payment.amount,
+              },
+            ],
+            subtotal,
+            taxAmount: vatAmount,
+            totalAmount,
+            currency: payment.currency || "SAR",
+            status: "paid",
+            paidAt: new Date(),
+          });
+          console.log("✅ [WEBHOOK] Invoice created:", invoiceDoc.invoiceNumber);
+        }
       } catch (error) {
         console.error("❌ [WEBHOOK] Post-payment action error:", error.message);
       }
@@ -390,6 +426,41 @@ class PaymentService {
             await player.save();
             console.log("✅ [CONFIRM] Player profile activated for user:", payment.user);
           }
+        }
+
+        // Create invoice for PAID payment (idempotent)
+        const existingInvoice = await Invoice.findOne({ payment: payment._id });
+        if (!existingInvoice) {
+          console.log("🧾 [CONFIRM] Creating invoice for paid payment...");
+          const { subtotal, vatAmount, totalAmount } =
+            typeof payment.calculateVAT === "function"
+              ? payment.calculateVAT()
+              : { subtotal: payment.amount, vatAmount: 0, totalAmount: payment.amount };
+
+          const invoiceDoc = await Invoice.create({
+            payment: payment._id,
+            user: payment.user,
+            invoiceNumber: typeof payment.generateInvoiceNumber === "function" ? payment.generateInvoiceNumber() : `INV-${Date.now()}`,
+            billingInfo: {},
+            items: [
+              {
+                description: {
+                  en: payment.description || `Payment: ${payment.type}`,
+                  ar: payment.description || `دفع: ${payment.type}`,
+                },
+                quantity: 1,
+                unitPrice: payment.amount,
+                total: payment.amount,
+              },
+            ],
+            subtotal,
+            taxAmount: vatAmount,
+            totalAmount,
+            currency: payment.currency || "SAR",
+            status: "paid",
+            paidAt: new Date(),
+          });
+          console.log("✅ [CONFIRM] Invoice created:", invoiceDoc.invoiceNumber);
         }
       } catch (error) {
         console.error("❌ [CONFIRM] Post-payment action error:", error.message);

@@ -10,6 +10,8 @@ import {
   replaceMediaItem,
 } from "../utils/mediaUtils.js";
 import { sendInternalNotification } from "./notification.controller.js";
+import Payment from "../models/payment.model.js";
+import { PRICING } from "../config/constants.js";
 
 // Create Player Profile
 
@@ -51,6 +53,32 @@ export const createPlayer = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(201, player, "Player profile created successfully")
       );
+
+    // Ensure a pending payment exists for player activation
+    try {
+      const existingCompleted = await Payment.findOne({
+        user: userId,
+        type: "promote_player",
+        status: { $in: ["completed", "refunded"] },
+      });
+      const existingPending = await Payment.findOne({
+        user: userId,
+        type: "promote_player",
+        status: "pending",
+      });
+      if (!existingCompleted && !existingPending) {
+        await Payment.create({
+          user: userId,
+          type: "promote_player",
+          amount: PRICING.PROMOTE_PLAYER,
+          currency: "SAR",
+          status: "pending",
+          description: "Player profile activation",
+          relatedPlayer: player._id,
+          gateway: process.env.PAYMENT_GATEWAY || "paylink",
+        });
+      }
+    } catch {}
   } catch (error) {
     // If there was an error, make sure to clean up any uploaded files
     console.error("Error creating player profile:", error);

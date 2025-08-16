@@ -3,6 +3,9 @@ import { deleteFromCloudinary } from "../config/cloudinary.js";
 import playerModel from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
+import Payment from "../models/payment.model.js";
+import { PRICING } from "../config/constants.js";
+import Invoice from "../models/invoice.model.js";
 
 export const update = async (req, res) => {
   try {
@@ -262,10 +265,43 @@ export const notPaied = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const player = await playerModel.findOne({ user: userId, isActive: false });
+    // Find pending payments for either user activation or player activation
+    const pendingPayments = await Payment.find({
+      user: userId,
+      status: "pending",
+      type: { $in: ["activate_user", "promote_player"] },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    if (!player) throw new ApiError(404, "Player not found");
-    return res.status(200).json(player);
+    // Also surface inactive player if exists (legacy behavior)
+    const inactivePlayer = await playerModel
+      .findOne({ user: userId, isActive: false })
+      .lean();
+
+    // All payments (any type, any status)
+    const payments = await Payment.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .select("-gatewayResponse.raw")
+      .lean();
+
+    // Unpaid payments (not completed/refunded) for profile payments tab
+    const unpaidPayments = await Payment.find({
+      user: userId,
+      status: { $nin: ["completed", "refunded"] },
+    })
+      .sort({ createdAt: -1 })
+      .select("-gatewayResponse.raw")
+      .lean();
+
+    // Paid invoices (invoices collection)
+    const invoices = await Invoice.find({ user: userId, status: "paid" })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res
+      .status(200)
+      .json({ pendingPayments, inactivePlayer, payments, unpaidPayments, invoices });
   } catch (error) {
     res.status(500).json({ error, message: error.message });
   }

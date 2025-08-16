@@ -109,8 +109,50 @@ const UserProfile = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Always ensure payments tab shows either pending player activation or user activation button
-      setPendingPayments(response.data ? [response.data] : []);
+      const data = response.data || {};
+      const items = [];
+      const source = Array.isArray(data.unpaidPayments)
+        ? data.unpaidPayments
+        : Array.isArray(data.payments)
+        ? data.payments
+        : [];
+      if (source.length) {
+        items.push(
+          ...source.map((p) => ({
+            _id: p._id,
+            type: p.type,
+            amount: p.amount,
+            currency: p.currency,
+            status: p.status,
+            createdAt: p.createdAt,
+            relatedPlayer: p.relatedPlayer,
+            description: p.description,
+            invoice: p.invoice,
+            gateway: p.gateway,
+          }))
+        );
+      } else if (Array.isArray(data.pendingPayments)) {
+        items.push(
+          ...data.pendingPayments.map((p) => ({
+            _id: p._id,
+            type: p.type,
+            amount: p.amount,
+            currency: p.currency,
+            status: p.status,
+            createdAt: p.createdAt,
+            relatedPlayer: p.relatedPlayer,
+            description: p.description,
+          }))
+        );
+      }
+      if (data.inactivePlayer) {
+        items.push({ ...data.inactivePlayer, isActive: false });
+      }
+      const unpaid = items.filter((p) => {
+        const s = String(p.status || "").toLowerCase();
+        return s !== "completed" && s !== "refunded"; // show pending/failed/cancelled etc.
+      });
+      setPendingPayments(unpaid);
     } catch (err) {
       console.error("Error fetching payments:", err);
     }

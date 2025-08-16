@@ -3,6 +3,8 @@ import userModel from "../models/user.model.js";
 import { sendEmail } from "../services/sendgridEmail.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import Payment from "../models/payment.model.js";
+import { PRICING } from "../config/constants.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
@@ -60,6 +62,31 @@ export const register = asyncHandler(async (req, res) => {
 
   // Save user
   await user.save();
+
+  // Create pending activation payment if not already exists or completed
+  try {
+    const existingCompleted = await Payment.findOne({
+      user: user._id,
+      type: "activate_user",
+      status: { $in: ["completed", "refunded"] },
+    });
+    const existingPending = await Payment.findOne({
+      user: user._id,
+      type: "activate_user",
+      status: "pending",
+    });
+    if (!existingCompleted && !existingPending) {
+      await Payment.create({
+        user: user._id,
+        type: "activate_user",
+        amount: PRICING.ACTIVATE_USER,
+        currency: "SAR",
+        status: "pending",
+        description: "One-time activation to view all players' contacts",
+        gateway: process.env.PAYMENT_GATEWAY || "paylink",
+      });
+    }
+  } catch {}
 
   // Send Verification Email & SMS OTP
   const emailResult = await sendEmail(
