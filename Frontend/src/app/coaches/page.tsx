@@ -15,9 +15,7 @@ import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
 
-// واجهة Player المستخدمة في PlayerCard
 
-// واجهة Player المستخدمة في PlayerCard
 interface Player {
   id: string;
   name: string;
@@ -40,7 +38,7 @@ interface Player {
   jop: string;
 }
 
-// واجهة لبيانات الـ API الخام
+
 interface ApiPlayer {
   _id: string;
   user: null | string;
@@ -73,7 +71,7 @@ interface ApiPlayer {
   jop: string;
 }
 
-// دالة لتحويل بيانات الـ API إلى واجهة Player
+
 const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   id: apiPlayer._id,
   name: apiPlayer.name,
@@ -95,7 +93,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   jop: apiPlayer.jop,
 });
 
-// عنوان الـ API
+
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?jop=coach`;
 
 export default function PlayersPage() {
@@ -109,7 +107,6 @@ export default function PlayersPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // جلب البيانات باستخدام Axios
   useEffect(() => {
     const fetchPlayers = async () => {
       try {

@@ -92,7 +92,6 @@ const handleLoginSuccess = (responseData, t) => {
     expirationTime.setDate(expirationTime.getDate() + 7);
     localStorage.setItem("tokenExpiration", expirationTime.toISOString());
 
-    console.log("Login successful, user data stored:", userToStore);
 
     return true;
   } catch (error) {
