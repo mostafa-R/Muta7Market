@@ -8,7 +8,7 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
   try {
     const u = JSON.parse(typeof window !== 'undefined' ? (localStorage.getItem('user') || '{}') : '{}');
     isUserInactive = u && u.isActive === false;
-  } catch {}
+  } catch { }
 
   const API_BASE = useMemo(() => {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
@@ -78,8 +78,8 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
     return jop === "player"
       ? t("common.player")
       : jop === "coach"
-      ? t("common.coach")
-      : jop || t("common.notAvailable");
+        ? t("common.coach")
+        : jop || t("common.notAvailable");
   };
 
   const translateStatus = (status) => {
@@ -210,12 +210,14 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
             <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
               {safePayment.type?.split("_")[0]?.[0]?.toUpperCase() || "P"}
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">
-                {t("payment.type", { defaultValue: "Type" })}: {safePayment.type}
-              </h3>
-              <div className="text-white/80 text-sm">
-                {t("payment.status", { defaultValue: "Status" })}: {safePayment.status}
+            <div className="w-full">
+              <div className="text-left">
+                <h3 className="font-semibold text-lg">
+                  {t("payment.type", { defaultValue: "Type" })}: {safePayment.type}
+                </h3>
+                <div className="text-white/80 text-sm">
+                  {t("payment.status", { defaultValue: "Status" })}: {safePayment.status}
+                </div>
               </div>
             </div>
             <div className="text-right">
@@ -443,7 +445,7 @@ const PaymentsSection = ({ payments, invoices = [], router, t, language }) => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <i className="fas fa-credit-card" /> {t("profile.pendingPayments", { defaultValue: "Pending payments" })}
                 </h3>
-                <div className={`grid ${payments.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6`}>
+                <div className={'flex flex-col gap-4'}>
                   {payments.map((payment) => (
                     <PaymentCard key={payment._id} payment={payment} />
                   ))}
