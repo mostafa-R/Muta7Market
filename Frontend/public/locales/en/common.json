@@ -567,6 +567,8 @@
     }
   },
   "auth": {
+    "resetPassword": "Reset Password",
+    "resetPasswordDescription": "Enter your email to receive a password reset link",
     "welcomeBack": "Welcome Back",
     "loginToContinue": "Sign in to continue",
     "email": "Email",
