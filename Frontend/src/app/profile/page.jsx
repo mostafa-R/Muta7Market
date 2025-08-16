@@ -22,7 +22,7 @@ import PlayerProfile from "./components/PlayerProfile";
 import { createProfileFormSchema } from "./components/validation.js";
 
 // Ensure API base includes /api/v1
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/v1`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}`;
 
 const UserProfile = () => {
   const { t } = useTranslation();
