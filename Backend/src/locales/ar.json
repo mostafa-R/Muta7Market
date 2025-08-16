@@ -1,1 +1,39 @@
-{}
+{
+  "errors": {
+    "unauthorized": "وصول غير مصرح",
+    "forbidden": "وصول ممنوع",
+    "notFound": "المورد غير موجود",
+    "serverError": "خطأ في الخادم",
+    "validationError": "خطأ في التحقق من الصحة",
+    "badRequest": "طلب غير صالح",
+    "userExists": "المستخدم موجود بالفعل",
+    "invalidCredentials": "بيانات الاعتماد غير صالحة",
+    "accountNotVerified": "الحساب غير مفعل",
+    "accountBlocked": "الحساب محظور",
+    "tokenExpired": "انتهت صلاحية الرمز",
+    "invalidToken": "رمز غير صالح",
+    "insufficientPermissions": "صلاحيات غير كافية"
+  },
+  "success": {
+    "accountCreated": "تم إنشاء الحساب بنجاح",
+    "accountVerified": "تم التحقق من الحساب بنجاح",
+    "passwordReset": "تمت إعادة تعيين كلمة المرور بنجاح",
+    "passwordUpdated": "تم تحديث كلمة المرور بنجاح",
+    "profileUpdated": "تم تحديث الملف الشخصي بنجاح",
+    "loginSuccess": "تم تسجيل الدخول بنجاح",
+    "logoutSuccess": "تم تسجيل الخروج بنجاح",
+    "otpSent": "تم إرسال رمز التحقق بنجاح",
+    "otpVerified": "تم التحقق من رمز التحقق بنجاح",
+    "recordCreated": "تم إنشاء السجل بنجاح",
+    "recordUpdated": "تم تحديث السجل بنجاح",
+    "recordDeleted": "تم حذف السجل بنجاح"
+  },
+  "email": {
+    "welcome": "مرحباً بك في متاح ماركت",
+    "verifyAccount": "الرجاء تأكيد حسابك",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "notification": "إشعار جديد",
+    "invoiceSubject": "فاتورة اشتراكك",
+    "paymentConfirmation": "تأكيد الدفع"
+  }
+}

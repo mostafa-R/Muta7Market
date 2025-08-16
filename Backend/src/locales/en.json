@@ -1,1 +1,39 @@
-{}
+{
+  "errors": {
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Forbidden access",
+    "notFound": "Resource not found",
+    "serverError": "Internal server error",
+    "validationError": "Validation error",
+    "badRequest": "Bad request",
+    "userExists": "User already exists",
+    "invalidCredentials": "Invalid credentials",
+    "accountNotVerified": "Account not verified",
+    "accountBlocked": "Account is blocked",
+    "tokenExpired": "Token expired",
+    "invalidToken": "Invalid token",
+    "insufficientPermissions": "Insufficient permissions"
+  },
+  "success": {
+    "accountCreated": "Account created successfully",
+    "accountVerified": "Account verified successfully",
+    "passwordReset": "Password reset successfully",
+    "passwordUpdated": "Password updated successfully",
+    "profileUpdated": "Profile updated successfully",
+    "loginSuccess": "Logged in successfully",
+    "logoutSuccess": "Logged out successfully",
+    "otpSent": "OTP sent successfully",
+    "otpVerified": "OTP verified successfully",
+    "recordCreated": "Record created successfully",
+    "recordUpdated": "Record updated successfully",
+    "recordDeleted": "Record deleted successfully"
+  },
+  "email": {
+    "welcome": "Welcome to Muta7Market",
+    "verifyAccount": "Please verify your account",
+    "resetPassword": "Reset your password",
+    "notification": "New notification",
+    "invoiceSubject": "Invoice for your subscription",
+    "paymentConfirmation": "Payment confirmation"
+  }
+}

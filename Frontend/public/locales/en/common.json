@@ -7,7 +7,9 @@
     "explore": "Explore",
     "signin": "Sign In",
     "signup": "Sign Up",
-    "registerProfile": "Register Profile"
+    "registerProfile": "Register Profile",
+    "startJourneyDescription": "Join thousands of players and coaches who have found their perfect opportunities through our platform",
+    "allPlayers": "All Players"
   },
   "player": {
     "status": {
@@ -543,6 +545,24 @@
       "professional": "Professional",
       "amateur": "Amateur"
     }
+  },
+  "otp": {
+    "verificationCode": "Verification Code",
+    "codeSentToEmail": "A verification code has been sent to your email",
+    "enterOtp": "Please enter the verification code",
+    "validOtp": "Please enter a valid verification code",
+    "otpRequired": "Verification code is required",
+    "enterCodePlaceholder": "Enter verification code",
+    "enter6DigitCode": "Enter the 6-digit verification code",
+    "didNotReceiveCode": "Didn't receive the code?",
+    "resend": "Resend",
+    "newCodeWillBeSent": "A new code will be sent soon",
+    "newCodeSentSuccessfully": "New verification code sent successfully!",
+    "failedToSendNewCode": "Failed to send new verification code",
+    "pleaseEnterOtp": "Please enter the verification code",
+    "pleaseEnterValid6DigitCode": "Please enter a valid 6-digit code",
+    "verificationSuccess": "Code verified successfully!",
+    "invalidCode": "Invalid verification code. Please try again."
   },
   "coaches": {
     "allCoaches": "All Coaches",
