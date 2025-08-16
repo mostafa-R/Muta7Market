@@ -215,20 +215,7 @@ export const listPayments = asyncHandler(async (req, res) => {
  * - amount يتم تحديده تلقائياً حسب نوع الدفع
  */
 export const initiatePayment = asyncHandler(async (req, res) => {
-  console.log("🔄 [CONTROLLER] Payment initiation request received");
-  console.log("📋 [CONTROLLER] Request headers:", {
-    authorization: req.headers.authorization ? "Bearer ***" : "Not provided",
-    contentType: req.headers["content-type"],
-  });
-  console.log(
-    "📋 [CONTROLLER] Request body:",
-    JSON.stringify(req.body, null, 2)
-  );
-  console.log("📋 [CONTROLLER] User from token:", {
-    id: req.user?.id,
-    email: req.user?.email,
-    name: req.user?.name,
-  });
+  
 
   const userId = req.user?._id || req.user?.id;
   if (!userId) throw new ApiError(401, "Unauthorized");
@@ -241,40 +228,23 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     metadata = {}, // لا تبعث userId هنا – يتم تجاهله
   } = req.body || {};
 
-  console.log("📋 [CONTROLLER] Extracted parameters:", {
-    paymentId,
-    currency,
-    description,
-    type,
-    metadata,
-  });
+  
 
   let paymentDoc;
   // console.log(req); // Removed debug console.log
 
   if (paymentId) {
-    console.log("📋 [CONTROLLER] Using existing payment ID:", paymentId);
     paymentDoc = await Payment.findById(paymentId);
     if (!paymentDoc) {
-      console.log("❌ [CONTROLLER] Payment not found for ID:", paymentId);
       throw new ApiError(404, "Payment not found");
     }
 
-    console.log("📋 [CONTROLLER] Found existing payment:", {
-      id: paymentDoc._id,
-      user: paymentDoc.user,
-      status: paymentDoc.status,
-      amount: paymentDoc.amount,
-    });
+    
 
     if (String(paymentDoc.user) !== String(userId)) {
-      console.log("❌ [CONTROLLER] User not authorized for this payment");
       throw new ApiError(403, "Not allowed to pay this invoice");
     }
     if (String(paymentDoc.status) === String(PAYMENT_STATUS.COMPLETED)) {
-      console.log(
-        "✅ [CONTROLLER] Payment already completed, returning existing URL"
-      );
       return res.status(200).json(
         new ApiResponse(
           200,
@@ -287,7 +257,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
       );
     }
   } else {
-    console.log("📋 [CONTROLLER] Creating new payment");
+    
 
     // Validate payment type
     const validTypes = [
@@ -299,7 +269,6 @@ export const initiatePayment = asyncHandler(async (req, res) => {
       "promote_coach",
     ];
     if (!validTypes.includes(type)) {
-      console.log("❌ [CONTROLLER] Invalid payment type:", type);
       throw new ApiError(
         400,
         `Invalid payment type. Must be one of: ${validTypes.join(", ")}`
@@ -317,23 +286,14 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     };
 
     const amount = amountMap[type];
-    console.log("📋 [CONTROLLER] Calculated amount for type:", {
-      type,
-      amount,
-    });
 
     if (!amount || amount <= 0) {
-      console.log("❌ [CONTROLLER] Invalid amount for payment type:", {
-        type,
-        amount,
-      });
       throw new ApiError(
         400,
         `Invalid payment type or amount not configured for type: ${type}`
       );
     }
 
-    console.log("💾 [CONTROLLER] Creating payment document in DB...");
     paymentDoc = await Payment.create({
       user: userId, // ← من التوكن فقط
       type, // ← إضافة نوع الدفع
@@ -345,19 +305,13 @@ export const initiatePayment = asyncHandler(async (req, res) => {
       status: PAYMENT_STATUS.PENDING,
     });
 
-    console.log("✅ [CONTROLLER] Payment document created:", {
-      id: paymentDoc._id,
-      type: paymentDoc.type,
-      amount: 55,
-      status: paymentDoc.status,
-    });
+    
   }
 
-  console.log("🔄 [CONTROLLER] Initiating payment with Paylink service...");
+  
 
   // إنشاء الفاتورة على Paylink
   const urls = buildReturnUrls(paymentDoc._id);
-  console.log("📋 [CONTROLLER] Return URLs configured:", urls);
 
   const init = await paymentService.initiatePayment(paymentDoc._id, {
     amount: paymentDoc.amount,
@@ -370,17 +324,12 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     ...urls,
   });
 
-  console.log("📋 [CONTROLLER] Payment service response:", {
-    hasCheckoutUrl: !!init?.checkoutUrl,
-    checkoutId: init?.checkoutId,
-  });
+  
 
   if (!init?.checkoutUrl) {
-    console.log("❌ [CONTROLLER] Failed to create checkout session");
     throw new ApiError(500, "Failed to create checkout session");
   }
 
-  console.log("💾 [CONTROLLER] Updating payment with gateway response...");
   paymentDoc.gateway = "paylink";
   paymentDoc.gatewayResponse = {
     checkoutId: init.checkoutId,
@@ -388,7 +337,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     raw: init.raw || {},
   };
   await paymentDoc.save();
-  console.log("✅ [CONTROLLER] Payment updated with gateway response");
+  
 
   const response = new ApiResponse(
     200,
@@ -396,10 +345,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     "Payment initiated"
   );
 
-  console.log("📋 [CONTROLLER] Sending response to frontend:", {
-    paymentId: paymentDoc._id,
-    hasPaymentUrl: !!init.checkoutUrl,
-  });
+  
 
   return res.status(200).json(response);
 });
@@ -410,20 +356,11 @@ export const initiatePayment = asyncHandler(async (req, res) => {
  * (تفعيل المستخدم يتم داخل payment.service في handleWebhook)
  */
 export const paymentWebhook = asyncHandler(async (req, res) => {
-  console.log("🔄 [WEBHOOK CONTROLLER] Webhook request received");
-  console.log("📋 [WEBHOOK CONTROLLER] Request headers:", {
-    contentType: req.headers["content-type"],
-    userAgent: req.headers["user-agent"],
-  });
-  console.log(
-    "📋 [WEBHOOK CONTROLLER] Request body:",
-    JSON.stringify(req.body, null, 2)
-  );
+  
 
   const result = await paymentService.handleWebhook(req.body);
 
-  console.log("📋 [WEBHOOK CONTROLLER] Webhook processing result:", result);
-  console.log("✅ [WEBHOOK CONTROLLER] Sending response to Paylink");
+  
 
   return res
     .status(200)
@@ -446,23 +383,16 @@ export const getPaymentById = asyncHandler(async (req, res) => {
  * يُستخدم من الفرونت للـ polling
  */
 export const getPaymentStatus = asyncHandler(async (req, res) => {
-  console.log("🔄 [STATUS CONTROLLER] Payment status request received");
-  console.log("📋 [STATUS CONTROLLER] Payment ID:", req.params.id);
+  
 
   const { id } = req.params;
   const payment = await Payment.findById(id);
 
   if (!payment) {
-    console.log("❌ [STATUS CONTROLLER] Payment not found for ID:", id);
     throw new ApiError(404, "Payment not found");
   }
 
-  console.log("📋 [STATUS CONTROLLER] Payment found:", {
-    id: payment._id,
-    status: payment.status,
-    type: payment.type,
-    amount: payment.amount,
-  });
+  
 
   const response = {
     status: payment.status,
@@ -476,7 +406,7 @@ export const getPaymentStatus = asyncHandler(async (req, res) => {
     updatedAt: payment.updatedAt,
   };
 
-  console.log("📋 [STATUS CONTROLLER] Sending response:", response);
+  
   return res.status(200).json(new ApiResponse(200, response, "OK"));
 });
 
@@ -485,18 +415,11 @@ export const getPaymentStatus = asyncHandler(async (req, res) => {
  * Check payment status by transaction number (useful when user returns from payment gateway)
  */
 export const getPaymentStatusByTransaction = asyncHandler(async (req, res) => {
-  console.log(
-    "🔄 [TRANSACTION STATUS] Payment status by transaction request received"
-  );
-  console.log(
-    "📋 [TRANSACTION STATUS] Transaction number:",
-    req.params.transactionNo
-  );
+  
 
   const { transactionNo } = req.params;
 
   if (!transactionNo) {
-    console.log("❌ [TRANSACTION STATUS] Missing transaction number");
     throw new ApiError(400, "Transaction number is required");
   }
 
@@ -506,39 +429,24 @@ export const getPaymentStatusByTransaction = asyncHandler(async (req, res) => {
   });
 
   if (!payment) {
-    console.log(
-      "❌ [TRANSACTION STATUS] Payment not found for transaction:",
-      transactionNo
-    );
     throw new ApiError(404, "Payment not found for this transaction");
   }
 
-  console.log("📋 [TRANSACTION STATUS] Payment found:", {
-    id: payment._id,
-    status: payment.status,
-    type: payment.type,
-    amount: payment.amount,
-  });
+  
 
   // If payment is still pending, try to confirm it with Paylink
   if (payment.status === PAYMENT_STATUS.PENDING) {
-    console.log(
-      "🔄 [TRANSACTION STATUS] Payment is pending, attempting to confirm with Paylink..."
-    );
     try {
       const confirmation = await paymentService.confirmTransaction(
         transactionNo,
         payment._id
       );
-      console.log("📋 [TRANSACTION STATUS] Confirmation result:", confirmation);
+      
 
       // Refresh payment data after confirmation
       await payment.refresh();
     } catch (error) {
-      console.log(
-        "⚠️ [TRANSACTION STATUS] Confirmation failed:",
-        error.message
-      );
+      
       // Continue with current status even if confirmation fails
     }
   }
@@ -555,7 +463,7 @@ export const getPaymentStatusByTransaction = asyncHandler(async (req, res) => {
     updatedAt: payment.updatedAt,
   };
 
-  console.log("📋 [TRANSACTION STATUS] Sending response:", response);
+  
   return res.status(200).json(new ApiResponse(200, response, "OK"));
 });
 
@@ -564,24 +472,17 @@ export const getPaymentStatusByTransaction = asyncHandler(async (req, res) => {
  * (اختياري) تأكيد يدوي بعد الرجوع من Paylink
  */
 export const confirmReturn = asyncHandler(async (req, res) => {
-  console.log("🔄 [CONFIRM CONTROLLER] Manual confirmation request received");
-  console.log("📋 [CONFIRM CONTROLLER] Query parameters:", req.query);
-  console.log("📋 [CONFIRM CONTROLLER] Request URL:", req.url);
+  
 
   const { transactionNo, pid } = req.query;
   if (!transactionNo) {
-    console.log("❌ [CONFIRM CONTROLLER] Missing transactionNo parameter");
     throw new ApiError(400, "Missing transactionNo");
   }
 
-  console.log("📋 [CONFIRM CONTROLLER] Calling payment service with:", {
-    transactionNo,
-    pid,
-  });
+  
   const out = await paymentService.confirmTransaction(transactionNo, pid);
 
-  console.log("📋 [CONFIRM CONTROLLER] Service response:", out);
-  console.log("✅ [CONFIRM CONTROLLER] Sending response to client");
+  
 
   return res.status(200).json(new ApiResponse(200, out, "Return confirmed"));
 });

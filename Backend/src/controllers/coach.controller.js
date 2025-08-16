@@ -293,9 +293,7 @@ export const promoteCoach = async (req, res) => {
 // Transfer coach
 export const transferCoach = async (req, res) => {
   try {
-    console.log('working');
     const { id } = req.params;
-    console.log(id);
     // const { id } = req.user;
     const { clubName, amount } = req.body;
 
