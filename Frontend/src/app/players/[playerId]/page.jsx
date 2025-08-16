@@ -93,7 +93,7 @@ const PlayerProfile = () => {
 
   const handleSendMessage = async () => {
     if (!isUserActive) {
-      toast.error(t("Play Details available for paid user"));
+      toast.error(t("playerDetail.availableForPaidUsers", { defaultValue: "Available for paid users only" }));
       return;
     }
     const token = localStorage.getItem("token");
@@ -101,15 +101,6 @@ const PlayerProfile = () => {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
-
-    // Require active user to access contact methods
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      if (user && user.isActive === false) {
-        toast.error(t("Available for paid user"));
-        return;
-      }
-    } catch {}
 
     const phoneNumber = player?.user?.phone;
     if (phoneNumber) {
@@ -122,7 +113,7 @@ const PlayerProfile = () => {
 
   const handleRequestPhone = () => {
     if (!isUserActive) {
-      toast.error(t("Available for paid user"));
+      toast.error(t("playerDetail.availableForPaidUsers", { defaultValue: "Available for paid users only" }));
       return;
     }
     const token = localStorage.getItem("token");
@@ -130,14 +121,6 @@ const PlayerProfile = () => {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
-
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      if (user && user.isActive === false) {
-        toast.error(t("Available for paid user"));
-        return;
-      }
-    } catch {}
 
     const phone = player?.user?.phone;
     if (phone) {
@@ -156,7 +139,7 @@ const PlayerProfile = () => {
 
   const handleSendEmail = () => {
     if (!isUserActive) {
-      toast.error(t("Available for paid user"));
+      toast.error(t("playerDetail.availableForPaidUsers", { defaultValue: "Available for paid users only" }));
       return;
     }
     const token = localStorage.getItem("token");
@@ -164,13 +147,6 @@ const PlayerProfile = () => {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      if (user && user.isActive === false) {
-        toast.error(t("Available for paid user"));
-        return;
-      }
-    } catch {}
     const email = player?.user?.email;
     if (email) {
       window.open(`mailto:${email}`, "_blank");
@@ -744,7 +720,7 @@ const PlayerProfile = () => {
               <CardContent className="space-y-4">
                 {!isUserActive && (
                   <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                    { "Activate your account to view contact information. One-time payment (55 SAR)."}
+                    {t('playerDetail.activateToViewContacts', { defaultValue: 'Activate your account to view contact information. One-time payment (55 SAR).' })}
                   </div>
                 )}
                 <Button
