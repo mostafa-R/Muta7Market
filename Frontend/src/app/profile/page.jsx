@@ -21,7 +21,8 @@ import { IoMdMenu } from "react-icons/io";
 import PlayerProfile from "./components/PlayerProfile";
 import { createProfileFormSchema } from "./components/validation.js";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+// Ensure API base includes /api/v1
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/v1`;
 
 const UserProfile = () => {
   const { t } = useTranslation();

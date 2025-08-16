@@ -797,10 +797,13 @@ const SuccessModal = ({
 
 export default function PaymentBtn() {
   const { t } = useTranslation();
+  // Ensure API base points to backend API root
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+    (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000") +
+    (process.env.NEXT_PUBLIC_API_BASE_URL?.endsWith("/api/v1") ? "" : "/api/v1");
   const FRONT_BASE =
     process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
+  const ALLOW_TEST = process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS === "1";
 
   const [loading, setLoading] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
@@ -904,8 +907,22 @@ export default function PaymentBtn() {
 
       setPaymentId(pId);
       setPaymentUrl(url);
-      // Open Paylink hosted page directly in same tab for best UX
-      window.location.href = url;
+      // In dev test mode, simulate success without redirecting to Paylink
+      if (ALLOW_TEST) {
+        await fetch(`${API_BASE}/payments/${pId}/simulate-success`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ transactionNo: `SIM_${Date.now()}` }),
+        });
+        // Redirect to profile with success indicator
+        window.location.href = `${FRONT_BASE}/profile?pid=${pId}&paid=1`;
+      } else {
+        // Open Paylink hosted page directly in same tab for best UX
+        window.location.href = url;
+      }
       return "تم إنشاء الفاتورة بنجاح";
     })();
 

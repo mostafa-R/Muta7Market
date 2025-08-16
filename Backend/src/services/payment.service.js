@@ -34,7 +34,8 @@ const PAYMENT_STATUS = (() => {
 // ========== Paylink Gateway ==========
 class PaylinkGateway {
   constructor() {
-    this.base = process.env.PAYLINK_BASE_URL;
+    // Fallback to official Paylink REST API base if env not set
+    this.base = process.env.PAYLINK_BASE_URL || "https://restapi.paylink.sa";
     this.apiId = process.env.PAYLINK_API_ID;
     this.secret = process.env.PAYLINK_SECRET;
     this.token = null;
@@ -47,6 +48,11 @@ class PaylinkGateway {
     if (this.token && now < this.tokenExp) {
       console.log("✅ [PAYLINK AUTH] Using cached token");
       return this.token;
+    }
+
+    if (!this.apiId || !this.secret) {
+      console.error("❌ [PAYLINK AUTH] Missing PAYLINK_API_ID or PAYLINK_SECRET env vars");
+      throw new ApiError(500, "Paylink credentials are not configured");
     }
 
     console.log("🔄 [PAYLINK AUTH] Requesting new token from Paylink...");

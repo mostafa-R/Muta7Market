@@ -7,6 +7,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import Payment from "../models/payment.model.js";
 import paymentService from "../services/payment.service.js";
 import { PRICING } from "../config/constants.js";
+import Player from "../models/player.model.js";
 
 // ===== حالات الدفع (تلقائية من الاسكيمة لتفادي اختلاف الـ casing) =====
 const PAYMENT_STATUS = (() => {
@@ -31,8 +32,9 @@ const PAYMENT_STATUS = (() => {
 })();
 
 // Helpers
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5000";
-const API_URL = process.env.API_URL || "http://localhost:4000";
+// Defaults align with Backend default port 5000 and typical Next.js dev port 3000
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const API_URL = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 const buildReturnUrls = (paymentId) => ({
   returnUrl: `${FRONTEND_URL}/profile?pid=${paymentId}&paid=1`,
@@ -539,6 +541,80 @@ export const refundPayment = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, result, "Refund requested"));
 });
 
+/**
+ * POST /api/v1/payments/:id/simulate-success
+ * Dev-only: mark a payment as COMPLETED without contacting Paylink
+ */
+export const simulateSuccess = asyncHandler(async (req, res) => {
+  if (process.env.NODE_ENV === "production" && !process.env.ALLOW_TEST_PAYMENTS) {
+    throw new ApiError(403, "Simulation is not allowed in production");
+  }
+
+  const { id } = req.params;
+  const { transactionNo } = req.body || {};
+  const payment = await Payment.findById(id);
+  if (!payment) throw new ApiError(404, "Payment not found");
+
+  payment.gateway = payment.gateway || "paylink";
+  payment.gatewayResponse = {
+    ...(payment.gatewayResponse || {}),
+    checkoutId: payment.gatewayResponse?.checkoutId || transactionNo || `TEST_${Date.now()}`,
+    raw: {
+      orderStatus: "PAID",
+      transactionNo: transactionNo || payment.gatewayResponse?.checkoutId,
+      simulated: true,
+      at: new Date().toISOString(),
+    },
+  };
+  payment.status = PAYMENT_STATUS.COMPLETED;
+
+  // Activate player profile if exists (mimic production behavior)
+  try {
+    const player = await Player.findOne({ user: payment.user });
+    if (player) {
+      player.isActive = true;
+      await player.save();
+    }
+  } catch {}
+
+  await payment.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { paymentId: payment._id, status: payment.status }, "Payment simulated as success"));
+});
+
+/**
+ * POST /api/v1/payments/:id/simulate-fail
+ * Dev-only: mark a payment as FAILED without contacting Paylink
+ */
+export const simulateFail = asyncHandler(async (req, res) => {
+  if (process.env.NODE_ENV === "production" && !process.env.ALLOW_TEST_PAYMENTS) {
+    throw new ApiError(403, "Simulation is not allowed in production");
+  }
+
+  const { id } = req.params;
+  const { reason = "Simulated failure" } = req.body || {};
+  const payment = await Payment.findById(id);
+  if (!payment) throw new ApiError(404, "Payment not found");
+
+  payment.status = PAYMENT_STATUS.FAILED;
+  payment.failureReason = reason;
+  payment.gatewayResponse = {
+    ...(payment.gatewayResponse || {}),
+    raw: {
+      orderStatus: "FAILED",
+      reason,
+      simulated: true,
+      at: new Date().toISOString(),
+    },
+  };
+
+  await payment.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { paymentId: payment._id, status: payment.status }, "Payment simulated as failed"));
+});
+
 export default {
   initiatePayment,
   paymentWebhook,
@@ -547,4 +623,6 @@ export default {
   getPaymentStatusByTransaction,
   confirmReturn,
   refundPayment,
+  simulateSuccess,
+  simulateFail,
 };
