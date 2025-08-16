@@ -112,6 +112,7 @@ const paymentSchema = new mongoose.Schema(
 // Indexes
 paymentSchema.index({ user: 1, status: 1 });
 paymentSchema.index({ "gatewayResponse.transactionId": 1 });
+paymentSchema.index({ "gatewayResponse.checkoutId": 1 });
 paymentSchema.index({ createdAt: -1 });
 
 // Generate invoice number
