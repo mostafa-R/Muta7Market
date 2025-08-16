@@ -170,7 +170,7 @@ export default function OTP() {
                     autoComplete="one-time-code"
                     pattern="\d*"
                     maxLength={6}
-                    className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
+                    className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pr-10 pl-6 font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
                     style={{ letterSpacing: "0.5em" }}
                   />
                   <FiLock className="absolute top-1/2 right-3 transform -translate-y-1/2 text-[#6B7280]" />

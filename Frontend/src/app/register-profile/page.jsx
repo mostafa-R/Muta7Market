@@ -47,7 +47,7 @@ const getErrorMessage = (error, fallback) => {
   );
 };
 
-export default function Page() {
+function RegisterProfileContent() {
   const { t } = useTranslation();
 
   // Form sections for multi-step navigation - using translations
@@ -1361,5 +1361,19 @@ export default function Page() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8">
+          <LoadingSpinner />
+        </div>
+      }
+    >
+      <RegisterProfileContent />
+    </Suspense>
   );
 }

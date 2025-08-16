@@ -1,7 +1,7 @@
 "use client";
 
+import i18n from "@/utils/i18n";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 const LanguageContext = createContext({
@@ -12,7 +12,6 @@ const LanguageContext = createContext({
 });
 
 export const LanguageProvider = ({ children }) => {
-  const { i18n } = useTranslation();
   // Using null initial state to detect first render and prevent hydration mismatch
   const [currentLanguage, setCurrentLanguage] = useState(null);
   const [isRTL, setIsRTL] = useState(null);
@@ -56,7 +55,9 @@ export const LanguageProvider = ({ children }) => {
       const isRtl = savedLanguage === "ar";
       setIsRTL(isRtl);
 
-      i18n.changeLanguage(savedLanguage);
+      if (typeof i18n?.changeLanguage === "function") {
+        i18n.changeLanguage(savedLanguage);
+      }
       document.documentElement.lang = savedLanguage;
 
       applyRTLStyles(isRtl);
@@ -65,7 +66,9 @@ export const LanguageProvider = ({ children }) => {
       console.error("Error loading language:", error);
       setCurrentLanguage("en");
       setIsRTL(false);
-      i18n.changeLanguage("en");
+      if (typeof i18n?.changeLanguage === "function") {
+        i18n.changeLanguage("en");
+      }
       document.documentElement.lang = "en";
       applyRTLStyles(false);
     }
@@ -77,7 +80,9 @@ export const LanguageProvider = ({ children }) => {
       const isRtl = lng === "ar";
       setIsRTL(isRtl);
 
-      i18n.changeLanguage(lng);
+      if (typeof i18n?.changeLanguage === "function") {
+        i18n.changeLanguage(lng);
+      }
       localStorage.setItem("language", lng);
       document.documentElement.lang = lng;
       document.documentElement.dir = isRtl ? "rtl" : "ltr";

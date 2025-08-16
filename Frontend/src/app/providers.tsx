@@ -4,8 +4,7 @@ import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-// Import i18n configuration - needs to be after the "use client" directive
+// Ensure i18n is initialized before any hooks use it
 import "@/utils/i18n";
 
 export function Providers({ children }: { children: React.ReactNode }) {

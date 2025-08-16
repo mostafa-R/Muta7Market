@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Increase static generation timeout to avoid premature timeouts
+  // when building pages
+  staticPageGenerationTimeout: 120,
 };
 
 export default nextConfig;
