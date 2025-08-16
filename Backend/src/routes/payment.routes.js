@@ -10,6 +10,8 @@ import {
   initiatePayment,
   paymentWebhook,
   refundPayment,
+  simulateSuccess,
+  simulateFail,
 } from "../controllers/payment.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { paymentLimiter } from "../middleware/rateLimiter.middleware.js";
@@ -35,5 +37,9 @@ r.get("/:id", authMiddleware, getPaymentById);
 
 // طلب استرجاع (اختياري؛ يتطلب Auth)
 r.post("/:id/refund", authMiddleware, refundPayment);
+
+// Development-only simulation endpoints (guarded in controller)
+r.post("/:id/simulate-success", authMiddleware, simulateSuccess);
+r.post("/:id/simulate-fail", authMiddleware, simulateFail);
 
 export default r;
