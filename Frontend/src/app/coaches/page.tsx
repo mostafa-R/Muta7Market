@@ -207,6 +207,8 @@ export default function PlayersPage() {
     );
   }
 
+  const isRTL = t("common.isRTL") === "true";
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-muted">
@@ -241,23 +243,35 @@ export default function PlayersPage() {
               {t("coaches.filterAndSearch")}
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 ${
+              isRTL ? "text-right" : "text-left"
+            }`}
+          >
             {/* Search */}
             <div className="xl:col-span-2 relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search
+                className={`absolute ${
+                  isRTL ? "left-3" : "right-3"
+                } top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4`}
+              />
               <input
                 type="text"
                 placeholder={t("coaches.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 text-right w-full py-2 px-4 rounded-lg border border-border bg-white"
+                className={`pr-10 w-full py-2 px-4 rounded-lg border border-border bg-white ${
+                  isRTL ? "text-right" : "text-left"
+                }`}
               />
             </div>
             {/* Sport Filter */}
             <select
               value={sportFilter}
               onChange={(e) => setSportFilter(e.target.value)}
-              className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
+              className={`w-full py-2 px-4 rounded-lg border border-border bg-white ${
+                isRTL ? "text-right" : "text-left"
+              }`}
             >
               <option value="all">{t("coaches.allSports")}</option>
               {uniqueSports.map((sport) => (
@@ -270,7 +284,9 @@ export default function PlayersPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
+              className={`w-full py-2 px-4 rounded-lg border border-border bg-white ${
+                isRTL ? "text-right" : "text-left"
+              }`}
             >
               <option value="all">{t("coaches.statusOptions.all")}</option>
               <option value="Free Agent">
@@ -287,7 +303,9 @@ export default function PlayersPage() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
+              className={`w-full py-2 px-4 rounded-lg border border-border bg-white ${
+                isRTL ? "text-right" : "text-left"
+              }`}
             >
               <option value="all">{t("coaches.allCategories")}</option>
               <option value="Elite">{t("coaches.category.elite")}</option>
@@ -300,7 +318,9 @@ export default function PlayersPage() {
             <select
               value={nationalityFilter}
               onChange={(e) => setNationalityFilter(e.target.value)}
-              className="w-full py-2 px-4 rounded-lg border border-border bg-white text-right"
+              className={`w-full py-2 px-4 rounded-lg border border-border bg-white ${
+                isRTL ? "text-right" : "text-left"
+              }`}
             >
               <option value="all">{t("coaches.allNationalities")}</option>
               {uniqueNationalities.map((nationality) => (

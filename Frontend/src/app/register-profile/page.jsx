@@ -1097,17 +1097,20 @@ export default function Page() {
     }
   };
 
+  const { i18n } = useTranslation();
+  const isRTL = i18n.language === "ar"; // Check if the current language is Arabic for RTL
+
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100"
-      dir="rtl"
+      dir={isRTL ? "rtl" : "ltr"} // Set direction based on language
     >
       <ToastContainer
         position="top-right"
         autoClose={5000}
         hideProgressBar={false}
         newestOnTop={true}
-        rtl={true}
+        rtl={isRTL} // Set RTL for ToastContainer based on language
       />
 
       <div className="container mx-auto pt-8 pb-20 px-4 md:px-6">

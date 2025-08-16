@@ -77,6 +77,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ""
     }
+    
     // preferences: {
     //   language: {
     //     type: String,

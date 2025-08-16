@@ -34,8 +34,8 @@ const SportsPage = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`${
-                isRTL ? "pr-10" : "pl-10"
-              } text-right w-full py-2 px-4 rounded-lg border border-[hsl(var(--border))] bg-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] transition`}
+                isRTL ? "pr-10 text-right" : "pl-10 text-left"
+              } w-full py-2 px-4 rounded-lg border border-[hsl(var(--border))] bg-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] transition`}
             />
           </div>
         </div>

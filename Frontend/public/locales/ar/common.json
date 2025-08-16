@@ -209,6 +209,7 @@
     "instructor": "مدرب تعليمي"
   },
   "profile": {
+    "profile": "الملف الشخصي",
     "userDataUnavailable": "بيانات المستخدم غير متوفرة",
     "failedToFetchUserData": "فشل في جلب بيانات المستخدم. يرجى المحاولة مرة أخرى.",
     "noPlayerDataFound": "لم يتم العثور على بيانات اللاعب",

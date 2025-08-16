@@ -71,7 +71,12 @@ const ProfileView = ({ user, t, language }) => {
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div
+      className={`bg-white rounded-2xl shadow-lg overflow-hidden ${
+        language === "ar" ? "rtl-direction" : "ltr-direction"
+      }`}
+      data-lang={language}
+    >
       {/* Header with gradient */}
       <div className="bg-[#00183D] p-6 lg:p-8">
         <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white flex items-center gap-3">
@@ -123,7 +128,10 @@ const ProfileView = ({ user, t, language }) => {
             </div>
           )}
 
-          <div className="text-center sm:text-right flex-1">
+          <div
+            className="text-center sm:text-right flex-1"
+            style={{ textAlign: language === "ar" ? "right" : "left" }}
+          >
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
               {user?.name || t("profile.userName")}
             </h2>
@@ -144,7 +152,10 @@ const ProfileView = ({ user, t, language }) => {
         </div>
 
         {/* Information grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          style={{ direction: language === "ar" ? "rtl" : "ltr" }}
+        >
           <InfoItem
             icon={FaPhone}
             label={t("profile.phone")}

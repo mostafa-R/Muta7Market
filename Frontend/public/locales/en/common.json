@@ -208,6 +208,7 @@
     "instructor": "Instructor"
   },
   "profile": {
+    "profile": "Profile",
     "userDataUnavailable": "User data unavailable",
     "failedToFetchUserData": "Failed to fetch user data. Please try again.",
     "noPlayerDataFound": "No player data found",
