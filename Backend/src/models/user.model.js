@@ -71,7 +71,7 @@ const userSchema = new mongoose.Schema(
     lastLogin: Date,
     isActive: {
       type: Boolean,
-      default: true
+      default: false
     },
     bio: {
       type: String,

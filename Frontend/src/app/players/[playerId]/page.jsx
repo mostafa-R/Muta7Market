@@ -36,6 +36,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,6 +58,7 @@ const PlayerProfile = () => {
   const [error, setError] = useState(null);
   const [isVideoPopupOpen, setIsVideoPopupOpen] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState(null);
+  const [isUserActive, setIsUserActive] = useState(false);
 
   const getFirstVideoUrl = () => {
     // Based on player model structure, videos are stored in player.media.video
@@ -90,11 +92,24 @@ const PlayerProfile = () => {
   };
 
   const handleSendMessage = async () => {
+    if (!isUserActive) {
+      toast.error(t("playerDetail.activationRequired"));
+      return;
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
+
+    // Require active user to access contact methods
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user && user.isActive === false) {
+        toast.error(t("playerDetail.activationRequired"));
+        return;
+      }
+    } catch {}
 
     const phoneNumber = player?.user?.phone;
     if (phoneNumber) {
@@ -106,11 +121,23 @@ const PlayerProfile = () => {
   };
 
   const handleRequestPhone = () => {
+    if (!isUserActive) {
+      toast.error(t("playerDetail.activationRequired"));
+      return;
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
+
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user && user.isActive === false) {
+        toast.error(t("playerDetail.activationRequired"));
+        return;
+      }
+    } catch {}
 
     const phone = player?.user?.phone;
     if (phone) {
@@ -128,11 +155,22 @@ const PlayerProfile = () => {
   };
 
   const handleSendEmail = () => {
+    if (!isUserActive) {
+      toast.error(t("playerDetail.activationRequired"));
+      return;
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user && user.isActive === false) {
+        toast.error(t("playerDetail.activationRequired"));
+        return;
+      }
+    } catch {}
     const email = player?.user?.email;
     if (email) {
       window.open(`mailto:${email}`, "_blank");
@@ -183,6 +221,29 @@ const PlayerProfile = () => {
 
     fetchPlayer();
   }, [playerId, t]);
+
+  useEffect(() => {
+    // Always verify from backend profile instead of relying on localStorage
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setIsUserActive(false);
+        return;
+      }
+      const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      fetch(`${base}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((j) => {
+          const active = Boolean(j?.user?.isActive);
+          setIsUserActive(active);
+        })
+        .catch(() => setIsUserActive(false));
+    } catch {
+      setIsUserActive(false);
+    }
+  }, []);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -677,8 +738,18 @@ const PlayerProfile = () => {
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
                 <CardTitle>{t("playerDetail.contactPlayer")}</CardTitle>
+                {!isUserActive && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {t("playerDetail.availableForPaidUsers") || "Available for paid users"}
+                  </p>
+                )}
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
+                {!isUserActive && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-sm">
+                    {t("playerDetail.activationRequired") || "Activate your account to view contact information. One-time payment (55 SAR)."}
+                  </div>
+                )}
                 <Button
                   variant="default"
                   className="w-full"
@@ -703,6 +774,22 @@ const PlayerProfile = () => {
                   <Mail className="w-4 h-4 ml-2" />
                   {t("playerDetail.sendEmail")}
                 </Button>
+                {isUserActive && (player?.user?.phone || player?.user?.email) && (
+                  <div className="pt-2 text-sm text-gray-600">
+                    {player?.user?.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4" />
+                        <span className="font-medium">{player.user.phone}</span>
+                      </div>
+                    )}
+                    {player?.user?.email && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Mail className="w-4 h-4" />
+                        <span className="font-medium">{player.user.email}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -13,6 +13,7 @@ const paymentSchema = new mongoose.Schema(
       enum: [
         "add_offer",
         "promote_offer",
+        "activate_user",
         "unlock_contact",
         "promote_player",
         "promote_coach",

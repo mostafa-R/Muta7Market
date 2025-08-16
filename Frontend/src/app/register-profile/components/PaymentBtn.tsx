@@ -795,7 +795,13 @@ const SuccessModal = ({
   );
 };
 
-export default function PaymentBtn() {
+type PaymentBtnProps = {
+  type?: string;
+  description?: string;
+  metadata?: Record<string, any>;
+};
+
+export default function PaymentBtn({ type = "activate_user", description, metadata }: PaymentBtnProps) {
   const { t } = useTranslation();
   // Ensure API base points to backend API root
   const API_BASE =
@@ -841,6 +847,11 @@ export default function PaymentBtn() {
           if (pollRef.current) clearInterval(pollRef.current);
           setShowPaymentModal(false);
           setShowSuccessModal(true);
+          // Optimistically mark user as active in localStorage
+          try {
+            const u = JSON.parse(localStorage.getItem("user") || "{}");
+            localStorage.setItem("user", JSON.stringify({ ...u, isActive: true }));
+          } catch {}
           toast.success("تم الدفع بنجاح ✅ – تم تفعيل اشتراكك");
         } else if (status.includes("FAILED") || status.includes("CANCELLED")) {
           if (pollRef.current) clearInterval(pollRef.current);
@@ -862,14 +873,19 @@ export default function PaymentBtn() {
 
     const promise = (async () => {
       const body = {
-        type: "promote_player",
+        type,
         currency: "SAR",
-        description: "Player Registration Subscription",
+        description:
+          description ||
+          (type === "activate_user"
+            ? "One-time activation to view players contact info"
+            : "Player Registration Subscription"),
         metadata: {
           name: user?.name || "",
           email: user?.email || "",
           mobile: user?.mobile || "",
-          source: "player-registration",
+          source: type === "activate_user" ? "user-activation" : "player-registration",
+          ...(metadata || {}),
         },
       };
 
@@ -968,6 +984,8 @@ export default function PaymentBtn() {
             <CreditCard size={22} />
             {loading
               ? "جارٍ التفعيل…"
+              : type === "activate_user"
+              ? t("payment.activateAccount")
               : t("registerProfile.success.upgradeButton")}
           </button>
 

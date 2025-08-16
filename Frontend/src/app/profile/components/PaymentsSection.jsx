@@ -2,6 +2,11 @@
 import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
 
 const PaymentsSection = ({ payments, router, t, language }) => {
+  let isUserInactive = false;
+  try {
+    const u = JSON.parse(typeof window !== 'undefined' ? (localStorage.getItem('user') || '{}') : '{}');
+    isUserInactive = u && u.isActive === false;
+  } catch {}
   // ترجمة القيم إلى العربية
   const translateJop = (jop) => {
     return jop === "player"
@@ -171,7 +176,8 @@ const PaymentsSection = ({ payments, router, t, language }) => {
             {t("common.viewDetails")}
           </button>
           <div className="mt-4 w-full">
-            <PaymentBtn />
+            {/* Player activation payment (for inactive player profile) */}
+            <PaymentBtn type="promote_player" description="Activate player profile" metadata={{ source: 'player-activation' }} />
           </div>
         </div>
       </div>
@@ -184,7 +190,7 @@ const PaymentsSection = ({ payments, router, t, language }) => {
       <div className="bg-[#00183D] p-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <i className="fas fa-credit-card"></i>
-          {t("profile.coachesData")}
+          {t("profile.payments")}
         </h1>
       </div>
 
@@ -199,6 +205,19 @@ const PaymentsSection = ({ payments, router, t, language }) => {
           </div>
         ) : (
           <>
+            {isUserInactive && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="text-blue-800">
+                    <div className="font-semibold mb-1">{t("payment.activateAccountTitle") || 'Activate your account'}</div>
+                    <div className="text-sm">{t("payment.activateAccountDesc") || 'Pay a one-time fee (55 SAR) to unlock all players\' contact info.'}</div>
+                  </div>
+                  <div className="w-full md:w-auto">
+                    <PaymentBtn type="activate_user" description="One-time activation to view players contact info" metadata={{ source: 'user-activation' }} />
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
               <p className="text-yellow-800 flex items-center gap-2">
                 <i className="fas fa-info-circle"></i>

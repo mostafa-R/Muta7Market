@@ -109,6 +109,7 @@ const UserProfile = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // Always ensure payments tab shows either pending player activation or user activation button
       setPendingPayments(response.data ? [response.data] : []);
     } catch (err) {
       console.error("Error fetching payments:", err);

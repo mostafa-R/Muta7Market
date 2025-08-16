@@ -125,10 +125,7 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Username or password is incorrect");
   }
 
-  // Check if active
-  if (!user.isActive) {
-    throw new ApiError(403, "Your account has been deactivated");
-  }
+  // Allow login even if inactive; gating will be handled in features
 
   // Update last login & clean expired refresh tokens
   user.lastLogin = new Date();
@@ -157,6 +154,7 @@ export const login = asyncHandler(async (req, res) => {
     lastLogin: user.lastLogin,
     profileImage: user.profileImage,
     isEmailVerified: user.isEmailVerified,
+    isActive: user.isActive,
   };
 
   // Send response (No Tokens in Body since they are in Cookies)

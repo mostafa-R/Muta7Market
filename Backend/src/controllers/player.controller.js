@@ -1,4 +1,5 @@
 import { default as Player } from "../models/player.model.js";
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -237,9 +238,27 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     await player.save();
   }
 
+  // Gate contact methods: only owner or active users can see contact info
+  let canSeeContacts = false;
+  try {
+    const isOwner = req.user && player.user._id.toString() === req.user._id.toString();
+    let requesterIsActive = false;
+    if (req.user) {
+      const requester = await User.findById(req.user._id).select("isActive");
+      requesterIsActive = Boolean(requester?.isActive);
+    }
+    canSeeContacts = Boolean(isOwner || requesterIsActive);
+  } catch {}
+
+  const playerData = player.toObject();
+  if (!canSeeContacts && playerData?.user) {
+    delete playerData.user.email;
+    delete playerData.user.phone;
+  }
+
   res
     .status(200)
-    .json(new ApiResponse(200, player, "Player fetched successfully"));
+    .json(new ApiResponse(200, playerData, "Player fetched successfully"));
 });
 
 // Update Player Profile

@@ -8,6 +8,7 @@ import Payment from "../models/payment.model.js";
 import paymentService from "../services/payment.service.js";
 import { PRICING } from "../config/constants.js";
 import Player from "../models/player.model.js";
+import User from "../models/user.model.js";
 
 // ===== حالات الدفع (تلقائية من الاسكيمة لتفادي اختلاف الـ casing) =====
 const PAYMENT_STATUS = (() => {
@@ -234,6 +235,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     const validTypes = [
       "add_offer",
       "promote_offer",
+      "activate_user",
       "unlock_contact",
       "promote_player",
       "promote_coach",
@@ -250,6 +252,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     const amountMap = {
       add_offer: PRICING.ADD_OFFER,
       promote_offer: PRICING.PROMOTE_OFFER,
+      activate_user: PRICING.ACTIVATE_USER,
       unlock_contact: PRICING.UNLOCK_CONTACT,
       promote_player: PRICING.PROMOTE_PLAYER,
       promote_coach: PRICING.PROMOTE_COACH,

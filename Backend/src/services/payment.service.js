@@ -2,6 +2,7 @@
 import axios from "axios";
 import Payment from "../models/payment.model.js"; // ⬅️ شِلّنا named import
 import Player from "../models/player.model.js";
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 
 // ===== حالات الدفع (تلقائية من الموديل) =====
@@ -285,25 +286,26 @@ class PaymentService {
       console.log("✅ [WEBHOOK] Payment is completed - updating status to COMPLETED");
       payment.status = PAYMENT_STATUS.COMPLETED;
 
-      // Activate player profile when payment is completed
-      console.log("🔄 [WEBHOOK] Attempting to activate player profile...");
+      // Post-payment actions based on type
       try {
-        const player = await Player.findOne({ user: payment.user });
-        if (player) {
-          console.log("📋 [WEBHOOK] Found player profile:", {
-            playerId: player._id,
-            currentIsActive: player.isActive
-          });
-          
-          player.isActive = true;
-          await player.save();
-          console.log("✅ [WEBHOOK] Player profile activated successfully for user:", payment.user);
-        } else {
-          console.log("⚠️ [WEBHOOK] No player profile found for user:", payment.user);
+        if (payment.type === "activate_user") {
+          console.log("🔄 [WEBHOOK] Activating user account...");
+          await User.findByIdAndUpdate(payment.user, { isActive: true });
+          console.log("✅ [WEBHOOK] User account activated:", payment.user);
+        }
+
+        // For promote_player keep activating player profile (existing behavior)
+        if (payment.type === "promote_player") {
+          console.log("🔄 [WEBHOOK] Attempting to activate player profile...");
+          const player = await Player.findOne({ user: payment.user });
+          if (player) {
+            player.isActive = true;
+            await player.save();
+            console.log("✅ [WEBHOOK] Player profile activated for user:", payment.user);
+          }
         }
       } catch (error) {
-        console.error("❌ [WEBHOOK] Error activating player profile:", error.message);
-        // Don't throw error here to avoid breaking the payment process
+        console.error("❌ [WEBHOOK] Post-payment action error:", error.message);
       }
     } else if (statusStr === "CANCELLED" || statusStr === "FAILED") {
       console.log("❌ [WEBHOOK] Payment failed/cancelled - updating status to FAILED");
@@ -372,25 +374,25 @@ class PaymentService {
       console.log("✅ [CONFIRM] Payment is completed - updating status to COMPLETED");
       payment.status = PAYMENT_STATUS.COMPLETED;
 
-      // Activate player profile when payment is confirmed
-      console.log("🔄 [CONFIRM] Attempting to activate player profile...");
+      // Post-payment actions based on type
       try {
-        const player = await Player.findOne({ user: payment.user });
-        if (player) {
-          console.log("📋 [CONFIRM] Found player profile:", {
-            playerId: player._id,
-            currentIsActive: player.isActive
-          });
-          
-          player.isActive = true;
-          await player.save();
-          console.log("✅ [CONFIRM] Player profile activated successfully for user:", payment.user);
-        } else {
-          console.log("⚠️ [CONFIRM] No player profile found for user:", payment.user);
+        if (payment.type === "activate_user") {
+          console.log("🔄 [CONFIRM] Activating user account...");
+          await User.findByIdAndUpdate(payment.user, { isActive: true });
+          console.log("✅ [CONFIRM] User account activated:", payment.user);
+        }
+
+        if (payment.type === "promote_player") {
+          console.log("🔄 [CONFIRM] Attempting to activate player profile...");
+          const player = await Player.findOne({ user: payment.user });
+          if (player) {
+            player.isActive = true;
+            await player.save();
+            console.log("✅ [CONFIRM] Player profile activated for user:", payment.user);
+          }
         }
       } catch (error) {
-        console.error("❌ [CONFIRM] Error activating player profile:", error.message);
-        // Don't throw error here to avoid breaking the payment process
+        console.error("❌ [CONFIRM] Post-payment action error:", error.message);
       }
     } else {
       console.log("⚠️ [CONFIRM] Payment not completed, status:", statusStr);
