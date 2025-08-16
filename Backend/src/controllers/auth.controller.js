@@ -34,8 +34,6 @@ export const register = asyncHandler(async (req, res) => {
   const emailToken = generateRandomString();
   const phoneOTP = generateOTP();
 
-  console.log("Email Token:", emailToken);
-  console.log("Phone OTP:", phoneOTP);
 
   const emailVerificationToken = crypto
     .createHash("sha256")

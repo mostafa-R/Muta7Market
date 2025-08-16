@@ -84,21 +84,17 @@ export const update = async (req, res) => {
     // Check for file in different possible locations
     if (req.files && req.files.profileImage && req.files.profileImage[0]) {
       imageFile = req.files.profileImage[0];
-      console.log("Image found in req.files.profileImage[0]");
+      
     } else if (req.file) {
       imageFile = req.file;
-      console.log("Image found in req.file");
+      
     } else if (req.files && Array.isArray(req.files) && req.files[0]) {
       imageFile = req.files[0];
-      console.log("Image found in req.files[0]");
+      
     }
 
     if (imageFile) {
-      console.log("Processing image file:", {
-        filename: imageFile.filename,
-        path: imageFile.path,
-        mimetype: imageFile.mimetype,
-      });
+      
 
       // التحقق من نوع الملف
       if (!imageFile.mimetype || !imageFile.mimetype.startsWith("image/")) {
@@ -110,10 +106,7 @@ export const update = async (req, res) => {
       // حذف الصورة القديمة إذا وجدت
       if (currentUser.profileImage && currentUser.profileImage.public_id) {
         try {
-          console.log(
-            "Deleting old image:",
-            currentUser.profileImage.public_id
-          );
+          
           await deleteFromCloudinary(
             currentUser.profileImage.public_id,
             "image"
@@ -130,7 +123,7 @@ export const update = async (req, res) => {
         public_id: imageFile.filename || imageFile.public_id,
       };
 
-      console.log("Image added to updates:", updates.profileImage);
+      
     }
 
     // معالجة رقم الهاتف
@@ -194,11 +187,10 @@ export const update = async (req, res) => {
     }
 
     // التحقق من وجود تحديثات
-    console.log("Updates object:", updates);
-    console.log("Updates keys:", Object.keys(updates));
+    
 
     if (Object.keys(updates).length === 0) {
-      console.log("No updates found!");
+      
       return res.status(400).json({ message: "No valid fields to update" });
     }
 
@@ -226,7 +218,7 @@ export const update = async (req, res) => {
       (key) => key !== "lastLogin"
     );
 
-    console.log("Update successful! Updated fields:", updatedFields);
+    
 
     res.status(200).json({
       message: "User updated successfully",
