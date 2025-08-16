@@ -269,21 +269,12 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
     return (
       <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden w-full">
         <div className="bg-[#00183D] p-4 flex items-center gap-4">
-          {safePayment.media?.profileImage?.url ? (
-            <img
-              src={safePayment.media.profileImage.url}
-              alt={safePayment.name.ar}
-              className="w-16 h-16 rounded-full object-cover"
-              onError={(e) => (e.target.src = "/default-profile.png")} // صورة افتراضية
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-              <i className="fas fa-user text-gray-500 text-2xl"></i>
-            </div>
-          )}
+          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+            <i className="fas fa-user text-gray-500 text-2xl"></i>
+          </div>
           <div className="flex-1">
             <h3 className="text-white font-semibold text-lg">
-              {safePayment.name.ar}
+              {t('payment.pendingTitle', { defaultValue: 'Pending item' })}
             </h3>
             <div className="text-white/80 text-sm">
               {safePayment.type && (
@@ -296,124 +287,17 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
           </div>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              {displayAmount !== undefined && displayAmount > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 flex items-center gap-2">
-                    <i className="fas fa-receipt"></i>
-                    {t("payment.amount") || "Amount"}
-                  </span>
-                  <span className="font-bold text-purple-600">
-                    {displayAmount} {safePayment.currency}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-money-bill-wave"></i>
-                  {t("player.monthlySalary")}
-                </span>
-                <span className="font-bold text-purple-600">
-                  {safePayment.monthlySalary.amount}{" "}
-                  {safePayment.monthlySalary.currency}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-money-check-alt"></i>
-                  {t("player.annualContract")}
-                </span>
-                <span className="font-bold text-purple-600">
-                  {safePayment.yearSalary.amount}{" "}
-                  {safePayment.yearSalary.currency}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-flag"></i>
-                  {t("playerDetail.nationality")}
-                </span>
-                <span className="text-gray-800">{safePayment.nationality}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-briefcase"></i>
-                  {t("profile.job")}
-                </span>
-                <span className="text-gray-800">
-                  {translateJop(safePayment.jop)}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-map-marker-alt"></i>
-                  {t("player.position")}
-                </span>
-                <span className="text-gray-800">{safePayment.position.ar}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-info-circle"></i>
-                  {t("profile.status")}
-                </span>
-                <span className="text-gray-800">
-                  {translateStatus(safePayment.status)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-toggle-on"></i>
-                  {t("profile.active")}
-                </span>
-                <span className="text-gray-800">
-                  {safePayment.isActive ? t("common.yes") : t("common.no")}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 flex items-center gap-2">
-                  <i className="fas fa-futbol"></i>
-                  {t("player.sport")}
-                </span>
-                <span className="text-gray-800">{safePayment.game}</span>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 space-y-3 border-t pt-4">
-            <div className="flex justify-between items-center">
+          {displayAmount !== undefined && displayAmount > 0 && (
+            <div className="flex justify-between items-center mb-4">
               <span className="text-gray-600 flex items-center gap-2">
-                <i className="fas fa-envelope"></i>
-                {t("profile.email")}
+                <i className="fas fa-receipt"></i>
+                {t("payment.amount") || "Amount"}
               </span>
-              <span className="text-gray-800">
-                {safePayment.contactInfo.email || t("common.notAvailable")}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 flex items-center gap-2">
-                <i className="fas fa-phone"></i>
-                {t("profile.phone")}
-              </span>
-              <span className="text-gray-800">
-                {safePayment.contactInfo.phone || t("common.notAvailable")}
+              <span className="font-bold text-purple-600">
+                {displayAmount} {safePayment.currency}
               </span>
             </div>
-          </div>
-          <button
-            onClick={() =>
-              router.push(`/register-profile?id=${safePayment._id}`)
-            }
-            className="mt-6 w-full py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#00183D]/80 transition-all flex items-center justify-center gap-2 font-medium"
-          >
-            <i className="fas fa-eye"></i>
-            {t("common.viewDetails")}
-          </button>
-          <div className="mt-4 w-full">
-            {/* Player activation payment (for inactive player profile) */}
-            <PaymentBtn type="promote_player" description="Activate player profile" metadata={{ source: 'player-activation' }} />
-          </div>
+          )}
         </div>
       </div>
     );

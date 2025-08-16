@@ -257,27 +257,7 @@ export const notPaied = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find pending payments for either user activation or player activation
-    const pendingPayments = await Payment.find({
-      user: userId,
-      status: "pending",
-      type: { $in: ["activate_user", "promote_player"] },
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // Also surface inactive player if exists (legacy behavior)
-    const inactivePlayer = await playerModel
-      .findOne({ user: userId, isActive: false })
-      .lean();
-
-    // All payments (any type, any status)
-    const payments = await Payment.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .select("-gatewayResponse.raw")
-      .lean();
-
-    // Unpaid payments (not completed/refunded) for profile payments tab
+    // Unpaid payments (not completed/refunded) belonging to the authenticated user
     const unpaidPayments = await Payment.find({
       user: userId,
       status: { $nin: ["completed", "refunded"] },
@@ -291,9 +271,8 @@ export const notPaied = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    return res
-      .status(200)
-      .json({ pendingPayments, inactivePlayer, payments, unpaidPayments, invoices });
+    // Return only payment-related data (no player profile blending)
+    return res.status(200).json({ unpaidPayments, invoices });
   } catch (error) {
     res.status(500).json({ error, message: error.message });
   }
