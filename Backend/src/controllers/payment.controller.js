@@ -222,7 +222,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
 
   const {
     paymentId,
-    currency = "USD",
+    currency = "SAR",
     description = "Subscription",
     type = "add_offer", // Default payment type
     metadata = {}, // لا تبعث userId هنا – يتم تجاهله
@@ -244,6 +244,20 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     if (String(paymentDoc.user) !== String(userId)) {
       throw new ApiError(403, "Not allowed to pay this invoice");
     }
+    // Ensure amount is synced with constants for activation types
+    try {
+      const t = String(paymentDoc.type);
+      if (t === "activate_user" && paymentDoc.amount !== PRICING.ACTIVATE_USER) {
+        paymentDoc.amount = PRICING.ACTIVATE_USER;
+        paymentDoc.currency = paymentDoc.currency || "SAR";
+        await paymentDoc.save();
+      }
+      if (t === "promote_player" && paymentDoc.amount !== PRICING.PROMOTE_PLAYER) {
+        paymentDoc.amount = PRICING.PROMOTE_PLAYER;
+        paymentDoc.currency = paymentDoc.currency || "SAR";
+        await paymentDoc.save();
+      }
+    } catch {}
     if (String(paymentDoc.status) === String(PAYMENT_STATUS.COMPLETED)) {
       return res.status(200).json(
         new ApiResponse(
@@ -278,7 +292,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     // Get static amount based on payment type
     const amountMap = {
       add_offer: PRICING.ADD_OFFER,
-      promote_offer: PRICING.PROMOTE_OFFER,
+      promote_offer: PRICING.PROMOTE_OFFER_PER_DAY,
       activate_user: PRICING.ACTIVATE_USER,
       unlock_contact: PRICING.UNLOCK_CONTACT,
       promote_player: PRICING.PROMOTE_PLAYER,

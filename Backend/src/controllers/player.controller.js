@@ -44,7 +44,8 @@ export const createPlayer = asyncHandler(async (req, res) => {
       socialLinks: req.body.socialLinks,
       contactInfo: req.body.contactInfo,
       game: req.body.game,
-      isActive: req.body.isActive,
+      // Always create player profiles as inactive; activation happens after payment
+      isActive: false,
       media,
     });
 

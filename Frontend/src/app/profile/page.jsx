@@ -29,6 +29,7 @@ const UserProfile = () => {
   const { language } = useLanguage();
   const [user, setUser] = useState(null);
   const [pendingPayments, setPendingPayments] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -153,6 +154,7 @@ const UserProfile = () => {
         return s !== "completed" && s !== "refunded"; // show pending/failed/cancelled etc.
       });
       setPendingPayments(unpaid);
+      setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
     } catch (err) {
       console.error("Error fetching payments:", err);
     }
@@ -443,6 +445,7 @@ const UserProfile = () => {
             {activeSection === "payments" && (
               <PaymentsSection
                 payments={pendingPayments}
+                invoices={invoices}
                 router={router}
                 t={t}
                 language={language}

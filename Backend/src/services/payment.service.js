@@ -167,7 +167,18 @@ class PaymentService {
 
     const payment = await Payment.findById(paymentId);
     if (!payment) throw new ApiError(404, "Payment not found");
-    
+    // Guardrail: hard-sync activation prices from constants when missing or stale
+    try {
+      const t = String(payment.type);
+      const constants = (await import("../config/constants.js")).PRICING;
+      if (t === "activate_user" && payment.amount !== constants.ACTIVATE_USER) {
+        payment.amount = constants.ACTIVATE_USER;
+      }
+      if (t === "promote_player" && payment.amount !== constants.PROMOTE_PLAYER) {
+        payment.amount = constants.PROMOTE_PLAYER;
+      }
+      await payment.save();
+    } catch {}
     
 
     
