@@ -106,7 +106,8 @@
     "exploreAllSports": "استكشف جميع الرياضات",
     "viewAll": "عرض الكل",
     "viewAllPlayers": "عرض جميع اللاعبين",
-    "startJourney": "ابدأ رحلتك",
+    "startJourney": "ابدأ رحلتك الرياضية",
+    "startJourneyDescription": "انضم إلى آلاف اللاعبين والمدربين الذين وجدوا فرصهم المثالية من خلال منصتنا",
     "joinNow": "انضم الآن"
   },
   "errors": {

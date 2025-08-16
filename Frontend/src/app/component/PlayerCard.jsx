@@ -69,35 +69,33 @@ const getCategoryText = (jop, t) => {
 const PlayerCard = ({ player }) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
+  const isRTL = language === "ar";
+
   return (
-    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card  h-[450px] w-[300px] flex flex-col min-h-0">
-      <div className="flex-1 min-h-0 ">
+    <div className="border border-gray-300 overflow-hidden group rounded-2xl transition-smooth bg-[hsl(var(--card))] shadow-card h-[450px] w-[300px] flex flex-col min-h-0">
+      <div className="flex-1 min-h-0">
         {/* Header with Avatar and Status */}
         <div className="relative p-6 pb-4">
-          <div className="absolute top-4 right-4 flex space-x-4 space-x-reverse">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between">
-                <div className="flex flex-col gap-2">
-                  <span
-                    className={`text-white text-center text-xs px-2 py-1 rounded-lg ${getStatusColor(
-                      player.status
-                    )}`}
-                  >
-                    {getStatusText(player.status, t)}
-                  </span>
-                  <span
-                    className={`text-white text-xs px-2 py-1 rounded-lg ${getCategoryColor(
-                      player.jop
-                    )}`}
-                  >
-                    {getCategoryText(player.jop, t)}
-                  </span>
-                </div>
-              </div>
+          <div className={`absolute top-4 ${isRTL ? "left-4" : "right-4"}`}>
+            <div className="flex flex-col gap-2">
+              <span
+                className={`text-white text-center text-xs px-2 py-1 rounded-lg ${getStatusColor(
+                  player.status
+                )}`}
+              >
+                {getStatusText(player.status, t)}
+              </span>
+              <span
+                className={`text-white text-xs px-2 py-1 rounded-lg ${getCategoryColor(
+                  player.jop
+                )}`}
+              >
+                {getCategoryText(player.jop, t)}
+              </span>
             </div>
           </div>
 
-          <div className="mr-auto ml-auto flex items-center justify-center flex-col">
+          <div className="mx-auto flex items-center justify-center flex-col">
             <div className="w-24 h-24 rounded-full border border-white shadow-card overflow-hidden flex items-center justify-center bg-[hsl(var(--primary)/0.15)] mb-2">
               {player.profileImage ? (
                 <Image
@@ -122,7 +120,7 @@ const PlayerCard = ({ player }) => {
               <h3 className="text-lg font-bold text-[hsl(var(--card-foreground))] truncate group-hover:text-[hsl(var(--primary))] transition-colors">
                 {player.name}
               </h3>
-              <div className="flex justify-center items-center space-x-2 space-x-reverse mt-1">
+              <div className="flex justify-center items-center gap-2 mt-1">
                 <MapPin className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
                 <span className="text-sm text-[hsl(var(--muted-foreground))]">
                   {player.nationality}
@@ -134,32 +132,32 @@ const PlayerCard = ({ player }) => {
 
         {/* Player Info */}
         <div className="px-6 pb-4 space-y-3 mt-3">
-          <div className="grid grid-cols-2 text-sm">
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+          <div className="grid grid-cols-2 text-sm gap-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
               <span className="text-[hsl(var(--muted-foreground))]">
                 {t("player.age")}:
               </span>
-              <span className="font-medium ml-1 mr-1">
+              <span className="font-medium">
                 {player.age} {t("player.years")}
               </span>
             </div>
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <Trophy className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
               <span className="text-[hsl(var(--muted-foreground))]">
                 {t("player.sport")}:
               </span>
-              <span className="font-medium ml-1 mr-1">{player.sport}</span>
+              <span className="font-medium">{player.sport}</span>
             </div>
           </div>
 
           {player.position && (
-            <div className="flex items-center space-x-2 space-x-reverse text-sm">
-              <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+            <div className="flex items-center gap-2 text-sm">
+              <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
               <span className="text-[hsl(var(--muted-foreground))]">
                 {t("player.position")}:
               </span>
-              <span className="font-medium ml-1 mr-1">{player.position}</span>
+              <span className="font-medium">{player.position}</span>
             </div>
           )}
 
@@ -167,9 +165,9 @@ const PlayerCard = ({ player }) => {
             <div className="bg-[hsl(var(--muted))] rounded-lg p-3 space-y-2">
               {player.monthlySalary && (
                 <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
-                    <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
+                    <span className="text-[hsl(var(--muted-foreground))]">
                       {t("player.monthlySalary")}:
                     </span>
                   </div>
@@ -181,9 +179,9 @@ const PlayerCard = ({ player }) => {
 
               {player.annualContractValue != null && (
                 <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <DollarSign className="w-4 h-4 text-[hsl(var(--primary))]" />
-                    <span className="text-[hsl(var(--muted-foreground))] ml-1 mr-1">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
+                    <span className="text-[hsl(var(--muted-foreground))]">
                       {t("player.annualContract")}:
                     </span>
                   </div>
@@ -199,10 +197,10 @@ const PlayerCard = ({ player }) => {
           )}
 
           {player.transferDeadline && (
-            <div className="flex items-center space-x-2 space-x-reverse text-sm text-orange-600">
-              <Clock className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-sm text-orange-600">
+              <Clock className="w-4 h-4 flex-shrink-0" />
               <span>{t("player.transferDeadline")}:</span>
-              <span className="font-medium ml-2 mr-2">
+              <span className="font-medium">
                 {new Date(player.transferDeadline).toLocaleDateString(
                   language === "ar" ? "ar-EG" : "en-US",
                   {
@@ -222,9 +220,9 @@ const PlayerCard = ({ player }) => {
           <button
             type="button"
             className="w-full group bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] 
-        border border-[hsl(var(--primary))] rounded-lg px-4 py-2 hover:bg-[hsl(var(--primary)/0.9)] hover:text-white transition flex items-center justify-center cursor-pointer"
+        border border-[hsl(var(--primary))] rounded-lg px-4 py-2 hover:bg-[hsl(var(--primary)/0.9)] hover:text-white transition flex items-center justify-center cursor-pointer gap-2"
           >
-            <Eye className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
+            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
             {t("player.viewProfile")}
           </button>
         </Link>
