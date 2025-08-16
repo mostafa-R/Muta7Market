@@ -4,6 +4,7 @@ import { Router } from "express";
 import {
   confirmReturn,
   Getallorders,
+  listPayments,
   getPaymentById,
   getPaymentStatus,
   getPaymentStatusByTransaction,
@@ -14,10 +15,12 @@ import {
   simulateFail,
 } from "../controllers/payment.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import { roleMiddleware } from "../middleware/roleMiddleware.js";
 import { paymentLimiter } from "../middleware/rateLimiter.middleware.js";
 const r = Router();
 
 r.post("/orders", Getallorders);
+r.get("/orders", Getallorders);
 r.post("/initiate", paymentLimiter, authMiddleware, initiatePayment);
 
 // Webhook من Paylink (بدون Auth)
@@ -34,6 +37,9 @@ r.get("/status/transaction/:transactionNo", getPaymentStatusByTransaction);
 
 // تفاصيل دفع كاملة (اختياري)
 r.get("/:id", authMiddleware, getPaymentById);
+
+// جميع المدفوعات (المستخدم يرى مدفوعاته فقط؛ الأدمن يرى الكل)
+r.get("/", authMiddleware, listPayments);
 
 // طلب استرجاع (اختياري؛ يتطلب Auth)
 r.post("/:id/refund", authMiddleware, refundPayment);

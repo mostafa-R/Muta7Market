@@ -8,6 +8,7 @@ import Payment from "../models/payment.model.js";
 import paymentService from "../services/payment.service.js";
 import { PRICING } from "../config/constants.js";
 import Player from "../models/player.model.js";
+import User from "../models/user.model.js";
 
 // ===== حالات الدفع (تلقائية من الاسكيمة لتفادي اختلاف الـ casing) =====
 const PAYMENT_STATUS = (() => {
@@ -148,6 +149,64 @@ export const Getallorders = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * GET /api/v1/payments
+ * Return all payments. Admin can filter; regular user sees only their payments.
+ */
+export const listPayments = asyncHandler(async (req, res) => {
+  const {
+    status,
+    type,
+    q,
+    from,
+    to,
+    page = 1,
+    limit = 20,
+    sort = "-createdAt",
+  } = req.query || {};
+
+  const filter = {};
+
+  // If not admin, restrict to current user
+  if (!req.user || !["admin", "super_admin"].includes(String(req.user.role))) {
+    filter.user = req.user?._id || req.user?.id;
+  }
+
+  if (status) filter.status = String(status).toLowerCase();
+  if (type) filter.type = String(type);
+  if (q && String(q).trim()) {
+    const s = String(q).trim();
+    filter.$or = [
+      { description: { $regex: s, $options: "i" } },
+      { "gatewayResponse.checkoutId": { $regex: s, $options: "i" } },
+    ];
+  }
+  if (from || to) {
+    filter.createdAt = {};
+    if (from) filter.createdAt.$gte = new Date(from);
+    if (to) filter.createdAt.$lte = new Date(to);
+  }
+
+  const pageNum = Math.max(parseInt(page) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit) || 20, 1), 100);
+
+  const total = await Payment.countDocuments(filter);
+  const items = await Payment.find(filter)
+    .sort(sort)
+    .skip((pageNum - 1) * limitNum)
+    .limit(limitNum)
+    .select("-gatewayResponse.raw")
+    .lean();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { total, page: pageNum, limit: limitNum, items },
+      "OK"
+    )
+  );
+});
+
 
 /**
  * POST /api/v1/payments/initiate
@@ -234,6 +293,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     const validTypes = [
       "add_offer",
       "promote_offer",
+      "activate_user",
       "unlock_contact",
       "promote_player",
       "promote_coach",
@@ -250,6 +310,7 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     const amountMap = {
       add_offer: PRICING.ADD_OFFER,
       promote_offer: PRICING.PROMOTE_OFFER,
+      activate_user: PRICING.ACTIVATE_USER,
       unlock_contact: PRICING.UNLOCK_CONTACT,
       promote_player: PRICING.PROMOTE_PLAYER,
       promote_coach: PRICING.PROMOTE_COACH,

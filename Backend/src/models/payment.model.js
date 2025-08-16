@@ -13,6 +13,7 @@ const paymentSchema = new mongoose.Schema(
       enum: [
         "add_offer",
         "promote_offer",
+        "activate_user",
         "unlock_contact",
         "promote_player",
         "promote_coach",
@@ -40,7 +41,7 @@ const paymentSchema = new mongoose.Schema(
     gateway: {
       type: String,
       enum: ["hyperpay", "paytabs", "stripe", "paylink"],
-      default: "hyperpay",
+      default: "paylink",
     },
     gatewayResponse: {
       transactionId: String,
@@ -111,6 +112,7 @@ const paymentSchema = new mongoose.Schema(
 // Indexes
 paymentSchema.index({ user: 1, status: 1 });
 paymentSchema.index({ "gatewayResponse.transactionId": 1 });
+paymentSchema.index({ "gatewayResponse.checkoutId": 1 });
 paymentSchema.index({ createdAt: -1 });
 
 // Generate invoice number

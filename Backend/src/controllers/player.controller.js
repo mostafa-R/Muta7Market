@@ -1,4 +1,5 @@
 import { default as Player } from "../models/player.model.js";
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -9,6 +10,8 @@ import {
   replaceMediaItem,
 } from "../utils/mediaUtils.js";
 import { sendInternalNotification } from "./notification.controller.js";
+import Payment from "../models/payment.model.js";
+import { PRICING } from "../config/constants.js";
 
 // Create Player Profile
 
@@ -50,6 +53,32 @@ export const createPlayer = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(201, player, "Player profile created successfully")
       );
+
+    // Ensure a pending payment exists for player activation
+    try {
+      const existingCompleted = await Payment.findOne({
+        user: userId,
+        type: "promote_player",
+        status: { $in: ["completed", "refunded"] },
+      });
+      const existingPending = await Payment.findOne({
+        user: userId,
+        type: "promote_player",
+        status: "pending",
+      });
+      if (!existingCompleted && !existingPending) {
+        await Payment.create({
+          user: userId,
+          type: "promote_player",
+          amount: PRICING.PROMOTE_PLAYER,
+          currency: "SAR",
+          status: "pending",
+          description: "Player profile activation",
+          relatedPlayer: player._id,
+          gateway: process.env.PAYMENT_GATEWAY || "paylink",
+        });
+      }
+    } catch {}
   } catch (error) {
     // If there was an error, make sure to clean up any uploaded files
     console.error("Error creating player profile:", error);
@@ -237,9 +266,27 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     await player.save();
   }
 
+  // Gate contact methods: only owner or active users can see contact info
+  let canSeeContacts = false;
+  try {
+    const isOwner = req.user && player.user._id.toString() === req.user._id.toString();
+    let requesterIsActive = false;
+    if (req.user) {
+      const requester = await User.findById(req.user._id).select("isActive");
+      requesterIsActive = Boolean(requester?.isActive);
+    }
+    canSeeContacts = Boolean(isOwner || requesterIsActive);
+  } catch {}
+
+  const playerData = player.toObject();
+  if (!canSeeContacts && playerData?.user) {
+    delete playerData.user.email;
+    delete playerData.user.phone;
+  }
+
   res
     .status(200)
-    .json(new ApiResponse(200, player, "Player fetched successfully"));
+    .json(new ApiResponse(200, playerData, "Player fetched successfully"));
 });
 
 // Update Player Profile
