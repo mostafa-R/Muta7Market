@@ -170,6 +170,7 @@ export default function ForgotPassword() {
         </div>
 
         <Formik
+          key={language}
           initialValues={initialValues}
           validate={getValidate(language)}
           onSubmit={handleSubmit}
@@ -182,18 +183,14 @@ export default function ForgotPassword() {
                   htmlFor="email"
                   className="mb-3 block text-base font-medium text-[#07074D]"
                 >
-                  {t("forms.emailPlaceholder")}
+                  {t("auth.email")}
                 </label>
                 <div className="relative">
                   <Field
                     type="email"
                     name="email"
                     id="email"
-                    placeholder={
-                      language === "ar"
-                        ? "أدخل بريدك الإلكتروني"
-                        : "Enter your email address"
-                    }
+                    placeholder={t("auth.emailPlaceholder")}
                     className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200"
                   />
                   <FiMail className="absolute top-1/2 right-3 transform -translate-y-1/2 text-[#6B7280]" />
@@ -244,7 +241,7 @@ export default function ForgotPassword() {
                       {t("common.loading")}
                     </>
                   ) : (
-                    t("forms.submitButton")
+                    t("common.submit")
                   )}
                 </button>
               </div>
