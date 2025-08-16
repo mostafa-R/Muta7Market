@@ -41,7 +41,7 @@ const paymentSchema = new mongoose.Schema(
     gateway: {
       type: String,
       enum: ["hyperpay", "paytabs", "stripe", "paylink"],
-      default: "hyperpay",
+      default: "paylink",
     },
     gatewayResponse: {
       transactionId: String,
