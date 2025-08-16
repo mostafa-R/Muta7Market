@@ -31,6 +31,7 @@ const UserProfile = () => {
   const [pendingPayments, setPendingPayments] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [pricing, setPricing] = useState(null);
+  const [pricingError, setPricingError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -164,9 +165,13 @@ const UserProfile = () => {
   const fetchPricing = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/config/pricing`);
-      setPricing(res.data?.data || null);
+      const data = res.data?.data;
+      if (!data) throw new Error("Missing pricing data");
+      setPricing(data);
+      setPricingError("");
     } catch (e) {
-      // ignore; frontend will fallback
+      setPricing(null);
+      setPricingError("Failed to load pricing. Please refresh the page.");
     }
   }, []);
 
@@ -479,6 +484,11 @@ const UserProfile = () => {
         </main>
       </div>
 
+      {pricingError && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-rose-50 text-rose-700 border border-rose-200 px-4 py-2 rounded-xl shadow">
+          {pricingError}
+        </div>
+      )}
       {showConfirmModal && (
         <ConfirmModal
           title={t("profile.confirmChanges")}

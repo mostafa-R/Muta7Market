@@ -192,24 +192,18 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
       media: payment.media || { profileImage: { url: null, publicId: null } },
     };
 
+    // Use backend pricing only; do not fallback to env or payload
+    const typeToKey = {
+      add_offer: 'ADD_OFFER',
+      promote_offer: 'PROMOTE_OFFER_PER_DAY',
+      unlock_contact: 'UNLOCK_CONTACT',
+      activate_user: 'ACTIVATE_USER',
+      promote_player: 'PROMOTE_PLAYER',
+      promote_coach: 'PROMOTE_COACH',
+    };
+    const displayAmount = pricing ? pricing[typeToKey[safePayment.type]] : undefined;
+
     if (isPaymentRecord) {
-      const STATIC_PRICING = pricing || {
-        ADD_OFFER: Number(process.env.NEXT_PUBLIC_PRICE_ADD_OFFER),
-        PROMOTE_OFFER_PER_DAY: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_OFFER),
-        UNLOCK_CONTACT: Number(process.env.NEXT_PUBLIC_PRICE_UNLOCK_CONTACT),
-        ACTIVATE_USER: Number(process.env.NEXT_PUBLIC_PRICE_ACTIVATE_USER),
-        PROMOTE_PLAYER: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_PLAYER),
-        PROMOTE_COACH: Number(process.env.NEXT_PUBLIC_PRICE_PROMOTE_COACH),
-      };
-      const typeToKey = {
-        add_offer: 'ADD_OFFER',
-        promote_offer: 'PROMOTE_OFFER_PER_DAY',
-        unlock_contact: 'UNLOCK_CONTACT',
-        activate_user: 'ACTIVATE_USER',
-        promote_player: 'PROMOTE_PLAYER',
-        promote_coach: 'PROMOTE_COACH',
-      };
-      const displayAmount = STATIC_PRICING[typeToKey[safePayment.type]] ?? safePayment.amount;
       const status = String(safePayment.status || "").toLowerCase();
       const canPay = ["pending", "failed", "cancelled", "canceled"].includes(status);
       return (
@@ -229,7 +223,7 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
               </div>
             </div>
             <div className="flex ">
-              <div className="text-2xl font-bold">{displayAmount} {safePayment.currency}</div>
+              <div className="text-2xl font-bold">{displayAmount !== undefined ? `${displayAmount} ${safePayment.currency}` : t('payment.priceUnavailable') || 'Price unavailable'}</div>
             </div>
           </div>
           <div className="p-6">
@@ -240,10 +234,14 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => handlePayExisting(safePayment._id)}
-                  disabled={payingIds.has(safePayment._id)}
+                  disabled={payingIds.has(safePayment._id) || displayAmount === undefined}
                   className="w-full sm:w-auto px-4 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#00183D]/80 transition-all font-medium"
                 >
-                  {payingIds.has(safePayment._id) ? t("payment.processing", { defaultValue: "Processing…" }) : t("payment.payNow", { defaultValue: "Pay Now" })}
+                  {displayAmount === undefined
+                    ? (t('payment.priceUnavailableCta') || 'Price unavailable')
+                    : (payingIds.has(safePayment._id)
+                      ? t("payment.processing", { defaultValue: "Processing…" })
+                      : t("payment.payNow", { defaultValue: "Pay Now" }))}
                 </button>
                 {ALLOW_TEST && (
                   <>
@@ -300,7 +298,7 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-3">
-              {displayAmount > 0 && (
+              {displayAmount !== undefined && displayAmount > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 flex items-center gap-2">
                     <i className="fas fa-receipt"></i>
