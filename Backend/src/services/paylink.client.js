@@ -1,40 +1,69 @@
-import axios from 'axios';
+// src/services/paylink.client.js
+import fetch from "node-fetch";
 
-const BASE = process.env.PAYLINK_BASE_URL || 'https://restapi.paylink.sa';
-let cachedToken = null;
-let tokenExpiresAt = 0;
+let tokenCache = { token: null, expAt: 0 }; // epoch ms
 
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiresAt) return cachedToken;
-
-  const { data } = await axios.post(`${BASE}/api/auth`, {
-    apiId: process.env.PAYLINK_API_ID,
-    secretKey: process.env.PAYLINK_SECRET,
-    persistToken: true
-  }, { headers: { 'Content-Type': 'application/json' } });
-
-  cachedToken = data.id_token;
-  tokenExpiresAt = now + 29 * 60 * 60 * 1000; // refresh early
-  return cachedToken;
+function baseUrl() {
+  // prefer explicit; fallback to env selector
+  if (process.env.PAYLINK_BASE_URL) return process.env.PAYLINK_BASE_URL;
+  const env = String(process.env.PAYLINK_ENV || "pilot").toLowerCase();
+  return env === "prod" ? "https://restapi.paylink.sa" : "https://restpilot.paylink.sa";
 }
 
-async function paylinkRequest(method, path, body) {
-  const token = await getToken();
-  const res = await axios({
-    method,
-    url: `${BASE}${path}`,
-    data: body,
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    timeout: 15000
+async function auth() {
+  const now = Date.now();
+  if (tokenCache.token && tokenCache.expAt - now > 60_000) {
+    return tokenCache.token;
+  }
+  const url = `${baseUrl()}/api/auth`;
+  const body = {
+    apiId: process.env.PAYLINK_API_ID,
+    secretKey: process.env.PAYLINK_SECRET,
+    persistToken: true, // longer-lived token
+  };
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
-  return res.data;
+  if (!r.ok) {
+    throw new Error(`paylink auth failed: ${r.status} ${await r.text()}`);
+  }
+  const j = await r.json();
+  if (!j?.id_token) throw new Error("paylink auth: id_token missing");
+  // docs: token lifetime is returned in expires_in (seconds). Fallback to 30 min.
+  const ttlSec = Number(j.expires_in || 1800);
+  tokenCache = { token: j.id_token, expAt: now + ttlSec * 1000 };
+  return tokenCache.token;
 }
 
 export async function paylinkCreateInvoice(payload) {
-  return paylinkRequest('POST', '/api/addInvoice', payload);
+  const token = await auth();
+  const r = await fetch(`${baseUrl()}/api/addInvoice`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    throw new Error(`addInvoice ${r.status}: ${JSON.stringify(j)}`);
+  }
+  // j: { url, transactionNo, invoiceId, ... }
+  return j;
 }
 
 export async function paylinkGetInvoice(transactionNo) {
-  return paylinkRequest('GET', `/api/getInvoice/${transactionNo}`);
+  const token = await auth();
+  const r = await fetch(`${baseUrl()}/api/getInvoice/${encodeURIComponent(transactionNo)}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    throw new Error(`getInvoice ${r.status}: ${JSON.stringify(j)}`);
+  }
+  return j; // contains orderStatus, amount, paymentErrors[], paymentReceipt, ...
 }
