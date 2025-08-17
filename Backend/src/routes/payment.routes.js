@@ -1,51 +1,64 @@
-// src/routes/payment.routes.js
-import { Router } from "express";
-
+import express, { Router } from "express";
 import {
-  confirmReturn,
-  Getallorders,
-  listPayments,
-  getPaymentById,
-  getPaymentStatus,
-  getPaymentStatusByTransaction,
   initiatePayment,
   paymentWebhook,
+  confirmReturn,
+  getPaymentStatus,
+  getPaymentStatusByTransaction,
   refundPayment,
   simulateSuccess,
   simulateFail,
-} from "../controllers/payment.controller.js";
+  listMyInvoices,
+  getInvoiceById,
+  checkEntitlement,
+  listMyEntitlements,
+  initiatePaymentByInvoiceId,
+} from "../controllers/payments.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { roleMiddleware } from "../middleware/roleMiddleware.js";
-import { paymentLimiter } from "../middleware/rateLimiter.middleware.js";
+
+// Replace with your real auth middleware that sets req.user
+function ensureAuth(req, res, next) {
+  if (!req.user?._id)
+    return res.status(401).json({ success: false, message: "unauthorized" });
+  next();
+}
+
 const r = Router();
 
-r.post("/orders", Getallorders);
-r.get("/orders", Getallorders);
-r.post("/initiate", paymentLimiter, authMiddleware, initiatePayment);
+// creation
+r.post("/initiate", authMiddleware, initiatePayment);
+r.post("/invoices/:id/initiate", authMiddleware, initiatePaymentByInvoiceId); // <-- click Pay on an existing invoice
 
-// Webhook من Paylink (بدون Auth)
-r.post("/webhook", paymentWebhook);
+// webhook (public, protected by header secret)
+r.post("/webhook", express.json({ type: "application/json" }), paymentWebhook);
 
-// تأكيد يدوي بعد الرجوع من Paylink (اختياري؛ بدون Auth)
-r.get("/confirm", confirmReturn);
+// optional browser return
+r.get("/return", confirmReturn);
 
-// حالة دفع محددة (لـ polling في الفرونت)
-r.get("/:id/status", authMiddleware, getPaymentStatus);
+// status helpers
+r.get("/status/:id", authMiddleware, getPaymentStatus);
+r.get(
+  "/status/transaction/:transactionNo",
+  authMiddleware,
+  getPaymentStatusByTransaction
+);
+r.get(
+  "/status/by-tx/:transactionNo",
+  authMiddleware,
+  getPaymentStatusByTransaction
+);
 
-// حالة دفع بواسطة رقم المعاملة (بدون Auth - مفيد عند العودة من بوابة الدفع)
-r.get("/status/transaction/:transactionNo", getPaymentStatusByTransaction);
+// invoices (user-visible)
+r.get("/invoices", authMiddleware, listMyInvoices);
+r.get("/invoices/:id", authMiddleware, getInvoiceById);
 
-// تفاصيل دفع كاملة (اختياري)
-r.get("/:id", authMiddleware, getPaymentById);
+// entitlements (user-visible)
+r.get("/entitlements/check", authMiddleware, checkEntitlement);
+r.get("/entitlements/me", authMiddleware, listMyEntitlements);
 
-// جميع المدفوعات (المستخدم يرى مدفوعاته فقط؛ الأدمن يرى الكل)
-r.get("/", authMiddleware, listPayments);
-
-// طلب استرجاع (اختياري؛ يتطلب Auth)
-r.post("/:id/refund", authMiddleware, refundPayment);
-
-// Development-only simulation endpoints (guarded in controller)
-r.post("/:id/simulate-success", authMiddleware, simulateSuccess);
-r.post("/:id/simulate-fail", authMiddleware, simulateFail);
+// dev-only simulate
+r.post("/simulate/success/:id", authMiddleware, simulateSuccess);
+r.post("/simulate/fail", authMiddleware, simulateFail);
+r.post("/refund", authMiddleware, refundPayment);
 
 export default r;

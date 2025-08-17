@@ -26,6 +26,11 @@ const mediaDocumentSchema = new mongoose.Schema(
 
 const playerSchema = new mongoose.Schema(
   {
+    isListed: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

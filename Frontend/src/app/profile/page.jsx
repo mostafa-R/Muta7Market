@@ -7,13 +7,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 // Import Components
 import LoadingSpinner from "../component/LoadingSpinner";
 import ConfirmModal from "./components/ConfirmModal";
 import EditProfile from "./components/EditProfile";
 import ErrorMessage from "./components/ErrorMessage";
-import PaymentsSection from "./components/PaymentsSection";
+import PaymentsSection from "./components/PaymentsSection.jsx";
 import ProfileView from "./components/ProfileView";
 import Sidebar from "./components/Sidebar";
 // Import Schemas
@@ -107,41 +106,31 @@ const UserProfile = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
+      const headers = { Authorization: `Bearer ${token}` };
 
-      const response = await axios.get(`${API_URL}/user/notpaid`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // PENDING invoices → feed the “payments” list (cards with Pay buttons)
+      const pendingRes = await axios.get(`${API_URL}/payments/invoices?status=pending`, { headers });
+      const pendingItems = (pendingRes.data?.data?.items || []).map((inv) => ({
+        _id: inv.id,                                     // use invoice id
+        type: inv.product === 'player_listing' ? 'publish_profile' : 'unlock_contacts',
+        status: inv.status,                              // 'pending'
+        amount: inv.amount,
+        currency: inv.currency || 'SAR',
+        createdAt: inv.createdAt,
+        relatedPlayer: inv.playerProfileId,              // needed for listing payments
+        invoice: { orderNumber: inv.orderNumber },
+        gateway: 'paylink',
+        paymentUrl: inv.paymentUrl || null,              // handy if you want a direct Pay link
+      }));
+      setPendingPayments(pendingItems);
 
-      const data = response.data || {};
-      const items = [];
-      const source = Array.isArray(data.unpaidPayments) ? data.unpaidPayments : [];
-      if (source.length) {
-        items.push(
-          ...source.map((p) => ({
-            _id: p._id,
-            type: p.type,
-            amount: p.amount,
-            currency: p.currency,
-            status: p.status,
-            createdAt: p.createdAt,
-            relatedPlayer: p.relatedPlayer,
-            description: p.description,
-            invoice: p.invoice,
-            gateway: p.gateway,
-          }))
-        );
-      }
-      const paymentItems = items.filter((p) => p && typeof p === 'object' && p.type && p.amount !== undefined);
-      const unpaid = paymentItems.filter((p) => {
-        const s = String(p.status || "").toLowerCase();
-        return s !== "completed" && s !== "refunded"; // show pending/failed/cancelled etc.
-      });
-      setPendingPayments(unpaid);
-      setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
+      // PAID invoices → feed “invoices” list in the tab
+      const paidRes = await axios.get(`${API_URL}/payments/invoices?status=paid`, { headers });
+      setInvoices(paidRes.data?.data?.items || []);
     } catch (err) {
       console.error("Error fetching payments:", err);
     }
-  }, []);
+  }, [API_URL]);
 
   const fetchPricing = useCallback(async () => {
     try {
@@ -228,7 +217,7 @@ const UserProfile = () => {
         setError(t("profile.paymentFailed"));
         fetchPendingPayments();
       }
-    } catch {}
+    } catch { }
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
 
   const onSubmit = useCallback(
@@ -406,14 +395,9 @@ const UserProfile = () => {
             )}
 
             {activeSection === "payments" && (
-              <PaymentsSection
-                payments={pendingPayments}
-                invoices={invoices}
-                pricing={pricing}
-                router={router}
-                t={t}
-                language={language}
-              />
+              <div className="mt-6">
+                <PaymentsSection />
+              </div>
             )}
             {activeSection === "playerProfile" && (
               <PlayerProfile
@@ -446,6 +430,7 @@ const UserProfile = () => {
           t={t}
         />
       )}
+
     </div>
   );
 };

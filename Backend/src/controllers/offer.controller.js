@@ -79,8 +79,6 @@
 import { deleteFile } from '../config/cloudinary.js';
 import { OFFER_STATUS, PRICING } from '../config/constants.js';
 import Offer from '../models/offer.model.js';
-import Payment from '../models/payment.model.js';
-import paymentService from '../services/payment.service.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';

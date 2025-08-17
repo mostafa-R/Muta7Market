@@ -1,18 +1,15 @@
 import mongoose from 'mongoose';
 
-const entitlementSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    type: { type: String, enum: ['unlock_contacts', 'publish_profile'], required: true, index: true },
-    active: { type: Boolean, default: true, index: true },
-    activatedAt: { type: Date, default: Date.now },
-    sourceInvoice: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice', required: true, unique: true },
-  },
-  { timestamps: true }
-);
+const EntitlementSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  type: { type: String, enum: ['contacts_access', 'player_listed'], required: true },
+  playerProfileId: { type: mongoose.Schema.Types.ObjectId, ref: 'PlayerProfile', default: null },
+  active: { type: Boolean, default: true },
+  grantedAt: { type: Date, default: Date.now },
+  revokedAt: { type: Date, default: null },
+  sourceInvoice: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice', required: true },
+}, { timestamps: true });
 
-entitlementSchema.index({ user: 1, type: 1, active: 1 });
+EntitlementSchema.index({ userId: 1, type: 1, playerProfileId: 1 }, { unique: true });
 
-export default mongoose.model('Entitlement', entitlementSchema);
-
-
+export default mongoose.model('Entitlement', EntitlementSchema);

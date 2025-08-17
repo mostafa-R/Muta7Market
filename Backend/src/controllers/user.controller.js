@@ -3,7 +3,6 @@ import { deleteFromCloudinary } from "../config/cloudinary.js";
 import playerModel from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
-import Payment from "../models/payment.model.js";
 import { PRICING } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
 

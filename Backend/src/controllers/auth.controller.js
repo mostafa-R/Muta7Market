@@ -4,12 +4,11 @@ import { sendEmail } from "../services/sendgridEmail.service.js";
 import { isEmailEnabled } from "../config/email.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import Payment from "../models/payment.model.js";
-import { PRICING } from "../config/constants.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
 import { generateAccessToken } from "../utils/jwt.js";
+import { ensurePendingInvoice } from "../services/invoice.service.js";
 
 export const register = asyncHandler(async (req, res) => {
   const { name, phone, password, confirmPassword, email } = req.body;
@@ -21,7 +20,6 @@ export const register = asyncHandler(async (req, res) => {
 
   // Check if user already exists by email or phone
   const existEmail = await userModel.findOne({ email });
-
   if (existEmail) {
     return res.status(400).json({ error: "Email already exists." });
   }
@@ -34,7 +32,6 @@ export const register = asyncHandler(async (req, res) => {
   // Generate Verification Tokens
   const emailToken = generateRandomString();
   const phoneOTP = generateOTP();
-
 
   const emailVerificationToken = crypto
     .createHash("sha256")
@@ -56,38 +53,24 @@ export const register = asyncHandler(async (req, res) => {
     emailVerificationToken,
     emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     phoneVerificationOTP: phoneVerificationHashedOTP,
-    phoneVerificationExpires: Date.now() + 10 * 60 * 1000,
+    phoneVerificationExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
   });
 
   // Save user
   await user.save();
 
-  // Create pending activation payment if not already exists or completed
+  // Create a pending invoice for contacts access (one-time unlock)
   try {
-    const existingCompleted = await Payment.findOne({
-      user: user._id,
-      type: "activate_user",
-      status: { $in: ["completed", "refunded"] },
+    await ensurePendingInvoice({
+      userId: user._id,
+      product: "contacts_access",
     });
-    const existingPending = await Payment.findOne({
-      user: user._id,
-      type: "activate_user",
-      status: "pending",
-    });
-    if (!existingCompleted && !existingPending) {
-      await Payment.create({
-        user: user._id,
-        type: "activate_user",
-        amount: PRICING.ACTIVATE_USER,
-        currency: "SAR",
-        status: "pending",
-        description: "One-time activation to view all players' contacts",
-        gateway: process.env.PAYMENT_GATEWAY || "paylink",
-      });
-    }
-  } catch {}
+  } catch (e) {
+    // Do not block signup if invoice creation fails
+    console.error("ensurePendingInvoice(contacts_access) failed", e);
+  }
 
-  // Send Verification Email & SMS OTP
+  // Send Verification Email (non-blocking)
   const emailResult = await sendEmail(
     user.email,
     "Verify Your Email",
@@ -95,19 +78,21 @@ export const register = asyncHandler(async (req, res) => {
     generateVerificationEmail(emailToken)
   );
 
-  // Non-blocking: if email fails (dev creds etc.), keep the user and proceed
-  if (!emailResult?.success) {
-    // Optionally attach a hint for client to show a banner
-    // Do not delete the user or fail the request
-  }
-
-  // Generate JWT Tokens
+  // Generate JWT Access Token
   const accessToken = generateAccessToken(user);
 
-  // Save refresh token
+  // Persist any last updates on user (e.g., lastLogin if you add it later)
   await user.save();
 
-  // Prepare Response (Don't return password or sensitive data)
+  // Set Access Token Cookie (15 minutes)
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+    maxAge: 1000 * 60 * 15,
+  });
+
+  // Prepare Response (Do not return sensitive fields)
   const userData = {
     id: user._id,
     name: user.name,
@@ -116,22 +101,17 @@ export const register = asyncHandler(async (req, res) => {
     role: user.role,
   };
 
-  // Set Access Token Cookie
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "None",
-    maxAge: 1000 * 60 * 15, // 15 mins
-  });
-
-  // In dev or when email disabled, expose verification codes in response for testing
+  // In dev or when email disabled, expose verification codes for testing
   const exposeCodes =
     String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
     (!isEmailEnabled && process.env.NODE_ENV !== "production");
 
   const extraDev = exposeCodes
-    ? { dev: { emailVerificationCode: emailToken, phoneOTP } }
-    : {};
+    ? {
+        dev: { emailVerificationCode: emailToken, phoneOTP },
+        emailSent: !!emailResult?.success,
+      }
+    : { emailSent: !!emailResult?.success };
 
   // Send Response
   res.status(201).json(
@@ -158,23 +138,21 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Username or password is incorrect");
   }
 
-  // Allow login even if inactive; gating will be handled in features
-
-  // Update last login & clean expired refresh tokens
+  // Update last login (optional)
   user.lastLogin = new Date();
 
-  // Generate Tokens
+  // Generate Access Token
   const accessToken = generateAccessToken(user);
 
   // Save user
   await user.save();
 
-  // Set Access Token Cookie
+  // Set Access Token Cookie (7 days)
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "None",
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 15 mins
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   });
 
   // Prepare sanitized user data
@@ -190,7 +168,7 @@ export const login = asyncHandler(async (req, res) => {
     isActive: user.isActive,
   };
 
-  // Send response (No Tokens in Body since they are in Cookies)
+  // Send response (also return token in body for your frontend localStorage)
   res
     .status(200)
     .json(
@@ -202,8 +180,7 @@ export const login = asyncHandler(async (req, res) => {
     );
 });
 
-export const logout = asyncHandler(async (req, res) => {
-  // Clear Cookies
+export const logout = asyncHandler(async (_req, res) => {
   res.clearCookie("accessToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -226,7 +203,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 
   const user = await userModel.findOne({
     emailVerificationToken: hashedToken,
-    emailVerificationExpires: { $gt: Date.now() }, // Check expiry
+    emailVerificationExpires: { $gt: Date.now() },
   });
 
   if (!user) {
@@ -260,23 +237,21 @@ export const verifyPhone = asyncHandler(async (req, res) => {
   const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
 
   const user = await userModel.findOne({
-    _id: req.user.id, // Assuming req.user is populated (Authenticated User)
+    _id: req.user.id, // Authenticated user
     phoneVerificationOTP: hashedOTP,
-    phoneVerificationExpires: { $gt: Date.now() }, // OTP not expired
+    phoneVerificationExpires: { $gt: Date.now() },
   });
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired OTP");
   }
 
-  // Mark phone as verified and clear OTP fields
   user.isPhoneVerified = true;
   user.phoneVerificationOTP = undefined;
   user.phoneVerificationExpires = undefined;
 
   await user.save();
 
-  // Send Response
   res
     .status(200)
     .json(
@@ -296,13 +271,11 @@ export const changePassword = asyncHandler(async (req, res) => {
   }
 
   const user = await userModel.findById(req.user.id).select("+password");
-
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
   const isMatch = await user.comparePassword(currentPassword);
-
   if (!isMatch) {
     throw new ApiError(401, "Current password is incorrect");
   }
@@ -324,11 +297,9 @@ export const changePassword = asyncHandler(async (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const user = await userModel.findById(req.user.id).select("-password");
-
     if (!user) {
       throw new ApiError(404, "User not found");
     }
-
     res.status(200).json({
       success: true,
       user,
@@ -338,19 +309,6 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// export const getProfile = asyncHandler(async (req, res) => {
-
-//   const user = await userModel.findById(req.user.id).select("-password ");
-
-//   if (!user) {
-//     throw new ApiError(404, "User not found");
-//   }
-
-//   res
-//     .status(200)
-//     .json(new ApiResponse(200, { user }, "Profile retrieved successfully"));
-// });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -367,7 +325,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-
   user.passwordResetExpires = Date.now() + 30 * 60 * 1000; // 30 mins
 
   await user.save();
@@ -385,16 +342,21 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     (!isEmailEnabled && process.env.NODE_ENV !== "production");
 
   const extraDev = exposeCodes
-    ? { dev: { passwordResetCode: resetToken }, emailSent: !!fpEmailResult?.success }
+    ? {
+        dev: { passwordResetCode: resetToken },
+        emailSent: !!fpEmailResult?.success,
+      }
     : { emailSent: !!fpEmailResult?.success };
 
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      { message: "Password reset email sent", ...extraDev },
-      "Password reset email sent"
-    )
-  );
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { message: "Password reset email sent", ...extraDev },
+        "Password reset email sent"
+      )
+    );
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
@@ -407,8 +369,8 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const hashedToken = crypto.createHash("sha256").update(otp).digest("hex");
 
   const user = await userModel.findOne({
-    passwordResetToken: hashedToken, // fixed field name
-    passwordResetExpires: { $gt: Date.now() }, // fixed field name
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
   });
 
   if (!user) {

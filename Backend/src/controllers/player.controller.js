@@ -10,84 +10,131 @@ import {
   replaceMediaItem,
 } from "../utils/mediaUtils.js";
 import { sendInternalNotification } from "./notification.controller.js";
-import Payment from "../models/payment.model.js";
 import { PRICING } from "../config/constants.js";
+import { ensurePendingInvoice } from "../services/invoice.service.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
+import Invoice from "../models/invoice.model.js";
 
 // Create Player Profile
 
+/* -------------------------------------------------------
+ * Create Player Profile
+ * ----------------------------------------------------- */
+// Create Player Profile
+// Create Player Profile (guaranteed invoice)
 export const createPlayer = asyncHandler(async (req, res) => {
+  // --- hard guard: must be authenticated ---
+  if (!req.user?._id) {
+    throw new ApiError(401, "Unauthorized");
+  }
   const userId = req.user._id;
 
-  try {
-    // تحقق مما إذا كان ملف اللاعب موجودًا بالفعل
-    const exists = await Player.findOne({ user: userId });
-    if (exists) throw new ApiError(400, "Player profile already exists");
+  console.log("[createPlayer] START", { userId: String(userId) });
 
-    // Process media files (profile image, videos, documents)
-    const media = await processPlayerMedia(req.files);
+  // one profile per user
+  const exists = await Player.findOne({ user: userId });
+  if (exists) throw new ApiError(400, "Player profile already exists");
 
-    // إنشاء كائن اللاعب
-    const player = await Player.create({
-      user: userId,
-      name: req.body.name,
-      age: req.body.age,
-      gender: req.body.gender,
-      nationality: req.body.nationality,
-      jop: req.body.jop,
-      position: req.body.position,
-      status: req.body.status,
-      expreiance: req.body.expreiance,
-      monthlySalary: req.body.monthlySalary,
-      yearSalary: req.body.yearSalary,
-      contractEndDate: req.body.contractEndDate,
-      transferredTo: req.body.transferredTo,
-      socialLinks: req.body.socialLinks,
-      contactInfo: req.body.contactInfo,
-      game: req.body.game,
-      // Always create player profiles as inactive; activation happens after payment
-      isActive: false,
-      media,
+  // Process media files
+  const media = await processPlayerMedia(req.files);
+
+  // Create profile HIDDEN by default
+  const player = await Player.create({
+    isListed: false, // flips to true after paid
+    isActive: false, // optional: keep disabled until paid
+    user: userId,
+    name: req.body.name,
+    age: req.body.age,
+    gender: req.body.gender,
+    nationality: req.body.nationality,
+    jop: req.body.jop,
+    position: req.body.position,
+    status: req.body.status,
+    expreiance: req.body.expreiance,
+    monthlySalary: req.body.monthlySalary,
+    yearSalary: req.body.yearSalary,
+    contractEndDate: req.body.contractEndDate,
+    transferredTo: req.body.transferredTo,
+    socialLinks: req.body.socialLinks,
+    contactInfo: req.body.contactInfo,
+    game: req.body.game,
+    media,
+  });
+
+  console.log("[createPlayer] profile created", {
+    playerId: String(player._id),
+  });
+
+  // ---- Inline upsert of pending invoice (no external helper dependencies) ----
+  const amount = Number(process.env.PRICE_PLAYER_LISTING || 55);
+
+  // 1) Check if a pending already exists for (user, player)
+  let invoice = await Invoice.findOne({
+    userId,
+    product: "player_listing",
+    playerProfileId: player._id,
+    status: "pending",
+  });
+
+  if (invoice) {
+    console.log("[createPlayer] reuse pending invoice", {
+      invoiceId: String(invoice._id),
+    });
+  } else {
+    // 2) Also check if already paid (rare but prevents duplicates)
+    const alreadyPaid = await Invoice.findOne({
+      userId,
+      product: "player_listing",
+      playerProfileId: player._id,
+      status: "paid",
     });
 
-    res
-      .status(201)
-      .json(
-        new ApiResponse(201, player, "Player profile created successfully")
+    if (alreadyPaid) {
+      console.log(
+        "[createPlayer] invoice already PAID earlier; no new pending created",
+        {
+          invoiceId: String(alreadyPaid._id),
+        }
       );
-
-    // Ensure a pending payment exists for player activation
-    try {
-      const existingCompleted = await Payment.findOne({
-        user: userId,
-        type: "promote_player",
-        status: { $in: ["completed", "refunded"] },
-      });
-      const existingPending = await Payment.findOne({
-        user: userId,
-        type: "promote_player",
-        status: "pending",
-      });
-      if (!existingCompleted && !existingPending) {
-        await Payment.create({
-          user: userId,
-          type: "promote_player",
-          amount: PRICING.PROMOTE_PLAYER,
+    } else {
+      // 3) Create brand-new pending invoice
+      const orderNumber = makeOrderNumber("player_listing", String(userId));
+      try {
+        invoice = await Invoice.create({
+          orderNumber,
+          userId,
+          product: "player_listing",
+          amount,
           currency: "SAR",
           status: "pending",
-          description: "Player profile activation",
-          relatedPlayer: player._id,
-          gateway: process.env.PAYMENT_GATEWAY || "paylink",
+          playerProfileId: player._id,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
+        console.log("[createPlayer] NEW pending invoice created", {
+          invoiceId: String(invoice._id),
+          orderNumber,
+          amount,
+        });
+      } catch (err) {
+        console.error(
+          "[createPlayer] Invoice.create FAILED",
+          err?.message || err
+        );
       }
-    } catch {}
-  } catch (error) {
-    // If there was an error, make sure to clean up any uploaded files
-    console.error("Error creating player profile:", error);
-    throw new ApiError(
-      error.statusCode || 500,
-      error.message || "Failed to create player profile"
-    );
+    }
   }
+
+  // --- respond only after invoice step attempt ---
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      {
+        player,
+        pendingInvoiceId: invoice ? String(invoice._id) : null,
+      },
+      "Player profile created successfully"
+    )
+  );
 });
 
 // Get All Players (with advanced filtering)
@@ -270,7 +317,8 @@ export const getPlayerById = asyncHandler(async (req, res) => {
   // Gate contact methods: only owner or active users can see contact info
   let canSeeContacts = false;
   try {
-    const isOwner = req.user && player.user._id.toString() === req.user._id.toString();
+    const isOwner =
+      req.user && player.user._id.toString() === req.user._id.toString();
     let requesterIsActive = false;
     if (req.user) {
       const requester = await User.findById(req.user._id).select("isActive");

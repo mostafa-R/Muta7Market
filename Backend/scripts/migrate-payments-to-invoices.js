@@ -1,7 +1,6 @@
 // scripts/migrate-payments-to-invoices.js
 import dotenv from 'dotenv'; dotenv.config();
 import mongoose from 'mongoose';
-import Payment from '../src/models/payment.model.js';
 import Invoice from '../src/models/invoice.model.js';
 import Entitlement from '../src/models/entitlement.model.js';
 import User from '../src/models/user.model.js';

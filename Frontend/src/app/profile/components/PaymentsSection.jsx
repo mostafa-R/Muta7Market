@@ -1,408 +1,265 @@
 "use client";
-import { useMemo, useState } from "react";
-import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
-import { toast } from "react-toastify";
 
-const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language }) => {
-  let isUserInactive = false;
-  let currentUserId = '';
-  try {
-    const u = JSON.parse(typeof window !== 'undefined' ? (localStorage.getItem('user') || '{}') : '{}');
-    isUserInactive = u && u.isActive === false;
-    currentUserId = u?.id || u?._id || '';
-  } catch { }
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-  const API_BASE = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
-    return base.endsWith("/api/v1") ? base : `${base}/api/v1`;
+/** -------- CONFIG -------- */
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
+  "http://localhost:5000/api/v1";
+
+const ALLOW_TEST = String(process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS || "") === "1";
+
+function authHeaders() {
+  if (typeof window === "undefined") return {};
+  const t = localStorage.getItem("token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+async function apiGet(path) {
+  const res = await fetch(`${API_BASE}${path}`, { headers: { ...authHeaders() } });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.message || "Request failed");
+  return json;
+}
+
+async function apiPost(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body || {}),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.message || "Request failed");
+  return json;
+}
+
+/** -------- UI -------- */
+export default function PaymentsSection({ defaultPlayerProfileId }) {
+  const [pending, setPending] = useState([]);
+  const [paid, setPaid] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [playerProfileId, setPlayerProfileId] = useState(defaultPlayerProfileId || "");
+  const [busy, setBusy] = useState({}); // map invoiceId -> boolean
+  const [creating, setCreating] = useState({ contacts: false, listing: false });
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setErr("");
+    try {
+      const [p1, p2] = await Promise.all([
+        apiGet("/payments/invoices?status=pending"),
+        apiGet("/payments/invoices?status=paid"),
+      ]);
+      setPending(p1?.data?.items || []);
+      setPaid(p2?.data?.items || []);
+    } catch (e) {
+      setErr(e?.message || "Failed to load invoices");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Track paying state per payment ID to avoid toggling all cards at once
-  const [payingIds, setPayingIds] = useState(() => new Set());
-  const setPaying = (paymentId, value) => {
-    setPayingIds((prev) => {
-      const next = new Set(prev);
-      if (value) next.add(paymentId);
-      else next.delete(paymentId);
-      return next;
-    });
-  };
-  const ALLOW_TEST = process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS === "1";
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const startFeaturePayment = async (feature) => {
+  const counts = useMemo(
+    () => ({ pending: pending?.length || 0, paid: paid?.length || 0 }),
+    [pending, paid]
+  );
+
+  /** Start a brand-new payment */
+  const startPayment = async (product, maybeProfileId) => {
+    const body =
+      product === "player_listing"
+        ? { product, playerProfileId: maybeProfileId }
+        : { product };
+    const { data } = await apiPost("/payments/initiate", body);
+    const url = data?.paymentUrl;
+    if (!url) throw new Error("No payment URL returned");
+    window.location.href = url;
+  };
+
+  /** Pay an existing pending invoice (prefer its paymentUrl; fallback to initiate) */
+  const payExisting = async (inv) => {
+    const id = inv?.id;
+    setBusy((m) => ({ ...m, [id]: true }));
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
-      const res = await fetch(`${API_BASE}/payments/initiate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ type: feature }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Failed to initiate payment");
-      const url = json?.data?.paymentUrl;
-      if (!url) throw new Error("No payment URL returned");
-      window.location.href = url;
-    } catch (e) {
-      toast.error(e?.message || "Failed to start payment");
-    }
-  };
-
-  const handlePayExisting = async (paymentId, paymentType) => {
-    try {
-      setPaying(paymentId, true);
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
-      const feature = paymentType === 'promote_player' ? 'publish_profile' : paymentType === 'activate_user' ? 'unlock_contacts' : paymentType;
-      const res = await fetch(`${API_BASE}/payments/initiate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ type: feature }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Failed to initiate payment");
-      const url = json?.data?.paymentUrl;
-      if (!url) throw new Error("No payment URL returned");
-      window.location.href = url;
-    } catch (e) {
-      toast.error(e?.message || "Failed to start payment");
-    } finally {
-      setPaying(paymentId, false);
-    }
-  };
-
-  const simulatePayment = async (paymentId, outcome = "success") => {
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
-      const path = outcome === "success" ? "simulate-success" : "simulate-fail";
-      const res = await fetch(`${API_BASE}/payments/${paymentId}/${path}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reason: outcome === "fail" ? "Simulated failure" : undefined }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.message || "Simulation failed");
-      toast.success(outcome === "success" ? "Payment simulated: success" : "Payment simulated: failed");
-      setTimeout(() => {
-        if (typeof window !== 'undefined') window.location.reload();
-      }, 600);
-    } catch (e) {
-      toast.error(e?.message || "Simulation error");
-    }
-  };
-  // ترجمة القيم إلى العربية
-  const translateJop = (jop) => {
-    return jop === "player"
-      ? t("common.player")
-      : jop === "coach"
-        ? t("common.coach")
-        : jop || t("common.notAvailable");
-  };
-
-  const translateStatus = (status) => {
-    switch (status) {
-      case "available":
-        return t("player.status.freeAgent");
-      case "contracted":
-        return t("player.status.contracted");
-      case "transferred":
-        return t("player.status.transferred");
-      default:
-        return status || t("common.notAvailable");
-    }
-  };
-
-  const InvoiceCard = ({ inv }) => {
-    const issued = inv?.issueDate ? new Date(inv.issueDate) : null;
-    const displayTotal = (typeof inv?.totalAmount === 'number' && inv.totalAmount > 0) ? inv.totalAmount : inv?.amount;
-    const displayVat = typeof inv?.taxAmount === 'number' ? inv.taxAmount : 0;
-    const status = String(inv?.status || '').toLowerCase();
-    const feature = inv?.type === 'publish_profile' || inv?.type === 'unlock_contacts' ? inv.type : undefined;
-    const headerBg =
-      status === 'paid' ? 'from-emerald-600 to-emerald-700' :
-      (status === 'pending' || status === 'created') ? 'from-amber-500 to-amber-600' :
-      (status === 'failed') ? 'from-rose-600 to-rose-700' :
-      (status === 'canceled' || status === 'cancelled' || status === 'expired') ? 'from-gray-500 to-gray-600' :
-      'from-slate-600 to-slate-700';
-    return (
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full border border-gray-100">
-        <div className={`bg-gradient-to-r ${headerBg} p-5 flex items-center gap-4 text-white`}>
-          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-xl">
-            <i className="fas fa-file-invoice-dollar" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs uppercase tracking-wide">{(inv?.status || 'paid').toString()}</span>
-              <span className="text-white/80 text-xs">{issued ? issued.toLocaleDateString() : ''}</span>
-            </div>
-            <h3 className="font-semibold text-lg mt-1">
-              {t("invoice.title", { defaultValue: "Invoice" })} #{inv?.invoiceNumber}
-            </h3>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-extrabold drop-shadow-sm">{displayTotal} {inv?.currency || "SAR"}</div>
-            {displayVat > 0 && (
-              <div className="text-xs text-white/80">{t("invoice.vat", { defaultValue: "VAT" })}: {displayVat}</div>
-            )}
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              {/* Hide raw user/payment identifiers; show only clean info */}
-              {feature && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <i className="fas fa-tag text-gray-400" />
-                  <span className="text-sm">{t('invoice.type', { defaultValue: 'Type' })}: </span>
-                  <span className="font-medium truncate">{feature}</span>
-                </div>
-              )}
-            </div>
-            <div className="sm:text-right">
-              {status === 'paid' && (
-                <>
-                  <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 font-semibold"
-                  >
-                    <i className="fas fa-download" /> {t("invoice.download", { defaultValue: "Download PDF" })}
-                  </a>
-                  <div className="mt-2 text-xs text-gray-500">{t("invoice.note", { defaultValue: "Keep this invoice for your records." })}</div>
-                </>
-              )}
-              {(status === 'pending' || status === 'created') && inv?.paymentUrl && (
-                <a
-                  href={inv.paymentUrl}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#00183D] text-white rounded-lg hover:bg-[#00183D]/85 font-semibold"
-                >
-                  <i className="fas fa-credit-card" /> {t('payment.payNow', { defaultValue: 'Pay Now' })}
-                </a>
-              )}
-              {(status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'expired') && feature && (
-                <button
-                  onClick={() => startFeaturePayment(feature)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-semibold"
-                >
-                  <i className="fas fa-rotate" /> {t('payment.tryAgain', { defaultValue: 'Try Again' })}
-                </button>
-              )}
-            </div>
-          </div>
-          {Array.isArray(inv?.items) && inv.items.length > 0 && (
-            <div className="mt-5 border-t pt-4">
-              <div className="text-sm font-semibold mb-2">{t("invoice.items", { defaultValue: "Items" })}</div>
-              <ul className="space-y-1 text-sm text-gray-700">
-                {inv.items.map((it, idx) => (
-                  <li key={idx} className="flex justify-between">
-                    <span className="truncate">{it?.description?.ar || it?.description?.en || '-'}</span>
-                    <span className="font-medium">{it?.total} {inv?.currency || 'SAR'}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const PaymentCard = ({ payment }) => {
-    const isPaymentRecord =
-      payment && typeof payment === "object" && payment.type && payment.amount !== undefined;
-    // تحديد القيم الافتراضية للحقول المفقودة بدون validation غير ضروري
-    const safePayment = {
-      _id: payment._id || "",
-      type: payment.type || "",
-      status: payment.status || "",
-      amount: payment.amount || 0,
-      currency: payment.currency || "SAR",
-      description: payment.description || "",
-      name:
-        typeof payment.name === "string"
-          ? { ar: payment.name, en: "" }
-          : payment.name || { ar: t("common.notAvailable"), en: "" },
-      position:
-        typeof payment.position === "string"
-          ? { ar: payment.position, en: "" }
-          : payment.position || { ar: t("common.notAvailable"), en: "" },
-      monthlySalary: payment.monthlySalary || { amount: 0, currency: "SAR" },
-      yearSalary: payment.yearSalary || { amount: 0, currency: "SAR" },
-      nationality: payment.nationality || t("common.notAvailable"),
-      jop: payment.jop || null,
-      status: payment.status || null,
-      isActive: payment.isActive || false,
-      game: payment.game || t("common.notAvailable"),
-      contactInfo: payment.contactInfo || { email: null, phone: null },
-      media: payment.media || { profileImage: { url: null, publicId: null } },
-    };
-
-    // Use backend pricing only; do not fallback to env or payload
-    const typeToKey = {
-      add_offer: 'ADD_OFFER',
-      promote_offer: 'PROMOTE_OFFER_PER_DAY',
-      unlock_contact: 'UNLOCK_CONTACT',
-      activate_user: 'ACTIVATE_USER',
-      promote_player: 'PROMOTE_PLAYER',
-      promote_coach: 'PROMOTE_COACH',
-    };
-    const displayAmount = pricing ? pricing[typeToKey[safePayment.type]] : undefined;
-
-    if (isPaymentRecord) {
-      const status = String(safePayment.status || "").toLowerCase();
-      const canPay = ["pending", "failed", "cancelled", "canceled"].includes(status);
-      return (
-        <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden w-full">
-          <div className="bg-[#00183D] p-4 flex items-center gap-4 text-white">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
-              {safePayment.type?.split("_")[0]?.[0]?.toUpperCase() || "P"}
-            </div>
-            <div className="w-full flex">
-              <div className="flex-1">
-                <h3 className="font-b text-lg">
-                  {t("payment.type", { defaultValue: "Type" })}: {safePayment.type}
-                </h3>
-                <div className="text-white/80 text-sm">
-                  {t("payment.status", { defaultValue: "Status" })}: {safePayment.status}
-                </div>
-              </div>
-            </div>
-            <div className="flex ">
-              <div className="text-2xl font-bold">{displayAmount !== undefined ? `${displayAmount} ${safePayment.currency}` : t('payment.priceUnavailable') || 'Price unavailable'}</div>
-            </div>
-          </div>
-          <div className="p-6">
-            {safePayment.description && (
-              <div className="mb-4 text-gray-700">{safePayment.description}</div>
-            )}
-            {canPay && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => handlePayExisting(safePayment._id, safePayment.type)}
-                  disabled={payingIds.has(safePayment._id) || displayAmount === undefined}
-                  className="w-full sm:w-auto px-4 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#00183D]/80 transition-all font-medium"
-                >
-                  {displayAmount === undefined
-                    ? (t('payment.priceUnavailableCta') || 'Price unavailable')
-                    : (payingIds.has(safePayment._id)
-                      ? t("payment.processing", { defaultValue: "Processing…" })
-                      : t("payment.payNow", { defaultValue: "Pay Now" }))}
-                </button>
-                {ALLOW_TEST && (
-                  <>
-                    <button
-                      onClick={() => simulatePayment(safePayment._id, "success")}
-                      className="w-full sm:w-auto px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-medium"
-                    >
-                      Simulate Success
-                    </button>
-                    <button
-                      onClick={() => simulatePayment(safePayment._id, "fail")}
-                      className="w-full sm:w-auto px-4 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-all font-medium"
-                    >
-                      Simulate Fail
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+      if (inv?.paymentUrl) {
+        window.location.href = inv.paymentUrl;
+        return;
+      }
+      // fallback: re-initiate with same product (and same playerProfileId if listing)
+      await startPayment(
+        inv?.product,
+        inv?.product === "player_listing" ? inv?.playerProfileId : undefined
       );
+    } catch (e) {
+      alert(e?.message || "Payment error");
+    } finally {
+      setBusy((m) => ({ ...m, [id]: false }));
     }
-
-    return (
-      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden w-full">
-        <div className="bg-[#00183D] p-4 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-            <i className="fas fa-user text-gray-500 text-2xl"></i>
-          </div>
-          <div className="flex-1">
-            <h3 className="text-white font-semibold text-lg">
-              {t('payment.pendingTitle', { defaultValue: 'Pending item' })}
-            </h3>
-            <div className="text-white/80 text-sm">
-              {safePayment.type && (
-                <span className="mr-2">{t("payment.type") || "Type"}: {safePayment.type}</span>
-              )}
-              {safePayment.status && (
-                <span>{t("payment.status") || "Status"}: {safePayment.status}</span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="p-6">
-          {displayAmount !== undefined && displayAmount > 0 && (
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-gray-600 flex items-center gap-2">
-                <i className="fas fa-receipt"></i>
-                {t("payment.amount") || "Amount"}
-              </span>
-              <span className="font-bold text-purple-600">
-                {displayAmount} {safePayment.currency}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
-  return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-      {/* Header */}
-      <div className="bg-[#00183D] p-8">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <i className="fas fa-credit-card"></i>
-          {t("profile.payments")}
+  const onCreateContacts = async () => {
+    try {
+      setCreating((s) => ({ ...s, contacts: true }));
+      await startPayment("contacts_access");
+    } catch (e) {
+      alert(e?.message || "Failed to start contacts payment");
+    } finally {
+      setCreating((s) => ({ ...s, contacts: false }));
+    }
+  };
+
+  const onCreateListing = async () => {
+    if (!playerProfileId) {
+      alert("Please enter your playerProfileId first.");
+      return;
+    }
+    try {
+      setCreating((s) => ({ ...s, listing: true }));
+      await startPayment("player_listing", playerProfileId);
+    } catch (e) {
+      alert(e?.message || "Failed to start listing payment");
+    } finally {
+      setCreating((s) => ({ ...s, listing: false }));
+    }
+  };
+
+  const simulatePaid = async (invoiceId) => {
+    try {
+      setBusy((m) => ({ ...m, [invoiceId]: true }));
+      await apiPost(`/payments/simulate/success/${invoiceId}`);
+      await refresh();
+    } catch (e) {
+      alert(e?.message || "Simulate failed");
+    } finally {
+      setBusy((m) => ({ ...m, [invoiceId]: false }));
+    }
+  };
+
+  return (<>
+
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-[#00183D] p-6 lg:p-8">
+        <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white flex items-center gap-3">
+          payments
         </h1>
       </div>
+      <div className="space-y-8 p-5">
+        <header className="flex flex-col gap-2">
+          <h2 className="text-2xl font-semibold">Payments</h2>
+          <p className="text-sm text-gray-500">
+            review all invoices for your account.
+          </p>
 
-      {/* Content */}
-      <div className="p-6 lg:p-8">
-        {/* Hide activation CTA here to only show invoices */}
+        </header>
+        {/* Pending invoices */}
 
-        {invoices.length === 0 ? (
-          <div className="text-center py-12">
-            <i className="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-            <p className="text-gray-500 text-xl">
-              {t("profile.noDataAvailable")}
-            </p>
+        <section className="space-y-3">
+          <div className="text-sm text-gray-700">
+            <span className="mr-4">Pending: <b>{counts.pending}</b></span>
+            <span>Paid: <b>{counts.paid}</b></span>
           </div>
-        ) : (
-          <>
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <p className="text-yellow-800 flex items-center gap-2">
-                <i className="fas fa-info-circle"></i>
-                {t("profile.youHaveRecords", { count: invoices.length })}
-              </p>
+          <h3 className="text-lg font-semibold">To pay</h3>
+          {loading ? (
+            <div className="text-sm text-gray-500">Loading…</div>
+          ) : err ? (
+            <div className="text-sm text-red-600">{err}</div>
+          ) : pending.length === 0 ? (
+            <div className="text-sm text-gray-500">No pending invoices.</div>
+          ) : (
+            <div className="space-y-3">
+              {pending.map((inv) => {
+                const id = inv?.id;
+                const isBusy = !!busy[id];
+                const label =
+                  inv?.product === "player_listing" ? "Player listing" : "Contacts access";
+                return (
+                  <div key={id} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <div className="font-medium">{label}</div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(inv.createdAt).toLocaleString()} • {inv.amount} {inv.currency}
+                      </div>
+                      <div className="text-xs text-gray-400">Order: {inv.orderNumber}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {inv.paymentUrl && (
+                        <a
+                          href={inv.paymentUrl}
+                          className="px-4 py-2 border rounded-lg"
+                        >
+                          Pay
+                        </a>
+                      )}
+                      {!inv.paymentUrl && (
+                        <button
+                          onClick={() => payExisting(inv)}
+                          disabled={isBusy}
+                          className="px-4 py-2 border rounded-lg"
+                        >
+                          {isBusy ? "Opening…" : "Pay"}
+                        </button>
+                      )}
+                      {ALLOW_TEST && (
+                        <button
+                          onClick={() => simulatePaid(id)}
+                          disabled={isBusy}
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg"
+                        >
+                          {isBusy ? "…" : "Simulate Paid (DEV)"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            {invoices.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <i className="fas fa-file-invoice" /> {t("profile.invoices", { defaultValue: "Invoices" })}
-                </h3>
-                <div className={`grid ${invoices.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6`}>
-                  {invoices
-                    .filter((inv) => !currentUserId || String(inv?.user) === String(currentUserId))
-                    .map((inv) => (
-                    <InvoiceCard key={inv._id} inv={inv} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+          )}
+        </section>
+
+        {/* Paid invoices */}
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Paid</h3>
+          {loading ? (
+            <div className="text-sm text-gray-500">Loading…</div>
+          ) : paid.length === 0 ? (
+            <div className="text-sm text-gray-500">No paid invoices yet.</div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {paid.map((inv) => {
+                const label =
+                  inv?.product === "player_listing" ? "Player listing" : "Contacts access";
+                return (
+                  <div key={inv.id} className="border rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{label}</div>
+                      <div className="text-sm">{inv.amount} {inv.currency}</div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Paid at {inv.paidAt ? new Date(inv.paidAt).toLocaleString() : "—"}
+                    </div>
+                    <div className="text-xs text-gray-400">Order: {inv.orderNumber}</div>
+                    {!!inv.receiptUrl && (
+                      <a
+                        href={inv.receiptUrl}
+                        target="_blank"
+                        className="text-blue-600 underline text-sm"
+                      >
+                        View receipt
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </div>
+  </>
   );
-};
-
-export default PaymentsSection;
+}

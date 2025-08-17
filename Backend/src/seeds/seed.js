@@ -2,7 +2,6 @@ import dotenv from 'dotenv'; dotenv.config();
 import mongoose from 'mongoose';
 import Invoice from '../models/invoice.model.js';
 import Entitlement from '../models/entitlement.model.js';
-import Payment from '../models/payment.model.js';
 import User from '../models/user.model.js';
 import Player from '../models/player.model.js';
 
