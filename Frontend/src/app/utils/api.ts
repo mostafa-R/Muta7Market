@@ -4,9 +4,9 @@ export const API_BASE = (() => {
     return v.endsWith("/api/v1") ? v : `${v}/api/v1`;
   })();
   
-  export function authHeaders() {
-    if (typeof window === "undefined") return {};
+  export function authHeaders(): Record<string, string> {
+    if (typeof window === "undefined") return {} as Record<string, string>;
     const t = localStorage.getItem("token");
-    return t ? { Authorization: `Bearer ${t}` } : {};
+    return t ? { Authorization: `Bearer ${t}` } : {} as Record<string, string>;
   }
   

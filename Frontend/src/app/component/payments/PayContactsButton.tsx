@@ -14,7 +14,10 @@ export default function PayContactsButton({
       setLoading(true);
       const res = await fetch(`${API_BASE}/payments/initiate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders() as Record<string, string>),
+        },
         body: JSON.stringify({ product: "contacts_access" }),
       });
       const json = await res.json();

@@ -15,7 +15,10 @@ export default function PayListingButton({
       setLoading(true);
       const res = await fetch(`${API_BASE}/payments/initiate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders() as Record<string, string>),
+        },
         body: JSON.stringify({ product: "player_listing", playerProfileId }),
       });
       const json = await res.json();
