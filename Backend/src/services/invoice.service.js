@@ -17,6 +17,12 @@ export async function ensurePendingInvoice({
   playerProfileId = null,
   priceOverride,
 }) {
+  console.log("[invoice.service][ensurePendingInvoice] start", {
+    userId: String(userId),
+    product,
+    playerProfileId: playerProfileId || null,
+    priceOverride: priceOverride ?? null,
+  });
   if (!userId) throw new Error("ensurePendingInvoice: userId is required");
   if (!["contacts_access", "player_listing"].includes(product)) {
     throw new Error(`ensurePendingInvoice: invalid product ${product}`);
@@ -64,6 +70,11 @@ export async function ensurePendingInvoice({
     status: "pending",
     playerProfileId: playerProfileId ?? null,
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+  });
+  console.log("[invoice.service][ensurePendingInvoice] created new pending invoice", {
+    id: String(invoice._id),
+    orderNumber: invoice.orderNumber,
+    amount: invoice.amount,
   });
 
   return invoice;
