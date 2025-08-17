@@ -8,6 +8,7 @@
     "dev": "nodemon .",
     "test": "jest --coverage",
     "lint": "eslint src/",
+    "seed": "node src/seeds/seed.js",
     "seed:players": "node src/seeds/player.seed.js"
   },
   "keywords": [

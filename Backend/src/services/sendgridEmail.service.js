@@ -1,7 +1,10 @@
-import { transporter } from '../config/email.js';
+import { transporter, isEmailEnabled } from '../config/email.js';
 
 export const sendEmail = async (to, subject, text, html = null) => {
   try {
+    if (!isEmailEnabled) {
+      return { success: true, messageId: 'email-disabled' };
+    }
     const info = await transporter.sendMail({
       from: {
         name: 'Muta7Market',
@@ -15,12 +18,9 @@ export const sendEmail = async (to, subject, text, html = null) => {
     
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Email Error:', {
-      message: error.message,
-      stack: error.stack,
-      to,
-      subject
-    });
-    throw new Error(`Failed to send email: ${error.message}`);
+    // Log and continue without blocking auth flows
+    const payload = { message: error.message, to, subject };
+    try { console.error('Email Error:', payload); } catch {}
+    return { success: false, error: payload };
   }
 };

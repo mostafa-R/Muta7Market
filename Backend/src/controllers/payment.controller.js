@@ -6,6 +6,8 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import Payment from "../models/payment.model.js";
 import paymentService from "../services/payment.service.js";
+import Invoice from "../models/invoice.model.js";
+import Entitlement from "../models/entitlement.model.js";
 import { PRICING } from "../config/constants.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
@@ -215,153 +217,80 @@ export const listPayments = asyncHandler(async (req, res) => {
  * - amount يتم تحديده تلقائياً حسب نوع الدفع
  */
 export const initiatePayment = asyncHandler(async (req, res) => {
-  
-
+  // Map new feature types to pricing
   const userId = req.user?._id || req.user?.id;
   if (!userId) throw new ApiError(401, "Unauthorized");
 
   const {
-    paymentId,
+    type, // 'unlock_contacts' | 'publish_profile'
     currency = "SAR",
     description = "Subscription",
-    type = "add_offer", // Default payment type
-    metadata = {}, // لا تبعث userId هنا – يتم تجاهله
+    metadata = {},
   } = req.body || {};
-
-  
-
-  let paymentDoc;
-  // console.log(req); // Removed debug console.log
-
-  if (paymentId) {
-    paymentDoc = await Payment.findById(paymentId);
-    if (!paymentDoc) {
-      throw new ApiError(404, "Payment not found");
-    }
-
-    
-
-    if (String(paymentDoc.user) !== String(userId)) {
-      throw new ApiError(403, "Not allowed to pay this invoice");
-    }
-    // Ensure amount is synced with constants for activation types
-    try {
-      const t = String(paymentDoc.type);
-      if (t === "activate_user" && paymentDoc.amount !== PRICING.ACTIVATE_USER) {
-        paymentDoc.amount = PRICING.ACTIVATE_USER;
-        paymentDoc.currency = paymentDoc.currency || "SAR";
-        await paymentDoc.save();
-      }
-      if (t === "promote_player" && paymentDoc.amount !== PRICING.PROMOTE_PLAYER) {
-        paymentDoc.amount = PRICING.PROMOTE_PLAYER;
-        paymentDoc.currency = paymentDoc.currency || "SAR";
-        await paymentDoc.save();
-      }
-    } catch {}
-    if (String(paymentDoc.status) === String(PAYMENT_STATUS.COMPLETED)) {
-      return res.status(200).json(
-        new ApiResponse(
-          200,
-          {
-            paymentId: paymentDoc._id,
-            paymentUrl: paymentDoc?.gatewayResponse?.checkoutUrl,
-          },
-          "Already paid"
-        )
-      );
-    }
-  } else {
-    
-
-    // Validate payment type
-    const validTypes = [
-      "add_offer",
-      "promote_offer",
-      "activate_user",
-      "unlock_contact",
-      "promote_player",
-      "promote_coach",
-    ];
-    if (!validTypes.includes(type)) {
-      throw new ApiError(
-        400,
-        `Invalid payment type. Must be one of: ${validTypes.join(", ")}`
-      );
-    }
-
-    // Get static amount based on payment type
-    const amountMap = {
-      add_offer: PRICING.ADD_OFFER,
-      promote_offer: PRICING.PROMOTE_OFFER_PER_DAY,
-      activate_user: PRICING.ACTIVATE_USER,
-      unlock_contact: PRICING.UNLOCK_CONTACT,
-      promote_player: PRICING.PROMOTE_PLAYER,
-      promote_coach: PRICING.PROMOTE_COACH,
-    };
-
-    const amount = amountMap[type];
-
-    if (!amount || amount <= 0) {
-      throw new ApiError(
-        400,
-        `Invalid payment type or amount not configured for type: ${type}`
-      );
-    }
-
-    paymentDoc = await Payment.create({
-      user: userId, // ← من التوكن فقط
-      type, // ← إضافة نوع الدفع
-      amount, // ← مبلغ ثابت حسب النوع
-      currency,
-      description,
-      metadata: { ...metadata }, // بدون userId
-      gateway: process.env.PAYMENT_GATEWAY || "paylink",
-      status: PAYMENT_STATUS.PENDING,
-    });
-
-    
+  if (!['unlock_contacts','publish_profile'].includes(type)) {
+    throw new ApiError(400, 'Invalid feature type');
   }
 
-  
+  // Idempotent: one open invoice per (userId,type)
+  const orderNumber = `U-${userId}-${type}`;
+  let invoice = await Invoice.findOne({ orderNumber }).lean();
 
-  // إنشاء الفاتورة على Paylink
-  const urls = buildReturnUrls(paymentDoc._id);
+  const activeEntitlement = await Entitlement.findOne({ user: userId, type, active: true }).lean();
+  if (activeEntitlement) {
+    return res.status(409).json(new ApiResponse(409, { alreadyActive: true }, 'ENTITLEMENT_ALREADY_ACTIVE'));
+  }
 
-  const init = await paymentService.initiatePayment(paymentDoc._id, {
-    amount: paymentDoc.amount,
-    currency: paymentDoc.currency,
-    description: paymentDoc.description,
-    // معلومات اختيارية لواجهة الدفع
+  const amount = type === 'unlock_contacts' ? PRICING.UNLOCK_CONTACT : PRICING.PROMOTE_PLAYER;
+
+  if (invoice && ['pending','created'].includes(invoice.status)) {
+    return res.status(200).json(new ApiResponse(200, {
+      invoiceId: invoice._id,
+      providerInvoiceId: invoice.providerInvoiceId,
+      paymentUrl: invoice.paymentUrl,
+      status: invoice.status
+    }, 'INVOICE_ALREADY_PENDING'));
+  }
+
+  // Create or recreate invoice
+  invoice = await Invoice.findOneAndUpdate(
+    { orderNumber },
+    {
+      user: userId,
+      type,
+      amount,
+      currency,
+      status: 'created',
+      invoiceNumber: `INV-${Date.now()}`,
+    },
+    { upsert: true, new: true }
+  ).lean();
+
+  const urls = buildReturnUrls(invoice._id);
+  const init = await paymentService.initiatePayment(invoice._id, {
+    amount,
+    currency,
+    description,
     customerEmail: req.user?.email || metadata?.email,
     clientName: req.user?.name || metadata?.name,
-    clientMobile: metadata?.mobile || "",
+    clientMobile: metadata?.mobile || '',
     ...urls,
   });
 
-  
+  if (!init?.checkoutUrl) throw new ApiError(500, 'Failed to create checkout session');
 
-  if (!init?.checkoutUrl) {
-    throw new ApiError(500, "Failed to create checkout session");
-  }
+  await Invoice.updateOne({ _id: invoice._id }, {
+    provider: 'paylink',
+    providerInvoiceId: init.checkoutId,
+    paymentUrl: init.checkoutUrl,
+    status: 'pending',
+  });
 
-  paymentDoc.gateway = "paylink";
-  paymentDoc.gatewayResponse = {
-    checkoutId: init.checkoutId,
-    checkoutUrl: init.checkoutUrl,
-    raw: init.raw || {},
-  };
-  await paymentDoc.save();
-  
-
-  const response = new ApiResponse(
-    200,
-    { paymentId: paymentDoc._id, paymentUrl: init.checkoutUrl },
-    "Payment initiated"
-  );
-
-  
-
-  return res.status(200).json(response);
+  return res.status(200).json(new ApiResponse(200, {
+    invoiceId: invoice._id,
+    providerInvoiceId: init.checkoutId,
+    paymentUrl: init.checkoutUrl,
+    status: 'pending'
+  }, 'Payment initiated'));
 });
 
 /**
@@ -370,15 +299,8 @@ export const initiatePayment = asyncHandler(async (req, res) => {
  * (تفعيل المستخدم يتم داخل payment.service في handleWebhook)
  */
 export const paymentWebhook = asyncHandler(async (req, res) => {
-  
-
   const result = await paymentService.handleWebhook(req.body);
-
-  
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, result, "Webhook processed successfully"));
+  return res.status(200).json(new ApiResponse(200, result, 'Webhook processed successfully'));
 });
 
 /**

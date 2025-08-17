@@ -1,9 +1,10 @@
 // src/services/payment.service.js
 import axios from "axios";
-import Payment from "../models/payment.model.js"; // ⬅️ شِلّنا named import
+import Payment from "../models/payment.model.js"; // legacy (still used by other flows)
 import Player from "../models/player.model.js";
 import Invoice from "../models/invoice.model.js";
 import User from "../models/user.model.js";
+import Entitlement from "../models/entitlement.model.js";
 import ApiError from "../utils/ApiError.js";
 
 // ===== حالات الدفع (تلقائية من الموديل) =====
@@ -158,162 +159,57 @@ class PaymentService {
     }
   }
 
-  // يبدأ جلسة دفع ويخزن الـ checkoutUrl/Id
+  // Create checkout using Invoice centric flow
   initiatePayment = async (
-    paymentId,
+    invoiceId,
     { amount, currency, description, customerEmail, returnUrl, cancelUrl }
   ) => {
-    
-
-    const payment = await Payment.findById(paymentId);
-    if (!payment) throw new ApiError(404, "Payment not found");
-    // Guardrail: hard-sync activation prices from constants when missing or stale
-    try {
-      const t = String(payment.type);
-      const constants = (await import("../config/constants.js")).PRICING;
-      if (t === "activate_user" && payment.amount !== constants.ACTIVATE_USER) {
-        payment.amount = constants.ACTIVATE_USER;
-      }
-      if (t === "promote_player" && payment.amount !== constants.PROMOTE_PLAYER) {
-        payment.amount = constants.PROMOTE_PLAYER;
-      }
-      await payment.save();
-    } catch {}
-    
-
-    
+    const inv = await Invoice.findById(invoiceId);
+    if (!inv) throw new ApiError(404, 'Invoice not found');
     const init = await this.gateway.createCheckout({
       amount,
       currency,
-      orderId: payment._id,
+      orderId: inv._id,
       description,
       customerEmail,
       returnUrl,
       cancelUrl,
     });
-
-    
-
-    payment.gateway = "paylink";
-    payment.gatewayResponse = {
-      checkoutId: init.checkoutId,
-      checkoutUrl: init.checkoutUrl,
-      raw: init.raw || {},
-    };
-    payment.status = PAYMENT_STATUS.PENDING; // ← هيتم تحويلها للصيغة اللي في الموديل تلقائيًا
-    
-    await payment.save();
-    
-
     return init;
   };
 
-  // Webhook من Paylink
+  // Webhook من Paylink (Invoice-centric)
   handleWebhook = async (body) => {
-    
-    
-    const transactionNo =
-      body?.transactionNo || body?.TransactionNo || body?.transactionID;
-    
-    
-    if (!transactionNo)
-      throw new ApiError(400, "Missing transactionNo in webhook body");
+    const transactionNo = body?.transactionNo || body?.TransactionNo || body?.transactionID;
+    if (!transactionNo) throw new ApiError(400, 'Missing transactionNo in webhook body');
 
-    
-    const invoice = await this.gateway.getInvoice(transactionNo);
-    
-    
-    const statusStr = String(
-      invoice?.orderStatus || invoice?.OrderStatus || ""
-    ).toUpperCase();
-    
+    const paylinkInvoice = await this.gateway.getInvoice(transactionNo);
+    const statusStr = String(paylinkInvoice?.orderStatus || paylinkInvoice?.OrderStatus || '').toUpperCase();
+    const isPaid = statusStr === 'PAID' || statusStr === 'PAID PARTIALLY';
 
-    const isPaid = statusStr === "PAID" || statusStr === "PAID PARTIALLY";
-    
-
-    
-    const payment = await Payment.findOne({
-      "gatewayResponse.checkoutId": transactionNo,
-    });
-    if (!payment) {
-      throw new ApiError(404, "Payment not found for this transaction");
-    }
-    
-    
-
-    payment.gatewayResponse = {
-      ...(payment.gatewayResponse || {}),
-      raw: invoice,
-    };
+    const inv = await Invoice.findOne({ providerInvoiceId: transactionNo });
+    if (!inv) throw new ApiError(404, 'Invoice not found for this transaction');
 
     if (isPaid) {
-      payment.status = PAYMENT_STATUS.COMPLETED;
-
-      // Post-payment actions based on type
-      try {
-        if (payment.type === "activate_user") {
-          await User.findByIdAndUpdate(payment.user, { isActive: true });
-          
-        }
-
-        // For promote_player keep activating player profile (existing behavior)
-        if (payment.type === "promote_player") {
-          const player = await Player.findOne({ user: payment.user });
-          if (player) {
-            player.isActive = true;
-            await player.save();
-            
+      if (inv.status !== 'paid') {
+        await Invoice.updateOne({ _id: inv._id }, { status: 'paid', paidAt: new Date() });
+        const exist = await Entitlement.findOne({ sourceInvoice: inv._id });
+        if (!exist) {
+          await Entitlement.create({ user: inv.user, type: inv.type, sourceInvoice: inv._id, active: true });
+          if (inv.type === 'unlock_contacts') {
+            await User.findByIdAndUpdate(inv.user, { isActive: true });
+          }
+          if (inv.type === 'publish_profile') {
+            const player = await Player.findOne({ user: inv.user });
+            if (player) { player.isActive = true; await player.save(); }
           }
         }
-
-        // Create invoice for PAID payment (idempotent)
-        const existingInvoice = await Invoice.findOne({ payment: payment._id });
-        if (!existingInvoice) {
-          const { subtotal, vatAmount, totalAmount } =
-            typeof payment.calculateVAT === "function"
-              ? payment.calculateVAT()
-              : { subtotal: payment.amount, vatAmount: 0, totalAmount: payment.amount };
-
-          const invoiceDoc = await Invoice.create({
-            payment: payment._id,
-            user: payment.user,
-            invoiceNumber: typeof payment.generateInvoiceNumber === "function" ? payment.generateInvoiceNumber() : `INV-${Date.now()}`,
-            billingInfo: {},
-            items: [
-              {
-                description: {
-                  en: payment.description || `Payment: ${payment.type}`,
-                  ar: payment.description || `دفع: ${payment.type}`,
-                },
-                quantity: 1,
-                unitPrice: payment.amount,
-                total: payment.amount,
-              },
-            ],
-            subtotal,
-            taxAmount: vatAmount,
-            totalAmount,
-            currency: payment.currency || "SAR",
-            status: "paid",
-            paidAt: new Date(),
-          });
-          
-        }
-      } catch (error) {
-        console.error("❌ [WEBHOOK] Post-payment action error:", error.message);
       }
-    } else if (statusStr === "CANCELLED" || statusStr === "FAILED") {
-      payment.status = PAYMENT_STATUS.FAILED;
-    } else {
-      
+    } else if (statusStr === 'CANCELLED' || statusStr === 'FAILED') {
+      await Invoice.updateOne({ _id: inv._id }, { status: statusStr.toLowerCase() === 'CANCELLED'.toLowerCase() ? 'canceled' : 'failed' });
     }
 
-    await payment.save();
-    
-
-    const result = { ok: true, paymentId: payment._id, status: payment.status };
-    
-    return result;
+    return { ok: true, invoiceId: inv._id, status: isPaid ? 'paid' : inv.status };
   };
 
   // تأكيد يدوي بعد العودة من Paylink

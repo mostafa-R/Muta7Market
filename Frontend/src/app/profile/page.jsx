@@ -217,53 +217,19 @@ const UserProfile = () => {
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const pid = params.get("pid");
       const paid = params.get("paid");
-      const txn =
-        params.get("transactionNo") ||
-        params.get("TransactionNo") ||
-        params.get("transactionID");
-      if (pid && paid) {
-        // If payment completed or cancelled, refresh status from backend
-        const token = localStorage.getItem("token");
-        fetch(`${API_URL}/payments/${pid}/status`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        })
-          .then((r) => r.json())
-          .then((j) => {
-            const status = String(j?.data?.status || "").toUpperCase();
-            if (status.includes("COMPLETED")) {
-              setSuccess(t("profile.paymentSuccess"));
-            } else if (
-              status.includes("FAILED") ||
-              status.includes("CANCELLED")
-            ) {
-              setError(t("profile.paymentFailed"));
-            }
-          })
-          .catch(() => {});
-      }
-      // If we have a transaction number from Paylink, confirm by transaction
-      if (txn) {
-        fetch(`${API_URL}/payments/status/transaction/${txn}`)
-          .then((r) => r.json())
-          .then((j) => {
-            const status = String(j?.data?.status || "").toUpperCase();
-            if (status.includes("COMPLETED")) {
-              setSuccess(t("profile.paymentSuccess"));
-            } else if (
-              status.includes("FAILED") ||
-              status.includes("CANCELLED")
-            ) {
-              setError(t("profile.paymentFailed"));
-            }
-          })
-          .catch(() => {});
+      if (paid === "1") {
+        setSuccess(t("profile.paymentSuccess"));
+        // Refresh user, invoices, and player data after webhook processes
+        fetchUserData();
+        fetchPendingPayments();
+        fetchPlayerData();
+      } else if (paid === "0") {
+        setError(t("profile.paymentFailed"));
+        fetchPendingPayments();
       }
     } catch {}
-  }, []);
+  }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
 
   const onSubmit = useCallback(
     async (data) => {

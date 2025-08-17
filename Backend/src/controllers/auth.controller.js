@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import userModel from "../models/user.model.js";
 import { sendEmail } from "../services/sendgridEmail.service.js";
+import { isEmailEnabled } from "../config/email.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import Payment from "../models/payment.model.js";
@@ -94,13 +95,10 @@ export const register = asyncHandler(async (req, res) => {
     generateVerificationEmail(emailToken)
   );
 
-  // await smsService.sendOTP(user.phone, phoneOTP);
-
-  if (!emailResult.success) {
-    await userModel.findByIdAndDelete(user._id);
-    return res.status(500).json({
-      error: "Failed to send verification email. Please try again.",
-    });
+  // Non-blocking: if email fails (dev creds etc.), keep the user and proceed
+  if (!emailResult?.success) {
+    // Optionally attach a hint for client to show a banner
+    // Do not delete the user or fail the request
   }
 
   // Generate JWT Tokens
@@ -126,6 +124,15 @@ export const register = asyncHandler(async (req, res) => {
     maxAge: 1000 * 60 * 15, // 15 mins
   });
 
+  // In dev or when email disabled, expose verification codes in response for testing
+  const exposeCodes =
+    String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
+    (!isEmailEnabled && process.env.NODE_ENV !== "production");
+
+  const extraDev = exposeCodes
+    ? { dev: { emailVerificationCode: emailToken, phoneOTP } }
+    : {};
+
   // Send Response
   res.status(201).json(
     new ApiResponse(
@@ -133,6 +140,7 @@ export const register = asyncHandler(async (req, res) => {
       {
         user: userData,
         accessToken,
+        ...extraDev,
       },
       "User registered successfully"
     )
@@ -364,23 +372,29 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  // Send Reset Email
-  await sendEmail(
+  // Send Reset Email (non-blocking)
+  const fpEmailResult = await sendEmail(
     user.email,
     "Password Reset",
     `Your password reset code is: ${resetToken}`,
     generateVerificationEmail(resetToken)
   );
 
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { message: "Password reset email sent" },
-        "Password reset email sent"
-      )
-    );
+  const exposeCodes =
+    String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
+    (!isEmailEnabled && process.env.NODE_ENV !== "production");
+
+  const extraDev = exposeCodes
+    ? { dev: { passwordResetCode: resetToken }, emailSent: !!fpEmailResult?.success }
+    : { emailSent: !!fpEmailResult?.success };
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { message: "Password reset email sent", ...extraDev },
+      "Password reset email sent"
+    )
+  );
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {

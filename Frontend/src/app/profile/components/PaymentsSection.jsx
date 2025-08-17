@@ -5,9 +5,11 @@ import { toast } from "react-toastify";
 
 const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language }) => {
   let isUserInactive = false;
+  let currentUserId = '';
   try {
     const u = JSON.parse(typeof window !== 'undefined' ? (localStorage.getItem('user') || '{}') : '{}');
     isUserInactive = u && u.isActive === false;
+    currentUserId = u?.id || u?._id || '';
   } catch { }
 
   const API_BASE = useMemo(() => {
@@ -27,9 +29,8 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
   };
   const ALLOW_TEST = process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS === "1";
 
-  const handlePayExisting = async (paymentId) => {
+  const startFeaturePayment = async (feature) => {
     try {
-      setPaying(paymentId, true);
       const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
       const res = await fetch(`${API_BASE}/payments/initiate`, {
         method: "POST",
@@ -37,7 +38,30 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ paymentId }),
+        body: JSON.stringify({ type: feature }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Failed to initiate payment");
+      const url = json?.data?.paymentUrl;
+      if (!url) throw new Error("No payment URL returned");
+      window.location.href = url;
+    } catch (e) {
+      toast.error(e?.message || "Failed to start payment");
+    }
+  };
+
+  const handlePayExisting = async (paymentId, paymentType) => {
+    try {
+      setPaying(paymentId, true);
+      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
+      const feature = paymentType === 'promote_player' ? 'publish_profile' : paymentType === 'activate_user' ? 'unlock_contacts' : paymentType;
+      const res = await fetch(`${API_BASE}/payments/initiate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ type: feature }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || "Failed to initiate payment");
@@ -97,15 +121,25 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
 
   const InvoiceCard = ({ inv }) => {
     const issued = inv?.issueDate ? new Date(inv.issueDate) : null;
+    const displayTotal = (typeof inv?.totalAmount === 'number' && inv.totalAmount > 0) ? inv.totalAmount : inv?.amount;
+    const displayVat = typeof inv?.taxAmount === 'number' ? inv.taxAmount : 0;
+    const status = String(inv?.status || '').toLowerCase();
+    const feature = inv?.type === 'publish_profile' || inv?.type === 'unlock_contacts' ? inv.type : undefined;
+    const headerBg =
+      status === 'paid' ? 'from-emerald-600 to-emerald-700' :
+      (status === 'pending' || status === 'created') ? 'from-amber-500 to-amber-600' :
+      (status === 'failed') ? 'from-rose-600 to-rose-700' :
+      (status === 'canceled' || status === 'cancelled' || status === 'expired') ? 'from-gray-500 to-gray-600' :
+      'from-slate-600 to-slate-700';
     return (
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full border border-gray-100">
-        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-5 flex items-center gap-4 text-white">
+        <div className={`bg-gradient-to-r ${headerBg} p-5 flex items-center gap-4 text-white`}>
           <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-xl">
             <i className="fas fa-file-invoice-dollar" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs uppercase tracking-wide">{inv?.status || 'paid'}</span>
+              <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs uppercase tracking-wide">{(inv?.status || 'paid').toString()}</span>
               <span className="text-white/80 text-xs">{issued ? issued.toLocaleDateString() : ''}</span>
             </div>
             <h3 className="font-semibold text-lg mt-1">
@@ -113,35 +147,53 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
             </h3>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-extrabold drop-shadow-sm">{inv?.totalAmount} {inv?.currency || "SAR"}</div>
-            {inv?.taxAmount > 0 && (
-              <div className="text-xs text-white/80">{t("invoice.vat", { defaultValue: "VAT" })}: {inv.taxAmount}</div>
+            <div className="text-2xl font-extrabold drop-shadow-sm">{displayTotal} {inv?.currency || "SAR"}</div>
+            {displayVat > 0 && (
+              <div className="text-xs text-white/80">{t("invoice.vat", { defaultValue: "VAT" })}: {displayVat}</div>
             )}
           </div>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-700">
-                <i className="fas fa-user-circle text-gray-400" />
-                <span className="text-sm">{t("invoice.user", { defaultValue: "User" })}: </span>
-                <span className="font-medium truncate">{inv?.user}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-700">
-                <i className="fas fa-hashtag text-gray-400" />
-                <span className="text-sm">{t("invoice.payment", { defaultValue: "Payment" })}: </span>
-                <span className="font-medium truncate">{inv?.payment}</span>
-              </div>
+              {/* Hide raw user/payment identifiers; show only clean info */}
+              {feature && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <i className="fas fa-tag text-gray-400" />
+                  <span className="text-sm">{t('invoice.type', { defaultValue: 'Type' })}: </span>
+                  <span className="font-medium truncate">{feature}</span>
+                </div>
+              )}
             </div>
             <div className="sm:text-right">
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 font-semibold"
-              >
-                <i className="fas fa-download" /> {t("invoice.download", { defaultValue: "Download PDF" })}
-              </a>
-              <div className="mt-2 text-xs text-gray-500">{t("invoice.note", { defaultValue: "Keep this invoice for your records." })}</div>
+              {status === 'paid' && (
+                <>
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 font-semibold"
+                  >
+                    <i className="fas fa-download" /> {t("invoice.download", { defaultValue: "Download PDF" })}
+                  </a>
+                  <div className="mt-2 text-xs text-gray-500">{t("invoice.note", { defaultValue: "Keep this invoice for your records." })}</div>
+                </>
+              )}
+              {(status === 'pending' || status === 'created') && inv?.paymentUrl && (
+                <a
+                  href={inv.paymentUrl}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#00183D] text-white rounded-lg hover:bg-[#00183D]/85 font-semibold"
+                >
+                  <i className="fas fa-credit-card" /> {t('payment.payNow', { defaultValue: 'Pay Now' })}
+                </a>
+              )}
+              {(status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'expired') && feature && (
+                <button
+                  onClick={() => startFeaturePayment(feature)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-semibold"
+                >
+                  <i className="fas fa-rotate" /> {t('payment.tryAgain', { defaultValue: 'Try Again' })}
+                </button>
+              )}
             </div>
           </div>
           {Array.isArray(inv?.items) && inv.items.length > 0 && (
@@ -233,7 +285,7 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
             {canPay && (
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => handlePayExisting(safePayment._id)}
+                  onClick={() => handlePayExisting(safePayment._id, safePayment.type)}
                   disabled={payingIds.has(safePayment._id) || displayAmount === undefined}
                   className="w-full sm:w-auto px-4 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#00183D]/80 transition-all font-medium"
                 >
@@ -315,7 +367,9 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
 
       {/* Content */}
       <div className="p-6 lg:p-8">
-        {payments.length === 0 && invoices.length === 0 ? (
+        {/* Hide activation CTA here to only show invoices */}
+
+        {invoices.length === 0 ? (
           <div className="text-center py-12">
             <i className="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
             <p className="text-gray-500 text-xl">
@@ -327,28 +381,18 @@ const PaymentsSection = ({ payments, invoices = [], pricing, router, t, language
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
               <p className="text-yellow-800 flex items-center gap-2">
                 <i className="fas fa-info-circle"></i>
-                {t("profile.youHaveRecords", { count: payments.length + invoices.length })}
+                {t("profile.youHaveRecords", { count: invoices.length })}
               </p>
             </div>
-            {payments.length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <i className="fas fa-credit-card" /> {t("profile.pendingPayments", { defaultValue: "Pending payments" })}
-                </h3>
-                <div className={'flex flex-col gap-4'}>
-                  {payments.map((payment) => (
-                    <PaymentCard key={payment._id} payment={payment} />
-                  ))}
-                </div>
-              </div>
-            )}
             {invoices.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <i className="fas fa-file-invoice" /> {t("profile.invoices", { defaultValue: "Invoices" })}
                 </h3>
                 <div className={`grid ${invoices.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6`}>
-                  {invoices.map((inv) => (
+                  {invoices
+                    .filter((inv) => !currentUserId || String(inv?.user) === String(currentUserId))
+                    .map((inv) => (
                     <InvoiceCard key={inv._id} inv={inv} />
                   ))}
                 </div>

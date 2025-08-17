@@ -2,21 +2,18 @@ import mongoose from 'mongoose';
 
 const invoiceSchema = new mongoose.Schema(
   {
+    // Keep compatibility but new flow centers invoices; payment ref optional
     payment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Payment',
-      required: true
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
     },
-    invoiceNumber: {
-      type: String,
-      required: true,
-      unique: true
-    },
+    invoiceNumber: { type: String, required: true, unique: true },
+    orderNumber: { type: String, unique: true, index: true },
     issueDate: {
       type: Date,
       default: Date.now
@@ -56,11 +53,11 @@ const invoiceSchema = new mongoose.Schema(
     taxAmount: Number,
     totalAmount: Number,
     currency: { type: String, default: 'SAR' },
-    status: {
-      type: String,
-      enum: ['draft', 'issued', 'sent', 'paid', 'overdue', 'cancelled'],
-      default: 'issued'
-    },
+    status: { type: String, enum: ['created','pending','paid','failed','canceled','expired','issued','overdue','cancelled'], default: 'created' },
+    provider: { type: String, default: 'paylink' },
+    providerInvoiceId: { type: String, index: true, unique: true, sparse: true },
+    paymentUrl: { type: String },
+    type: { type: String, enum: ['unlock_contacts','publish_profile'] },
     zatcaCompliance: {
       qrCode: String,
       uuid: String,
@@ -72,7 +69,6 @@ const invoiceSchema = new mongoose.Schema(
     notes: String,
     termsAndConditions: String,
     sentAt: Date,
-    paidAt: Date,
     reminders: [
       {
         sentAt: Date,
@@ -85,8 +81,7 @@ const invoiceSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-invoiceSchema.index({ invoiceNumber: 1 });
+// Indexes (avoid duplicate index on invoiceNumber since it's unique on the path)
 invoiceSchema.index({ user: 1, status: 1 });
 invoiceSchema.index({ issueDate: -1 });
 

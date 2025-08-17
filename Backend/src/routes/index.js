@@ -7,6 +7,7 @@ import notificationRoutes from './notification.routes.js';
 import offerRoutes from './offer.routes.js';
 import playerRoutes from './player.routes.js';
 import userRoutes from './user.routes.js';
+import entitlementRoutes from './entitlement.routes.js';
 import paymentRoutes from './payment.routes.js';
 import { PRICING } from '../config/constants.js';
 
@@ -21,6 +22,7 @@ router.use('/coaches', coachRoutes);
 router.use('/offers', offerRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/entitlements', entitlementRoutes);
 
 // Public pricing endpoint for frontend to fetch static prices
 router.get('/config/pricing', (req, res) => {

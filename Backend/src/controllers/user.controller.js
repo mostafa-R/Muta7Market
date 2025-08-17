@@ -266,8 +266,8 @@ export const notPaied = async (req, res) => {
       .select("-gatewayResponse.raw")
       .lean();
 
-    // Paid invoices (invoices collection)
-    const invoices = await Invoice.find({ user: userId, status: "paid" })
+    // All invoices for the user (any status)
+    const invoices = await Invoice.find({ user: userId })
       .sort({ createdAt: -1 })
       .lean();
 

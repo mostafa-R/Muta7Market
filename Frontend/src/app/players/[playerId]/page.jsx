@@ -723,6 +723,11 @@ const PlayerProfile = () => {
                     {t('playerDetail.activateToViewContacts', { defaultValue: 'Activate your account to view contact information. One-time payment (55 SAR).' })}
                   </div>
                 )}
+                {!isUserActive && (
+                  <div className="pt-2">
+                    <PaymentBtn type="unlock_contacts" />
+                  </div>
+                )}
                 <Button
                   variant="default"
                   className="w-full"

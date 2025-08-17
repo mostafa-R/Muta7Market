@@ -801,7 +801,7 @@ type PaymentBtnProps = {
   metadata?: Record<string, any>;
 };
 
-export default function PaymentBtn({ type = "activate_user", description, metadata }: PaymentBtnProps) {
+export default function PaymentBtn({ type = "unlock_contacts", description, metadata }: PaymentBtnProps) {
   const { t } = useTranslation();
   // Ensure API base points to backend API root
   const API_BASE =
@@ -812,11 +812,9 @@ export default function PaymentBtn({ type = "activate_user", description, metada
   const ALLOW_TEST = process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS === "1";
 
   const [loading, setLoading] = useState(false);
-  const [paymentId, setPaymentId] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   // اقرا التوكن واليوزر
   const { token, user } = useMemo(() => {
@@ -832,59 +830,26 @@ export default function PaymentBtn({ type = "activate_user", description, metada
   }, []);
 
   // Polling على حالة الدفع
-  useEffect(() => {
-    if (!paymentId) return;
-
-    pollRef.current = setInterval(async () => {
-      try {
-        const r = await fetch(`${API_BASE}/payments/${paymentId}/status`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        });
-        const j = await r.json();
-        const status = String(j?.data?.status || "").toUpperCase();
-
-        if (status.includes("COMPLETED")) {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setShowPaymentModal(false);
-          setShowSuccessModal(true);
-          // Optimistically mark user as active in localStorage
-          try {
-            const u = JSON.parse(localStorage.getItem("user") || "{}");
-            localStorage.setItem("user", JSON.stringify({ ...u, isActive: true }));
-          } catch {}
-          toast.success("تم الدفع بنجاح ✅ – تم تفعيل اشتراكك");
-        } else if (status.includes("FAILED") || status.includes("CANCELLED")) {
-          if (pollRef.current) clearInterval(pollRef.current);
-          toast.error("فشل الدفع ❌ — حاول مرة أخرى");
-          setShowPaymentModal(false);
-        }
-      } catch {
-        // تجاهل أثناء polling
-      }
-    }, 3500);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [paymentId, API_BASE, token]);
+  useEffect(() => {}, []);
 
   const startPayment = async () => {
     setLoading(true);
 
     const promise = (async () => {
+      // Map old types to new features
+      const feature = type === "promote_player" ? "publish_profile" : type === "activate_user" ? "unlock_contacts" : type;
       const body = {
-        type,
+        type: feature,
         currency: "SAR",
         description:
-          description ||
-          (type === "activate_user"
+          description || (feature === "unlock_contacts"
             ? "One-time activation to view players contact info"
-            : "Player Registration Subscription"),
+            : "Player Profile Publication"),
         metadata: {
           name: user?.name || "",
           email: user?.email || "",
           mobile: user?.mobile || "",
-          source: type === "activate_user" ? "user-activation" : "player-registration",
+          source: feature === "unlock_contacts" ? "user-activation" : "player-publication",
           ...(metadata || {}),
         },
       };
@@ -917,28 +882,12 @@ export default function PaymentBtn({ type = "activate_user", description, metada
         }
       }
 
-      const pId = json?.data?.paymentId;
       const url = json?.data?.paymentUrl;
-      if (!pId || !url) throw new Error("لم نستلم رابط الدفع");
-
-      setPaymentId(pId);
+      if (!url) throw new Error("لم نستلم رابط الدفع");
+      
       setPaymentUrl(url);
-      // In dev test mode, simulate success without redirecting to Paylink
-      if (ALLOW_TEST) {
-        await fetch(`${API_BASE}/payments/${pId}/simulate-success`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ transactionNo: `SIM_${Date.now()}` }),
-        });
-        // Redirect to profile with success indicator
-        window.location.href = `${FRONT_BASE}/profile?pid=${pId}&paid=1`;
-      } else {
-        // Open Paylink hosted page directly in same tab for best UX
-        window.location.href = url;
-      }
+      // Open Paylink hosted page directly in same tab for best UX
+      window.location.href = url;
       return "تم إنشاء الفاتورة بنجاح";
     })();
 
