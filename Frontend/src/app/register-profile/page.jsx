@@ -427,7 +427,7 @@ function RegisterProfileContent() {
             try {
               const createdPlayer = resp?.data?.data?.player;
               if (createdPlayer?._id) setPlayer(createdPlayer);
-            } catch {}
+            } catch { }
             setCanPay(true);
             return;
           } catch (error) {
@@ -581,7 +581,7 @@ function RegisterProfileContent() {
         try {
           const createdPlayer = respData?.data?.data?.player;
           if (createdPlayer?._id) setPlayer(createdPlayer);
-        } catch {}
+        } catch { }
         setCanPay(true);
 
         // On successful profile creation, redirect to profile view
@@ -673,39 +673,39 @@ function RegisterProfileContent() {
             },
             media: player.media
               ? {
-                  video: player.media.video || {
-                    url: null,
-                    publicId: null,
-                    title: null,
-                    duration: 0,
-                    uploadedAt: null,
-                  },
-                  document: player.media.document || {
-                    url: null,
-                    publicId: null,
-                    title: null,
-                    type: null,
-                    size: 0,
-                    uploadedAt: null,
-                  },
-                }
-              : {
-                  video: {
-                    url: null,
-                    publicId: null,
-                    title: null,
-                    duration: 0,
-                    uploadedAt: null,
-                  },
-                  document: {
-                    url: null,
-                    publicId: null,
-                    title: null,
-                    type: null,
-                    size: 0,
-                    uploadedAt: null,
-                  },
+                video: player.media.video || {
+                  url: null,
+                  publicId: null,
+                  title: null,
+                  duration: 0,
+                  uploadedAt: null,
                 },
+                document: player.media.document || {
+                  url: null,
+                  publicId: null,
+                  title: null,
+                  type: null,
+                  size: 0,
+                  uploadedAt: null,
+                },
+              }
+              : {
+                video: {
+                  url: null,
+                  publicId: null,
+                  title: null,
+                  duration: 0,
+                  uploadedAt: null,
+                },
+                document: {
+                  url: null,
+                  publicId: null,
+                  title: null,
+                  type: null,
+                  size: 0,
+                  uploadedAt: null,
+                },
+              },
             game: player.game || "",
             isActive: player.isActive || false,
             views: player.views || 0,
@@ -742,7 +742,7 @@ function RegisterProfileContent() {
       if (formik.values.profilePicturePreview?.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(formik.values.profilePicturePreview);
-        } catch {}
+        } catch { }
       }
 
       // Use our utility to clean up all media previews
@@ -1171,22 +1171,20 @@ function RegisterProfileContent() {
             <button
               key={section.id}
               onClick={() => setCurrentStep(index)}
-              className={`flex flex-col items-center mx-1 min-w-[80px] ${
-                currentStep === index
+              className={`flex flex-col items-center mx-1 min-w-[80px] ${currentStep === index
                   ? "text-blue-600 font-medium"
                   : index < currentStep
-                  ? "text-green-600"
-                  : "text-gray-400"
-              }`}
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg mb-1 ${
-                  currentStep === index
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg mb-1 ${currentStep === index
                     ? "bg-blue-100 text-blue-600"
                     : index < currentStep
-                    ? "bg-green-100 text-green-600"
-                    : "bg-gray-100 text-gray-400"
-                }`}
+                      ? "bg-green-100 text-green-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
               >
                 {section.icon}
               </div>

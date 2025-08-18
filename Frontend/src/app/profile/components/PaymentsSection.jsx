@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ClipLoader } from "react-spinners";
 
 /** -------- CONFIG -------- */
 const API_BASE =
@@ -148,42 +149,43 @@ export default function PaymentsSection({ defaultPlayerProfileId }) {
         </header>
         {/* Pending invoices */}
 
-        <section className="space-y-3">
+        <section className="space-y-3 py-4 flex flex-col items-center">
           <div className="text-sm text-gray-700">
             <span className="mr-4">Pending: <b>{counts.pending}</b></span>
             <span>Paid: <b>{counts.paid}</b></span>
           </div>
-          <h3 className="text-lg font-semibold">To pay</h3>
+          <h3 className="text-lg font-semibold bg-[#00183D] w-full text-center text-white p-2 rounded-lg" >Pending invoices</h3>
           {loading ? (
-            <div className="text-sm text-gray-500">Loading…</div>
+            <ClipLoader size={50} color="#00183D" />
           ) : err ? (
             <div className="text-sm text-red-600">{err}</div>
           ) : pending.length === 0 ? (
             <div className="text-sm text-gray-500">No pending invoices.</div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 py-4">
               {pending.map((inv) => {
                 const id = inv?.id;
                 const isBusy = !!busy[id];
                 const label =
                   inv?.product === "player_listing" ? "Player listing" : "Contacts access";
                 return (
-                  <div key={id} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div key={id} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-5xl">
                     <div>
-                      <div className="font-medium">{label}</div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(inv.createdAt).toLocaleString()} • {inv.amount} {inv.currency}
-                      </div>
-                      <div className="text-xs text-gray-400">Order: {inv.orderNumber}</div>
+                      <div className="font-bold p-2">Order: <span className="font-normal">{label}</span></div>
+                      <div className="font-bold p-2">paid: <span className="font-normal">{new Date(inv.createdAt).toLocaleString()}</span> </div>
+                      <div className="font-bold p-2">Amount: <span className="font-normal">{inv.amount} {inv.currency}</span></div>
+                      <div className="font-bold p-2">Order number: <span className="font-normal">{inv.orderNumber}</span></div>
                     </div>
                     <div className="flex items-center gap-2">
                       {inv.paymentUrl && (
                         <a
                           href={inv.paymentUrl}
-                          className="px-4 py-2 border rounded-lg"
-                        >
-                          Pay
+                          className="text-white bg-[#00183D] hover:bg-[#00183dce] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center me-2 dark:bg-[#00183D] dark:hover:bg-[#00183dab] dark:focus:ring-blue-800">
+                          <svg class="w-3.5 h-3.5 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 21">
+                            <path d="M15 12a1 1 0 0 0 .962-.726l2-7A1 1 0 0 0 17 3H3.77L3.175.745A1 1 0 0 0 2.208 0H1a1 1 0 0 0 0 2h.438l.6 2.255v.019l2 7 .746 2.986A3 3 0 1 0 9 17a2.966 2.966 0 0 0-.184-1h2.368c-.118.32-.18.659-.184 1a3 3 0 1 0 3-3H6.78l-.5-2H15Z" />
+                          </svg>Pay now
                         </a>
+
                       )}
                       {!inv.paymentUrl && (
                         <button
@@ -204,44 +206,44 @@ export default function PaymentsSection({ defaultPlayerProfileId }) {
         </section>
 
         {/* Paid invoices */}
-        <section className="space-y-3">
-          <h3 className="text-lg font-semibold">Paid</h3>
+        <section className="space-y-3 flex flex-col items-center">
+          <h3 className="text-lg font-semibold bg-[#00183D] w-full text-center text-white p-2 rounded-lg">Paid invoices</h3>
           {loading ? (
-            <div className="text-sm text-gray-500">Loading…</div>
+            <ClipLoader size={50} color="#00183D" />
           ) : paid.length === 0 ? (
             <div className="text-sm text-gray-500">No paid invoices yet.</div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div>
               {paid.map((inv) => {
                 const label =
                   inv?.product === "player_listing" ? "Player listing" : "Contacts access";
                 return (
-                  <div key={inv.id} className="border rounded-xl p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">{label}</div>
-                      <div className="text-sm">{inv.amount} {inv.currency}</div>
+                  <div className="space-y-3 py-4">
+                    <div key={inv.id} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-5xl ">
+                      <div>
+                        <div className="font-bold p-2">Order: <span className="font-normal">{label}</span></div>
+                        <div className="font-bold p-2">Paid at: <span className="font-normal">{new Date(inv.createdAt).toLocaleString()}</span> </div>
+                        <div className="font-bold p-2">Amount: <span className="font-normal">{inv.amount} {inv.currency}</span></div>
+                        <div className="font-bold p-2">Order number: <span className="font-normal">{inv.orderNumber}</span></div>
+                      </div>
+                      {!!inv.receiptUrl && (
+                        <a
+                          href={inv.receiptUrl}
+                          target="_blank"
+                          className="text-blue-600 underline text-sm"
+                        >
+                          View receipt
+                        </a>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      Paid at {inv.paidAt ? new Date(inv.paidAt).toLocaleString() : "—"}
-                    </div>
-                    <div className="text-xs text-gray-400">Order: {inv.orderNumber}</div>
-                    {!!inv.receiptUrl && (
-                      <a
-                        href={inv.receiptUrl}
-                        target="_blank"
-                        className="text-blue-600 underline text-sm"
-                      >
-                        View receipt
-                      </a>
-                    )}
                   </div>
                 );
               })}
             </div>
           )}
         </section>
-      </div>
-    </div>
+      </div >
+    </div >
   </>
   );
 }
