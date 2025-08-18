@@ -8,6 +8,7 @@ import {
   getPaymentStatus,
   listMyInvoices,
   simulateSuccess,
+  recheckByOrderNumber,
 } from "../controllers/payments.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -21,6 +22,8 @@ r.get("/return", confirmReturn); // (not used now—return to frontend instead)
 
 r.get("/status/:id", authMiddleware, getPaymentStatus);
 r.get("/invoices", authMiddleware, listMyInvoices);
+// Manual recheck by orderNumber (merchant order number)
+r.post("/invoices/recheck/:orderNumber", authMiddleware, recheckByOrderNumber);
 
 // DEV simulate
 r.post("/simulate/success/:id", authMiddleware, simulateSuccess);

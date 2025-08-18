@@ -28,6 +28,64 @@ function mapPaymentErrors(inv, verify) {
   }
 }
 
+// Verify current invoice status with Paylink by providerInvoiceId (transactionNo)
+async function verifyWithPaylinkAndApply(inv, session = null) {
+  try {
+    if (!inv?.providerInvoiceId) {
+      console.log("[Payments][verify] skip: no providerInvoiceId", { invoiceId: String(inv?._id) });
+      return { verified: false };
+    }
+    console.log("[Payments][verify] getInvoice", { providerInvoiceId: inv.providerInvoiceId });
+    const verify = await paylinkGetInvoice(inv.providerInvoiceId);
+    const isPaid = String(verify?.orderStatus || "").toLowerCase() === "paid";
+    if (!isPaid) {
+      mapPaymentErrors(inv, verify);
+      await inv.save(session ? { session } : {});
+      console.log("[Payments][verify] not paid; saved errors if any", { invoiceId: String(inv._id) });
+      return { verified: true, paid: false };
+    }
+    // Apply paid transition idempotently
+    if (inv.status !== "paid") {
+      inv.status = "paid";
+      inv.paidAt = new Date();
+      if (!inv.providerTransactionNo)
+        inv.providerTransactionNo = verify?.transactionNo || inv.providerInvoiceId;
+      if (verify?.paymentReceipt?.url) inv.paymentReceiptUrl = verify.paymentReceipt.url;
+      await inv.save(session ? { session } : {});
+      console.log("[Payments][verify] invoice marked paid via verify", { invoiceId: String(inv._id) });
+      if (inv.product === "contacts_access") {
+        await Entitlement.updateOne(
+          { userId: inv.userId, type: "contacts_access", playerProfileId: null },
+          { $setOnInsert: { active: true, grantedAt: new Date(), sourceInvoice: inv._id } },
+          { upsert: true, ...(session ? { session } : {}) }
+        );
+        await User.updateOne(
+          { _id: inv.userId },
+          { $set: { isActive: true } },
+          session ? { session } : {}
+        );
+      } else if (inv.product === "player_listing") {
+        await Entitlement.updateOne(
+          { userId: inv.userId, type: "player_listed", playerProfileId: inv.playerProfileId },
+          { $setOnInsert: { active: true, grantedAt: new Date(), sourceInvoice: inv._id } },
+          { upsert: true, ...(session ? { session } : {}) }
+        );
+        if (inv.playerProfileId) {
+          await PlayerProfile.updateOne(
+            { _id: inv.playerProfileId, user: inv.userId },
+            { $set: { isListed: true, isActive: true } },
+            session ? { session } : {}
+          );
+        }
+      }
+    }
+    return { verified: true, paid: true };
+  } catch (e) {
+    console.error("[Payments][verify] error", e);
+    return { verified: false, error: String(e?.message || e) };
+  }
+}
+
 // Create/reuse invoice by product (when you don't have an id yet)
 export const initiatePayment = async (req, res) => {
   try {
@@ -88,9 +146,9 @@ export const initiatePayment = async (req, res) => {
 
     // Frontend return: go back to profile payments tab with invoiceId
     const callBackUrl = `${
-      process.env.APP_URL
+      process.env.FRONTEND_URL
     }/profile?tab=payments&invoiceId=${String(invoice._id)}`;
-    const cancelUrl = `${process.env.APP_URL}/profile?tab=payments`;
+    const cancelUrl = `${process.env.FRONTEND_URL}/profile?tab=payments`;
 
     const payload = {
       orderNumber: invoice.orderNumber,
@@ -188,9 +246,9 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
     }
 
     const callBackUrl = `${
-      process.env.APP_URL
+      process.env.FRONTEND_URL
     }/profile?tab=payments&invoiceId=${String(invoice._id)}`;
-    const cancelUrl = `${process.env.APP_URL}/profile?tab=payments`;
+    const cancelUrl = `${process.env.FRONTEND_URL}/profile?tab=payments`;
 
     const payload = {
       orderNumber: invoice.orderNumber,
@@ -403,6 +461,10 @@ export const getPaymentStatus = async (req, res) => {
   const inv = await Invoice.findById(id);
   if (!inv)
     return res.status(404).json({ success: false, message: "not_found" });
+  // Auto-verify if not paid yet
+  if (String(inv.status || "").toLowerCase() !== "paid") {
+    await verifyWithPaylinkAndApply(inv);
+  }
   console.log("[Payments][getPaymentStatus]", {
     invoiceId: String(inv._id),
     status: inv.status,
@@ -438,9 +500,16 @@ export const listMyInvoices = async (req, res) => {
   const skip = (page - 1) * pageSize;
 
   const [items, total] = await Promise.all([
-    Invoice.find(q).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+    Invoice.find(q).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
     Invoice.countDocuments(q),
   ]);
+
+  // Auto-verify any non-paid invoices
+  for (const doc of items) {
+    if (String(doc.status || "").toLowerCase() !== "paid") {
+      await verifyWithPaylinkAndApply(doc);
+    }
+  }
   console.log("[Payments][listMyInvoices]", {
     userId: String(userId),
     statusQ,
@@ -467,6 +536,36 @@ export const listMyInvoices = async (req, res) => {
   return res
     .status(200)
     .json({ success: true, data: { total, page, pageSize, items: mapped } });
+};
+
+// Recheck invoice by orderNumber and update if paid
+export const recheckByOrderNumber = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const orderNumber = String(req.params.orderNumber || req.query.orderNumber || "");
+    if (!orderNumber) {
+      return res.status(400).json({ success: false, message: "orderNumber_required" });
+    }
+    const inv = await Invoice.findOne({ orderNumber, $or: [{ userId }, { user: userId }] });
+    if (!inv) {
+      return res.status(404).json({ success: false, message: "invoice_not_found" });
+    }
+    const result = await verifyWithPaylinkAndApply(inv);
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: String(inv._id),
+        orderNumber: inv.orderNumber,
+        status: inv.status,
+        verified: Boolean(result.verified),
+        paid: Boolean(result.paid),
+        error: result.error || null,
+      },
+    });
+  } catch (err) {
+    console.error("[Payments][recheckByOrderNumber] error", err);
+    return res.status(500).json({ success: false, message: "recheck_failed" });
+  }
 };
 
 // (dev) simulate: also flips user/profile flags like real webhook
