@@ -422,6 +422,12 @@ function RegisterProfileContent() {
             });
 
             toast.success(getSuccessMessage(resp, "تم الإنشاء"));
+
+
+            try {
+              const createdPlayer = resp?.data?.data?.player;
+              if (createdPlayer?._id) setPlayer(createdPlayer);
+            } catch {}
             setCanPay(true);
             return;
           } catch (error) {
@@ -572,6 +578,10 @@ function RegisterProfileContent() {
             isUpdate ? "تم التحديث بنجاح" : "تم الإنشاء بنجاح"
           )
         );
+        try {
+          const createdPlayer = respData?.data?.data?.player;
+          if (createdPlayer?._id) setPlayer(createdPlayer);
+        } catch {}
         setCanPay(true);
 
         // On successful profile creation, redirect to profile view

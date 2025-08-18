@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 // Import Components
 import LoadingSpinner from "../component/LoadingSpinner";
 import ConfirmModal from "./components/ConfirmModal";
@@ -219,6 +220,69 @@ const UserProfile = () => {
       }
     } catch { }
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
+
+  // Handle Paylink callback with invoiceId/orderNumber/transactionNo → one-time toast and recheck
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const invoiceId = params.get("invoiceId");
+        const orderNumber = params.get("orderNumber");
+        const transactionNo = params.get("transactionNo");
+        if (!invoiceId && !orderNumber && !transactionNo) return;
+
+        // Clean URL params ASAP to avoid duplicate triggers in StrictMode
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete("invoiceId");
+        currentUrl.searchParams.delete("orderNumber");
+        currentUrl.searchParams.delete("transactionNo");
+        currentUrl.searchParams.delete("paid");
+        window.history.replaceState({}, "", currentUrl.toString());
+
+        // Session guard to ensure one-time handling
+        const guardKey = `paylink_cb_${orderNumber || invoiceId || transactionNo}`;
+        if (sessionStorage.getItem(guardKey)) return;
+        sessionStorage.setItem(guardKey, "1");
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
+
+        if (orderNumber) {
+          const res = await axios.post(
+            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(orderNumber)}`,
+            {},
+            { headers }
+          );
+          const status = String(res.data?.data?.status || "").toLowerCase();
+          if (status === "paid" || res.data?.data?.paid) {
+            toast.success("Payment Paid Success");
+          } else {
+            toast.info("Payment pending or cancelled");
+          }
+        } else if (invoiceId) {
+          const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
+          const status = String(res.data?.data?.status || "").toLowerCase();
+          if (status === "paid") {
+            toast.success("Payment Paid Success");
+          } else {
+            toast.info("Payment pending or cancelled");
+          }
+        }
+
+        // Refresh UI
+        fetchUserData();
+        fetchPendingPayments();
+        fetchPlayerData();
+      } catch (e) {
+        console.error("Paylink callback handling failed", e);
+        toast.error("Payment Failed");
+      }
+    };
+    run();
+    // Intentionally run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = useCallback(
     async (data) => {

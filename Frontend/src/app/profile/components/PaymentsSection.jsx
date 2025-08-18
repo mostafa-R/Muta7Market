@@ -7,7 +7,7 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api/v1";
 
-const ALLOW_TEST = String(process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS );
+const ALLOW_TEST = String(process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS);
 
 function authHeaders() {
   if (typeof window === "undefined") return {};
@@ -128,17 +128,7 @@ export default function PaymentsSection({ defaultPlayerProfileId }) {
     }
   };
 
-  const simulatePaid = async (invoiceId) => {
-    try {
-      setBusy((m) => ({ ...m, [invoiceId]: true }));
-      await apiPost(`/payments/simulate/success/${invoiceId}`);
-      await refresh();
-    } catch (e) {
-      alert(e?.message || "Simulate failed");
-    } finally {
-      setBusy((m) => ({ ...m, [invoiceId]: false }));
-    }
-  };
+
 
   return (<>
 
@@ -204,15 +194,7 @@ export default function PaymentsSection({ defaultPlayerProfileId }) {
                           {isBusy ? "Opening…" : "Pay"}
                         </button>
                       )}
-                      {ALLOW_TEST && (
-                        <button
-                          onClick={() => simulatePaid(id)}
-                          disabled={isBusy}
-                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg"
-                        >
-                          {isBusy ? "…" : "Simulate Paid (DEV)"}
-                        </button>
-                      )}
+
                     </div>
                   </div>
                 );
