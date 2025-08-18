@@ -809,7 +809,7 @@ export default function PaymentBtn({ type = "unlock_contacts", description, meta
     (process.env.NEXT_PUBLIC_API_BASE_URL?.endsWith("/api/v1") ? "" : "/api/v1");
   const FRONT_BASE =
     process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
-  const ALLOW_TEST = process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS === "1";
+  const ALLOW_TEST = process.env.NEXT_PUBLIC_ALLOW_TEST_PAYMENTS ;
 
   const [loading, setLoading] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
