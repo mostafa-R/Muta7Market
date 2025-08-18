@@ -3,11 +3,8 @@
 import { Shield, CreditCard } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import {
-  FaGooglePay,
-  FaApplePay ,
-} from "react-icons/fa6";
-import { RiVisaLine ,RiMastercardFill} from "react-icons/ri";
+import { FaGooglePay, FaApplePay } from "react-icons/fa6";
+import { RiVisaLine, RiMastercardFill } from "react-icons/ri";
 type PaymentBtnProps = {
   type?:
     | "unlock_contacts"
@@ -138,14 +135,12 @@ export default function PaymentBtn({
                   ? "ادفع لتفعيل الحساب"
                   : type === "publish_profile"
                   ? "ادفع لنشر ملفك"
-                  : "ادفع الآن"}
+                  : " ادفع الآن"}
               </span>
             </button>
 
             <div className="absolute -top-2 -right-2 animate-pulse select-none">
-              <div className="bg-amber-400/90 text-amber-900 text-[10px] font-bold px-2 py-1 rounded-full shadow">
-                فرصة مميزة
-              </div>
+              <div className="bg-amber-400/90 text-amber-900 text-[10px] font-bold px-2 py-1 rounded-full shadow">عرض خاص 55 ريال</div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-right">
@@ -164,10 +159,18 @@ export default function PaymentBtn({
           </div>
 
           <div className="flex justify-center mt-4 gap-3  text-3xl text-gray-500">
-            <span><RiVisaLine /></span>
-            <span><RiMastercardFill /></span>
-            <span><FaApplePay /></span>
-            <span><FaGooglePay /></span>
+            <span>
+              <RiVisaLine />
+            </span>
+            <span>
+              <RiMastercardFill />
+            </span>
+            <span>
+              <FaApplePay />
+            </span>
+            <span>
+              <FaGooglePay />
+            </span>
           </div>
         </div>
       </div>
