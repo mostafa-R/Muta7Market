@@ -3,7 +3,11 @@
 import { Shield, CreditCard } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-
+import {
+  FaGooglePay,
+  FaApplePay ,
+} from "react-icons/fa6";
+import { RiVisaLine ,RiMastercardFill} from "react-icons/ri";
 type PaymentBtnProps = {
   type?:
     | "unlock_contacts"
@@ -111,7 +115,7 @@ export default function PaymentBtn({
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 m-auto text-center">
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <div className="relative">
             <button
@@ -159,11 +163,11 @@ export default function PaymentBtn({
             </div>
           </div>
 
-          <div className="flex justify-center mt-4 gap-3 opacity-80 text-xs text-gray-500">
-            <span>Visa</span>
-            <span>Mastercard</span>
-            <span>Mada</span>
-            <span>STC Pay</span>
+          <div className="flex justify-center mt-4 gap-3  text-3xl text-gray-500">
+            <span><RiVisaLine /></span>
+            <span><RiMastercardFill /></span>
+            <span><FaApplePay /></span>
+            <span><FaGooglePay /></span>
           </div>
         </div>
       </div>
