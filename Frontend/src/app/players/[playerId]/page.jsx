@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/component/ui/card";
+import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
 import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import {
@@ -36,7 +37,6 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -93,7 +93,7 @@ const PlayerProfile = () => {
 
   const handleSendMessage = async () => {
     if (!isUserActive) {
-      toast.error(t("playerDetail.availableForPaidUsers", { defaultValue: "Available for paid users only" }));
+      toast.error(t("playerDetail.availableForPaidUsers"));
       return;
     }
     const token = localStorage.getItem("token");
@@ -113,7 +113,7 @@ const PlayerProfile = () => {
 
   const handleRequestPhone = () => {
     if (!isUserActive) {
-      toast.error(t("playerDetail.availableForPaidUsers", { defaultValue: "Available for paid users only" }));
+      toast.error(t("playerDetail.availableForPaidUsers"));
       return;
     }
     const token = localStorage.getItem("token");
@@ -139,7 +139,7 @@ const PlayerProfile = () => {
 
   const handleSendEmail = () => {
     if (!isUserActive) {
-      toast.error(t("playerDetail.availableForPaidUsers", { defaultValue: "Available for paid users only" }));
+      toast.error(t("playerDetail.availableForPaidUsers"));
       return;
     }
     const token = localStorage.getItem("token");
@@ -206,7 +206,8 @@ const PlayerProfile = () => {
         setIsUserActive(false);
         return;
       }
-      const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      const base =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
       fetch(`${base}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -580,10 +581,10 @@ const PlayerProfile = () => {
                       </span>
                     </div>
                     <span className="text-2xl font-bold text-gray-800">
-                      {player.monthlySalary.currency}{" "}
                       {player.monthlySalary.amount.toLocaleString(
-                        language === "ar" ? "ar-EG" : "en-US"
-                      )}
+                        language === "ar" ? "en-US" : "en-US"
+                      )}{" "}
+                      {player.monthlySalary.currency}
                     </span>
                   </div>
                 )}
@@ -596,10 +597,10 @@ const PlayerProfile = () => {
                       </span>
                     </div>
                     <span className="text-2xl font-bold text-gray-800">
-                      {player.yearSalary.currency}{" "}
                       {player.yearSalary.amount.toLocaleString(
-                        language === "ar" ? "ar-EG" : "en-US"
-                      )}
+                        language === "ar" ? "en-US" : "en-US"
+                      )}{" "}
+                      {player.yearSalary.currency}
                     </span>
                   </div>
                 )}
@@ -649,9 +650,9 @@ const PlayerProfile = () => {
                       </div>
                       <span className="text-2xl font-bold text-gray-800">
                         {player.transferredTo.amount.toLocaleString(
-                          language === "ar" ? "ar-EG" : "en-US"
+                          language === "ar" ? "en-US" : "en-US"
                         )}{" "}
-                        $
+                        SAR
                       </span>
                     </div>
                   </>
@@ -715,12 +716,11 @@ const PlayerProfile = () => {
               <CardHeader>
                 {}
                 <CardTitle>{t("playerDetail.contactPlayer")}</CardTitle>
-             
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isUserActive && (
                   <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                    {t('playerDetail.activateToViewContacts', { defaultValue: 'Activate your account to view contact information. One-time payment (55 SAR).' })}
+                    {t("playerDetail.activateToViewContacts")}
                   </div>
                 )}
                 {!isUserActive && (
@@ -752,22 +752,27 @@ const PlayerProfile = () => {
                   <Mail className="w-4 h-4 ml-2" />
                   {t("playerDetail.sendEmail")}
                 </Button>
-                {isUserActive && (player?.user?.phone || player?.user?.email) && (
-                  <div className="pt-2 text-sm text-gray-600">
-                    {player?.user?.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        <span className="font-medium">{player.user.phone}</span>
-                      </div>
-                    )}
-                    {player?.user?.email && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <Mail className="w-4 h-4" />
-                        <span className="font-medium">{player.user.email}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {isUserActive &&
+                  (player?.user?.phone || player?.user?.email) && (
+                    <div className="pt-2 text-sm text-gray-600">
+                      {player?.user?.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          <span className="font-medium">
+                            {player.user.phone}
+                          </span>
+                        </div>
+                      )}
+                      {player?.user?.email && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Mail className="w-4 h-4" />
+                          <span className="font-medium">
+                            {player.user.email}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </CardContent>
             </Card>
 

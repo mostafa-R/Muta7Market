@@ -1,10 +1,11 @@
 "use client";
 
-import { Shield, CreditCard } from "lucide-react";
+import { CreditCard, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { FaApplePay, FaGooglePay } from "react-icons/fa6";
+import { RiMastercardFill, RiVisaLine } from "react-icons/ri";
 import { toast } from "react-toastify";
-import { FaGooglePay, FaApplePay } from "react-icons/fa6";
-import { RiVisaLine, RiMastercardFill } from "react-icons/ri";
 type PaymentBtnProps = {
   type?:
     | "unlock_contacts"
@@ -18,6 +19,7 @@ export default function PaymentBtn({
   type = "unlock_contacts",
   playerId,
 }: PaymentBtnProps) {
+  const { t } = useTranslation();
   // Ensure API base points to backend API root
   const API_BASE =
     (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000") +
@@ -52,7 +54,7 @@ export default function PaymentBtn({
       const product =
         feature === "unlock_contacts" ? "contacts_access" : "player_listing";
       if (product === "player_listing" && !playerId) {
-        toast.info("يرجى إكمال إنشاء الملف أولاً، سنوجهك لصفحة المدفوعات.");
+        toast.info(t("payment.completeProfileFirst"));
         window.location.href = "/profile?tab=payments";
         return "redirected_to_payments";
       }
@@ -74,31 +76,29 @@ export default function PaymentBtn({
 
       if (!res.ok) {
         if (res.status === 429) {
-          throw new Error(
-            "تم تجاوز حد المحاولات. يرجى المحاولة مرة أخرى خلال دقائق"
-          );
+          throw new Error(t("payments.tooManyAttempts"));
         } else if (res.status === 401) {
-          throw new Error("يرجى تسجيل الدخول أولاً");
+          throw new Error(t("formErrors.loginRequiredFirst"));
         } else if (res.status === 400) {
-          throw new Error(json?.message || "بيانات الطلب غير صحيحة");
+          throw new Error(json?.message || t("payments.invalidRequestData"));
         } else if (res.status >= 500) {
-          throw new Error("خطأ في الخادم. يرجى المحاولة لاحقاً");
+          throw new Error(t("payments.serverError"));
         } else {
-          throw new Error(json?.message || "فشل إنشاء الفاتورة");
+          throw new Error(json?.message || t("payments.failedToCreateInvoice"));
         }
       }
 
       const url = json?.data?.paymentUrl;
-      if (!url) throw new Error("لم نستلم رابط الدفع");
+      if (!url) throw new Error(t("payments.noPaymentUrlReceived"));
 
       window.location.href = url;
-      return "تم إنشاء الفاتورة بنجاح";
+      return t("payments.invoiceCreatedSuccessfully");
     })();
 
     toast.promise(promise, {
-      loading: "جارٍ تجهيز الدفع…",
+      loading: t("payment.preparingPayment"),
       success: (msg) => msg,
-      error: (e) => e?.message || "حدث خطأ غير متوقع",
+      error: (e) => e?.message || t("payment.unexpectedError"),
     });
 
     try {
@@ -130,17 +130,19 @@ export default function PaymentBtn({
               <CreditCard size={20} />
               <span>
                 {loading
-                  ? "جارٍ التوجيه للدفع…"
+                  ? t("payments.redirectingToPayment")
                   : type === "activate_user"
-                  ? "ادفع لتفعيل الحساب"
+                  ? t("payments.payToActivateAccount")
                   : type === "publish_profile"
-                  ? "ادفع لنشر ملفك"
-                  : " ادفع الآن"}
+                  ? t("payments.payToPublishProfile")
+                  : t("payments.payNow")}
               </span>
             </button>
 
             <div className="absolute -top-2 -right-2 animate-pulse select-none">
-              <div className="bg-amber-400/90 text-amber-900 text-[10px] font-bold px-2 py-1 rounded-full shadow">عرض خاص 55 ريال</div>
+              <div className="bg-amber-400/90 text-amber-900 text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                {t("payments.specialOffer")}
+              </div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-right">
@@ -149,11 +151,10 @@ export default function PaymentBtn({
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">
-                دفع آمن ومضمون
+                {t("payments.securePayment")}
               </h4>
               <p className="text-sm text-gray-600">
-                تتم معالجة المدفوعات بواسطة شريك موثوق به ومرخص من مؤسسة النقد
-                العربي السعودي
+                {t("payments.paymentProcessing")}
               </p>
             </div>
           </div>

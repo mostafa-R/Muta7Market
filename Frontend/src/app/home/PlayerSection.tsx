@@ -150,10 +150,10 @@ const PlayerSection = () => {
   }
 
   return (
-    <section className="py-10  bg-[hsl(var(--muted))]">
-      <div className='onesignal-customlink-container'></div>
+    <section className="py-1  bg-[hsl(var(--muted))]">
+      <div className="onesignal-customlink-container"></div>
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
+        <div className="text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
             {t("home.featuredPlayers")}
           </h2>
@@ -161,7 +161,7 @@ const PlayerSection = () => {
             {t("home.featuredPlayersDescription")}
           </p>
         </div>
-        <div className="flex flex-wrap justify-center gap-6">
+        <div className="flex flex-wrap justify-center gap-3">
           {players.map((player) => (
             <PlayerCard key={player.id} player={player} />
           ))}

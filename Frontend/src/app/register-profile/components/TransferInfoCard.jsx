@@ -31,18 +31,24 @@ export const TransferInfoCard = ({ formik }) => {
             formik={formik}
           />
           <FormField
-            label={t("registerProfile.form.transferInfo.transferDate")}
-            name="transferredTo.date"
-            type="date"
-            formik={formik}
-          />
-          <FormField
             label={t("registerProfile.form.transferInfo.transferAmount")}
             name="transferredTo.amount"
             type="number"
             placeholder={t(
               "registerProfile.form.transferInfo.transferAmountPlaceholder"
             )}
+            formik={formik}
+          />
+          <FormField
+            label={t("registerProfile.form.transferInfo.transferStartDate")}
+            name="transferredTo.startDate"
+            type="date"
+            formik={formik}
+          />
+          <FormField
+            label={t("registerProfile.form.transferInfo.transferEndDate")}
+            name="transferredTo.endDate"
+            type="date"
             formik={formik}
           />
         </div>

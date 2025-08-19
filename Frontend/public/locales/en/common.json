@@ -134,6 +134,7 @@
     "taekwondo": "Taekwondo",
     "archery": "Archery",
     "esports": "E-Sports",
+    "football": "Football",
     "swimming": "Swimming",
     "judo": "Judo",
     "fencing": "Fencing",
@@ -343,7 +344,8 @@
     "financialAndTransferInfo": "Financial & Transfer Information",
     "transferDetails": "Transfer Details",
     "transferredToClub": "Transferred to Club",
-    "transferDate": "Transfer Date",
+    "transferStartDate": "Transfer Start Date",
+    "transferEndDate": "Transfer End Date",
     "transferAmount": "Transfer Amount",
     "contractDetails": "Contract Details",
     "contactPlayer": "Contact Player",
@@ -356,11 +358,17 @@
     "statistics": "Statistics",
     "yearsOfExperience": "Years of Experience",
     "views": "Views",
-    "nationality": "Nationality"
+    "nationality": "Nationality",
+    "availableForPaidUsers": "Available for paid users only",
+    "activateToViewContacts": "Activate your account to view contact information. One-time payment (200 SAR)."
   },
   "registerProfile": {
     "editPlayerProfile": "Edit Player Profile",
     "createNewPlayerProfile": "Create New Player Profile",
+    "publish": {
+      "promptTitle": "Publish your profile",
+      "promptDesc": "Complete payment to publish your profile and make it visible."
+    },
     "completeRequiredInformation": "Complete the required information to create a profile",
     "backToProfile": "Back to Profile",
     "step": "Step",
@@ -396,6 +404,11 @@
         "female": "Female",
         "nationality": "Nationality",
         "nationalityPlaceholder": "Select your nationality",
+        "specifyNationality": "Specify your nationality",
+        "customNationalityPlaceholder": "Enter your nationality",
+        "birthCountry": "Country of Birth",
+        "birthCountryPlaceholder": "Select your country of birth",
+        "customBirthCountryPlaceholder": "Enter your country of birth",
         "allowedImageFormats": "JPG, PNG or GIF (max 10MB)"
       },
       "sportsInfo": {
@@ -403,11 +416,16 @@
         "sport": "Sport",
         "sportPlaceholder": "Choose your sport",
         "position": "Position/Specialization",
-        "positionPlaceholder": "Example: Forward, Goalkeeper, Fitness Coach",
+        "positionPlaceholder": "Select your position",
+        "selectSportFirst": "Please select a sport first",
         "category": "Category",
         "categoryPlaceholder": "Choose your category",
         "player": "Player",
         "coach": "Coach",
+        "playerType": "Player Type",
+        "coachType": "Coach Type",
+        "selectPlayerType": "Select player type",
+        "selectCoachType": "Select coach type",
         "currentStatus": "Current Status",
         "currentStatusPlaceholder": "Choose your current status",
         "available": "Available (Looking for team)",
@@ -430,7 +448,8 @@
         "title": "Transfer Information (Optional)",
         "transferredToClub": "Club Transferred To",
         "transferredToClubPlaceholder": "Name of the club transferred to",
-        "transferDate": "Transfer Date",
+        "transferStartDate": "Transfer Start Date",
+        "transferEndDate": "Transfer End Date",
         "transferAmount": "Transfer Value (in Riyals)",
         "transferAmountPlaceholder": "Transfer amount"
       },
@@ -494,6 +513,12 @@
       "ageRange": "Age must be between 15 and 50",
       "genderRequired": "Gender is required - please select gender",
       "nationalityRequired": "Nationality is required - please select nationality",
+      "nationalityInvalid": "Please select a valid nationality from the list",
+      "customNationalityRequired": "Please specify your nationality",
+      "customNationalityTooShort": "Nationality must be at least 2 characters",
+      "customNationalityTooLong": "Nationality is too long",
+      "positionRequired": "Position/Specialization is required",
+      "roleTypeRequired": "Role type is required - please select your specific role",
       "sportRequired": "Sport is required - please select a sport",
       "categoryRequired": "Category is required - please select category explicitly",
       "statusRequired": "Current status is required - please select status explicitly",
@@ -643,6 +668,149 @@
     "serverError": "Server error occurred, please try again later",
     "connectionFailed": "Failed to connect to server, check your internet connection",
     "unexpectedError": "An unexpected error occurred"
+  },
+  "formErrors": {
+    "loginRequired": "Please log in",
+    "serverConfigError": "Server configuration not set (API_URL)",
+    "termsAcceptanceRequired": "You must agree to the Terms and Conditions",
+    "loginRequiredFirst": "You must log in first",
+    "missingPricingData": "Missing pricing data",
+    "noPaymentUrl": "No payment URL returned",
+    "paymentSuccess": "Payment Paid Success",
+    "paymentPending": "Payment pending or cancelled",
+    "paymentFailed": "Payment Failed",
+    "enterPlayerIdFirst": "Please enter your playerProfileId first.",
+    "pleaseCheckFields": "Please check the specified fields",
+    "emailNotRegistered": "Email is not registered in the system",
+    "errorSendingRequest": "An error occurred while sending the request",
+    "playerDataFetchFailed": "Failed to fetch player data",
+    "profileCreated": "Profile created successfully",
+    "profileUpdated": "Profile updated successfully",
+    "uploadError": "An error occurred while uploading data. Please try again.",
+    "failedToLoadPricing": "Failed to load pricing. Please refresh the page.",
+    "emailInvalid": "Please enter a valid email",
+    "emailRequired": "Email is required"
+  },
+  "fileValidation": {
+    "noFileSelected": "No file selected",
+    "unsupportedFileType": "File type not supported",
+    "fileTooLarge": "File size too large (maximum 10MB)"
+  },
+  "fieldValidation": {
+    "nameRequired": "Name is required",
+    "ageRequired": "Age is required",
+    "ageMustBeNumber": "Age must be a number",
+    "ageRange": "Age must be between 15 and 50 years",
+    "genderRequired": "Gender is required",
+    "nationalityRequired": "Nationality is required",
+    "customNationalityRequired": "Please specify your nationality",
+    "birthCountryRequired": "Birth country is required",
+    "customBirthCountryRequired": "Please specify your birth country",
+    "birthCountryInvalid": "Please choose a valid birth country from the list",
+    "customNationalityTooShort": "Nationality must be at least 2 characters",
+    "customNationalityTooLong": "Nationality is too long",
+    "customBirthCountryTooShort": "Birth country must be at least 2 characters",
+    "customBirthCountryTooLong": "Birth country is too long"
+  },
+  "sportsValidation": {
+    "sportRequired": "Sport is required",
+    "positionRequired": "Position/Specialization is required for players",
+    "categoryRequired": "Category is required - please select a category",
+    "categoryInvalid": "Category is required - must select player or coach",
+    "statusRequired": "Current status is required - please select a status",
+    "statusInvalid": "Current status is required - must select a valid status",
+    "termsAcceptanceRequired": "You must agree to the terms and conditions",
+    "roleTypeRequired": "Role type is required - please select your specific role",
+    "positionTooShort": "Position must be at least 2 characters"
+  },
+  "formValidation": {
+    "reviewRequiredFields": "Please review the required fields in this section",
+    "reviewRequiredFieldsGeneral": "Please review the required fields"
+  },
+  "fileUpload": {
+    "pleaseSelectFile": "Please select a file"
+  },
+  "browser": {
+    "videoNotSupported": "Your browser does not support video playback"
+  },
+  "general": {
+    "loading": "Loading..."
+  },
+  "labels": {
+    "optional": "Optional",
+    "agentInfo": "Agent Information",
+    "transferInfo": "Transfer Information",
+    "financialInfo": "Financial Information",
+    "uploadSportsVideos": "Upload Sports Videos",
+    "uploadSupportingDocuments": "Upload Supporting Documents",
+    "uploadSupportingDocumentsWithTypes": "Upload Supporting Documents (PDF or Images)"
+  },
+  "adjectives": {
+    "optional": "Optional"
+  },
+  "actions": {
+    "removeVideo": "Remove Video",
+    "removeDocument": "Remove Document"
+  },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Review all invoices for your account",
+    "pending": "Pending",
+    "paid": "Paid",
+    "pendingInvoices": "Pending invoices",
+    "paidInvoices": "Paid invoices",
+    "noPendingInvoices": "No pending invoices",
+    "noPaidInvoices": "No paid invoices yet",
+    "playerListing": "Player listing",
+    "contactsAccess": "Contacts access",
+    "order": "Order",
+    "paidAt": "Paid at",
+    "amount": "Amount",
+    "orderNumber": "Order number",
+    "payNow": "Pay now",
+    "opening": "Opening…",
+    "viewReceipt": "View receipt",
+    "completeProfileFirst": "Please complete your profile first, we'll redirect you to the payments page.",
+    "tooManyAttempts": "Too many attempts. Please try again in a few minutes",
+    "invalidRequestData": "Invalid request data",
+    "serverError": "Server error. Please try again later",
+    "failedToCreateInvoice": "Failed to create invoice",
+    "noPaymentUrlReceived": "We didn't receive the payment URL",
+    "preparingPayment": "Preparing payment...",
+    "unexpectedError": "An unexpected error occurred",
+    "redirectingToPayment": "Redirecting to payment...",
+    "payToActivateAccount": "Pay to activate account",
+    "payToPublishProfile": "Pay to publish your profile",
+    "payNow": "Pay now",
+    "specialOffer": "Special offer 200 SAR",
+    "securePayment": "Secure and guaranteed payment",
+    "invoiceCreatedSuccessfully": "Invoice created successfully",
+    "paymentProcessing": "Payments are processed by a trusted partner licensed by the Saudi Central Bank"
+  },
+  "mediaNotifications": {
+    "profileImageReplaced": "Previous profile image will be replaced",
+    "documentReplaced": "Previous document will be replaced with the new document",
+    "videoReplaced": "Previous video will be replaced with the new video"
+  },
+  "formValidation": {
+    "nameRequired": "Name is required",
+    "ageRequired": "Age is required and must be a number",
+    "ageRange": "Age must be between 15 and 50",
+    "genderRequired": "Gender is required",
+    "nationalityRequired": "Nationality is required",
+    "nationalityInvalid": "Please select a valid nationality from the list",
+    "birthCountryRequired": "Birth country is required",
+    "birthCountryInvalid": "Please select a valid birth country from the list",
+    "sportRequired": "Sport is required",
+    "positionRequired": "Position/Specialization is required",
+    "categoryRequired": "Category is required",
+    "statusRequired": "Status is required",
+    "customNationalityRequired": "Please specify your nationality",
+    "customNationalityTooShort": "Nationality must be at least 2 characters",
+    "customNationalityTooLong": "Nationality is too long",
+    "customBirthCountryRequired": "Please specify your birth country",
+    "customBirthCountryTooShort": "Birth country must be at least 2 characters",
+    "customBirthCountryTooLong": "Birth country is too long"
   },
   "validation": {
     "nameRequired": "Full name is required",
@@ -810,5 +978,211 @@
     "sudan": "Sudan",
     "yemen": "Yemen",
     "other": "Other"
+  },
+  "playerRoles": {
+    "youthPlayer": "Youth Player",
+    "juniorPlayer": "Junior Player",
+    "firstTeamPlayer": "First Team Player",
+    "reservePlayer": "Reserve Player",
+    "professionalPlayer": "Professional Player",
+    "amateurPlayer": "Amateur Player",
+    "academyPlayer": "Academy Player"
+  },
+  "coachRoles": {
+    "headCoach": "Head Coach",
+    "assistantCoach": "Assistant Coach",
+    "goalkeeperCoach": "Goalkeeper Coach",
+    "fitnessCoach": "Fitness Coach",
+    "technicalCoach": "Technical Coach",
+    "youthCoach": "Youth Coach",
+    "physio": "Physiotherapist",
+    "tacticalAnalyst": "Tactical Analyst",
+    "strengthConditioningCoach": "Strength & Conditioning Coach"
+  },
+  "notifications": {
+    "customNationalityRequired": "Please specify your nationality",
+    "positionRequired": "Position/Specialization is required",
+    "roleTypeRequired": "Role type is required",
+    "selectValidOption": "Please select a valid option",
+    "fieldIsRequired": "This field is required",
+    "invalidSelection": "Invalid selection",
+    "pleaseComplete": "Please complete this field"
+  },
+  "sports": {
+    "handball": "Handball",
+    "basketball": "Basketball",
+    "volleyball": "Volleyball",
+    "badminton": "Badminton",
+    "athletics": "Athletics",
+    "tennis": "Tennis",
+    "tabletennis": "Table Tennis",
+    "karate": "Karate",
+    "taekwondo": "Taekwondo",
+    "archery": "Archery",
+    "esports": "E-Sports",
+    "swimming": "Swimming",
+    "judo": "Judo",
+    "fencing": "Fencing",
+    "cycling": "Cycling",
+    "squash": "Squash",
+    "weightlifting": "Weightlifting",
+    "futsal": "Futsal",
+    "boxing": "Boxing",
+    "gymnastics": "Gymnastics",
+    "billiards": "Billiards",
+    "wrestling": "Wrestling"
+  },
+  "positions": {
+    "handball": {
+      "goalkeeper": "Goalkeeper",
+      "leftWing": "Left Wing",
+      "leftBack": "Left Back",
+      "centerBack": "Center Back",
+      "rightBack": "Right Back",
+      "rightWing": "Right Wing",
+      "pivot": "Pivot"
+    },
+    "basketball": {
+      "pointGuard": "Point Guard",
+      "shootingGuard": "Shooting Guard",
+      "smallForward": "Small Forward",
+      "powerForward": "Power Forward",
+      "center": "Center"
+    },
+    "volleyball": {
+      "setter": "Setter",
+      "outsideHitter": "Outside Hitter",
+      "middleBlocker": "Middle Blocker",
+      "oppositeHitter": "Opposite Hitter",
+      "libero": "Libero",
+      "defensiveSpecialist": "Defensive Specialist"
+    },
+    "badminton": {
+      "singles": "Singles",
+      "doubles": "Doubles",
+      "mixedDoubles": "Mixed Doubles"
+    },
+    "athletics": {
+      "sprinter": "Sprinter",
+      "middleDistance": "Middle Distance",
+      "longDistance": "Long Distance",
+      "hurdler": "Hurdler",
+      "highJump": "High Jump",
+      "longJump": "Long Jump",
+      "poleVault": "Pole Vault",
+      "shotPut": "Shot Put",
+      "discus": "Discus",
+      "javelin": "Javelin",
+      "hammerThrow": "Hammer Throw",
+      "decathlon": "Decathlon",
+      "heptathlon": "Heptathlon"
+    },
+    "tennis": {
+      "singles": "Singles",
+      "doubles": "Doubles",
+      "mixedDoubles": "Mixed Doubles"
+    },
+    "tabletennis": {
+      "singles": "Singles",
+      "doubles": "Doubles",
+      "mixedDoubles": "Mixed Doubles"
+    },
+    "karate": {
+      "kata": "Kata",
+      "kumite": "Kumite",
+      "teamKata": "Team Kata"
+    },
+    "taekwondo": {
+      "poomsae": "Poomsae",
+      "kyorugi": "Kyorugi (Sparring)",
+      "breaking": "Breaking"
+    },
+    "archery": {
+      "recurve": "Recurve",
+      "compound": "Compound",
+      "barebow": "Barebow",
+      "traditional": "Traditional"
+    },
+    "esports": {
+      "shooter": "First Person Shooter",
+      "strategy": "Real-Time Strategy",
+      "moba": "MOBA",
+      "racing": "Racing",
+      "fighting": "Fighting",
+      "sportsSimulation": "Sports Simulation"
+    },
+    "swimming": {
+      "freestyle": "Freestyle",
+      "backstroke": "Backstroke",
+      "breaststroke": "Breaststroke",
+      "butterfly": "Butterfly",
+      "individualMedley": "Individual Medley",
+      "relay": "Relay",
+      "openWater": "Open Water"
+    },
+    "judo": {
+      "lightweight": "Lightweight",
+      "middleweight": "Middleweight",
+      "heavyweight": "Heavyweight",
+      "team": "Team"
+    },
+    "fencing": {
+      "foil": "Foil",
+      "epee": "Épée",
+      "sabre": "Sabre",
+      "team": "Team"
+    },
+    "cycling": {
+      "roadRacing": "Road Racing",
+      "trackCycling": "Track Cycling",
+      "mountainBiking": "Mountain Biking",
+      "bmx": "BMX",
+      "cyclocross": "Cyclocross"
+    },
+    "squash": {
+      "singles": "Singles",
+      "doubles": "Doubles"
+    },
+    "weightlifting": {
+      "snatch": "Snatch",
+      "cleanJerk": "Clean & Jerk",
+      "powerlifting": "Powerlifting"
+    },
+    "futsal": {
+      "goalkeeper": "Goalkeeper",
+      "defender": "Defender",
+      "midfielder": "Midfielder",
+      "forward": "Forward",
+      "pivot": "Pivot"
+    },
+    "boxing": {
+      "lightweight": "Lightweight",
+      "welterweight": "Welterweight",
+      "middleweight": "Middleweight",
+      "heavyweight": "Heavyweight"
+    },
+    "gymnastics": {
+      "floorExercise": "Floor Exercise",
+      "pommelHorse": "Pommel Horse",
+      "stillRings": "Still Rings",
+      "vault": "Vault",
+      "parallelBars": "Parallel Bars",
+      "horizontalBar": "Horizontal Bar",
+      "unevenBars": "Uneven Bars",
+      "balanceBeam": "Balance Beam",
+      "rhythmic": "Rhythmic",
+      "trampoline": "Trampoline"
+    },
+    "billiards": {
+      "eightBall": "8-Ball",
+      "nineBall": "9-Ball",
+      "snooker": "Snooker",
+      "straightPool": "Straight Pool"
+    },
+    "wrestling": {
+      "freestyle": "Freestyle",
+      "grecoRoman": "Greco-Roman",
+      "folkstyle": "Folkstyle"
+    }
   }
 }

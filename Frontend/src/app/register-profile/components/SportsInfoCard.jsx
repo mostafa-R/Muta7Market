@@ -15,7 +15,13 @@ import {
 import { get } from "lodash";
 import { Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { sportsOptions } from "../types/constants";
+import {
+  coachRoleTypes,
+  playerRoleTypes,
+  sportPositions,
+  sportsOptions,
+} from "../types/constants";
+import { ConditionalSelect } from "./ConditionalSelect";
 
 export const SportsInfoCard = ({ formik }) => {
   const { t } = useTranslation();
@@ -47,6 +53,9 @@ export const SportsInfoCard = ({ formik }) => {
                 formik.setFieldValue("game", value);
                 formik.setFieldValue("gameSelected", true);
                 formik.setFieldTouched("game", true);
+                // Clear position when sport changes
+                formik.setFieldValue("position", "");
+                formik.setFieldTouched("position", false);
               }}
               onOpenChange={(open) => {
                 if (!open) {
@@ -89,90 +98,173 @@ export const SportsInfoCard = ({ formik }) => {
             )}
           </div>
 
-          {/* المركز/التخصص */}
-          <div className="space-y-2 relative">
-            <Label
-              htmlFor="position"
-              className="flex items-center text-base font-medium"
-            >
-              <span>{t("registerProfile.form.sportsInfo.position")}</span>
-              <span className="text-xs text-gray-500 mr-2">(اختياري)</span>
-            </Label>
-            <input
-              id="position"
-              name="position"
-              value={formik.values.position || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder={t(
-                "registerProfile.form.sportsInfo.positionPlaceholder"
-              )}
-              className="w-full h-11 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
-            />
-            <div className="text-gray-500 text-xs mt-1">
-              {t("registerProfile.form.sportsInfo.positionPlaceholder")}
-            </div>
-          </div>
-
           {/* الفئة */}
-          <div className="space-y-2 relative">
-            <Label
-              htmlFor="jop"
-              className="flex items-center text-base font-medium"
-            >
-              <span className="flex items-center">
-                {t("registerProfile.form.sportsInfo.category")}{" "}
-                <span className="text-red-500 mx-1">*</span>
-              </span>
-            </Label>
-            <Select
-              value={formik.values.jop || ""}
-              onValueChange={(value) => {
-                formik.setFieldValue("jop", value);
-                formik.setFieldValue("jopSelected", true);
-                formik.setFieldTouched("jop", true);
-              }}
-              onOpenChange={(open) => {
-                if (!open) {
-                  formik.setFieldTouched("jop", true);
-                }
-              }}
-            >
-              <SelectTrigger
-                className={`h-11 transition-all focus:ring-2 focus:ring-blue-400 ${
-                  get(formik.touched, "jop") && get(formik.errors, "jop")
-                    ? "border-red-300 bg-red-50"
-                    : "border-gray-200 hover:border-blue-400"
-                }`}
-              >
-                <SelectValue
-                  placeholder={t(
-                    "registerProfile.form.sportsInfo.categoryPlaceholder"
-                  )}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="player" className="py-2 text-base">
-                  {t("registerProfile.form.sportsInfo.player")}
-                </SelectItem>
-                <SelectItem value="coach" className="py-2 text-base">
-                  {t("registerProfile.form.sportsInfo.coach")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {get(formik.touched, "jop") && get(formik.errors, "jop") ? (
-              <div className="text-red-600 text-sm font-medium mt-1 flex items-center">
-                <span className="inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
-                {get(formik.errors, "jop")}
-              </div>
-            ) : (
-              !formik.values.jopSelected && (
-                <div className="text-gray-500 text-xs mt-1">
-                  {t("registerProfile.form.sportsInfo.categoryPlaceholder")}
-                </div>
-              )
+          <ConditionalSelect
+            label={t("registerProfile.form.sportsInfo.category")}
+            name="jop"
+            value={formik.values.jop || ""}
+            onValueChange={(value) => {
+              formik.setFieldValue("jop", value);
+              formik.setFieldValue("jopSelected", true);
+              formik.setFieldTouched("jop", true);
+              // Clear role type and position when changing category
+              formik.setFieldValue("roleType", "");
+              formik.setFieldValue("position", "");
+              formik.setFieldTouched("position", false);
+            }}
+            onBlur={() => formik.setFieldTouched("jop", true)}
+            placeholder={t(
+              "registerProfile.form.sportsInfo.categoryPlaceholder"
             )}
-          </div>
+            options={[
+              {
+                id: "player",
+                name: "registerProfile.form.sportsInfo.player",
+                value: "player",
+              },
+              {
+                id: "coach",
+                name: "registerProfile.form.sportsInfo.coach",
+                value: "coach",
+              },
+            ]}
+            required={true}
+            formik={formik}
+          >
+            {/* Conditional Role Type Selection */}
+            {formik.values.jop && (
+              <div className="mt-4 space-y-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  {formik.values.jop === "player"
+                    ? t("registerProfile.form.sportsInfo.playerType")
+                    : t("registerProfile.form.sportsInfo.coachType")}
+                  <span className="text-red-500 mr-1 ml-1">*</span>
+                </Label>
+                <Select
+                  value={formik.values.roleType || ""}
+                  onValueChange={(value) => {
+                    formik.setFieldValue("roleType", value);
+                    formik.setFieldTouched("roleType", true);
+                  }}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      formik.setFieldTouched("roleType", true);
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    className={`h-11 bg-white transition-all focus:ring-2 focus:ring-blue-400 ${
+                      get(formik.touched, "roleType") &&
+                      get(formik.errors, "roleType")
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 hover:border-blue-400"
+                    }`}
+                    required
+                  >
+                    <SelectValue
+                      placeholder={
+                        formik.values.jop === "player"
+                          ? t(
+                              "registerProfile.form.sportsInfo.selectPlayerType"
+                            )
+                          : t("registerProfile.form.sportsInfo.selectCoachType")
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {(formik.values.jop === "player"
+                      ? playerRoleTypes
+                      : coachRoleTypes
+                    ).map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {t(role.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {get(formik.touched, "roleType") &&
+                  get(formik.errors, "roleType") && (
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="text-red-500 text-xs mt-1 bg-red-50 p-1 px-2 rounded-md border border-red-100 inline-block"
+                    >
+                      {get(formik.errors, "roleType")}
+                    </div>
+                  )}
+              </div>
+            )}
+          </ConditionalSelect>
+
+          {/* المركز/التخصص - للاعبين فقط */}
+          {formik.values.jop === "player" && (
+            <div className="space-y-2 relative">
+              <Label
+                htmlFor="position"
+                className="flex items-center text-base font-medium"
+              >
+                <span className="flex items-center">
+                  {t("registerProfile.form.sportsInfo.position")}{" "}
+                  <span className="text-red-500 mx-1">*</span>
+                </span>
+              </Label>
+              {formik.values.game && sportPositions[formik.values.game] ? (
+                <Select
+                  value={formik.values.position || ""}
+                  onValueChange={(value) => {
+                    formik.setFieldValue("position", value);
+                    formik.setFieldTouched("position", true);
+                  }}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      formik.setFieldTouched("position", true);
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    className={`h-11 transition-all focus:ring-2 focus:ring-blue-400 ${
+                      get(formik.touched, "position") &&
+                      get(formik.errors, "position")
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 hover:border-blue-400"
+                    }`}
+                  >
+                    <SelectValue
+                      placeholder={t(
+                        "registerProfile.form.sportsInfo.positionPlaceholder"
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {sportPositions[formik.values.game].map((position) => (
+                      <SelectItem key={position.value} value={position.value}>
+                        {t(position.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="h-11 px-3 py-2 border border-gray-200 rounded-md bg-gray-50 flex items-center">
+                  <span className="text-gray-500">
+                    {t("registerProfile.form.sportsInfo.selectSportFirst")}
+                  </span>
+                </div>
+              )}
+              {get(formik.touched, "position") &&
+              get(formik.errors, "position") ? (
+                <div className="text-red-600 text-sm font-medium mt-1 flex items-center">
+                  <span className="inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
+                  {get(formik.errors, "position")}
+                </div>
+              ) : (
+                <div className="text-gray-500 text-xs mt-1">
+                  {formik.values.game
+                    ? t("registerProfile.form.sportsInfo.positionPlaceholder")
+                    : t("registerProfile.form.sportsInfo.selectSportFirst")}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* الحالة الحالية */}
           <div className="space-y-2 relative">
@@ -246,7 +338,9 @@ export const SportsInfoCard = ({ formik }) => {
               className="flex items-center text-base font-medium"
             >
               <span>{t("registerProfile.form.sportsInfo.experience")}</span>
-              <span className="text-xs text-gray-500 mr-2">(اختياري)</span>
+              <span className="text-xs text-gray-500 mr-2">
+                ({t("labels.optional")})
+              </span>
             </Label>
             <input
               id="experience"

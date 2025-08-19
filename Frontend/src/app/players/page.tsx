@@ -273,7 +273,7 @@ export default function PlayersPage() {
               <option value="all">{t("players.allSports")}</option>
               {uniqueSports.map((sport) => (
                 <option key={sport} value={sport}>
-                  {sport}
+                  {t(`sports.${sport.toLowerCase()}`)}
                 </option>
               ))}
             </select>
@@ -320,7 +320,7 @@ export default function PlayersPage() {
               <option value="all">{t("players.allNationalities")}</option>
               {uniqueNationalities.map((nationality) => (
                 <option key={nationality} value={nationality}>
-                  {nationality}
+                  {t(`nationalities.${nationality.toLowerCase()}`)}
                 </option>
               ))}
             </select>
@@ -361,7 +361,7 @@ export default function PlayersPage() {
 
         {/* Players Grid */}
         {filteredPlayers.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="flex flex-wrap justify-center gap-3">
             {filteredPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} />
             ))}

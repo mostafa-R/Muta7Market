@@ -22,7 +22,9 @@ import PlayerProfile from "./components/PlayerProfile";
 import { createProfileFormSchema } from "./components/validation.js";
 
 // Ensure API base includes /api/v1
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}`;
+const API_URL = `${
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
+}`;
 
 const UserProfile = () => {
   const { t } = useTranslation();
@@ -110,23 +112,32 @@ const UserProfile = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // PENDING invoices → feed the “payments” list (cards with Pay buttons)
-      const pendingRes = await axios.get(`${API_URL}/payments/invoices?status=pending`, { headers });
+      const pendingRes = await axios.get(
+        `${API_URL}/payments/invoices?status=pending`,
+        { headers }
+      );
       const pendingItems = (pendingRes.data?.data?.items || []).map((inv) => ({
-        _id: inv.id,                                     // use invoice id
-        type: inv.product === 'player_listing' ? 'publish_profile' : 'unlock_contacts',
-        status: inv.status,                              // 'pending'
+        _id: inv.id, // use invoice id
+        type:
+          inv.product === "player_listing"
+            ? "publish_profile"
+            : "unlock_contacts",
+        status: inv.status, // 'pending'
         amount: inv.amount,
-        currency: inv.currency || 'SAR',
+        currency: inv.currency || "SAR",
         createdAt: inv.createdAt,
-        relatedPlayer: inv.playerProfileId,              // needed for listing payments
+        relatedPlayer: inv.playerProfileId, // needed for listing payments
         invoice: { orderNumber: inv.orderNumber },
-        gateway: 'paylink',
-        paymentUrl: inv.paymentUrl || null,              // handy if you want a direct Pay link
+        gateway: "paylink",
+        paymentUrl: inv.paymentUrl || null, // handy if you want a direct Pay link
       }));
       setPendingPayments(pendingItems);
 
       // PAID invoices → feed “invoices” list in the tab
-      const paidRes = await axios.get(`${API_URL}/payments/invoices?status=paid`, { headers });
+      const paidRes = await axios.get(
+        `${API_URL}/payments/invoices?status=paid`,
+        { headers }
+      );
       setInvoices(paidRes.data?.data?.items || []);
     } catch (err) {
       console.error("Error fetching payments:", err);
@@ -137,12 +148,12 @@ const UserProfile = () => {
     try {
       const res = await axios.get(`${API_URL}/config/pricing`);
       const data = res.data?.data;
-      if (!data) throw new Error("Missing pricing data");
+      if (!data) throw new Error(t("formErrors.missingPricingData"));
       setPricing(data);
       setPricingError("");
     } catch (e) {
       setPricing(null);
-      setPricingError("Failed to load pricing. Please refresh the page.");
+      setPricingError(t("formErrors.failedToLoadPricing"));
     }
   }, []);
 
@@ -218,7 +229,7 @@ const UserProfile = () => {
         setError(t("profile.paymentFailed"));
         fetchPendingPayments();
       }
-    } catch { }
+    } catch {}
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
 
   // Handle Paylink callback with invoiceId/orderNumber/transactionNo → one-time toast and recheck
@@ -240,7 +251,9 @@ const UserProfile = () => {
         window.history.replaceState({}, "", currentUrl.toString());
 
         // Session guard to ensure one-time handling
-        const guardKey = `paylink_cb_${orderNumber || invoiceId || transactionNo}`;
+        const guardKey = `paylink_cb_${
+          orderNumber || invoiceId || transactionNo
+        }`;
         if (sessionStorage.getItem(guardKey)) return;
         sessionStorage.setItem(guardKey, "1");
 
@@ -250,23 +263,28 @@ const UserProfile = () => {
 
         if (orderNumber) {
           const res = await axios.post(
-            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(orderNumber)}`,
+            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(
+              orderNumber
+            )}`,
             {},
             { headers }
           );
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid" || res.data?.data?.paid) {
-            toast.success("Payment Paid Success");
+            toast.success(t("formErrors.paymentSuccess"));
           } else {
-            toast.info("Payment pending or cancelled");
+            toast.info(t("formErrors.paymentPending"));
           }
         } else if (invoiceId) {
-          const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
+          const res = await axios.get(
+            `${API_URL}/payments/status/${invoiceId}`,
+            { headers }
+          );
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
-            toast.success("Payment Paid Success");
+            toast.success(t("formErrors.paymentSuccess"));
           } else {
-            toast.info("Payment pending or cancelled");
+            toast.info(t("formErrors.paymentPending"));
           }
         }
 
@@ -276,7 +294,7 @@ const UserProfile = () => {
         fetchPlayerData();
       } catch (e) {
         console.error("Paylink callback handling failed", e);
-        toast.error("Payment Failed");
+        toast.error(t("formErrors.paymentFailed"));
       }
     };
     run();
@@ -494,7 +512,6 @@ const UserProfile = () => {
           t={t}
         />
       )}
-
     </div>
   );
 };

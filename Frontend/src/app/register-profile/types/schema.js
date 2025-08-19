@@ -1,160 +1,393 @@
 import Joi from "joi";
 
-export const playerFormSchema = Joi.object({
-  name: Joi.string().min(2).max(100).required().messages({
-    "string.empty": "الاسم مطلوب",
-    "string.min": "الاسم يجب أن يكون على الأقل حرفين",
-    "string.max": "الاسم طويل جدًا",
-  }),
+// Function to create schema with translated messages
+export const createPlayerFormSchema = (t) =>
+  Joi.object({
+    name: Joi.string()
+      .min(2)
+      .max(100)
+      .required()
+      .messages({
+        "string.empty": t("fieldValidation.nameRequired"),
+        "string.min": t("formValidation.customNationalityTooShort"),
+        "string.max": t("formValidation.customNationalityTooLong"),
+      }),
 
-  age: Joi.number().integer().min(15).max(50).required().messages({
-    "number.base": "العمر يجب أن يكون رقم",
-    "number.empty": "العمر مطلوب",
-    "number.min": "العمر يجب أن لا يقل عن 15",
-    "number.max": "العمر يجب أن لا يزيد عن 50",
+    age: Joi.number()
+      .integer()
+      .min(15)
+      .max(50)
+      .required()
+      .messages({
+        "number.base": t("fieldValidation.ageMustBeNumber"),
+        "number.empty": t("fieldValidation.ageRequired"),
+        "number.min": t("fieldValidation.ageRange"),
+        "number.max": t("fieldValidation.ageRange"),
+      }),
+
+    gender: Joi.string()
+      .valid("male", "female")
+      .required()
+      .messages({
+        "any.only": t("fieldValidation.genderRequired"),
+        "string.empty": t("fieldValidation.genderRequired"),
+      }),
+
+    nationality: Joi.string()
+      .valid(
+        "saudi",
+        "uae",
+        "egypt",
+        "morocco",
+        "kuwait",
+        "qatar",
+        "bahrain",
+        "oman",
+        "jordan",
+        "lebanon",
+        "syria",
+        "iraq",
+        "libya",
+        "tunisia",
+        "algeria",
+        "sudan",
+        "yemen",
+        "other"
+      )
+      .required()
+      .messages({
+        "string.empty": t("fieldValidation.nationalityRequired"),
+        "any.only": t("formValidation.nationalityInvalid"),
+        "any.required": t("fieldValidation.nationalityRequired"),
+      }),
+
+    customNationality: Joi.when("nationality", {
+      is: "other",
+      then: Joi.string()
+        .min(2)
+        .max(50)
+        .required()
+        .messages({
+          "string.empty": t("fieldValidation.customNationalityRequired"),
+          "string.min": t("formValidation.customNationalityTooShort"),
+          "string.max": t("formValidation.customNationalityTooLong"),
+        }),
+      otherwise: Joi.optional(),
+    }),
+
+    birthCountry: Joi.string()
+      .valid(
+        "saudi",
+        "uae",
+        "egypt",
+        "morocco",
+        "kuwait",
+        "qatar",
+        "bahrain",
+        "oman",
+        "jordan",
+        "lebanon",
+        "syria",
+        "iraq",
+        "libya",
+        "tunisia",
+        "algeria",
+        "sudan",
+        "yemen",
+        "other"
+      )
+      .required()
+      .messages({
+        "string.empty": t("fieldValidation.birthCountryRequired"),
+        "any.only": t("formValidation.birthCountryInvalid"),
+        "any.required": t("fieldValidation.birthCountryRequired"),
+      }),
+
+    customBirthCountry: Joi.when("birthCountry", {
+      is: "other",
+      then: Joi.string()
+        .min(2)
+        .max(50)
+        .required()
+        .messages({
+          "string.empty": t("fieldValidation.customBirthCountryRequired"),
+          "string.min": t("formValidation.customBirthCountryTooShort"),
+          "string.max": t("formValidation.customBirthCountryTooLong"),
+        }),
+      otherwise: Joi.optional(),
+    }),
+
+    jop: Joi.string()
+      .valid("player", "coach")
+      .required()
+      .messages({
+        "any.only": t("sportsValidation.categoryRequired"),
+        "string.empty": t("sportsValidation.categoryRequired"),
+      }),
+
+    roleType: Joi.when("jop", {
+      is: Joi.exist(),
+      then: Joi.string()
+        .required()
+        .messages({
+          "string.empty": t("sportsValidation.roleTypeRequired"),
+          "any.required": t("sportsValidation.roleTypeRequired"),
+        }),
+      otherwise: Joi.optional(),
+    }),
+
+    position: Joi.string()
+      .min(2)
+      .max(100)
+      .required()
+      .messages({
+        "string.empty": t("sportsValidation.positionRequired"),
+        "string.min": t("sportsValidation.positionTooShort"),
+        "string.max": t("sportsValidation.positionTooShort"),
+      }),
+
+    status: Joi.string()
+      .valid("available", "contracted", "transferred")
+      .required()
+      .messages({
+        "any.only": t("sportsValidation.statusRequired"),
+        "string.empty": t("sportsValidation.statusRequired"),
+      }),
+
+    experience: Joi.number()
+      .integer()
+      .min(0)
+      .max(30)
+      .optional()
+      .messages({
+        "number.base": t("fieldValidation.ageMustBeNumber"),
+        "number.min": t("fieldValidation.ageRange"),
+        "number.max": t("fieldValidation.ageRange"),
+      }),
+
+    // Other optional fields
+    monthlySalary: Joi.object({
+      amount: Joi.number().min(0).optional(),
+      currency: Joi.string().default("SAR"),
+    }).optional(),
+
+    yearSalary: Joi.object({
+      amount: Joi.number().min(0).optional(),
+      currency: Joi.string().default("SAR"),
+    }).optional(),
+
+    contractEndDate: Joi.date().optional(),
+
+    transferredTo: Joi.object({
+      club: Joi.string().optional(),
+      startDate: Joi.date().optional(),
+      endDate: Joi.date().optional(),
+      amount: Joi.number().min(0).optional(),
+    }).optional(),
+
+    socialLinks: Joi.object({
+      instagram: Joi.string().uri().allow("").optional(),
+      twitter: Joi.string().uri().allow("").optional(),
+      whatsapp: Joi.string().allow("").optional(),
+      youtube: Joi.string().uri().allow("").optional(),
+    }).optional(),
+
+    isPromoted: Joi.object({
+      status: Joi.boolean().default(false),
+      startDate: Joi.date().optional(),
+      endDate: Joi.date().optional(),
+      type: Joi.string().valid("featured", "premium").default("featured"),
+    }).optional(),
+
+    contactInfo: Joi.object({
+      isHidden: Joi.boolean().default(true),
+      email: Joi.string().email().allow("").optional(),
+      phone: Joi.string().allow("").optional(),
+      agent: Joi.object({
+        name: Joi.string().allow("").optional(),
+        phone: Joi.string().allow("").optional(),
+        email: Joi.string().email().allow("").optional(),
+      }).optional(),
+    }).optional(),
+
+    game: Joi.string()
+      .min(2)
+      .required()
+      .messages({
+        "string.empty": t("sportsValidation.sportRequired"),
+        "string.min": t("sportsValidation.sportRequired"),
+      }),
+
+    // Media and other fields
+    media: Joi.object({
+      video: Joi.object({
+        url: Joi.string().allow(null).optional(),
+        publicId: Joi.string().allow(null).optional(),
+        title: Joi.string().allow(null).optional(),
+        duration: Joi.number().default(0),
+        uploadedAt: Joi.string().allow(null).optional(),
+      }).optional(),
+      document: Joi.object({
+        url: Joi.string().allow(null).optional(),
+        publicId: Joi.string().allow(null).optional(),
+        title: Joi.string().allow(null).optional(),
+        type: Joi.string().allow(null).optional(),
+        size: Joi.number().default(0),
+        uploadedAt: Joi.string().allow(null).optional(),
+      }).optional(),
+    }).optional(),
+
+    agreeToTerms: Joi.boolean()
+      .valid(true)
+      .required()
+      .messages({
+        "any.only": t("sportsValidation.termsAcceptanceRequired"),
+        "any.required": t("sportsValidation.termsAcceptanceRequired"),
+      }),
+
+    // Form-only fields
+    profilePicturePreview: Joi.string().allow("").optional(),
+    profilePictureFile: Joi.any().optional(),
+    documentFile: Joi.any().optional(),
+    jopSelected: Joi.boolean().optional(),
+    statusSelected: Joi.boolean().optional(),
+    isActive: Joi.boolean().default(false),
+    views: Joi.number().default(0),
+    seo: Joi.object().optional(),
+  });
+
+// Backward compatibility - using default messages (will be deprecated)
+export const playerFormSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  age: Joi.number().integer().min(15).max(50).required(),
+  gender: Joi.string().valid("male", "female").required(),
+  nationality: Joi.string()
+    .valid(
+      "saudi",
+      "uae",
+      "egypt",
+      "morocco",
+      "kuwait",
+      "qatar",
+      "bahrain",
+      "oman",
+      "jordan",
+      "lebanon",
+      "syria",
+      "iraq",
+      "libya",
+      "tunisia",
+      "algeria",
+      "sudan",
+      "yemen",
+      "other"
+    )
+    .required(),
+  customNationality: Joi.when("nationality", {
+    is: "other",
+    then: Joi.string().min(2).max(50).required(),
+    otherwise: Joi.optional(),
   }),
-  gender: Joi.string().valid("male", "female").required().messages({
-    "any.only": "الرجاء اختيار الجنس",
-    "string.empty": "الرجاء اختيار الجنس",
+  birthCountry: Joi.string()
+    .valid(
+      "saudi",
+      "uae",
+      "egypt",
+      "morocco",
+      "kuwait",
+      "qatar",
+      "bahrain",
+      "oman",
+      "jordan",
+      "lebanon",
+      "syria",
+      "iraq",
+      "libya",
+      "tunisia",
+      "algeria",
+      "sudan",
+      "yemen",
+      "other"
+    )
+    .required(),
+  customBirthCountry: Joi.when("birthCountry", {
+    is: "other",
+    then: Joi.string().min(2).max(50).required(),
+    otherwise: Joi.optional(),
   }),
-  nationality: Joi.string().min(2).required().messages({
-    "string.empty": "الجنسية مطلوبة",
-    "string.min": "الجنسية يجب أن تكون على الأقل حرفين",
+  jop: Joi.string().valid("player", "coach").required(),
+  roleType: Joi.when("jop", {
+    is: Joi.exist(),
+    then: Joi.string().required(),
+    otherwise: Joi.optional(),
   }),
-  jop: Joi.string().valid("player", "coach").required().messages({
-    "any.only": "الفئة مطلوبة",
-    "string.empty": "الفئة مطلوبة",
-  }),
-  position: Joi.string().allow("").max(100).optional(),
+  position: Joi.string().min(2).max(100).required(),
   status: Joi.string()
     .valid("available", "contracted", "transferred")
-    .required()
-    .messages({
-      "any.only": "الحالة مطلوبة",
-      "string.empty": "الحالة مطلوبة",
-    }),
-  experience: Joi.number().min(0).max(30).allow(null).optional().messages({
-    "number.base": "يجب أن تكون سنوات الخبرة رقمًا",
-    "number.min": "يجب أن تكون الخبرة 0 أو أكثر",
-    "number.max": "يجب ألا تتجاوز الخبرة 30 عامًا",
-  }),
+    .required(),
+  experience: Joi.number().integer().min(0).max(30).optional(),
   monthlySalary: Joi.object({
-    amount: Joi.number().min(0).allow(0).optional().messages({
-      "number.base": "يجب أن يكون المبلغ رقمًا",
-      "number.min": "يجب أن لا يكون المبلغ سالبًا",
-    }),
-    currency: Joi.string().default("SAR").optional(),
+    amount: Joi.number().min(0).optional(),
+    currency: Joi.string().default("SAR"),
   }).optional(),
   yearSalary: Joi.object({
-    amount: Joi.number().min(0).allow(0).optional().messages({
-      "number.base": "يجب أن يكون المبلغ رقمًا",
-      "number.min": "يجب أن لا يكون المبلغ سالبًا",
-    }),
-    currency: Joi.string().default("SAR").optional(),
+    amount: Joi.number().min(0).optional(),
+    currency: Joi.string().default("SAR"),
   }).optional(),
-  contractEndDate: Joi.string().allow("", null).optional().isoDate().messages({
-    "date.base": "يجب أن يكون تاريخ انتهاء العقد صالحًا",
-  }),
+  contractEndDate: Joi.date().optional(),
   transferredTo: Joi.object({
-    club: Joi.string().allow("", null).max(100).optional(),
-    date: Joi.string().allow("", null).optional().isoDate().messages({
-      "date.base": "يجب أن يكون تاريخ الانتقال صالحًا",
-    }),
-    amount: Joi.number().min(0).allow(0, "").optional().messages({
-      "number.base": "يجب أن يكون المبلغ رقمًا",
-      "number.min": "يجب أن لا يكون المبلغ سالبًا",
-    }),
+    club: Joi.string().optional(),
+    startDate: Joi.date().optional(),
+    endDate: Joi.date().optional(),
+    amount: Joi.number().min(0).optional(),
   }).optional(),
-
   socialLinks: Joi.object({
-    instagram: Joi.string()
-      .allow("", null)
-      .uri()
-      .pattern(/^(https?:\/\/)?(www\.)?instagram\.com\/[a-zA-Z0-9._]+\/?$/)
-      .optional()
-      .messages({
-        "string.uri": "يجب أن يكون رابط Instagram صحيحًا",
-        "string.pattern.base": "يجب أن يكون رابط Instagram صحيحًا",
-      }),
-    twitter: Joi.string()
-      .allow("", null)
-      .uri()
-      .pattern(/^(https?:\/\/)?(www\.)?(twitter|x)\.com\/[a-zA-Z0-9._]+\/?$/)
-      .optional()
-      .messages({
-        "string.uri": "يجب أن يكون رابط Twitter صحيحًا",
-        "string.pattern.base": "يجب أن يكون رابط Twitter صحيحًا",
-      }),
-    whatsapp: Joi.string().allow("", null).optional().messages({
-      "string.pattern.base": "رقم WhatsApp غير صحيح",
-    }),
-    youtube: Joi.string()
-      .allow("", null)
-      .uri()
-      .pattern(/^(https?:\/\/)?(www\.)?youtube\.com\/[a-zA-Z0-9_-]+\/?$/)
-      .optional()
-      .messages({
-        "string.uri": "يجب أن يكون رابط YouTube صحيحًا",
-        "string.pattern.base": "يجب أن يكون رابط YouTube صحيحًا",
-      }),
+    instagram: Joi.string().uri().allow("").optional(),
+    twitter: Joi.string().uri().allow("").optional(),
+    whatsapp: Joi.string().allow("").optional(),
+    youtube: Joi.string().uri().allow("").optional(),
   }).optional(),
   isPromoted: Joi.object({
-    status: Joi.boolean().optional(),
-    startDate: Joi.string().allow("", null).optional().isoDate().messages({
-      "date.base": "يجب أن يكون تاريخ بدء الترويج صالحًا",
-    }),
-    endDate: Joi.string().allow("", null).optional().isoDate().messages({
-      "date.base": "يجب أن يكون تاريخ انتهاء الترويج صالحًا",
-    }),
-    type: Joi.string().allow("", null).optional(),
+    status: Joi.boolean().default(false),
+    startDate: Joi.date().optional(),
+    endDate: Joi.date().optional(),
+    type: Joi.string().valid("featured", "premium").default("featured"),
   }).optional(),
   contactInfo: Joi.object({
-    isHidden: Joi.boolean().optional(),
-    email: Joi.string()
-      .allow("", null)
-      .email({ tlds: false })
-      .optional()
-      .messages({
-        "string.email": "البريد الإلكتروني غير صحيح",
-      }),
-    phone: Joi.string().allow("", null).optional().messages({
-      "string.pattern.base": "رقم الهاتف غير صحيح",
-    }),
+    isHidden: Joi.boolean().default(true),
+    email: Joi.string().email().allow("").optional(),
+    phone: Joi.string().allow("").optional(),
     agent: Joi.object({
-      name: Joi.string().allow("", null).optional(),
-      phone: Joi.string().allow("", null).optional().messages({
-        "string.pattern.base": "رقم هاتف الوكيل غير صحيح",
-      }),
-      email: Joi.string()
-        .allow("", null)
-        .email({ tlds: false })
-        .optional()
-        .messages({
-          "string.email": "بريد الوكيل غير صحيح",
-        }),
+      name: Joi.string().allow("").optional(),
+      phone: Joi.string().allow("").optional(),
+      email: Joi.string().email().allow("").optional(),
     }).optional(),
   }).optional(),
-  game: Joi.string().min(2).required().messages({
-    "string.empty": "الرياضة مطلوبة",
-    "string.min": "الرياضة يجب أن تكون على الأقل حرفين",
-  }),
-  isActive: Joi.boolean().optional(),
-  views: Joi.number().min(0).optional(),
-  seo: Joi.object({
-    metaTitle: Joi.object({
-      en: Joi.string().max(60).allow("").optional(),
-      ar: Joi.string().max(60).allow("").optional(),
+  game: Joi.string().min(2).required(),
+  media: Joi.object({
+    video: Joi.object({
+      url: Joi.string().allow(null).optional(),
+      publicId: Joi.string().allow(null).optional(),
+      title: Joi.string().allow(null).optional(),
+      duration: Joi.number().default(0),
+      uploadedAt: Joi.string().allow(null).optional(),
     }).optional(),
-    metaDescription: Joi.object({
-      en: Joi.string().max(160).allow("").optional(),
-      ar: Joi.string().max(160).allow("").optional(),
+    document: Joi.object({
+      url: Joi.string().allow(null).optional(),
+      publicId: Joi.string().allow(null).optional(),
+      title: Joi.string().allow(null).optional(),
+      type: Joi.string().allow(null).optional(),
+      size: Joi.number().default(0),
+      uploadedAt: Joi.string().allow(null).optional(),
     }).optional(),
-    keywords: Joi.array().items(Joi.string()).optional(),
   }).optional(),
+  agreeToTerms: Joi.boolean().valid(true).required(),
   profilePicturePreview: Joi.string().allow("").optional(),
   profilePictureFile: Joi.any().optional(),
-  agreeToTerms: Joi.boolean().valid(true).required().messages({
-    "any.only": "يجب الموافقة على الشروط والأحكام",
-    "any.required": "الموافقة على الشروط مطلوبة",
-  }),
+  documentFile: Joi.any().optional(),
+  jopSelected: Joi.boolean().optional(),
+  statusSelected: Joi.boolean().optional(),
+  isActive: Joi.boolean().default(false),
+  views: Joi.number().default(0),
+  seo: Joi.object().optional(),
 });

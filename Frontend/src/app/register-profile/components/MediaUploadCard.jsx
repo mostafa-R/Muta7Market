@@ -61,7 +61,7 @@ export const MediaUploadCard = ({
             {t("registerProfile.form.mediaUpload.sportsVideos.title")}
           </h2>
           <Badge variant="outline" className="mr-auto font-normal text-xs">
-            اختياري
+            {t("labels.optional")}
           </Badge>
         </div>
 
@@ -92,7 +92,8 @@ export const MediaUploadCard = ({
                 const error = handleFileValidation(
                   file,
                   ALLOWED_VIDEO_TYPES,
-                  MAX_FILE_SIZE
+                  MAX_FILE_SIZE,
+                  t
                 );
 
                 if (error) {
@@ -160,7 +161,7 @@ export const MediaUploadCard = ({
                       controls
                       controlsList="nodownload"
                     >
-                      Your browser does not support video playback.
+                      {t("browser.videoNotSupported")}
                     </video>
                   )}
                 </div>
@@ -197,7 +198,7 @@ export const MediaUploadCard = ({
                       type="button"
                       onClick={removeVideo}
                       className="flex items-center px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-xs font-medium transition-colors"
-                      aria-label="إزالة الفيديو"
+                      aria-label={t("actions.removeVideo")}
                     >
                       <FiX className="w-3 h-3 mr-1" />
                       {t(
@@ -222,7 +223,7 @@ export const MediaUploadCard = ({
             {t("registerProfile.form.mediaUpload.supportingDocuments.title")}
           </h2>
           <Badge variant="outline" className="mr-auto font-normal text-xs">
-            اختياري
+            {t("labels.optional")}
           </Badge>
         </div>
 
@@ -257,7 +258,8 @@ export const MediaUploadCard = ({
                 const error = handleFileValidation(
                   file,
                   ALLOWED_DOCUMENT_TYPES,
-                  MAX_FILE_SIZE
+                  MAX_FILE_SIZE,
+                  t
                 );
 
                 if (error) {
@@ -384,7 +386,7 @@ export const MediaUploadCard = ({
                         type="button"
                         onClick={removeDocument}
                         className="flex-shrink-0 p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors"
-                        aria-label="إزالة المستند"
+                        aria-label={t("actions.removeDocument")}
                       >
                         <FiX className="w-4 h-4" />
                       </button>

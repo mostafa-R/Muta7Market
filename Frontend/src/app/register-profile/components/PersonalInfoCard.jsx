@@ -6,14 +6,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../../component/ui/button";
 import { Label } from "../../component/ui/label";
 import { RadioGroup, RadioGroupItem } from "../../component/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../component/ui/select";
 import { nationalities } from "../types/constants";
+import { ConditionalSelect } from "./ConditionalSelect";
 import { FormField } from "./FormField";
 
 export const PersonalInfoCard = ({
@@ -65,14 +59,15 @@ export const PersonalInfoCard = ({
                   if (!file) {
                     formik.setFieldError(
                       "profilePictureFile",
-                      "يرجى اختيار ملف"
+                      t("fileUpload.pleaseSelectFile")
                     );
                     return;
                   }
                   const error = handleFileValidation(
                     file,
                     ALLOWED_IMAGE_TYPES,
-                    MAX_FILE_SIZE
+                    MAX_FILE_SIZE,
+                    t
                   );
                   if (error) {
                     formik.setFieldError("profilePictureFile", error);
@@ -139,6 +134,80 @@ export const PersonalInfoCard = ({
             formik={formik}
           />
 
+          {/* Nationality selection with conditional "Other" input */}
+          <ConditionalSelect
+            label={t("registerProfile.form.personalInfo.nationality")}
+            name="nationality"
+            value={formik.values.nationality}
+            onValueChange={(value) => {
+              formik.setFieldValue("nationality", value);
+              formik.setFieldTouched("nationality", true);
+              // Clear custom nationality if not "other"
+              if (value !== "other") {
+                formik.setFieldValue("customNationality", "");
+                formik.setFieldTouched("customNationality", false);
+                // Also clear any existing errors for customNationality
+                if (formik.errors.customNationality) {
+                  formik.setFieldError("customNationality", "");
+                }
+              } else {
+                // If switching to "other", reset custom nationality field
+                formik.setFieldValue("customNationality", "");
+                formik.setFieldTouched("customNationality", false);
+                formik.setFieldError("customNationality", "");
+              }
+            }}
+            onBlur={() => formik.setFieldTouched("nationality", true)}
+            placeholder={t(
+              "registerProfile.form.personalInfo.nationalityPlaceholder"
+            )}
+            options={nationalities}
+            required={true}
+            formik={formik}
+            showConditionalInput={formik.values.nationality === "other"}
+            conditionalInputName="customNationality"
+            conditionalInputPlaceholder={t(
+              "registerProfile.form.personalInfo.customNationalityPlaceholder"
+            )}
+          />
+
+          {/* Birth Country selection with conditional "Other" input */}
+          <ConditionalSelect
+            label={t("registerProfile.form.personalInfo.birthCountry")}
+            name="birthCountry"
+            value={formik.values.birthCountry}
+            onValueChange={(value) => {
+              formik.setFieldValue("birthCountry", value);
+              formik.setFieldTouched("birthCountry", true);
+              // Clear custom birth country if not "other"
+              if (value !== "other") {
+                formik.setFieldValue("customBirthCountry", "");
+                formik.setFieldTouched("customBirthCountry", false);
+                // Also clear any existing errors for customBirthCountry
+                if (formik.errors.customBirthCountry) {
+                  formik.setFieldError("customBirthCountry", "");
+                }
+              } else {
+                // If switching to "other", reset custom birth country field
+                formik.setFieldValue("customBirthCountry", "");
+                formik.setFieldTouched("customBirthCountry", false);
+                formik.setFieldError("customBirthCountry", "");
+              }
+            }}
+            onBlur={() => formik.setFieldTouched("birthCountry", true)}
+            placeholder={t(
+              "registerProfile.form.personalInfo.birthCountryPlaceholder"
+            )}
+            options={nationalities}
+            required={true}
+            formik={formik}
+            showConditionalInput={formik.values.birthCountry === "other"}
+            conditionalInputName="customBirthCountry"
+            conditionalInputPlaceholder={t(
+              "registerProfile.form.personalInfo.customBirthCountryPlaceholder"
+            )}
+          />
+
           {/* Gender selection with improved radio buttons */}
           <div className="space-y-3">
             <Label htmlFor="gender-group" className="flex items-center">
@@ -174,49 +243,6 @@ export const PersonalInfoCard = ({
                 {get(formik.errors, "gender")}
               </div>
             )}
-          </div>
-
-          {/* Nationality selection with improved styling */}
-          <div className="space-y-2">
-            <Label htmlFor="nationality" className="flex items-center">
-              {t("registerProfile.form.personalInfo.nationality")}{" "}
-              <span className="text-red-500 mr-1">*</span>
-            </Label>
-            <Select
-              value={formik.values.nationality}
-              onValueChange={(value) => {
-                formik.setFieldValue("nationality", value);
-                formik.setFieldTouched("nationality", true);
-              }}
-            >
-              <SelectTrigger
-                id="nationality"
-                className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50"
-              >
-                <SelectValue
-                  placeholder={t(
-                    "registerProfile.form.personalInfo.nationalityPlaceholder"
-                  )}
-                />
-              </SelectTrigger>
-              <SelectContent className="max-h-80">
-                {nationalities.map((nationality) => (
-                  <SelectItem key={nationality.id} value={nationality.value}>
-                    {t(nationality.name)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {get(formik.touched, "nationality") &&
-              get(formik.errors, "nationality") && (
-                <div
-                  role="alert"
-                  aria-live="assertive"
-                  className="text-red-500 text-xs mt-1 bg-red-50 p-1 px-2 rounded-md border border-red-100 inline-block"
-                >
-                  {get(formik.errors, "nationality")}
-                </div>
-              )}
           </div>
         </div>
       </div>

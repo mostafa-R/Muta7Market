@@ -8,10 +8,10 @@ import StartJourneySection from "./home/StartJourneySection";
 export default function Home() {
   return (
     <>
-      <SimpleHero />
-      <PlayerSection />
       <AdBanner />
       <SportsSection />
+      <PlayerSection />
+      {/* <SimpleHero /> */}
       <StartJourneySection />
     </> 
   );

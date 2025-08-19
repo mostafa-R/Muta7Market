@@ -1,7 +1,8 @@
 "use client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FaBasketballBall,
@@ -143,58 +144,84 @@ const sports = [
 const SportsSection = () => {
   const { t } = useTranslation();
   const { language } = useLanguage();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    }
+  };
 
   return (
-    <section className="py-8 md:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            {t("home.exploreAllSports")}
-          </h2>
-          <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            {t("sports.description")}
-          </p>
-        </div>
+    <section className="bg-gradient-to-br from-gray-50 to-white">
+      <div className="w-[90%] mx-auto px-1 sm:px-1 lg:px-1">
+        {/* Horizontal Scrollable Sports Navigation */}
+        <div className="mb-3">
+          <div className="bg-white rounded-xl p-1 md:p-1 shadow-sm border border-gray-100 relative">
+            {/* Left Arrow */}
+            <button
+              onClick={scrollLeft}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
+            </button>
 
-        {/* Sports Grid */}
-        <div className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-5 mb-12">
-          {sports.map((sport) => {
-            const Icon = sport.icon;
-            return (
-              <Link
-                key={sport.id}
-                href={`/sports/${sport.id}`}
-                className="group"
-              >
-                <div className="flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#00184d] transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105">
-                  {/* Icon Container */}
-                  <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
-                    <Icon className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
-                  </div>
+            {/* Right Arrow */}
+            <button
+              onClick={scrollRight}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            </button>
 
-                  {/* Sport Name */}
-                  <h3 className="text-xs sm:text-sm md:text-base font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-300 text-center leading-tight px-1">
-                    {t(`sports.${sport.id}`)}
-                  </h3>
-                </div>
-              </Link>
-            );
-          })}
+            <div
+              ref={scrollContainerRef}
+              className="flex overflow-x-auto scrollbar-hide gap-3 md:gap-4 w-auto flex-nowrap px-8"
+            >
+              {sports.map((sport) => {
+                const Icon = sport.icon;
+                return (
+                  <Link
+                    key={sport.id}
+                    href={`/sports/${sport.id}`}
+                    className="group flex-shrink-0"
+                  >
+                    <div className="flex flex-col items-center justify-center min-w-[70px] md:min-w-[80px] lg:min-w-[90px] p-2 md:p-3 rounded-lg transition-all duration-300 ease-in-out hover:bg-gray-50">
+                      {/* Icon Container */}
+                      <div className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 mb-1 md:mb-2 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Icon className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-gray-600 group-hover:text-[#00184d] transition-colors duration-300" />
+                      </div>
+
+                      {/* Sport Name */}
+                      <h3 className="text-xs font-medium text-gray-600 group-hover:text-gray-900 transition-colors duration-300 text-center leading-tight">
+                        {t(`sports.${sport.id}`)}
+                      </h3>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* CTA Button */}
-        <div className="text-center">
+        {/* <div className="text-center">
           <Link href="/sports">
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-[#00184d] to-[#00184d] hover:from-[#00184d] hover:to-[#00184d] text-white font-semibold rounded-xl text-base md:text-lg px-8 py-4 md:px-10 md:py-5 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#00184d]"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-[#00184d] to-[#00184d] hover:from-[#00184d] hover:to-[#00184d] text-white font-semibold rounded-xl text-sm md:text-base px-6 py-3 md:px-8 md:py-4 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#00184d]"
             >
-              <Trophy className="w-5 h-5 md:w-6 md:h-6 ml-3" />
+              <Trophy className="w-4 h-4 md:w-5 md:h-5 ml-2 md:ml-3" />
               {t("home.viewAll")} {t("sports.allSports")}
             </button>
           </Link>
-        </div>
+        </div> */}
       </div>
     </section>
   );

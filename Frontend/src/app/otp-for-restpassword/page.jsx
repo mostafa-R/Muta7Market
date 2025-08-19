@@ -236,7 +236,7 @@ function OTPForResetPasswordContent() {
                     id="otp"
                     placeholder={t("otp.enter6DigitCode")}
                     maxLength="6"
-                    className="w-full rounded-md border border-[#e0e0e0] bg.white py-3 pr-10 pl-6 text-base font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
+                    className="w-full rounded-md border border-[#e0e0e0] bg.white py-3 pr-10 pl-6  font-medium text-[#6B7280] outline-none focus:border-[hsl(var(--primary))] focus:shadow-md transition-all duration-200 text-center text-lg tracking-widest"
                     style={{ letterSpacing: "0.5em" }}
                     onInput={(e) => {
                       e.target.value = e.target.value.replace(/[^0-9]/g, "");

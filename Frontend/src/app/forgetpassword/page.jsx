@@ -19,14 +19,9 @@ const getForgotPasswordSchema = (language) =>
       .email({ tlds: { allow: false } })
       .required()
       .messages({
-        "string.email":
-          language === "ar"
-            ? "يرجى إدخال بريد إلكتروني صحيح"
-            : "Please enter a valid email",
-        "string.empty":
-          language === "ar" ? "البريد الإلكتروني مطلوب" : "Email is required",
-        "any.required":
-          language === "ar" ? "البريد الإلكتروني مطلوب" : "Email is required",
+        "string.email": "formErrors.emailInvalid",
+        "string.empty": "formErrors.emailRequired",
+        "any.required": "formErrors.emailRequired",
       }),
   });
 
@@ -107,20 +102,22 @@ export default function ForgotPassword() {
           Object.entries(data.errors).forEach(([field, errorMessage]) => {
             setFieldError(field, errorMessage);
           });
-          toast.error("يرجى التحقق من الحقول المحددة");
+          toast.error(t("formErrors.pleaseCheckFields"));
         }
         // التعامل مع رسائل الخطأ المحددة من الخلفية
         else if (
           data.error?.message === "No user found with this email" ||
           data.message?.includes("not found")
         ) {
-          setFieldError("email", "البريد الإلكتروني غير مسجل في النظام");
-          toast.error("البريد الإلكتروني غير مسجل في النظام");
+          setFieldError("email", t("formErrors.emailNotRegistered"));
+          toast.error(t("formErrors.emailNotRegistered"));
         }
         // أخطاء عامة أخرى
         else {
           const errorMsg =
-            data.error?.message || data.message || "حدث خطأ أثناء إرسال الطلب";
+            data.error?.message ||
+            data.message ||
+            t("formErrors.errorSendingRequest");
           setSubmitMessage(errorMsg);
           setStatus(errorMsg);
           toast.error(errorMsg);

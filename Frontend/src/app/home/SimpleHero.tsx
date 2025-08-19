@@ -6,7 +6,7 @@ const SimpleHero = () => {
   const { t } = useTranslation();
 
   return (
-    <section className="relative pt-12 text-white mb-10 overflow-hidden">
+    <section className="relative pt-12 text-white mb-10 overflow-hidden mt-3">
       {/* Hero Background Image */}
       <div
         className="absolute inset-0"

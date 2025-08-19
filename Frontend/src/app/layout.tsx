@@ -46,6 +46,7 @@ export default function RootLayout({
       <head>
         {/* Default metadata, will be overridden by client-side language selection */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -60,7 +61,7 @@ export default function RootLayout({
           window.OneSignalDeferred = window.OneSignalDeferred || [];
           OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
-              appId: "b8f45ad2-ae38-46e2-a160-069a90d04b92",
+              appId: "44506d2e-9021-4372-a5d2-49765d4e46a1",
             });
           });
         `}

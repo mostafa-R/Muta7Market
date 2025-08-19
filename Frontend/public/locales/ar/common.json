@@ -134,6 +134,7 @@
     "archery": "السهام",
     "esports": "الرياضات الإلكترونية",
     "swimming": "السباحة",
+    "football": "كرة القدم",
     "judo": "الجودو",
     "fencing": "المبارزة",
     "cycling": "الدراجات الهوائية",
@@ -342,7 +343,8 @@
     "financialAndTransferInfo": "المعلومات المالية ومعلومات الانتقال",
     "transferDetails": "تفاصيل الانتقال",
     "transferredToClub": "انتقل إلى النادي",
-    "transferDate": "تاريخ الانتقال",
+    "transferStartDate": "تاريخ بداية الانتقال",
+    "transferEndDate": "تاريخ نهاية الانتقال",
     "transferAmount": "قيمة الانتقال",
     "contractDetails": "تفاصيل العقد",
     "contactPlayer": "اتصال باللاعب",
@@ -355,11 +357,17 @@
     "statistics": "الإحصائيات",
     "yearsOfExperience": "سنوات الخبرة",
     "views": "المشاهدات",
-    "nationality": "الجنسية"
+    "nationality": "الجنسية",
+    "availableForPaidUsers": "متاح للمستخدمين المدفوعين فقط",
+    "activateToViewContacts": "فعّل حسابك لعرض معلومات الاتصال. دفعة واحدة (200 ريال سعودي)."
   },
   "registerProfile": {
     "editPlayerProfile": "تعديل ملف اللاعب",
     "createNewPlayerProfile": "إنشاء ملف لاعب جديد",
+    "publish": {
+      "promptTitle": "نشر ملفك الشخصي",
+      "promptDesc": "أكمل الدفع لنشر ملفك الشخصي وجعله مرئياً."
+    },
     "completeRequiredInformation": "أكمل المعلومات المطلوبة لإنشاء ملف",
     "backToProfile": "العودة للملف الشخصي",
     "step": "الخطوة",
@@ -395,6 +403,11 @@
         "female": "أنثى",
         "nationality": "الجنسية",
         "nationalityPlaceholder": "اختر جنسيتك",
+        "specifyNationality": "حدد جنسيتك",
+        "customNationalityPlaceholder": "أدخل جنسيتك",
+        "birthCountry": "بلد المولد",
+        "birthCountryPlaceholder": "اختر بلد مولدك",
+        "customBirthCountryPlaceholder": "أدخل بلد مولدك",
         "allowedImageFormats": "JPG, PNG أو GIF (حد أقصى 10MB)"
       },
       "sportsInfo": {
@@ -402,11 +415,16 @@
         "sport": "الرياضة",
         "sportPlaceholder": "اختر رياضتك",
         "position": "المركز/التخصص",
-        "positionPlaceholder": "مثال: مهاجم، حارس مرمى، مدرب لياقة",
+        "positionPlaceholder": "اختر مركزك",
+        "selectSportFirst": "يرجى اختيار الرياضة أولاً",
         "category": "الفئة",
         "categoryPlaceholder": "اختر فئتك",
         "player": "لاعب",
         "coach": "مدرب",
+        "playerType": "نوع اللاعب",
+        "coachType": "نوع المدرب",
+        "selectPlayerType": "اختر نوع اللاعب",
+        "selectCoachType": "اختر نوع المدرب",
         "currentStatus": "الحالة الحالية",
         "currentStatusPlaceholder": "اختر حالتك الحالية",
         "available": "حر (بحث عن فريق)",
@@ -419,7 +437,7 @@
       },
       "financialInfo": {
         "title": "المعلومات المالية (اختيارية)",
-        "monthlySalary": "الراتب الشهري المطلوب (بالريال)",
+        "monthlySalary": "الراتب الشهري (بالريال)",
         "monthlySalaryPlaceholder": "مثال: 5000",
         "annualContract": "قيمة العقد السنوي (بالريال)",
         "annualContractPlaceholder": "مثال: 60000",
@@ -429,7 +447,8 @@
         "title": "معلومات الانتقال (اختيارية)",
         "transferredToClub": "اسم النادي المنتقل إليه",
         "transferredToClubPlaceholder": "اسم النادي المنتقل إليه",
-        "transferDate": "تاريخ الانتقال",
+        "transferStartDate": "تاريخ بداية الانتقال",
+        "transferEndDate": "تاريخ نهاية الانتقال",
         "transferAmount": "قيمة الانتقال (بالريال)",
         "transferAmountPlaceholder": "قيمة الانتقال"
       },
@@ -493,6 +512,12 @@
       "ageRange": "العمر يجب أن يكون بين 15 و 50",
       "genderRequired": "الجنس مطلوب - يرجى اختيار الجنس",
       "nationalityRequired": "الجنسية مطلوبة - يرجى اختيار الجنسية",
+      "nationalityInvalid": "يرجى اختيار جنسية صحيحة من القائمة",
+      "customNationalityRequired": "يرجى تحديد جنسيتك",
+      "customNationalityTooShort": "الجنسية يجب أن تكون على الأقل حرفين",
+      "customNationalityTooLong": "الجنسية طويلة جداً",
+      "positionRequired": "المركز/التخصص مطلوب",
+      "roleTypeRequired": "نوع الدور مطلوب - يرجى اختيار دورك المحدد",
       "sportRequired": "الرياضة مطلوبة - يرجى اختيار رياضة",
       "categoryRequired": "الفئة مطلوبة - يرجى اختيار الفئة بشكل صريح",
       "statusRequired": "الحالة الحالية مطلوبة - يرجى اختيار الحالة بشكل صريح",
@@ -642,6 +667,149 @@
     "serverError": "حدث خطأ في السيرفر، يرجى المحاولة لاحقاً",
     "connectionFailed": "فشل في الاتصال بالخادم، تحقق من اتصالك بالإنترنت",
     "unexpectedError": "حدث خطأ غير متوقع"
+  },
+  "formErrors": {
+    "loginRequired": "يرجى تسجيل الدخول",
+    "serverConfigError": "إعدادات الخادم غير مضبوطة (API_URL)",
+    "termsAcceptanceRequired": "يجب الموافقة على الشروط والأحكام",
+    "loginRequiredFirst": "يجب تسجيل الدخول أولاً",
+    "missingPricingData": "بيانات التسعير مفقودة",
+    "noPaymentUrl": "لا يوجد رابط دفع",
+    "paymentSuccess": "تم الدفع بنجاح",
+    "paymentPending": "الدفع معلق أو ملغي",
+    "paymentFailed": "فشل الدفع",
+    "enterPlayerIdFirst": "يرجى إدخال معرف ملف اللاعب أولاً",
+    "pleaseCheckFields": "يرجى التحقق من الحقول المحددة",
+    "emailNotRegistered": "البريد الإلكتروني غير مسجل في النظام",
+    "errorSendingRequest": "حدث خطأ أثناء إرسال الطلب",
+    "playerDataFetchFailed": "فشل في جلب بيانات اللاعب",
+    "profileCreated": "تم إنشاء الملف بنجاح",
+    "profileUpdated": "تم تحديث الملف بنجاح",
+    "uploadError": "حدث خطأ أثناء رفع البيانات. حاول مرة أخرى.",
+    "failedToLoadPricing": "فشل في تحميل التسعير. يرجى تحديث الصفحة.",
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صحيح",
+    "emailRequired": "البريد الإلكتروني مطلوب"
+  },
+  "fileValidation": {
+    "noFileSelected": "لم يتم اختيار ملف",
+    "unsupportedFileType": "نوع الملف غير مدعوم",
+    "fileTooLarge": "حجم الملف كبير جدًا (الحد الأقصى 10MB)"
+  },
+  "fieldValidation": {
+    "nameRequired": "الاسم مطلوب",
+    "ageRequired": "العمر مطلوب",
+    "ageMustBeNumber": "العمر يجب أن يكون رقمًا",
+    "ageRange": "العمر يجب أن يكون بين 15 و 50 سنة",
+    "genderRequired": "الجنس مطلوب",
+    "nationalityRequired": "الجنسية مطلوبة",
+    "customNationalityRequired": "يرجى تحديد جنسيتك",
+    "birthCountryRequired": "بلد المولد مطلوب",
+    "customBirthCountryRequired": "يرجى تحديد بلد مولدك",
+    "birthCountryInvalid": "يرجى اختيار بلد مولد صحيح من القائمة",
+    "customNationalityTooShort": "الجنسية يجب أن تكون على الأقل حرفين",
+    "customNationalityTooLong": "الجنسية طويلة جداً",
+    "customBirthCountryTooShort": "بلد المولد يجب أن يكون على الأقل حرفين",
+    "customBirthCountryTooLong": "بلد المولد طويل جداً"
+  },
+  "sportsValidation": {
+    "sportRequired": "الرياضة مطلوبة",
+    "positionRequired": "المركز/التخصص مطلوب للاعبين",
+    "categoryRequired": "الفئة مطلوبة - يرجى اختيار الفئة",
+    "categoryInvalid": "الفئة مطلوبة - يجب اختيار لاعب أو مدرب",
+    "statusRequired": "الحالة الحالية مطلوبة - يرجى اختيار الحالة",
+    "statusInvalid": "الحالة الحالية مطلوبة - يجب اختيار حالة صالحة",
+    "termsAcceptanceRequired": "يجب الموافقة على الشروط والأحكام",
+    "roleTypeRequired": "نوع الدور مطلوب - يرجى اختيار دورك المحدد",
+    "positionTooShort": "المركز يجب أن يكون على الأقل حرفين"
+  },
+  "formValidation": {
+    "reviewRequiredFields": "يرجى مراجعة الحقول المطلوبة في هذا القسم",
+    "reviewRequiredFieldsGeneral": "يرجى مراجعة الحقول المطلوبة"
+  },
+  "fileUpload": {
+    "pleaseSelectFile": "يرجى اختيار ملف"
+  },
+  "browser": {
+    "videoNotSupported": "متصفحك لا يدعم تشغيل الفيديو"
+  },
+  "general": {
+    "loading": "جاري التحميل..."
+  },
+  "labels": {
+    "optional": "اختياري",
+    "agentInfo": "معلومات الوكيل",
+    "transferInfo": "معلومات الانتقال",
+    "financialInfo": "المعلومات المالية",
+    "uploadSportsVideos": "رفع فيديوهات رياضية",
+    "uploadSupportingDocuments": "رفع مستندات داعمة",
+    "uploadSupportingDocumentsWithTypes": "رفع مستندات داعمة (PDF أو صور)"
+  },
+  "adjectives": {
+    "optional": "اختيارية"
+  },
+  "actions": {
+    "removeVideo": "إزالة الفيديو",
+    "removeDocument": "إزالة المستند"
+  },
+  "payments": {
+    "title": "المدفوعات",
+    "subtitle": "راجع جميع الفواتير لحسابك",
+    "pending": "معلق",
+    "paid": "مدفوع",
+    "pendingInvoices": "الفواتير المعلقة",
+    "paidInvoices": "الفواتير المدفوعة",
+    "noPendingInvoices": "لا توجد فواتير معلقة",
+    "noPaidInvoices": "لا توجد فواتير مدفوعة بعد",
+    "playerListing": "إدراج اللاعب",
+    "contactsAccess": "الوصول للجهات",
+    "order": "الطلب",
+    "paidAt": "تم الدفع في",
+    "amount": "المبلغ",
+    "orderNumber": "رقم الطلب",
+    "payNow": "ادفع الآن",
+    "opening": "جاري الفتح…",
+    "viewReceipt": "عرض الإيصال",
+    "completeProfileFirst": "يرجى إكمال إنشاء الملف أولاً، سنوجهك لصفحة المدفوعات.",
+    "tooManyAttempts": "تم تجاوز حد المحاولات. يرجى المحاولة مرة أخرى خلال دقائق",
+    "invalidRequestData": "بيانات الطلب غير صحيحة",
+    "serverError": "خطأ في الخادم. يرجى المحاولة لاحقاً",
+    "failedToCreateInvoice": "فشل إنشاء الفاتورة",
+    "noPaymentUrlReceived": "لم نستلم رابط الدفع",
+    "preparingPayment": "جارٍ تجهيز الدفع…",
+    "unexpectedError": "حدث خطأ غير متوقع",
+    "redirectingToPayment": "جارٍ التوجيه للدفع…",
+    "payToActivateAccount": "ادفع لتفعيل الحساب",
+    "payToPublishProfile": "ادفع لنشر ملفك",
+    "payNow": "ادفع الآن",
+    "specialOffer": "عرض خاص 200 ريال",
+    "securePayment": "دفع آمن ومضمون",
+    "invoiceCreatedSuccessfully": "تم إنشاء الفاتورة بنجاح",
+    "paymentProcessing": "تتم معالجة المدفوعات بواسطة شريك موثوق به ومرخص من مؤسسة النقد العربي السعودي"
+  },
+  "mediaNotifications": {
+    "profileImageReplaced": "سيتم استبدال الصورة الشخصية السابقة",
+    "documentReplaced": "سيتم استبدال المستند السابق بالمستند الجديد",
+    "videoReplaced": "سيتم استبدال الفيديو السابق بالفيديو الجديد"
+  },
+  "formValidation": {
+    "nameRequired": "الاسم مطلوب",
+    "ageRequired": "العمر مطلوب ويجب أن يكون رقمًا",
+    "ageRange": "العمر يجب أن يكون بين 15 و 50 سنة",
+    "genderRequired": "الجنس مطلوب",
+    "nationalityRequired": "الجنسية مطلوبة",
+    "nationalityInvalid": "يرجى اختيار جنسية صحيحة من القائمة",
+    "birthCountryRequired": "بلد المولد مطلوب",
+    "birthCountryInvalid": "يرجى اختيار بلد مولد صحيح من القائمة",
+    "sportRequired": "الرياضة مطلوبة",
+    "positionRequired": "المركز/التخصص مطلوب",
+    "categoryRequired": "الفئة مطلوبة",
+    "statusRequired": "الحالة مطلوبة",
+    "customNationalityRequired": "يرجى تحديد جنسيتك",
+    "customNationalityTooShort": "الجنسية يجب أن تكون على الأقل حرفين",
+    "customNationalityTooLong": "الجنسية طويلة جداً",
+    "customBirthCountryRequired": "يرجى تحديد بلد مولدك",
+    "customBirthCountryTooShort": "بلد المولد يجب أن يكون على الأقل حرفين",
+    "customBirthCountryTooLong": "بلد المولد طويل جداً"
   },
   "validation": {
     "nameRequired": "الاسم الكامل مطلوب",
@@ -810,5 +978,211 @@
     "sudan": "السودان",
     "yemen": "اليمن",
     "other": "أخرى"
+  },
+  "playerRoles": {
+    "youthPlayer": "لاعب ناشئ",
+    "juniorPlayer": "لاعب شباب",
+    "firstTeamPlayer": "لاعب فريق أول",
+    "reservePlayer": "لاعب احتياط",
+    "professionalPlayer": "لاعب محترف",
+    "amateurPlayer": "لاعب هاوي",
+    "academyPlayer": "لاعب أكاديمية"
+  },
+  "coachRoles": {
+    "headCoach": "مدرب رئيسي",
+    "assistantCoach": "مدرب مساعد",
+    "goalkeeperCoach": "مدرب حراس",
+    "fitnessCoach": "مدرب لياقة",
+    "technicalCoach": "مدرب فني",
+    "youthCoach": "مدرب شباب",
+    "physio": "أخصائي علاج طبيعي",
+    "tacticalAnalyst": "محلل تكتيكي",
+    "strengthConditioningCoach": "مدرب إعداد بدني"
+  },
+  "notifications": {
+    "customNationalityRequired": "يرجى تحديد جنسيتك",
+    "positionRequired": "المركز/التخصص مطلوب",
+    "roleTypeRequired": "نوع الدور مطلوب",
+    "selectValidOption": "يرجى اختيار خيار صحيح",
+    "fieldIsRequired": "هذا الحقل مطلوب",
+    "invalidSelection": "اختيار غير صحيح",
+    "pleaseComplete": "يرجى إكمال هذا الحقل"
+  },
+  "sports": {
+    "handball": "كرة اليد",
+    "basketball": "كرة السلة",
+    "volleyball": "الكرة الطائرة",
+    "badminton": "الريشة الطائرة",
+    "athletics": "ألعاب القوى",
+    "tennis": "التنس",
+    "tabletennis": "تنس الطاولة",
+    "karate": "الكاراتيه",
+    "taekwondo": "التايكوندو",
+    "archery": "الرماية",
+    "esports": "الرياضة الإلكترونية",
+    "swimming": "السباحة",
+    "judo": "الجودو",
+    "fencing": "المبارزة",
+    "cycling": "الدراجات",
+    "squash": "الاسكواش",
+    "weightlifting": "رفع الأثقال",
+    "futsal": "كرة القدم الصالات",
+    "boxing": "الملاكمة",
+    "gymnastics": "الجمباز",
+    "billiards": "البلياردو",
+    "wrestling": "المصارعة"
+  },
+  "positions": {
+    "handball": {
+      "goalkeeper": "حارس المرمى",
+      "leftWing": "الجناح الأيسر",
+      "leftBack": "الظهير الأيسر",
+      "centerBack": "صانع الألعاب",
+      "rightBack": "الظهير الأيمن",
+      "rightWing": "الجناح الأيمن",
+      "pivot": "المحور"
+    },
+    "basketball": {
+      "pointGuard": "صانع الألعاب",
+      "shootingGuard": "حارس الرماية",
+      "smallForward": "الجناح الصغير",
+      "powerForward": "الجناح القوي",
+      "center": "المركز"
+    },
+    "volleyball": {
+      "setter": "معد الكرات",
+      "outsideHitter": "ضارب خارجي",
+      "middleBlocker": "صاد أوسط",
+      "oppositeHitter": "ضارب مقابل",
+      "libero": "الليبرو",
+      "defensiveSpecialist": "أخصائي دفاع"
+    },
+    "badminton": {
+      "singles": "فردي",
+      "doubles": "زوجي",
+      "mixedDoubles": "زوجي مختلط"
+    },
+    "athletics": {
+      "sprinter": "عداء سريع",
+      "middleDistance": "متوسط المسافة",
+      "longDistance": "مسافات طويلة",
+      "hurdler": "الحواجز",
+      "highJump": "الوثب العالي",
+      "longJump": "الوثب الطويل",
+      "poleVault": "الوثب بالعصا",
+      "shotPut": "دفع الجلة",
+      "discus": "قرص",
+      "javelin": "رمح",
+      "hammerThrow": "رمي المطرقة",
+      "decathlon": "عشاري",
+      "heptathlon": "سباعي"
+    },
+    "tennis": {
+      "singles": "فردي",
+      "doubles": "زوجي",
+      "mixedDoubles": "زوجي مختلط"
+    },
+    "tabletennis": {
+      "singles": "فردي",
+      "doubles": "زوجي",
+      "mixedDoubles": "زوجي مختلط"
+    },
+    "karate": {
+      "kata": "كاتا",
+      "kumite": "كوميتيه",
+      "teamKata": "كاتا فريق"
+    },
+    "taekwondo": {
+      "poomsae": "بومزة",
+      "kyorugi": "قتال",
+      "breaking": "كسر الألواح"
+    },
+    "archery": {
+      "recurve": "قوس منحني",
+      "compound": "قوس مركب",
+      "barebow": "قوس تقليدي",
+      "traditional": "قوس شعبي"
+    },
+    "esports": {
+      "shooter": "إطلاق نار",
+      "strategy": "استراتيجية",
+      "moba": "موبا",
+      "racing": "سباق",
+      "fighting": "قتال",
+      "sportsSimulation": "محاكاة رياضية"
+    },
+    "swimming": {
+      "freestyle": "حرة",
+      "backstroke": "ظهر",
+      "breaststroke": "صدر",
+      "butterfly": "فراشة",
+      "individualMedley": "متنوع فردي",
+      "relay": "تتابع",
+      "openWater": "مياه مفتوحة"
+    },
+    "judo": {
+      "lightweight": "وزن خفيف",
+      "middleweight": "وزن متوسط",
+      "heavyweight": "وزن ثقيل",
+      "team": "فريق"
+    },
+    "fencing": {
+      "foil": "شيش",
+      "epee": "سيف",
+      "sabre": "سابر",
+      "team": "فريق"
+    },
+    "cycling": {
+      "roadRacing": "سباق طريق",
+      "trackCycling": "مضمار",
+      "mountainBiking": "دراجة جبلية",
+      "bmx": "بي إم إكس",
+      "cyclocross": "عبر البلاد"
+    },
+    "squash": {
+      "singles": "فردي",
+      "doubles": "زوجي"
+    },
+    "weightlifting": {
+      "snatch": "خطف",
+      "cleanJerk": "نطر ونتر",
+      "powerlifting": "رفع أثقال قوة"
+    },
+    "futsal": {
+      "goalkeeper": "حارس المرمى",
+      "defender": "مدافع",
+      "midfielder": "وسط",
+      "forward": "مهاجم",
+      "pivot": "محور"
+    },
+    "boxing": {
+      "lightweight": "وزن خفيف",
+      "welterweight": "وزن ولتر",
+      "middleweight": "وزن متوسط",
+      "heavyweight": "وزن ثقيل"
+    },
+    "gymnastics": {
+      "floorExercise": "حرة أرضي",
+      "pommelHorse": "حصان حلق",
+      "stillRings": "حلق ثابت",
+      "vault": "حصان قفز",
+      "parallelBars": "متوازي",
+      "horizontalBar": "عقلة",
+      "unevenBars": "متوازي مختلف",
+      "balanceBeam": "عارضة التوازن",
+      "rhythmic": "إيقاعي",
+      "trampoline": "ترامبولين"
+    },
+    "billiards": {
+      "eightBall": "الكرة الثامنة",
+      "nineBall": "الكرة التاسعة",
+      "snooker": "سنوكر",
+      "straightPool": "بركة مستقيمة"
+    },
+    "wrestling": {
+      "freestyle": "حرة",
+      "grecoRoman": "رومانية",
+      "folkstyle": "شعبي"
+    }
   }
 }
