@@ -229,6 +229,7 @@
     "contactUs": "Contact us to display your ad in this space"
   },
   "playerDetail": {
+    "transferDeadline": "Transfer Deadline",
     "loginRequired": "You must be logged in first",
     "noPhoneAvailable": "No phone number available for this player",
     "phoneCopied": "Phone number copied",

@@ -228,6 +228,7 @@
     "contactUs": "اتصل بنا لعرض إعلانك في هذه المساحة"
   },
   "playerDetail": {
+    "transferDeadline": "تاريخ نهاية العقد",
     "loginRequired": "يجب عليك تسجيل الدخول أولاً",
     "noPhoneAvailable": "لا يوجد رقم هاتف متاح لهذا اللاعب",
     "phoneCopied": "تم نسخ رقم الهاتف",
