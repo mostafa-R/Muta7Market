@@ -118,97 +118,7 @@
     "networkError": "فشل في الاتصال بالخادم. تحقق من اتصالك بالإنترنت.",
     "unexpectedError": "حدث خطأ غير متوقع"
   },
-  "sports": {
-    "description": "اكتشف المواهب في مختلف الرياضات واتصل باللاعبين والمدربين المحترفين",
-    "allSports": "جميع الرياضات",
-    "explorePlayers": "استكشف اللاعبين",
-    "handball": "كرة اليد",
-    "basketball": "كرة السلة",
-    "volleyball": "الكرة الطائرة",
-    "badminton": "الريشة الطائرة",
-    "athletics": "ألعاب القوى",
-    "tennis": "التنس",
-    "tabletennis": "كرة الطاولة",
-    "karate": "الكاراتيه",
-    "taekwondo": "التايكوندو",
-    "archery": "السهام",
-    "esports": "الرياضات الإلكترونية",
-    "swimming": "السباحة",
-    "football": "كرة القدم",
-    "judo": "الجودو",
-    "fencing": "المبارزة",
-    "cycling": "الدراجات الهوائية",
-    "squash": "الإسكواش",
-    "weightlifting": "رفع الأثقال",
-    "futsal": "كرة قدم الصالات",
-    "boxing": "الملاكمة",
-    "gymnastics": "الجمباز",
-    "billiards": "البلياردو والسنوكر",
-    "wrestling": "المصارعة",
-    "pageTitle": "استكشف جميع الرياضات",
-    "pageDescription": "اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين المحترفين من جميع أنحاء العالم العربي",
-    "searchPlaceholder": "ابحث عن رياضة...",
-    "notFoundTitle": "الرياضة غير موجودة",
-    "loadingTitle": "جارٍ تحميل {{sportName}}",
-    "loadingDescription": "جارٍ تحميل البيانات...",
-    "backToSports": "العودة للرياضات",
-    "playersCount": "{{count}} لاعب مسجل",
-    "filters": {
-      "title": "فلترة النتائج",
-      "searchPlaceholder": "ابحث باسم اللاعب أو الجنسية...",
-      "statusLabel": "الحالة",
-      "categoryLabel": "الفئة",
-      "clearFilters": "مسح الفلاتر",
-      "allStatuses": "جميع الحالات",
-      "allCategories": "جميع الفئات"
-    },
-    "results": {
-      "showing": "عرض {{filtered}} من أصل {{total}} لاعب",
-      "noResultsTitle": "لم يتم العثور على لاعبين",
-      "noResultsDescription": "جرب تغيير معايير البحث أو الفلاتر للعثور على لاعبين",
-      "clearAllFilters": "مسح جميع الفلاتر"
-    },
-    "cta": {
-      "title": "لا تجد رياضتك المفضلة؟",
-      "description": "سجل بياناتك كلاعب وساعدنا في إضافة المزيد من الرياضات",
-      "button": "سجل بياناتك الآن"
-    },
-    "statusOptions": {
-      "all": "جميع الحالات",
-      "freeAgent": "حر",
-      "contracted": "متعاقد",
-      "transferred": "منتقل"
-    },
-    "categoryOptions": {
-      "all": "جميع الفئات",
-      "player": "لاعب",
-      "coach": "مدرب"
-    }
-  },
-  "positions": {
-    "goalkeeper": "حارس مرمى",
-    "defender": "مدافع",
-    "midfielder": "لاعب وسط",
-    "forward": "مهاجم",
-    "striker": "مهاجم",
-    "center": "وسط",
-    "point_guard": "صانع ألعاب",
-    "shooting_guard": "مدافع مسدد",
-    "small_forward": "جناح صغير",
-    "power_forward": "جناح قوي",
-    "setter": "ممرر",
-    "outside_hitter": "مهاجم خارجي",
-    "middle_blocker": "حاجز وسط",
-    "libero": "ليبرو",
-    "singles": "فردي",
-    "doubles": "زوجي",
-    "mixed_doubles": "زوجي مختلط",
-    "team": "فريق",
-    "individual": "فردي",
-    "coach": "مدرب",
-    "trainer": "مدرب لياقة",
-    "instructor": "مدرب تعليمي"
-  },
+
   "profile": {
     "profile": "الملف الشخصي",
     "userDataUnavailable": "بيانات المستخدم غير متوفرة",
@@ -722,10 +632,7 @@
     "roleTypeRequired": "نوع الدور مطلوب - يرجى اختيار دورك المحدد",
     "positionTooShort": "المركز يجب أن يكون على الأقل حرفين"
   },
-  "formValidation": {
-    "reviewRequiredFields": "يرجى مراجعة الحقول المطلوبة في هذا القسم",
-    "reviewRequiredFieldsGeneral": "يرجى مراجعة الحقول المطلوبة"
-  },
+
   "fileUpload": {
     "pleaseSelectFile": "يرجى اختيار ملف"
   },
@@ -780,7 +687,6 @@
     "redirectingToPayment": "جارٍ التوجيه للدفع…",
     "payToActivateAccount": "ادفع لتفعيل الحساب",
     "payToPublishProfile": "ادفع لنشر ملفك",
-    "payNow": "ادفع الآن",
     "specialOffer": "عرض خاص 200 ريال",
     "securePayment": "دفع آمن ومضمون",
     "invoiceCreatedSuccessfully": "تم إنشاء الفاتورة بنجاح",
@@ -792,6 +698,8 @@
     "videoReplaced": "سيتم استبدال الفيديو السابق بالفيديو الجديد"
   },
   "formValidation": {
+    "reviewRequiredFields": "يرجى مراجعة الحقول المطلوبة في هذا القسم",
+    "reviewRequiredFieldsGeneral": "يرجى مراجعة الحقول المطلوبة",
     "nameRequired": "الاسم مطلوب",
     "ageRequired": "العمر مطلوب ويجب أن يكون رقمًا",
     "ageRange": "العمر يجب أن يكون بين 15 و 50 سنة",
@@ -856,6 +764,10 @@
   "payment": {
     "title": "إتمام الدفع",
     "subtitle": "أكمل عملية الدفع لتفعيل اشتراكك",
+    "preparingPayment": "جارٍ تجهيز الدفع...",
+    "paymentInitiated": "تم بدء عملية الدفع",
+    "unexpectedError": "حدث خطأ غير متوقع",
+    "completeProfileFirst": "يرجى إكمال إنشاء الملف أولاً، سنوجهك لصفحة المدفوعات.",
     "summary": {
       "title": "تسجيل لاعب محترف",
       "type": "اشتراك",
@@ -1009,6 +921,49 @@
     "pleaseComplete": "يرجى إكمال هذا الحقل"
   },
   "sports": {
+    "description": "اكتشف المواهب في مختلف الرياضات واتصل باللاعبين والمدربين المحترفين",
+    "allSports": "جميع الرياضات",
+    "explorePlayers": "استكشف اللاعبين",
+    "football": "كرة القدم",
+    "pageTitle": "استكشف جميع الرياضات",
+    "pageDescription": "اكتشف المواهب في مختلف الرياضات وتواصل مع اللاعبين والمدربين المحترفين من جميع أنحاء العالم العربي",
+    "searchPlaceholder": "ابحث عن رياضة...",
+    "notFoundTitle": "الرياضة غير موجودة",
+    "loadingTitle": "جارٍ تحميل {{sportName}}",
+    "loadingDescription": "جارٍ تحميل البيانات...",
+    "backToSports": "العودة للرياضات",
+    "playersCount": "{{count}} لاعب مسجل",
+    "filters": {
+      "title": "فلترة النتائج",
+      "searchPlaceholder": "ابحث باسم اللاعب أو الجنسية...",
+      "statusLabel": "الحالة",
+      "categoryLabel": "الفئة",
+      "clearFilters": "مسح الفلاتر",
+      "allStatuses": "جميع الحالات",
+      "allCategories": "جميع الفئات"
+    },
+    "results": {
+      "showing": "عرض {{filtered}} من أصل {{total}} لاعب",
+      "noResultsTitle": "لم يتم العثور على لاعبين",
+      "noResultsDescription": "جرب تغيير معايير البحث أو الفلاتر للعثور على لاعبين",
+      "clearAllFilters": "مسح جميع الفلاتر"
+    },
+    "cta": {
+      "title": "لا تجد رياضتك المفضلة؟",
+      "description": "سجل بياناتك كلاعب وساعدنا في إضافة المزيد من الرياضات",
+      "button": "سجل بياناتك الآن"
+    },
+    "statusOptions": {
+      "all": "جميع الحالات",
+      "freeAgent": "حر",
+      "contracted": "متعاقد",
+      "transferred": "منتقل"
+    },
+    "categoryOptions": {
+      "all": "جميع الفئات",
+      "player": "لاعب",
+      "coach": "مدرب"
+    },
     "handball": "كرة اليد",
     "basketball": "كرة السلة",
     "volleyball": "الكرة الطائرة",
@@ -1032,7 +987,31 @@
     "billiards": "البلياردو",
     "wrestling": "المصارعة"
   },
+
   "positions": {
+    "goalkeeper": "حارس مرمى",
+    "defender": "مدافع",
+    "midfielder": "لاعب وسط",
+    "forward": "مهاجم",
+    "striker": "مهاجم",
+    "center": "وسط",
+    "point_guard": "صانع ألعاب",
+    "shooting_guard": "مدافع مسدد",
+    "small_forward": "جناح صغير",
+    "power_forward": "جناح قوي",
+    "setter": "ممرر",
+    "outside_hitter": "مهاجم خارجي",
+    "middle_blocker": "حاجز وسط",
+    "libero": "ليبرو",
+    "singles": "فردي",
+    "doubles": "زوجي",
+    "mixed_doubles": "زوجي مختلط",
+    "team": "فريق",
+    "individual": "فردي",
+    "coach": "مدرب",
+    "trainer": "مدرب لياقة",
+    "instructor": "مدرب تعليمي",
+
     "handball": {
       "goalkeeper": "حارس المرمى",
       "leftWing": "الجناح الأيسر",

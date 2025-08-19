@@ -119,97 +119,7 @@
     "networkError": "Failed to connect to server. Check your internet connection.",
     "unexpectedError": "An unexpected error occurred"
   },
-  "sports": {
-    "description": "Discover talents in various sports and connect with professional players and coaches",
-    "allSports": "All Sports",
-    "explorePlayers": "Explore Players",
-    "handball": "Handball",
-    "basketball": "Basketball",
-    "volleyball": "Volleyball",
-    "badminton": "Badminton",
-    "athletics": "Athletics",
-    "tennis": "Tennis",
-    "tabletennis": "Table Tennis",
-    "karate": "Karate",
-    "taekwondo": "Taekwondo",
-    "archery": "Archery",
-    "esports": "E-Sports",
-    "football": "Football",
-    "swimming": "Swimming",
-    "judo": "Judo",
-    "fencing": "Fencing",
-    "cycling": "Cycling",
-    "squash": "Squash",
-    "weightlifting": "Weightlifting",
-    "futsal": "Futsal",
-    "boxing": "Boxing",
-    "gymnastics": "Gymnastics",
-    "billiards": "Billiards & Snooker",
-    "wrestling": "Wrestling",
-    "pageTitle": "Explore All Sports",
-    "pageDescription": "Discover talents in various sports and connect with professional players and coaches from around the Arab world",
-    "searchPlaceholder": "Search for a sport...",
-    "notFoundTitle": "Sport not found",
-    "loadingTitle": "Loading {{sportName}}",
-    "loadingDescription": "Loading data...",
-    "backToSports": "Back to Sports",
-    "playersCount": "{{count}} registered players",
-    "filters": {
-      "title": "Filter Results",
-      "searchPlaceholder": "Search by player name or nationality...",
-      "statusLabel": "Status",
-      "categoryLabel": "Category",
-      "clearFilters": "Clear Filters",
-      "allStatuses": "All Statuses",
-      "allCategories": "All Categories"
-    },
-    "results": {
-      "showing": "Showing {{filtered}} out of {{total}} players",
-      "noResultsTitle": "No players found",
-      "noResultsDescription": "Try changing search criteria or filters to find players",
-      "clearAllFilters": "Clear All Filters"
-    },
-    "cta": {
-      "title": "Can't find your favorite sport?",
-      "description": "Register your data as a player and help us add more sports",
-      "button": "Register Your Data Now"
-    },
-    "statusOptions": {
-      "all": "All Statuses",
-      "freeAgent": "Free Agent",
-      "contracted": "Contracted",
-      "transferred": "Transferred"
-    },
-    "categoryOptions": {
-      "all": "All Categories",
-      "player": "Player",
-      "coach": "Coach"
-    }
-  },
-  "positions": {
-    "goalkeeper": "Goalkeeper",
-    "defender": "Defender",
-    "midfielder": "Midfielder",
-    "forward": "Forward",
-    "striker": "Striker",
-    "center": "Center",
-    "point_guard": "Point Guard",
-    "shooting_guard": "Shooting Guard",
-    "small_forward": "Small Forward",
-    "power_forward": "Power Forward",
-    "setter": "Setter",
-    "outside_hitter": "Outside Hitter",
-    "middle_blocker": "Middle Blocker",
-    "libero": "Libero",
-    "singles": "Singles",
-    "doubles": "Doubles",
-    "mixed_doubles": "Mixed Doubles",
-    "team": "Team",
-    "individual": "Individual",
-    "coach": "Coach",
-    "trainer": "Trainer",
-    "instructor": "Instructor"
-  },
+
   "profile": {
     "profile": "Profile",
     "userDataUnavailable": "User data unavailable",
@@ -723,10 +633,7 @@
     "roleTypeRequired": "Role type is required - please select your specific role",
     "positionTooShort": "Position must be at least 2 characters"
   },
-  "formValidation": {
-    "reviewRequiredFields": "Please review the required fields in this section",
-    "reviewRequiredFieldsGeneral": "Please review the required fields"
-  },
+
   "fileUpload": {
     "pleaseSelectFile": "Please select a file"
   },
@@ -767,7 +674,6 @@
     "paidAt": "Paid at",
     "amount": "Amount",
     "orderNumber": "Order number",
-    "payNow": "Pay now",
     "opening": "Opening…",
     "viewReceipt": "View receipt",
     "completeProfileFirst": "Please complete your profile first, we'll redirect you to the payments page.",
@@ -793,6 +699,8 @@
     "videoReplaced": "Previous video will be replaced with the new video"
   },
   "formValidation": {
+    "reviewRequiredFields": "Please review the required fields in this section",
+    "reviewRequiredFieldsGeneral": "Please review the required fields",
     "nameRequired": "Name is required",
     "ageRequired": "Age is required and must be a number",
     "ageRange": "Age must be between 15 and 50",
@@ -856,6 +764,10 @@
   "payment": {
     "title": "Complete Payment",
     "subtitle": "Complete the payment process to activate your subscription",
+    "preparingPayment": "Preparing payment...",
+    "paymentInitiated": "Payment initiated",
+    "unexpectedError": "An unexpected error occurred",
+    "completeProfileFirst": "Please complete your profile first, we'll redirect you to the payments page.",
     "summary": {
       "title": "Professional Player Registration",
       "type": "Subscription",
@@ -1030,9 +942,74 @@
     "boxing": "Boxing",
     "gymnastics": "Gymnastics",
     "billiards": "Billiards",
-    "wrestling": "Wrestling"
+    "wrestling": "Wrestling",
+    "description": "Discover talents in various sports and connect with professional players and coaches",
+    "allSports": "All Sports",
+    "explorePlayers": "Explore Players",
+    "football": "Football",
+    "pageTitle": "Explore All Sports",
+    "pageDescription": "Discover talents in various sports and connect with professional players and coaches from around the Arab world",
+    "searchPlaceholder": "Search for a sport...",
+    "notFoundTitle": "Sport not found",
+    "loadingTitle": "Loading {{sportName}}",
+    "loadingDescription": "Loading data...",
+    "backToSports": "Back to Sports",
+    "playersCount": "{{count}} registered players",
+    "filters": {
+      "title": "Filter Results",
+      "searchPlaceholder": "Search by player name or nationality...",
+      "statusLabel": "Status",
+      "categoryLabel": "Category",
+      "clearFilters": "Clear Filters",
+      "allStatuses": "All Statuses",
+      "allCategories": "All Categories"
+    },
+    "results": {
+      "showing": "Showing {{filtered}} out of {{total}} players",
+      "noResultsTitle": "No players found",
+      "noResultsDescription": "Try changing search criteria or filters to find players",
+      "clearAllFilters": "Clear All Filters"
+    },
+    "cta": {
+      "title": "Can't find your favorite sport?",
+      "description": "Register your data as a player and help us add more sports",
+      "button": "Register Your Data Now"
+    },
+    "statusOptions": {
+      "all": "All Statuses",
+      "freeAgent": "Free Agent",
+      "contracted": "Contracted",
+      "transferred": "Transferred"
+    },
+    "categoryOptions": {
+      "all": "All Categories",
+      "player": "Player",
+      "coach": "Coach"
+    }
   },
   "positions": {
+    "goalkeeper": "Goalkeeper",
+    "defender": "Defender",
+    "midfielder": "Midfielder",
+    "forward": "Forward",
+    "striker": "Striker",
+    "center": "Center",
+    "point_guard": "Point Guard",
+    "shooting_guard": "Shooting Guard",
+    "small_forward": "Small Forward",
+    "power_forward": "Power Forward",
+    "setter": "Setter",
+    "outside_hitter": "Outside Hitter",
+    "middle_blocker": "Middle Blocker",
+    "libero": "Libero",
+    "singles": "Singles",
+    "doubles": "Doubles",
+    "mixed_doubles": "Mixed Doubles",
+    "team": "Team",
+    "individual": "Individual",
+    "coach": "Coach",
+    "trainer": "Trainer",
+    "instructor": "Instructor",
     "handball": {
       "goalkeeper": "Goalkeeper",
       "leftWing": "Left Wing",
