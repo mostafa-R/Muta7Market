@@ -96,9 +96,9 @@ export default function PaymentBtn({
     })();
 
     toast.promise(promise, {
-      loading: t("payment.preparingPayment"),
-      success: (msg) => msg,
-      error: (e) => e?.message || t("payment.unexpectedError"),
+      pending: t("payment.preparingPayment"),
+      success: t("payment.paymentInitiated"),
+      error: t("payment.unexpectedError"),
     });
 
     try {
