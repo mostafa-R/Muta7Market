@@ -21,7 +21,6 @@ const startServer = async () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
       console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-      console.log(`🏥 env:` +  Object.entries(process.env));
     });
 
     // Handle unhandled promise rejections
@@ -65,3 +64,6 @@ const startServer = async () => {
 
 // Start the server
 startServer();
+
+
+

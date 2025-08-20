@@ -117,7 +117,7 @@ export const initiatePayment = async (req, res) => {
       playerProfileId: playerProfileId || null,
       status: "pending",
     });
-
+console.log("invoice", invoice);
     if (!invoice) {
       console.log("[Payments][initiatePayment] no pending invoice, creating new", {
         userId: String(user._id),
@@ -207,6 +207,7 @@ export const initiatePayment = async (req, res) => {
     });
   } catch (err) {
     console.error("[Payments][initiatePayment] error", err);
+    console.log("err", err);
     return res.status(500).json({ success: false, message: "initiate_failed" });
   }
 };
