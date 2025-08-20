@@ -20,11 +20,11 @@ import Sidebar from "./components/Sidebar";
 import { IoMdMenu } from "react-icons/io";
 import PlayerProfile from "./components/PlayerProfile";
 import { createProfileFormSchema } from "./components/validation.js";
+import PromoteNowButton from "./components/PromoteNowButton";
 
 // Ensure API base includes /api/v1
-const API_URL = `${
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
-}`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
+  }`;
 
 const UserProfile = () => {
   const { t } = useTranslation();
@@ -229,7 +229,7 @@ const UserProfile = () => {
         setError(t("profile.paymentFailed"));
         fetchPendingPayments();
       }
-    } catch {}
+    } catch { }
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
 
   // Handle Paylink callback with invoiceId/orderNumber/transactionNo → one-time toast and recheck
@@ -251,9 +251,8 @@ const UserProfile = () => {
         window.history.replaceState({}, "", currentUrl.toString());
 
         // Session guard to ensure one-time handling
-        const guardKey = `paylink_cb_${
-          orderNumber || invoiceId || transactionNo
-        }`;
+        const guardKey = `paylink_cb_${orderNumber || invoiceId || transactionNo
+          }`;
         if (sessionStorage.getItem(guardKey)) return;
         sessionStorage.setItem(guardKey, "1");
 
@@ -431,10 +430,15 @@ const UserProfile = () => {
   if (!user) return <ErrorMessage message={t("profile.errorLoadingData")} />;
 
   return (
+
     <div
       className="min-h-screen bg-[#ffffff]"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
+    {/* {!player?.isPromoted?.status && (
+  <PromoteNowButton profileId={player?._id} />
+)} */}
+
       <div className="flex relative">
         <Sidebar
           activeSection={activeSection}
@@ -512,7 +516,13 @@ const UserProfile = () => {
           t={t}
         />
       )}
+
+
+
+
+
     </div>
+
   );
 };
 
