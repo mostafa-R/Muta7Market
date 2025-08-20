@@ -8,7 +8,11 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
 import { generateAccessToken } from "../utils/jwt.js";
-import { ensurePendingInvoice } from "../services/invoice.service.js";
+
+// NEW: create draft invoice on signup (DB only)
+import Invoice from "../models/invoice.model.js";
+import { PRICING } from "../config/constants.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
 
 export const register = asyncHandler(async (req, res) => {
   const { name, phone, password, confirmPassword, email } = req.body;
@@ -59,15 +63,36 @@ export const register = asyncHandler(async (req, res) => {
   // Save user
   await user.save();
 
-  // Create a pending invoice for contacts access (one-time unlock)
+  // Create a draft invoice (pending) for contacts_access (1 year)
+  // This does NOT call Paylink; Paylink is only called on /payments/invoices/:id/initiate
   try {
-    await ensurePendingInvoice({
+    const exists = await Invoice.findOne({
       userId: user._id,
       product: "contacts_access",
+      status: "pending",
     });
+
+    if (!exists) {
+      const orderNo = makeOrderNumber("contacts_access", String(user._id));
+      await Invoice.create({
+        orderNumber: orderNo,
+        invoiceNumber: orderNo,
+        userId: user._id,
+        product: "contacts_access",
+        targetType: null,
+        profileId: null,
+        durationDays: PRICING.ONE_YEAR_DAYS || 365,
+        featureType: null,
+        amount: PRICING.contacts_access_year,
+        currency: "SAR",
+        status: "pending",
+        // how long your checkout link should be valid once initiated
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+    }
   } catch (e) {
     // Do not block signup if invoice creation fails
-    console.error("ensurePendingInvoice(contacts_access) failed", e);
+    console.error("seed contacts_access draft failed", e);
   }
 
   // Send Verification Email (non-blocking)

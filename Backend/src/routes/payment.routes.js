@@ -1,31 +1,34 @@
-// src/routes/payment.routes.js
 import { Router } from "express";
 import {
-  initiatePayment,
+  createDraftInvoice,
   initiatePaymentByInvoiceId,
   paymentWebhook,
-  confirmReturn,
   getPaymentStatus,
   listMyInvoices,
   simulateSuccess,
   recheckByOrderNumber,
+  reconcileMyInvoices,
 } from "../controllers/payments.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const r = Router();
+r.post("/reconcile", authMiddleware, reconcileMyInvoices);  // <-- NEW
 
-r.post("/initiate", authMiddleware, initiatePayment);
+// Draft داخلي (لا يتصل بـ Paylink)
+r.post("/drafts", authMiddleware, createDraftInvoice);
+
+// بدء دفع لفاتورة داخلية (هنا فقط نتصل بـ Paylink)
 r.post("/invoices/:id/initiate", authMiddleware, initiatePaymentByInvoiceId);
 
-r.post("/webhook", paymentWebhook); // Paylink server-to-server POST
-r.get("/return", confirmReturn); // (not used now—return to frontend instead)
+// Webhook من Paylink
+r.post("/webhook", paymentWebhook);
 
+// Helpers للـ UI
 r.get("/status/:id", authMiddleware, getPaymentStatus);
 r.get("/invoices", authMiddleware, listMyInvoices);
-// Manual recheck by orderNumber (merchant order number)
 r.post("/invoices/recheck/:orderNumber", authMiddleware, recheckByOrderNumber);
 
-// DEV simulate
+// DEV
 r.post("/simulate/success/:id", authMiddleware, simulateSuccess);
 
 export default r;

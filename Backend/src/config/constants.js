@@ -41,13 +41,25 @@ export const NOTIFICATION_TYPES = {
   PUSH: "push",
 };
 
+// كل الأسعار لسنة كاملة
 export const PRICING = {
-  ADD_OFFER: 55, // SAR
-  PROMOTE_OFFER_PER_DAY: 55, // SAR
-  UNLOCK_CONTACT: 55, // SAR
-  ACTIVATE_USER: 55, // SAR - one-time activation to view all players' contacts
-  PROMOTE_PLAYER: 55, // USD - for player registration
-  PROMOTE_COACH: 55, // USD - for coach registration
+  // يوزر يدفع سنة ليفتح وسائل التواصل
+  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR || 55),
+
+  // اشتراك الظهور في الليست لسنة
+  listing_year: {
+    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR || 199),
+    coach: Number(process.env.PRICE_LISTING_COACH_YEAR || 249),
+  },
+
+  // ترقية التوب ليست لسنة
+  promotion_year: {
+    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR || 299),
+    coach: Number(process.env.PRICE_PROMO_COACH_YEAR || 349),
+  },
+
+  // مدة الاشتراكات: 365 يوم
+  ONE_YEAR_DAYS: 365,
 };
 
 export const PAGINATION = {

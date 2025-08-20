@@ -18,7 +18,10 @@ export const usePlayerForm = (idParam, router) => {
   const [isLoading, setIsLoading] = useState(false);
   const [canPay, setCanPay] = useState(false);
   const [player, setPlayer] = useState(null);
-  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  // Normalize API base; append /api/v1 if missing; fallback to localhost
+  const API_URL = (
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
+  ) + (process.env.NEXT_PUBLIC_API_BASE_URL?.endsWith("/api/v1") ? "" : "/api/v1");
   const dataLoadedRef = useRef(false);
 
   const formik = useFormik({
