@@ -18,37 +18,6 @@ function AboutPage() {
   const { language } = useLanguage();
   const isRTL = language === "ar";
 
-  const team = [
-    {
-      name: isRTL ? "أحمد محمد" : "Ahmed Mohamed",
-      role: isRTL ? "المؤسس والرئيس التنفيذي" : "Founder & CEO",
-      bio: isRTL
-        ? "رائد أعمال شغوف بالرياضة مع خبرة 15 عامًا في إدارة الأعمال"
-        : "Sports enthusiast entrepreneur with 15 years of business management experience",
-    },
-    {
-      name: isRTL ? "فاطمة السعد" : "Fatima Al-Saad",
-      role: isRTL ? "مديرة التطوير" : "Head of Development",
-      bio: isRTL
-        ? "مطورة برمجيات متخصصة في التقنيات الحديثة والذكاء الاصطناعي"
-        : "Software developer specialized in modern technologies and AI",
-    },
-    {
-      name: isRTL ? "محمد العلي" : "Mohammed Al-Ali",
-      role: isRTL ? "مدير المبيعات" : "Sales Manager",
-      bio: isRTL
-        ? "خبير في التسويق الرياضي مع شبكة واسعة من العلاقات"
-        : "Sports marketing expert with an extensive network",
-    },
-    {
-      name: isRTL ? "سارة أحمد" : "Sara Ahmed",
-      role: isRTL ? "مديرة التصميم" : "Design Manager",
-      bio: isRTL
-        ? "مصممة UX/UI إبداعية متخصصة في تجربة المستخدم"
-        : "Creative UX/UI designer specialized in user experience",
-    },
-  ];
-
   const values = [
     {
       icon: <FiHeart className="w-8 h-8" />,
@@ -255,8 +224,6 @@ function AboutPage() {
         </div>
       </div>
 
-
-
       {/* Contact Section */}
       <div className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -289,8 +256,7 @@ function AboutPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "الهاتف" : "Phone"}
               </h3>
-              <p className="text-gray-300">+966 11 234 5678</p>
-              <p className="text-gray-300">+966 50 123 4567</p>
+              <p className="text-gray-300">00966531540229</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -300,9 +266,7 @@ function AboutPage() {
                 {isRTL ? "العنوان" : "Address"}
               </h3>
               <p className="text-gray-300">
-                {isRTL
-                  ? "الرياض، المملكة العربية السعودية"
-                  : "Riyadh, Saudi Arabia"}
+                {isRTL ? "المملكة العربية السعودية" : "Saudi Arabia"}
               </p>
             </div>
           </div>

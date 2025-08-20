@@ -82,6 +82,7 @@
     "termsAndConditions": "الشروط والأحكام",
     "and": "و",
     "privacyPolicy": "سياسة الخصوصية",
+    "privacyAndTerms": "سياسة الخصوصية والشروط",
     "showMore": "عرض المزيد",
     "showLess": "عرض أقل",
     "noData": "لا توجد بيانات متاحة",
@@ -1307,5 +1308,21 @@
       "freestyle": "مصارعة حرة",
       "grecoRoman": "مصارعة رومانية"
     }
+  },
+
+  "privacyTerms": {
+    "title": "سياسة الخصوصية والشروط",
+    "subtitle": "نحن ملتزمون بحماية خصوصيتك وضمان شفافية كاملة في استخدام خدماتنا",
+    "lastUpdated": "آخر تحديث: ديسمبر 2024",
+    "privacyPolicy": "سياسة الخصوصية",
+    "privacySubtitle": "كيف نجمع ونستخدم ونحمي بياناتك الشخصية",
+    "termsConditions": "الشروط والأحكام",
+    "termsSubtitle": "القواعد والإرشادات لاستخدام منصتنا",
+    "dataRights": "حقوقك في البيانات",
+    "additionalTerms": "أحكام إضافية",
+    "haveQuestions": "هل لديك أسئلة؟",
+    "questionsSubtitle": "تواصل معنا إذا كان لديك أي استفسارات حول سياسة الخصوصية أو الشروط والأحكام",
+    "legalInquiries": "الاستفسارات القانونية",
+    "contactUs": "تواصل معنا"
   }
 }
