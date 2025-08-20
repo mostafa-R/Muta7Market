@@ -25,7 +25,19 @@
     "annualContract": "قيمة العقد السنوي",
     "notSpecified": "غير محدد",
     "transferDeadline": "موعد انتهاء الانتقال",
-    "viewProfile": "عرض الملف الشخصي"
+    "viewProfile": "عرض الملف الشخصي",
+    "promoted": "مميز",
+    "featured": "مُقترح",
+    "premiumPlayer": "لاعب مميز",
+    "experienceYears": "سنوات الخبرة",
+    "contactPlayer": "تواصل مع اللاعب",
+    "playerCard": "بطاقة اللاعب",
+    "playerPhoto": "صورة اللاعب",
+    "playerInitials": "أحرف اللاعب الأولى",
+    "availabilityStatus": "حالة التوفر",
+    "sportsPosition": "المركز الرياضي",
+    "playerLocation": "موقع اللاعب",
+    "clickToViewDetails": "انقر لعرض تفاصيل اللاعب"
   },
   "common": {
     "player": "لاعب",
@@ -69,7 +81,15 @@
     "or": "أو",
     "termsAndConditions": "الشروط والأحكام",
     "and": "و",
-    "privacyPolicy": "سياسة الخصوصية"
+    "privacyPolicy": "سياسة الخصوصية",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل",
+    "noData": "لا توجد بيانات متاحة",
+    "updated": "محدث",
+    "created": "تم الإنشاء",
+    "featured": "مُقترح",
+    "premium": "مميز",
+    "verified": "مُتحقق منه"
   },
   "brand": {
     "name": "متاح ماركت",
@@ -270,7 +290,16 @@
     "views": "المشاهدات",
     "nationality": "الجنسية",
     "availableForPaidUsers": "متاح للمستخدمين المدفوعين فقط",
-    "activateToViewContacts": "فعّل حسابك لعرض معلومات الاتصال. دفعة واحدة (200 ريال سعودي)."
+    "activateToViewContacts": "فعّل حسابك لعرض معلومات الاتصال. دفعة واحدة (200 ريال سعودي).",
+    "activateToViewFinancials": "فعّل حسابك لعرض المعلومات المالية ومعلومات الانتقال. دفعة واحدة (200 ريال سعودي).",
+    "activateToDownloadFiles": "تحميل المستندات متاح للحسابات المفعّلة فقط. فعّل حسابك لتحميل مستندات وملفات اللاعب.",
+    "noFinancialData": "لا توجد معلومات مالية متاحة",
+    "playerImages": "صور اللاعب",
+    "noImagesAvailable": "لا توجد صور متاحة لهذا اللاعب",
+    "profilePhoto": "شخصية",
+    "sportsPhoto": "رياضية",
+    "clickToZoom": "انقر على الصورة لعرضها بالحجم الكامل",
+    "imageGallery": "معرض الصور"
   },
   "registerProfile": {
     "editPlayerProfile": "تعديل ملف اللاعب",
@@ -895,6 +924,7 @@
     }
   },
   "nationalities": {
+    "SaudiArabia": "السعودية",
     "saudi": "السعودية",
     "uae": "الإمارات",
     "egypt": "مصر",
@@ -912,6 +942,17 @@
     "algeria": "الجزائر",
     "sudan": "السودان",
     "yemen": "اليمن",
+    "palestine": "فلسطين",
+    "mauritania": "موريتانيا",
+    "somalia": "الصومال",
+    "djibouti": "جيبوتي",
+    "comoros": "جزر القمر",
+    "turkish": "تركيا",
+    "iran": "إيران",
+    "pakistan": "باكستان",
+    "india": "الهند",
+    "bangladesh": "بنغلاديش",
+    "afghanistan": "أفغانستان",
     "other": "أخرى"
   },
   "playerRoles": {
@@ -1008,7 +1049,26 @@
     "boxing": "الملاكمة",
     "gymnastics": "الجمباز",
     "billiards": "البلياردو",
-    "wrestling": "المصارعة"
+    "wrestling": "المصارعة",
+    "rugby": "الرغبي",
+    "hockey": "الهوكي",
+    "cricket": "الكريكت",
+    "golf": "الغولف",
+    "skiing": "التزلج",
+    "surfing": "ركوب الأمواج",
+    "climbing": "التسلق",
+    "skating": "التزلج على الجليد",
+    "snowboarding": "التزلج على الثلج",
+    "waterpolo": "كرة الماء",
+    "lacrosse": "لاكروس",
+    "polo": "البولو",
+    "crossfit": "كروس فيت",
+    "motorsport": "رياضة السيارات",
+    "sailing": "الإبحار",
+    "rowing": "التجديف",
+    "triathlon": "الترايثلون",
+    "marathon": "الماراثون",
+    "pentathlon": "الخماسي الحديث"
   },
 
   "positions": {

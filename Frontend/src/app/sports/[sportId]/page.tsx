@@ -245,7 +245,7 @@ const SportDetailPage = () => {
   // عرض حالة التحميل
   if (loading) {
     return (
-      <div className="min-h-screen bg-[hsl(var(--background))]">
+      <div className="min-h-screen ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--foreground))] mb-4">
@@ -265,7 +265,7 @@ const SportDetailPage = () => {
   // عرض حالة الخطأ أو الرياضة غير موجودة
   if (error || !sportName) {
     return (
-      <div className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center">
+      <div className="min-h-screen  flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))] mb-4">
             {error || t("sports.notFoundTitle")}
@@ -282,7 +282,7 @@ const SportDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))]">
+    <div className="min-h-screen ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div
           className={`flex items-center space-x-2 ${
@@ -404,7 +404,7 @@ const SportDetailPage = () => {
 
         {/* Players Grid */}
         {filteredPlayers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6 justify-items-center mb-12">
+          <div className="flex flex-wrap justify-center gap-2">
             {filteredPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} />
             ))}

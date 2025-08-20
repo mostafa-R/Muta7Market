@@ -16,64 +16,18 @@ import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
 
-// واجهة Player المستخدمة في PlayerCard
-interface Player {
-  id: string;
-  name: string;
-  age: number;
-  status: "Free Agent" | "Contracted" | "Transferred";
-  gender: "Male" | "Female";
-  nationality: string;
-  category: string;
-  monthlySalary?: number;
-  annualContractValue?: number;
-  contractConditions?: string;
-  transferDeadline?: string;
-  sport: string;
-  position?: string;
-  profilePicture?: string;
-  rating?: number;
-  experience?: number;
-  profileImage?: string;
-  yearSalary?: number;
-  jop: string;
-}
+// Player object structure used in PlayerCard
+// Expected properties: id, name, age, status, gender, nationality, category,
+// monthlySalary, annualContractValue, contractConditions, transferDeadline,
+// sport, position, profilePicture, rating, experience, profileImage, yearSalary, jop
 
-// واجهة لبيانات الـ API الخام
-interface ApiPlayer {
-  _id: string;
-  user: null | string;
-  name: string;
-  age: number;
-  gender: string;
-  nationality: string;
-  category: string;
-  position: string;
-  status: string;
-  expreiance: number;
-  monthlySalary: {
-    amount: number;
-    currency: string;
-  };
-  game: string;
-  views: number;
-  isActive: boolean;
-  contractEndDate?: string;
-  media?: {
-    profileImage?: {
-      url: string;
-      publicId: string;
-    };
-  };
-  yearSalary: {
-    amount: number;
-    currency: string;
-  };
-  jop: string;
-}
+// API response structure
+// Expected properties: _id, user, name, age, gender, nationality, category,
+// position, status, expreiance, monthlySalary, game, views, isActive,
+// contractEndDate, media, yearSalary, jop
 
 // دالة لتحويل بيانات الـ API إلى واجهة Player
-const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+const transformApiDataToPlayer = (apiPlayer) => ({
   id: apiPlayer._id,
   name: apiPlayer.name,
   age: apiPlayer.age,
@@ -92,6 +46,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   annualContractValue: apiPlayer.yearSalary?.amount,
   jop: apiPlayer.jop,
+  isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
 // عنوان الـ API
@@ -105,9 +60,9 @@ export default function PlayersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [nationalityFilter, setNationalityFilter] = useState("all");
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // جلب البيانات باستخدام Axios
   useEffect(() => {
@@ -273,7 +228,7 @@ export default function PlayersPage() {
               <option value="all">{t("players.allSports")}</option>
               {uniqueSports.map((sport) => (
                 <option key={sport} value={sport}>
-                  {t(`sports.${sport.toLowerCase()}`)}
+                  {t(`sports.${sport.toLowerCase()}`, { defaultValue: sport })}
                 </option>
               ))}
             </select>
@@ -320,7 +275,9 @@ export default function PlayersPage() {
               <option value="all">{t("players.allNationalities")}</option>
               {uniqueNationalities.map((nationality) => (
                 <option key={nationality} value={nationality}>
-                  {t(`nationalities.${nationality.toLowerCase()}`)}
+                  {t(`nationalities.${nationality.toLowerCase()}`, {
+                    defaultValue: nationality,
+                  })}
                 </option>
               ))}
             </select>
@@ -361,7 +318,7 @@ export default function PlayersPage() {
 
         {/* Players Grid */}
         {filteredPlayers.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-2">
             {filteredPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} />
             ))}

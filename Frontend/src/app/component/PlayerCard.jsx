@@ -1,6 +1,6 @@
 "use client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, Eye, MapPin, Star, Trophy } from "lucide-react";
+import { Calendar, Eye, MapPin, Pin, Star, Trophy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
@@ -8,11 +8,11 @@ import { useTranslation } from "react-i18next";
 
 const getStatusColor = (status) => {
   const colors = {
-    "Free Agent": "bg-green-500",
-    Contracted: "bg-blue-500",
-    Transferred: "bg-ref-500",
+    "Free Agent": "bg-emerald-500",
+    Contracted: "bg-blue-600",
+    Transferred: "bg-purple-500",
   };
-  return colors[status] || "bg-gray-500";
+  return colors[status] || "bg-slate-500";
 };
 
 const getCategoryColor = (jop) => {
@@ -40,6 +40,43 @@ const getCategoryText = (jop, t) => {
   return texts[jop] || jop;
 };
 
+const getSportText = (sport, t) => {
+  // Convert sport name to lowercase and try to get translation
+  const sportKey = sport?.toLowerCase();
+  const translatedSport = t(`sports.${sportKey}`, { defaultValue: sport });
+  return translatedSport;
+};
+
+const getNationalityText = (nationality, t) => {
+  // Convert nationality to lowercase and try to get translation
+  const nationalityKey = nationality?.toLowerCase();
+  const translatedNationality = t(`nationalities.${nationalityKey}`, {
+    defaultValue: nationality,
+  });
+  return translatedNationality;
+};
+
+const getPositionText = (position, sport, t) => {
+  if (!position) return null;
+
+  // Try sport-specific position first
+  const sportKey = sport?.toLowerCase();
+  let translatedPosition = t(
+    `positions.${sportKey}.${position.toLowerCase().replace(/\s+/g, "")}`,
+    { defaultValue: null }
+  );
+
+  // If no sport-specific position found, try general position
+  if (!translatedPosition) {
+    translatedPosition = t(
+      `positions.${position.toLowerCase().replace(/\s+/g, "")}`,
+      { defaultValue: position }
+    );
+  }
+
+  return translatedPosition;
+};
+
 const PlayerCard = ({ player }) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
@@ -53,188 +90,176 @@ const PlayerCard = ({ player }) => {
     () => getCategoryText(player.jop, t),
     [player.jop, t]
   );
+  const sportText = useMemo(
+    () => getSportText(player.sport, t),
+    [player.sport, t]
+  );
+  const nationalityText = useMemo(
+    () => getNationalityText(player.nationality, t),
+    [player.nationality, t]
+  );
+  const positionText = useMemo(
+    () => getPositionText(player.position, player.sport, t),
+    [player.position, player.sport, t]
+  );
 
   return (
-    <div className="border border-gray-300 rounded-2xl overflow-hidden group bg-[hsl(var(--card))] shadow-card transition-all duration-300 flex flex-col w-full max-w-[250px] min-w-[250px] min-h-[300px] mb-6">
+    <div
+      className="border border-gray-200 rounded-xl overflow-hidden group bg-[hsl(var(--card))] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col w-full max-w-[260px] min-w-[260px] min-h-[260px] mb-6 hover:border-[hsl(var(--primary)/0.2)]"
+      role="article"
+      aria-label={`${t("player.playerCard")} - ${player.name}`}
+    >
       {/* Header with Avatar and Status */}
-      <div className="relative p-4 sm:p-6 pb-4">
-        <div
-          className={`absolute top-4 ${
-            isRTL ? "left-4" : "right-4"
-          } flex flex-col gap-1.5`}
-        >
-          <span
-            className={`text-white text-xs px-2 py-0.5 rounded-md ${getStatusColor(
-              player.status
-            )} transition-transform group-hover:scale-105`}
-            aria-label={`Status: ${statusText}`}
+      <div className="relative p-4 pb-3">
+        {/* Promoted Pin */}
+        {player.isPromoted && player.isPromoted.status === true && (
+          <div
+            className={`absolute top-3 ${isRTL ? "left-3" : "right-3"} z-10`}
+            title={t("player.promoted")}
+            aria-label={t("player.promoted")}
           >
-            {statusText}
-          </span>
-          {/* <span
-            className={`text-white text-xs px-2 py-0.5 rounded-md ${getCategoryColor(
-              player.jop
-            )} transition-transform group-hover:scale-105`}
-            aria-label={`Category: ${categoryText}`}
-          >
-            {categoryText}
-          </span> */}
-        </div>
+            <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full shadow-sm transition-transform group-hover:scale-110">
+              <Pin className="w-3 h-3 text-white" />
+            </div>
+          </div>
+        )}
 
-        <div className="flex flex-col items-center justify-center">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-white shadow-md overflow-hidden bg-[hsl(var(--primary)/0.15)] mb-3 transition-transform group-hover:scale-105">
-            {player.profileImage ? (
-              <Image
-                src={player.profileImage}
-                alt={player.name}
-                width={96}
-                height={96}
-                className="w-full h-full object-cover rounded-full"
-                loading="lazy"
-                unoptimized
-              />
-            ) : (
-              <span className="text-[hsl(var(--primary))] text-lg sm:text-xl font-bold flex items-center justify-center h-full">
-                {player.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+        <div className="flex flex-col items-center">
+          {/* Avatar with Status Badge */}
+          <div className="relative mb-3">
+            <div className="w-26 h-26 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gradient-to-br from-[hsl(var(--primary)/0.1)] to-[hsl(var(--primary)/0.15)] transition-transform group-hover:scale-105">
+              {player.profileImage ? (
+                <Image
+                  src={player.profileImage}
+                  alt={`${t("player.playerPhoto")} - ${player.name}`}
+                  width={100}
+                  height={100}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  unoptimized
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  aria-label={`${t("player.playerInitials")} - ${player.name}`}
+                >
+                  <span className="text-[hsl(var(--primary))] text-lg font-bold">
+                    {player.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .substring(0, 2)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Status Badge */}
+            <div
+              className={`absolute -bottom-1 ${isRTL ? "left-0" : "right-0"}`}
+            >
+              <span
+                className={`text-white text-xs px-2 py-0.5 rounded-full ${getStatusColor(
+                  player.status
+                )} shadow-sm transition-transform group-hover:scale-105 font-medium`}
+                aria-label={`Status: ${statusText}`}
+              >
+                {statusText}
               </span>
-            )}
+            </div>
           </div>
 
-          <div className="space-y-1 text-center">
+          {/* Player Info */}
+          <div className="text-center space-y-1">
             <h3
-              className="text-base sm:text-lg font-bold text-[hsl(var(--card-foreground))] truncate group-hover:text-[hsl(var(--primary))] transition-colors"
+              className="text-base font-bold text-[hsl(var(--card-foreground))] group-hover:text-[hsl(var(--primary))] transition-colors leading-tight"
               title={player.name}
             >
               {player.name}
             </h3>
-            <div className="flex flex-col items-center gap-1">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
-                <span
-                  className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] truncate max-w-[150px] sm:max-w-[200px]"
-                  title={player.nationality}
-                >
-                  {player.nationality}
-                </span>
-              </div>
-              <div
-                className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] truncate max-w-[150px] sm:max-w-[200px]"
-                title={categoryText}
+
+            {/* Location */}
+            <div className="flex items-center justify-center gap-1 text-[hsl(var(--muted-foreground))]">
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <span
+                className="text-xs font-medium truncate max-w-[140px]"
+                title={nationalityText}
               >
+                {nationalityText}
+              </span>
+            </div>
+
+            {/* Job Category Badge */}
+            <div className="flex justify-center mt-2">
+              <span className="inline-flex items-center px-2.5 py-1 bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] rounded-full text-xs font-medium border border-[hsl(var(--primary)/0.2)]">
                 {categoryText}
-              </div>
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Player Info */}
-      <div className="px-4 sm:px-6 space-y-3 mb-4 flex-1">
-        {/* Basic Info */}
-        <div className="grid grid-cols-1 gap-2 text-xs sm:text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
-            <span className="text-[hsl(var(--muted-foreground))] flex-shrink-0">
-              {t("player.age")}:
-            </span>
-            <span className="font-medium">
-              {player.age} {t("player.years")}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
-            <span className="text-[hsl(var(--muted-foreground))] flex-shrink-0">
-              {t("player.sport")}:
-            </span>
-            <span className="font-medium truncate" title={player.sport}>
-              {player.sport}
-            </span>
-          </div>
-
-          {player.position && (
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
-              <span className="text-[hsl(var(--muted-foreground))] flex-shrink-0">
-                {t("player.position")}:
-              </span>
-              <span className="font-medium truncate" title={player.position}>
-                {player.position}
-              </span>
+      {/* Player Details */}
+      <div className="px-4 flex-1">
+        <div className="grid grid-cols-5 gap-2 mb-2">
+          {/* Age */}
+          <div className="col-span-2 flex items-center justify-center p-2 bg-[hsl(var(--muted)/0.3)] rounded-lg">
+            <Calendar className="w-3.5 h-3.5 text-[hsl(var(--primary))] mr-1" />
+            <div className="text-center">
+              <div className="text-xs text-[hsl(var(--muted-foreground))] font-medium">
+                {t("player.age")}
+              </div>
+              <div className="text-sm font-bold text-[hsl(var(--card-foreground))]">
+                {player.age}
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Sport */}
+          <div className="col-span-3 flex items-center justify-center p-2 bg-[hsl(var(--muted)/0.3)] rounded-lg">
+            <Trophy className="w-3.5 h-3.5 text-[hsl(var(--primary))] mr-1" />
+            <div className="text-center min-w-0 flex-1">
+              <div className="text-xs text-[hsl(var(--muted-foreground))] font-medium">
+                {t("player.sport")}
+              </div>
+              <div
+                className="text-sm font-bold text-[hsl(var(--card-foreground))] truncate"
+                title={sportText}
+              >
+                {sportText}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Salary Info */}
-        {/* {(player.monthlySalary || player.annualContractValue != null) && (
-          <div className="bg-[hsl(var(--muted))] rounded-lg p-2 space-y-1.5">
-            {player.monthlySalary && (
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <div className="flex items-center gap-2 min-w-0 flex-shrink">
-                  <DollarSign className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
-                  <span className="text-[hsl(var(--muted-foreground))] flex-shrink-0">
-                    {t("player.monthlySalary")}:
-                  </span>
-                </div>
-                <span className="font-semibold text-[hsl(var(--primary))] ml-2 flex-shrink-0">
-                  {player.monthlySalary.toLocaleString()} SAR
-                </span>
-              </div>
-            )}
-
-            {player.annualContractValue != null && (
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <div className="flex items-center gap-2 min-w-0 flex-shrink">
-                  <DollarSign className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
-                  <span className="text-[hsl(var(--muted-foreground))] flex-shrink-0">
-                    {t("player.annualContract")}:
-                  </span>
-                </div>
-                <span className="font-semibold text-[hsl(var(--primary))] ml-2 flex-shrink-0">
-                  {player.annualContractValue === 0
-                    ? t("player.notSpecified")
-                    : `${player.annualContractValue.toLocaleString()} SAR`}
-                </span>
-              </div>
-            )}
-          </div>
-        )} */}
-
-        {/* Contract Info */}
-        {/* {player.transferDeadline && (
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-orange-600">
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-shrink-0">
-              {t("player.transferDeadline")}:
+        {/* Position */}
+        {positionText && (
+          <div className="flex items-center justify-center gap-1.5 p-2 bg-[hsl(var(--muted)/0.2)] rounded-lg mb-2">
+            <Star className="w-3.5 h-3.5 text-[hsl(var(--primary))] flex-shrink-0" />
+            <span className="text-xs text-[hsl(var(--muted-foreground))] font-medium">
+              {t("player.position")}:
             </span>
-            <span className="font-medium truncate flex-shrink-0">
-              {new Date(player.transferDeadline).toLocaleDateString(
-                language === "ar" ? "ar-EG" : "en-US",
-                {
-                  month: "short",
-                  year: "numeric",
-                }
-              )}
+            <span
+              className="text-sm font-bold text-[hsl(var(--card-foreground))] truncate"
+              title={positionText}
+            >
+              {positionText}
             </span>
           </div>
-        )} */}
+        )}
       </div>
 
       {/* Action Button */}
-      <div className="mt-auto px-4 sm:px-6 pb-4">
+      <div className="mt-auto px-4 pb-4">
         <Link href={`/players/${player.id}`} passHref>
           <button
             type="button"
-            className="w-full bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border border-[hsl(var(--primary))] rounded-lg px-4 py-2 hover:bg-[hsl(var(--primary)/0.9)] hover:text-white transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:ring-offset-2"
-            aria-label={t("player.viewProfile")}
+            className="w-full bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg px-4 py-2.5 hover:bg-[hsl(var(--primary)/0.9)] transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:ring-offset-1 font-medium shadow-sm hover:shadow group/btn"
+            aria-label={`${t("player.clickToViewDetails")} ${player.name}`}
+            title={`${t("player.clickToViewDetails")} ${player.name}`}
           >
-            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-sm sm:text-base">
-              {t("player.viewProfile")}
-            </span>
+            <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+            <span className="text-sm">{t("player.viewProfile")}</span>
           </button>
         </Link>
       </div>

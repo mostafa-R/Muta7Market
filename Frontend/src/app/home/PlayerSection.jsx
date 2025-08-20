@@ -7,63 +7,8 @@ import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
 import PlayerCard from "../component/PlayerCard";
 
-// واجهة Player المستخدمة في PlayerCard
-interface Player {
-  id: string;
-  name: string;
-  age: number;
-  status: "Free Agent" | "Contracted" | "Transferred";
-  gender: "Male" | "Female";
-  nationality: string;
-  category: "Amateur" | "Professional" | "Elite";
-  monthlySalary?: number;
-  yearSalary?: number;
-  annualContractValue?: number;
-  contractConditions?: string;
-  transferDeadline?: string;
-  sport: string;
-  position?: string;
-  profileImage?: string;
-  rating?: number;
-  experience?: number;
-  jop?: string;
-}
-
-// واجهة لبيانات الـ API الخام
-interface ApiPlayer {
-  _id: string;
-  user: null | string;
-  name: string;
-  age: number;
-  jop: string;
-  gender: string;
-  nationality: string;
-  category: string;
-  position: string;
-  status: string;
-  expreiance: number;
-  monthlySalary: {
-    amount: number;
-    currency: string;
-  };
-  yearSalary: {
-    amount: number;
-    currency: string;
-  };
-  game: string;
-  views: number;
-  isActive: boolean;
-  contractEndDate?: string;
-  media?: {
-    profileImage?: {
-      url: string;
-      publicId: string;
-    };
-  };
-}
-
-// دالة لتحويل بيانات الـ API إلى واجهة Player
-const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
+// Function to transform API data to Player object
+const transformApiDataToPlayer = (apiPlayer) => ({
   id: apiPlayer._id,
   name: apiPlayer.name,
   age: apiPlayer.age,
@@ -81,6 +26,7 @@ const transformApiDataToPlayer = (apiPlayer: ApiPlayer): Player => ({
   rating: undefined,
   experience: apiPlayer.expreiance,
   jop: apiPlayer.jop,
+  isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
 // عنوان الـ API
@@ -90,9 +36,9 @@ const PlayerSection = () => {
   const { t } = useTranslation();
 
   // Setup states
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // جلب البيانات باستخدام Axios
   useEffect(() => {

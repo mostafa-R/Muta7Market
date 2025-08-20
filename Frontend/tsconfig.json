@@ -32,6 +32,6 @@
     ".next/types/**/*.ts",
     "src/app/component/header.tsx",
     "src/app/profile/page.jsx"
-  ],
+, "src/app/sports/[sportId]/page.jtsx"  ],
   "exclude": ["node_modules"]
 }
