@@ -82,6 +82,7 @@
     "termsAndConditions": "Terms and Conditions",
     "and": "and",
     "privacyPolicy": "Privacy Policy",
+    "privacyAndTerms": "Privacy Policy & Terms",
     "showMore": "Show More",
     "showLess": "Show Less",
     "noData": "No Data Available",
@@ -1304,5 +1305,21 @@
       "freestyle": "Freestyle Wrestling",
       "grecoRoman": "Greco-Roman Wrestling"
     }
+  },
+
+  "privacyTerms": {
+    "title": "Privacy Policy & Terms",
+    "subtitle": "We are committed to protecting your privacy and ensuring complete transparency in using our services",
+    "lastUpdated": "Last updated: December 2024",
+    "privacyPolicy": "Privacy Policy",
+    "privacySubtitle": "How we collect, use, and protect your personal data",
+    "termsConditions": "Terms & Conditions",
+    "termsSubtitle": "Rules and guidelines for using our platform",
+    "dataRights": "Your Data Rights",
+    "additionalTerms": "Additional Terms",
+    "haveQuestions": "Have Questions?",
+    "questionsSubtitle": "Contact us if you have any questions about our privacy policy or terms and conditions",
+    "legalInquiries": "Legal inquiries",
+    "contactUs": "Contact Us"
   }
 }
