@@ -1,18 +1,10 @@
 "use client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  Calendar,
-  Clock,
-  DollarSign,
-  Eye,
-  MapPin,
-  Star,
-  Trophy,
-} from "lucide-react";
+import { Calendar, Eye, MapPin, Star, Trophy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 const getStatusColor = (status) => {
   const colors = {
@@ -63,7 +55,7 @@ const PlayerCard = ({ player }) => {
   );
 
   return (
-    <div className="border border-gray-300 rounded-2xl overflow-hidden group bg-[hsl(var(--card))] shadow-card transition-all duration-300 flex flex-col w-full max-w-[350px] min-w-[250px] min-h-[300px] mx-auto">
+    <div className="border border-gray-300 rounded-2xl overflow-hidden group bg-[hsl(var(--card))] shadow-card transition-all duration-300 flex flex-col w-full max-w-[250px] min-w-[250px] min-h-[300px] mb-6">
       {/* Header with Avatar and Status */}
       <div className="relative p-4 sm:p-6 pb-4">
         <div
@@ -79,14 +71,14 @@ const PlayerCard = ({ player }) => {
           >
             {statusText}
           </span>
-          <span
+          {/* <span
             className={`text-white text-xs px-2 py-0.5 rounded-md ${getCategoryColor(
               player.jop
             )} transition-transform group-hover:scale-105`}
             aria-label={`Category: ${categoryText}`}
           >
             {categoryText}
-          </span>
+          </span> */}
         </div>
 
         <div className="flex flex-col items-center justify-center">
@@ -177,7 +169,7 @@ const PlayerCard = ({ player }) => {
         </div>
 
         {/* Salary Info */}
-        {(player.monthlySalary || player.annualContractValue != null) && (
+        {/* {(player.monthlySalary || player.annualContractValue != null) && (
           <div className="bg-[hsl(var(--muted))] rounded-lg p-2 space-y-1.5">
             {player.monthlySalary && (
               <div className="flex items-center justify-between text-xs sm:text-sm">
@@ -209,10 +201,10 @@ const PlayerCard = ({ player }) => {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
         {/* Contract Info */}
-        {player.transferDeadline && (
+        {/* {player.transferDeadline && (
           <div className="flex items-center gap-2 text-xs sm:text-sm text-orange-600">
             <Clock className="w-4 h-4 flex-shrink-0" />
             <span className="flex-shrink-0">
@@ -228,7 +220,7 @@ const PlayerCard = ({ player }) => {
               )}
             </span>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Action Button */}

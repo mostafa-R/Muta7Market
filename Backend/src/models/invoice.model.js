@@ -14,13 +14,33 @@ const PaymentErrorSchema = new mongoose.Schema(
 const InvoiceSchema = new mongoose.Schema(
   {
     orderNumber: { type: String, unique: true, index: true }, // canonical unique
-    invoiceNumber: { type: String, index: true },              // display/legacy; not unique
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    product: { type: String, enum: ["contacts_access", "player_listing"], required: true, index: true },
+    invoiceNumber: { type: String, index: true }, // display/legacy; not unique
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    product: {
+      type: String,
+      enum: ["contacts_access", "player_listing"],
+      required: true,
+      index: true,
+    },
     amount: { type: Number, required: true },
     currency: { type: String, default: "SAR" },
-    status: { type: String, enum: ["pending", "paid", "cancelled", "expired", "failed", "refunded"], default: "pending", index: true },
-    playerProfileId: { type: mongoose.Schema.Types.ObjectId, ref: "Player", default: null, index: true },
+    status: {
+      type: String,
+      enum: ["pending", "paid", "cancelled", "expired", "failed", "refunded"],
+      default: "pending",
+      index: true,
+    },
+    playerProfileId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Player",
+      default: null,
+      index: true,
+    },
 
     provider: { type: String, default: "paylink" },
     providerInvoiceId: { type: String, default: undefined, index: true }, // NOT unique

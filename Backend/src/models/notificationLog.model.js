@@ -1,61 +1,61 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const notificationLogSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
-      index: true
+      index: true,
     },
     channel: {
       type: String,
-      enum: ['email', 'sms', 'push', 'in_app'],
+      enum: ["email", "sms", "push", "in_app"],
       required: true,
-      index: true
+      index: true,
     },
     title: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     message: {
       type: String,
-      required: true
+      required: true,
     },
     templateId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'NotificationTemplate',
-      index: true
+      ref: "NotificationTemplate",
+      index: true,
     },
     data: {
       type: mongoose.Schema.Types.Mixed,
-      default: {}
+      default: {},
     },
     status: {
       type: String,
       enum: [
-        'pending',
-        'sent',
-        'delivered',
-        'read',
-        'clicked',
-        'failed',
-        'bounced'
+        "pending",
+        "sent",
+        "delivered",
+        "read",
+        "clicked",
+        "failed",
+        "bounced",
       ],
-      default: 'pending',
+      default: "pending",
       required: true,
-      index: true
+      index: true,
     },
     priority: {
       type: String,
-      enum: ['low', 'normal', 'high', 'critical'],
-      default: 'normal'
+      enum: ["low", "normal", "high", "critical"],
+      default: "normal",
     },
     error: {
       message: String,
       code: String,
-      details: mongoose.Schema.Types.Mixed
+      details: mongoose.Schema.Types.Mixed,
     },
     delivery: {
       sentAt: Date,
@@ -65,29 +65,29 @@ const notificationLogSchema = new mongoose.Schema(
       failedAt: Date,
       attempts: {
         type: Number,
-        default: 0
+        default: 0,
       },
       maxAttempts: {
         type: Number,
-        default: 3
+        default: 3,
       },
-      nextRetryAt: Date
+      nextRetryAt: Date,
     },
     recipient: {
       email: String,
       phone: String,
       deviceId: String,
-      playerId: String // OneSignal player ID
+      playerId: String, // OneSignal player ID
     },
     metadata: {
       deviceId: String,
       platform: {
         type: String,
-        enum: ['ios', 'android', 'web', 'desktop']
+        enum: ["ios", "android", "web", "desktop"],
       },
       deviceType: {
         type: String,
-        enum: ['mobile', 'tablet', 'desktop']
+        enum: ["mobile", "tablet", "desktop"],
       },
       browser: String,
       os: String,
@@ -96,20 +96,20 @@ const notificationLogSchema = new mongoose.Schema(
       location: {
         country: String,
         city: String,
-        timezone: String
+        timezone: String,
       },
       campaign: {
         id: String,
         name: String,
         source: String,
-        medium: String
-      }
+        medium: String,
+      },
     },
     tracking: {
       messageId: String, // External service message ID
       batchId: String, // For bulk notifications
       correlationId: String, // For tracking related notifications
-      tags: [String]
+      tags: [String],
     },
     content: {
       subject: String, // For email
@@ -120,8 +120,8 @@ const notificationLogSchema = new mongoose.Schema(
           filename: String,
           size: Number,
           contentType: String,
-          url: String
-        }
+          url: String,
+        },
       ],
       actionButtons: [
         {
@@ -130,37 +130,37 @@ const notificationLogSchema = new mongoose.Schema(
           url: String,
           clicked: {
             type: Boolean,
-            default: false
+            default: false,
           },
-          clickedAt: Date
-        }
-      ]
+          clickedAt: Date,
+        },
+      ],
     },
     analytics: {
       openCount: {
         type: Number,
-        default: 0
+        default: 0,
       },
       clickCount: {
         type: Number,
-        default: 0
+        default: 0,
       },
       lastOpenedAt: Date,
       lastClickedAt: Date,
       timeToOpen: Number, // Milliseconds from sent to first open
-      timeToClick: Number // Milliseconds from sent to first click
+      timeToClick: Number, // Milliseconds from sent to first click
     },
     preferences: {
       language: {
         type: String,
-        default: 'en'
+        default: "en",
       },
       timezone: String,
       frequency: {
         type: String,
-        enum: ['immediate', 'daily', 'weekly', 'monthly'],
-        default: 'immediate'
-      }
+        enum: ["immediate", "daily", "weekly", "monthly"],
+        default: "immediate",
+      },
     },
     scheduling: {
       scheduledAt: Date,
@@ -168,46 +168,46 @@ const notificationLogSchema = new mongoose.Schema(
       recurring: {
         enabled: {
           type: Boolean,
-          default: false
+          default: false,
         },
         pattern: {
           type: String,
-          enum: ['daily', 'weekly', 'monthly', 'yearly']
+          enum: ["daily", "weekly", "monthly", "yearly"],
         },
         interval: Number, // Every N days/weeks/months
         endDate: Date,
-        nextRun: Date
-      }
+        nextRun: Date,
+      },
     },
     segmentation: {
       segment: String,
       criteria: mongoose.Schema.Types.Mixed,
-      audienceSize: Number
+      audienceSize: Number,
     },
     compliance: {
       consentGiven: {
         type: Boolean,
-        default: false
+        default: false,
       },
       consentDate: Date,
       unsubscribeToken: String,
       suppressionReason: String,
       gdprCompliant: {
         type: Boolean,
-        default: true
-      }
+        default: true,
+      },
     },
     cost: {
       amount: Number,
       currency: {
         type: String,
-        default: 'USD'
+        default: "USD",
       },
-      provider: String // SMS/Email provider
-    }
+      provider: String, // SMS/Email provider
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
@@ -217,13 +217,13 @@ notificationLogSchema.index({ user: 1, status: 1 });
 notificationLogSchema.index({ user: 1, channel: 1, createdAt: -1 });
 notificationLogSchema.index({ status: 1, channel: 1 });
 notificationLogSchema.index({ templateId: 1, createdAt: -1 });
-notificationLogSchema.index({ 'delivery.nextRetryAt': 1, status: 1 });
-notificationLogSchema.index({ 'tracking.batchId': 1 });
-notificationLogSchema.index({ 'tracking.correlationId': 1 });
+notificationLogSchema.index({ "delivery.nextRetryAt": 1, status: 1 });
+notificationLogSchema.index({ "tracking.batchId": 1 });
+notificationLogSchema.index({ "tracking.correlationId": 1 });
 notificationLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // Auto-delete after 90 days
 
 // Virtual for calculating delivery time
-notificationLogSchema.virtual('deliveryTime').get(function () {
+notificationLogSchema.virtual("deliveryTime").get(function () {
   if (this.delivery.sentAt && this.delivery.deliveredAt) {
     return this.delivery.deliveredAt - this.delivery.sentAt;
   }
@@ -231,7 +231,7 @@ notificationLogSchema.virtual('deliveryTime').get(function () {
 });
 
 // Virtual for calculating read time
-notificationLogSchema.virtual('readTime').get(function () {
+notificationLogSchema.virtual("readTime").get(function () {
   if (this.delivery.sentAt && this.delivery.readAt) {
     return this.delivery.readAt - this.delivery.sentAt;
   }
@@ -239,31 +239,31 @@ notificationLogSchema.virtual('readTime').get(function () {
 });
 
 // Virtual for engagement status
-notificationLogSchema.virtual('isEngaged').get(function () {
+notificationLogSchema.virtual("isEngaged").get(function () {
   return (
-    this.status === 'read' ||
-    this.status === 'clicked' ||
+    this.status === "read" ||
+    this.status === "clicked" ||
     this.analytics.clickCount > 0
   );
 });
 
 // Instance methods
 notificationLogSchema.methods.markAsSent = function () {
-  this.status = 'sent';
+  this.status = "sent";
   this.delivery.sentAt = new Date();
   this.delivery.attempts += 1;
   return this.save();
 };
 
 notificationLogSchema.methods.markAsDelivered = function () {
-  this.status = 'delivered';
+  this.status = "delivered";
   this.delivery.deliveredAt = new Date();
   return this.save();
 };
 
 notificationLogSchema.methods.markAsRead = function () {
-  if (this.status !== 'read') {
-    this.status = 'read';
+  if (this.status !== "read") {
+    this.status = "read";
     this.delivery.readAt = new Date();
     this.analytics.openCount += 1;
 
@@ -278,7 +278,7 @@ notificationLogSchema.methods.markAsRead = function () {
 };
 
 notificationLogSchema.methods.markAsClicked = function (buttonId = null) {
-  this.status = 'clicked';
+  this.status = "clicked";
   this.delivery.clickedAt = new Date();
   this.analytics.clickCount += 1;
   this.analytics.lastClickedAt = new Date();
@@ -302,7 +302,7 @@ notificationLogSchema.methods.markAsClicked = function (buttonId = null) {
 };
 
 notificationLogSchema.methods.markAsFailed = function (error) {
-  this.status = 'failed';
+  this.status = "failed";
   this.delivery.failedAt = new Date();
   this.delivery.attempts += 1;
 
@@ -310,7 +310,7 @@ notificationLogSchema.methods.markAsFailed = function (error) {
     this.error = {
       message: error.message || error,
       code: error.code,
-      details: error.details || error
+      details: error.details || error,
     };
   }
 
@@ -318,7 +318,7 @@ notificationLogSchema.methods.markAsFailed = function (error) {
   if (this.delivery.attempts < this.delivery.maxAttempts) {
     const retryDelay = Math.pow(2, this.delivery.attempts) * 60 * 1000; // Exponential backoff
     this.delivery.nextRetryAt = new Date(Date.now() + retryDelay);
-    this.status = 'pending';
+    this.status = "pending";
   }
 
   return this.save();
@@ -326,7 +326,7 @@ notificationLogSchema.methods.markAsFailed = function (error) {
 
 notificationLogSchema.methods.shouldRetry = function () {
   return (
-    this.status === 'pending' &&
+    this.status === "pending" &&
     this.delivery.attempts < this.delivery.maxAttempts &&
     this.delivery.nextRetryAt &&
     this.delivery.nextRetryAt <= new Date()
@@ -337,8 +337,8 @@ notificationLogSchema.methods.shouldRetry = function () {
 notificationLogSchema.statics.getUnreadCount = function (userId) {
   return this.countDocuments({
     user: userId,
-    status: { $in: ['sent', 'delivered'] },
-    channel: { $in: ['push', 'in_app'] }
+    status: { $in: ["sent", "delivered"] },
+    channel: { $in: ["push", "in_app"] },
   });
 };
 
@@ -348,35 +348,35 @@ notificationLogSchema.statics.getAnalytics = function (filters = {}) {
     {
       $group: {
         _id: {
-          channel: '$channel',
-          status: '$status',
+          channel: "$channel",
+          status: "$status",
           date: {
             $dateToString: {
-              format: '%Y-%m-%d',
-              date: '$createdAt'
-            }
-          }
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
         },
         count: { $sum: 1 },
-        totalCost: { $sum: '$cost.amount' }
-      }
+        totalCost: { $sum: "$cost.amount" },
+      },
     },
     {
       $group: {
-        _id: '$_id.date',
+        _id: "$_id.date",
         stats: {
           $push: {
-            channel: '$_id.channel',
-            status: '$_id.status',
-            count: '$count',
-            cost: '$totalCost'
-          }
+            channel: "$_id.channel",
+            status: "$_id.status",
+            count: "$count",
+            cost: "$totalCost",
+          },
         },
-        totalCount: { $sum: '$count' },
-        totalCost: { $sum: '$totalCost' }
-      }
+        totalCount: { $sum: "$count" },
+        totalCost: { $sum: "$totalCost" },
+      },
     },
-    { $sort: { _id: -1 } }
+    { $sort: { _id: -1 } },
   ];
 
   return this.aggregate(pipeline);
@@ -384,11 +384,11 @@ notificationLogSchema.statics.getAnalytics = function (filters = {}) {
 
 notificationLogSchema.statics.getPendingRetries = function () {
   return this.find({
-    status: 'pending',
-    'delivery.nextRetryAt': { $lte: new Date() },
-    'delivery.attempts': {
-      $lt: this.schema.paths['delivery.maxAttempts'].defaultValue
-    }
+    status: "pending",
+    "delivery.nextRetryAt": { $lte: new Date() },
+    "delivery.attempts": {
+      $lt: this.schema.paths["delivery.maxAttempts"].defaultValue,
+    },
   });
 };
 
@@ -403,67 +403,67 @@ notificationLogSchema.statics.getEngagementStats = function (
     {
       $match: {
         user: mongoose.Types.ObjectId(userId),
-        createdAt: { $gte: startDate }
-      }
+        createdAt: { $gte: startDate },
+      },
     },
     {
       $group: {
         _id: null,
         totalSent: { $sum: 1 },
         totalRead: {
-          $sum: { $cond: [{ $eq: ['$status', 'read'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ["$status", "read"] }, 1, 0] },
         },
         totalClicked: {
-          $sum: { $cond: [{ $eq: ['$status', 'clicked'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ["$status", "clicked"] }, 1, 0] },
         },
-        avgTimeToOpen: { $avg: '$analytics.timeToOpen' },
-        avgTimeToClick: { $avg: '$analytics.timeToClick' }
-      }
-    }
+        avgTimeToOpen: { $avg: "$analytics.timeToOpen" },
+        avgTimeToClick: { $avg: "$analytics.timeToClick" },
+      },
+    },
   ]);
 };
 
 // Pre-save middleware
-notificationLogSchema.pre('save', function (next) {
+notificationLogSchema.pre("save", function (next) {
   // Generate unsubscribe token if not exists
-  if (this.channel === 'email' && !this.compliance.unsubscribeToken) {
-    this.compliance.unsubscribeToken = require('crypto')
+  if (this.channel === "email" && !this.compliance.unsubscribeToken) {
+    this.compliance.unsubscribeToken = require("crypto")
       .randomBytes(32)
-      .toString('hex');
+      .toString("hex");
   }
 
   // Set timezone if not provided
   if (!this.preferences.timezone) {
-    this.preferences.timezone = 'UTC';
+    this.preferences.timezone = "UTC";
   }
 
   next();
 });
 
 // Post-save middleware for analytics
-notificationLogSchema.post('save', async function (doc) {
+notificationLogSchema.post("save", async function (doc) {
   // Update template analytics if templateId exists
-  if (doc.templateId && doc.isModified('status')) {
-    const Template = mongoose.model('NotificationTemplate');
+  if (doc.templateId && doc.isModified("status")) {
+    const Template = mongoose.model("NotificationTemplate");
     const updateField = {};
 
     switch (doc.status) {
-    case 'sent':
-      updateField['analytics.totalSent'] = 1;
-      updateField['analytics.lastUsed'] = new Date();
-      break;
-    case 'delivered':
-      updateField['analytics.totalDelivered'] = 1;
-      break;
-    case 'read':
-      updateField['analytics.totalRead'] = 1;
-      break;
-    case 'clicked':
-      updateField['analytics.totalClicked'] = 1;
-      break;
-    case 'failed':
-      updateField['analytics.totalFailed'] = 1;
-      break;
+      case "sent":
+        updateField["analytics.totalSent"] = 1;
+        updateField["analytics.lastUsed"] = new Date();
+        break;
+      case "delivered":
+        updateField["analytics.totalDelivered"] = 1;
+        break;
+      case "read":
+        updateField["analytics.totalRead"] = 1;
+        break;
+      case "clicked":
+        updateField["analytics.totalClicked"] = 1;
+        break;
+      case "failed":
+        updateField["analytics.totalFailed"] = 1;
+        break;
     }
 
     if (Object.keys(updateField).length > 0) {
@@ -477,7 +477,7 @@ notificationLogSchema.post('save', async function (doc) {
 });
 
 const NotificationLog = mongoose.model(
-  'NotificationLog',
+  "NotificationLog",
   notificationLogSchema
 );
 

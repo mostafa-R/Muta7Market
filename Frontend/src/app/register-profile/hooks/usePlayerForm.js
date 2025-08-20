@@ -7,7 +7,8 @@ import { useFormik } from "formik";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { playerFormSchema } from "../types/schema";
+// Updated imports to use new organized schema structure
+import { playerFormSchema } from "../schemas/playerFormSchema";
 import { validateWithJoi } from "../types/validateWithJoi";
 import { initialFormValues } from "../utils/constants";
 import { getErrorMessage, getSuccessMessage } from "../utils/helpers";

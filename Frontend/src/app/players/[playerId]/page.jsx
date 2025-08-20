@@ -680,8 +680,9 @@ const PlayerProfile = () => {
               </CardContent>
             </Card>
 
+            
             {/* Contract Information */}
-            {player.contractEndDate && (
+            {/* {player.contractEndDate && (
               <Card className="border-0 shadow-card">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -706,7 +707,7 @@ const PlayerProfile = () => {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            )} */}
           </div>
 
           {/* Sidebar */}

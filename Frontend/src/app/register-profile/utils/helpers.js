@@ -95,6 +95,16 @@ export const validateFields = (fields, values, t) => {
     errors.position = t("sportsValidation.positionRequired");
   }
 
+  // Custom position validation - required when position is "other"
+  // This ensures users cannot proceed if they select "Other" but leave custom position empty
+  if (
+    fields.includes("position") &&
+    values.position === "other" &&
+    (!values.customPosition || values.customPosition.trim() === "")
+  ) {
+    errors.customPosition = t("sportsValidation.customPositionRequired");
+  }
+
   // Strengthen jop validation - must be explicitly selected by user
   if (fields.includes("jop")) {
     if (!values.jopSelected) {

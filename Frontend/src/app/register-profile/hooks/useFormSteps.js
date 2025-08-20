@@ -102,6 +102,15 @@ export const useFormSteps = (formik) => {
       formik.setFieldTouched("position", true, true);
     }
 
+    // Also mark customPosition as touched if position is "other"
+    // This ensures validation for custom position field when "Other" option is selected
+    if (
+      requiredFields.includes("position") &&
+      formik.values.position === "other"
+    ) {
+      formik.setFieldTouched("customPosition", true, true);
+    }
+
     // Use both Joi validation and our custom validation
     const _errors = await formik.validateForm();
 
@@ -139,6 +148,14 @@ export const useFormSteps = (formik) => {
           path === "position" &&
           requiredFields.includes("position") &&
           formik.values.jop === "player"
+        ) {
+          currentSectionErrors[path] = mergedErrors[path];
+        }
+        // Special case: include customPosition error when position is "other"
+        if (
+          path === "customPosition" &&
+          requiredFields.includes("position") &&
+          formik.values.position === "other"
         ) {
           currentSectionErrors[path] = mergedErrors[path];
         }

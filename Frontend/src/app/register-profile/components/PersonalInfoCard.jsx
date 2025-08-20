@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../../component/ui/button";
 import { Label } from "../../component/ui/label";
 import { RadioGroup, RadioGroupItem } from "../../component/ui/radio-group";
-import { nationalities } from "../types/constants";
+// Updated import to use new organized constants structure
+import { nationalities } from "../constants/sportsPositions";
 import { ConditionalSelect } from "./ConditionalSelect";
 import { FormField } from "./FormField";
 
