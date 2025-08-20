@@ -355,6 +355,8 @@
         "title": "Sports Information",
         "sport": "Sport",
         "sportPlaceholder": "Choose your sport",
+        "customSport": "Custom Sport",
+        "customSportPlaceholder": "Specify your sport",
         "position": "Position/Specialization",
         "positionPlaceholder": "Select your position",
         "selectSportFirst": "Please select a sport first",
@@ -368,6 +370,10 @@
         "coachType": "Coach Type",
         "selectPlayerType": "Select player type",
         "selectCoachType": "Select coach type",
+        "customPlayerType": "Custom Player Type",
+        "customPlayerTypePlaceholder": "Specify your player type",
+        "customCoachType": "Custom Coach Type",
+        "customCoachTypePlaceholder": "Specify your coach type",
         "currentStatus": "Current Status",
         "currentStatusPlaceholder": "Choose your current status",
         "available": "Available (Looking for team)",
@@ -672,6 +678,9 @@
   },
   "sportsValidation": {
     "sportRequired": "Sport is required",
+    "customSportRequired": "Please specify your sport",
+    "customSportTooShort": "Sport name must be at least 2 characters",
+    "customSportTooLong": "Sport name is too long",
     "positionRequired": "Position/Specialization is required for players",
     "categoryRequired": "Category is required - please select a category",
     "categoryInvalid": "Category is required - must select player or coach",
@@ -679,6 +688,9 @@
     "statusInvalid": "Current status is required - must select a valid status",
     "termsAcceptanceRequired": "You must agree to the terms and conditions",
     "roleTypeRequired": "Role type is required - please select your specific role",
+    "customRoleTypeRequired": "Please specify your role type",
+    "customRoleTypeTooShort": "Role type must be at least 2 characters",
+    "customRoleTypeTooLong": "Role type is too long",
     "positionTooShort": "Position must be at least 2 characters",
     "customPositionRequired": "Please specify your position",
     "customPositionTooShort": "Custom position must be at least 2 characters",
@@ -961,7 +973,8 @@
     "reservePlayer": "Reserve Player",
     "professionalPlayer": "Professional Player",
     "amateurPlayer": "Amateur Player",
-    "academyPlayer": "Academy Player"
+    "academyPlayer": "Academy Player",
+    "other": "Other"
   },
   "coachRoles": {
     "headCoach": "Head Coach",
@@ -972,7 +985,8 @@
     "youthCoach": "Youth Coach",
     "physio": "Physiotherapist",
     "tacticalAnalyst": "Tactical Analyst",
-    "strengthConditioningCoach": "Strength & Conditioning Coach"
+    "strengthConditioningCoach": "Strength & Conditioning Coach",
+    "other": "Other"
   },
   "notifications": {
     "customNationalityRequired": "Please specify your nationality",
@@ -985,6 +999,7 @@
   },
   "sports": {
     "handball": "Handball",
+    "other": "Other",
     "basketball": "Basketball",
     "volleyball": "Volleyball",
     "badminton": "Badminton",

@@ -1,5 +1,3 @@
-
-
 // Main sports options list
 export const sportsOptions = [
   { id: "volleyball", name: "sports.volleyball", value: "volleyball" },
@@ -26,6 +24,7 @@ export const sportsOptions = [
   { id: "boxing", name: "sports.boxing", value: "boxing" },
   { id: "gymnastics", name: "sports.gymnastics", value: "gymnastics" },
   { id: "billiards", name: "sports.billiards", value: "billiards" },
+  { id: "other", name: "sports.other", value: "other" },
 ];
 
 // Sport-specific positions mapping with updated comprehensive lists
@@ -69,7 +68,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -103,7 +102,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -122,7 +121,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -161,7 +160,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -205,7 +204,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -314,7 +313,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -358,7 +357,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -397,7 +396,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -456,7 +455,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -515,7 +514,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -549,7 +548,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -598,7 +597,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -687,7 +686,7 @@ export const sportPositions = {
     },
     {
       id: "other",
-      name: "positions.other",
+      name: "sports.other",
       value: "other",
     },
   ],
@@ -701,7 +700,7 @@ export const sportPositions = {
       name: "positions.tennis.mixedDoubles",
       value: "mixed_doubles",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   tabletennis: [
@@ -712,7 +711,7 @@ export const sportPositions = {
       name: "positions.tabletennis.mixedDoubles",
       value: "mixed_doubles",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   badminton: [
@@ -723,7 +722,7 @@ export const sportPositions = {
       name: "positions.badminton.mixedDoubles",
       value: "mixed_doubles",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   judo: [
@@ -743,7 +742,7 @@ export const sportPositions = {
       value: "heavyweight",
     },
     { id: "team", name: "positions.judo.team", value: "team" },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   cycling: [
@@ -768,13 +767,13 @@ export const sportPositions = {
       name: "positions.cycling.cyclocross",
       value: "cyclocross",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   squash: [
     { id: "singles", name: "positions.squash.singles", value: "singles" },
     { id: "doubles", name: "positions.squash.doubles", value: "doubles" },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   weightlifting: [
@@ -789,7 +788,7 @@ export const sportPositions = {
       name: "positions.weightlifting.powerlifting",
       value: "powerlifting",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   boxing: [
@@ -813,7 +812,7 @@ export const sportPositions = {
       name: "positions.boxing.heavyweight",
       value: "heavyweight",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   gymnastics: [
@@ -863,7 +862,7 @@ export const sportPositions = {
       name: "positions.gymnastics.trampoline",
       value: "trampoline",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 
   billiards: [
@@ -883,7 +882,7 @@ export const sportPositions = {
       name: "positions.billiards.straightPool",
       value: "straight_pool",
     },
-    { id: "other", name: "positions.other", value: "other" },
+    { id: "other", name: "sports.other", value: "other" },
   ],
 };
 
@@ -964,6 +963,11 @@ export const playerRoleTypes = [
     name: "playerRoles.academyPlayer",
     value: "academy_player",
   },
+  {
+    id: "other",
+    name: "playerRoles.other",
+    value: "other",
+  },
 ];
 
 // Coach role types
@@ -1000,6 +1004,11 @@ export const coachRoleTypes = [
     id: "strength_conditioning_coach",
     name: "coachRoles.strengthConditioningCoach",
     value: "strength_conditioning_coach",
+  },
+  {
+    id: "other",
+    name: "coachRoles.other",
+    value: "other",
   },
 ];
 

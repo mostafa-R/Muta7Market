@@ -66,28 +66,19 @@ export const MediaUploadCard = ({
       if (imageToRemove.url.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(imageToRemove.url);
-          console.log("Revoked blob URL for:", imageToRemove.title);
         } catch (err) {
-          console.error("Error revoking blob URL:", err);
+          toast.error("Error revoking");
         }
       }
     }
 
     const newImages = images.filter((_, i) => i !== index);
     formik.setFieldValue("media.images", newImages);
-    console.log(
-      "Removed image at index:",
-      index,
-      "Remaining images:",
-      newImages.length
-    );
   };
 
   const addImages = (files) => {
     const currentImages = formik.values.media.images || [];
     const newImages = [];
-
-    console.log("🚀 Starting simple image processing...");
 
     for (
       let i = 0;
@@ -96,22 +87,15 @@ export const MediaUploadCard = ({
     ) {
       const file = files[i];
 
-      console.log(`📁 Processing file ${i + 1}/${files.length}:`, {
-        name: file.name,
-        type: file.type,
-        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      });
-
       // Simple validation
       if (!file.type.startsWith("image/")) {
-        console.error("❌ File is not an image:", file.name, file.type);
+        toast.error("File is not an image:", file.name, file.type);
         continue;
       }
 
       // Create simple object URL
       try {
         const objectUrl = URL.createObjectURL(file);
-        console.log("✅ Created object URL:", objectUrl);
 
         const imageData = {
           url: objectUrl,
@@ -124,30 +108,16 @@ export const MediaUploadCard = ({
         };
 
         newImages.push(imageData);
-        console.log("✅ Added image to array:", imageData.title);
       } catch (err) {
-        console.error("❌ Error creating object URL:", err);
+        toast.error("Error creating");
       }
     }
 
     if (newImages.length > 0) {
-      console.log(
-        "🎉 Adding images to form state:",
-        newImages.length,
-        "images"
-      );
       const finalImages = [...currentImages, ...newImages];
       formik.setFieldValue("media.images", finalImages);
-      console.log("📊 Total images now:", finalImages.length);
-      console.log(
-        "📊 Images URLs:",
-        finalImages.map((img) => ({
-          title: img.title,
-          url: img.url?.substring(0, 50) + "...",
-        }))
-      );
     } else {
-      console.log("⚠️ No valid images to add");
+      toast.error("⚠️ No valid images to add");
     }
   };
 
@@ -352,8 +322,6 @@ export const MediaUploadCard = ({
               onChange={(e) => {
                 const files = Array.from(e.target.files || []);
 
-                console.log("Files selected:", files.length);
-
                 if (files.length > 0) {
                   // Clear any previous errors
                   formik.setFieldError("media.images", "");
@@ -371,7 +339,10 @@ export const MediaUploadCard = ({
               disabled={(formik.values.media.images || []).length >= 4}
             >
               <FiImage className="w-4 h-4 ml-2" />
-              اختر صور ({(formik.values.media.images || []).length}/4)
+              {t(
+                "registerProfile.form.mediaUpload.sportsImages.selectImages"
+              )}{" "}
+              ({(formik.values.media.images || []).length}/4)
             </Button>
           </div>
         </div>
@@ -386,78 +357,79 @@ export const MediaUploadCard = ({
           </div>
         )}
 
-        {/* Debug info */}
-        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-          <strong>Debug:</strong> Total images in state:{" "}
-          {(formik.values.media.images || []).length}
-          {(formik.values.media.images || []).map((img, i) => (
-            <div key={i}>
-              Image {i}: {img.title} - URL exists: {!!img.url} - URL type:{" "}
-              {img.url?.startsWith("blob:") ? "blob" : "other"}
-            </div>
-          ))}
-        </div>
+        {/* Debug info - only show in development */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+            <strong>Debug:</strong> Total images in state:{" "}
+            {(formik.values.media.images || []).length}
+            {(formik.values.media.images || []).map((img, i) => (
+              <div key={i}>
+                Image {i}: {img.title} - URL exists: {!!img.url} - URL type:{" "}
+                {img.url?.startsWith("blob:") ? "blob" : "other"}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Uploaded images display */}
         {(formik.values.media.images || []).length > 0 && (
           <div className="space-y-3">
             <h3 className="text-base font-medium flex items-center gap-2">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
-              الصور المرفوعة ({(formik.values.media.images || []).length}/4)
+              {t(
+                "registerProfile.form.mediaUpload.sportsImages.uploadedImages"
+              )}{" "}
+              ({(formik.values.media.images || []).length}/4)
             </h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {(formik.values.media.images || []).map((image, index) => {
-                console.log(`🖼️ Rendering image ${index}:`, {
-                  title: image.title,
-                  type: image.type,
-                  hasUrl: !!image.url,
-                  urlType: image.url?.startsWith("data:")
-                    ? "data URL"
-                    : image.url?.startsWith("blob:")
-                    ? "blob URL"
-                    : "other",
-                  urlLength: image.url?.length,
-                  actualUrl: image.url?.substring(0, 100) + "...",
-                });
-
                 return (
                   <div
                     key={`${image.publicId}-${index}`}
                     className="relative group"
                   >
                     <div className="w-full h-48 bg-blue-100 rounded-lg border-2 border-blue-300 overflow-hidden relative">
-                      {/* Show URL for debugging */}
-                      <div className="absolute top-0 left-0 bg-black bg-opacity-75 text-white text-xs p-1 z-20 max-w-full truncate">
-                        URL: {image.url ? "EXISTS" : "NULL"} -{" "}
-                        {image.url?.substring(0, 30)}...
-                      </div>
+                      {/* Show URL for debugging - only in development */}
+                      {process.env.NODE_ENV === "development" && (
+                        <div className="absolute top-0 left-0 bg-black bg-opacity-75 text-white text-xs p-1 z-20 max-w-full truncate">
+                          URL: {image.url ? "EXISTS" : "NULL"} -{" "}
+                          {image.url?.substring(0, 30)}...
+                        </div>
+                      )}
 
                       <img
                         src={image.url}
-                        alt={image.title || `صورة ${index + 1}`}
+                        alt={
+                          image.title ||
+                          t(
+                            "registerProfile.form.mediaUpload.sportsImages.imageAlt",
+                            { number: index + 1 }
+                          )
+                        }
                         className="w-full h-full object-cover"
-                        style={{
-                          backgroundColor: "yellow", // لرؤية ما إذا كانت الصورة تحمل
-                          border: "2px solid green",
-                        }}
+                        style={
+                          process.env.NODE_ENV === "development"
+                            ? {
+                                backgroundColor: "yellow", // To see if image loads
+                                border: "2px solid green",
+                              }
+                            : {}
+                        }
                         onLoad={(e) => {
-                          console.log(
-                            "✅ Image displayed successfully:",
-                            image.title
-                          );
-                          e.target.style.backgroundColor = "transparent";
-                          e.target.style.border = "none";
+                          if (process.env.NODE_ENV === "development") {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.border = "none";
+                          }
                         }}
                         onError={(e) => {
-                          console.error(
-                            "❌ Failed to display image:",
-                            image.title
+                          if (process.env.NODE_ENV === "development") {
+                            e.target.style.backgroundColor = "red";
+                            e.target.style.border = "2px solid red";
+                          }
+                          e.target.alt = t(
+                            "registerProfile.form.mediaUpload.sportsImages.imageLoadError"
                           );
-                          console.error("URL:", image.url);
-                          e.target.style.backgroundColor = "red";
-                          e.target.alt = "خطأ في تحميل الصورة";
-                          e.target.style.border = "2px solid red";
                         }}
                       />
 

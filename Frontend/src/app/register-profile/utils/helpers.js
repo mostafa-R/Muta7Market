@@ -9,12 +9,22 @@ export const getSuccessMessage = (response, fallback) => {
 };
 
 export const getErrorMessage = (error, fallback) => {
-  return (
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    error?.message ||
-    fallback
-  );
+  // Handle nested error object structure
+  const errorData = error?.response?.data;
+
+  if (errorData?.error?.message) {
+    return errorData.error.message;
+  }
+
+  if (errorData?.message) {
+    return errorData.message;
+  }
+
+  if (errorData?.error && typeof errorData.error === "string") {
+    return errorData.error;
+  }
+
+  return error?.message || fallback;
 };
 
 // File validation helper
@@ -86,6 +96,33 @@ export const validateFields = (fields, values, t) => {
     errors.game = t("sportsValidation.sportRequired");
   }
 
+  // Custom sport validation when "other" is selected
+  if (
+    fields.includes("game") &&
+    values.game === "other" &&
+    (!values.customSport || values.customSport.trim() === "")
+  ) {
+    errors.customSport = t("sportsValidation.customSportRequired");
+  }
+
+  // Role type validation when category (jop) is selected
+  if (
+    fields.includes("roleType") &&
+    values.jop &&
+    (!values.roleType || values.roleType.trim() === "")
+  ) {
+    errors.roleType = t("sportsValidation.roleTypeRequired");
+  }
+
+  // Custom role type validation when "other" is selected
+  if (
+    fields.includes("roleType") &&
+    values.roleType === "other" &&
+    (!values.customRoleType || values.customRoleType.trim() === "")
+  ) {
+    errors.customRoleType = t("sportsValidation.customRoleTypeRequired");
+  }
+
   // Position validation - only required for players, not coaches
   if (
     fields.includes("position") &&
@@ -95,10 +132,10 @@ export const validateFields = (fields, values, t) => {
     errors.position = t("sportsValidation.positionRequired");
   }
 
-  // Custom position validation - required when position is "other"
-  // This ensures users cannot proceed if they select "Other" but leave custom position empty
+  // Custom position validation - required when position is "other" (only for players)
   if (
     fields.includes("position") &&
+    values.jop === "player" &&
     values.position === "other" &&
     (!values.customPosition || values.customPosition.trim() === "")
   ) {

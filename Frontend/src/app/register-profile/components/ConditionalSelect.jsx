@@ -20,14 +20,21 @@ export const ConditionalSelect = ({
   options,
   required = false,
   formik,
-  triggerValue = null, // value that triggers conditional input
+  triggerValue = "other", // value that triggers conditional input
   conditionalInputName = null, // name for conditional input field
+  conditionalInputLabel = null, // label for conditional input field
   conditionalInputPlaceholder = "",
-  showConditionalInput = false, // whether to show conditional input
+  showConditionalInput = false, // whether to show conditional input (can override auto-detection)
+  autoDetectConditional = true, // automatically detect when to show conditional input
   children, // for custom conditional content
 }) => {
   const { t } = useTranslation();
   const { touched, errors } = formik;
+
+  // Determine if conditional input should be shown
+  const shouldShowConditionalInput = autoDetectConditional
+    ? value === triggerValue && conditionalInputName
+    : showConditionalInput && conditionalInputName;
 
   const hasError = get(touched, name) && get(errors, name);
   const hasConditionalError =
@@ -81,13 +88,14 @@ export const ConditionalSelect = ({
       )}
 
       {/* Conditional Input for "Other" option */}
-      {showConditionalInput && conditionalInputName && (
+      {shouldShowConditionalInput && (
         <div className="mt-3 space-y-2">
           <Label
             htmlFor={conditionalInputName}
             className="text-sm font-medium text-gray-700"
           >
-            {t("registerProfile.form.personalInfo.specifyNationality")}
+            {conditionalInputLabel ||
+              t("registerProfile.form.personalInfo.specifyNationality")}
             <span className="text-red-500 mr-1 ml-1">*</span>
           </Label>
           <Input

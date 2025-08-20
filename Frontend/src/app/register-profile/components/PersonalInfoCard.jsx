@@ -165,8 +165,12 @@ export const PersonalInfoCard = ({
             options={nationalities}
             required={true}
             formik={formik}
-            showConditionalInput={formik.values.nationality === "other"}
+            triggerValue="other"
+            autoDetectConditional={true}
             conditionalInputName="customNationality"
+            conditionalInputLabel={t(
+              "registerProfile.form.personalInfo.specifyNationality"
+            )}
             conditionalInputPlaceholder={t(
               "registerProfile.form.personalInfo.customNationalityPlaceholder"
             )}
@@ -202,8 +206,12 @@ export const PersonalInfoCard = ({
             options={nationalities}
             required={true}
             formik={formik}
-            showConditionalInput={formik.values.birthCountry === "other"}
+            triggerValue="other"
+            autoDetectConditional={true}
             conditionalInputName="customBirthCountry"
+            conditionalInputLabel={t(
+              "registerProfile.form.personalInfo.customBirthCountryPlaceholder"
+            )}
             conditionalInputPlaceholder={t(
               "registerProfile.form.personalInfo.customBirthCountryPlaceholder"
             )}

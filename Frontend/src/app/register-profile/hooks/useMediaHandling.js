@@ -1,5 +1,5 @@
 import { cleanupMediaPreviews } from "@/app/utils/mediaUtils";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
@@ -8,18 +8,25 @@ export const useMediaHandling = (formik) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null);
 
+  // Store current values for cleanup
+  const cleanupRef = useRef();
+  cleanupRef.current = {
+    profilePicturePreview: formik.values.profilePicturePreview,
+    media: formik.values.media,
+  };
+
   // Cleanup function for media previews when component unmounts
   useEffect(() => {
     return () => {
       // Cleanup any object URLs when component unmounts
-      if (formik.values.profilePicturePreview?.startsWith("blob:")) {
+      if (cleanupRef.current.profilePicturePreview?.startsWith("blob:")) {
         try {
-          URL.revokeObjectURL(formik.values.profilePicturePreview);
+          URL.revokeObjectURL(cleanupRef.current.profilePicturePreview);
         } catch {}
       }
 
       // Use our utility to clean up all media previews
-      cleanupMediaPreviews(formik.values.media);
+      cleanupMediaPreviews(cleanupRef.current.media);
     };
   }, []);
 

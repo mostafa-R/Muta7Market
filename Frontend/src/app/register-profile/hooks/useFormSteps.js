@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { sectionRequiredFields } from "../utils/constants";
@@ -8,29 +8,36 @@ export const useFormSteps = (formik) => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
 
-  // All possible form sections
-  const allFormSections = [
-    {
-      id: "personal",
-      title: t("registerProfile.sections.personal"),
-      icon: "👤",
-    },
-    { id: "sports", title: t("registerProfile.sections.sports"), icon: "🏆" },
-    {
-      id: "financial",
-      title: t("registerProfile.sections.financial"),
-      icon: "💰",
-    },
-    {
-      id: "transfer",
-      title: t("registerProfile.sections.transfer"),
-      icon: "🔄",
-    },
-    { id: "contact", title: t("registerProfile.sections.contact"), icon: "📞" },
-    { id: "social", title: t("registerProfile.sections.social"), icon: "🔗" },
-    { id: "media", title: t("registerProfile.sections.media"), icon: "📎" },
-    { id: "terms", title: t("registerProfile.sections.terms"), icon: "📝" },
-  ];
+  // All possible form sections - memoized to prevent dependency issues
+  const allFormSections = useMemo(
+    () => [
+      {
+        id: "personal",
+        title: t("registerProfile.sections.personal"),
+        icon: "👤",
+      },
+      { id: "sports", title: t("registerProfile.sections.sports"), icon: "🏆" },
+      {
+        id: "financial",
+        title: t("registerProfile.sections.financial"),
+        icon: "💰",
+      },
+      {
+        id: "transfer",
+        title: t("registerProfile.sections.transfer"),
+        icon: "🔄",
+      },
+      {
+        id: "contact",
+        title: t("registerProfile.sections.contact"),
+        icon: "📞",
+      },
+      { id: "social", title: t("registerProfile.sections.social"), icon: "🔗" },
+      { id: "media", title: t("registerProfile.sections.media"), icon: "📎" },
+      { id: "terms", title: t("registerProfile.sections.terms"), icon: "📝" },
+    ],
+    [t]
+  );
 
   // Filter sections based on user status
   const getFilteredSections = () => {
@@ -47,30 +54,32 @@ export const useFormSteps = (formik) => {
 
   const formSections = getFilteredSections();
 
+  // Track previous status to detect actual changes
+  const prevStatusRef = React.useRef(formik.values.status);
+
   // Handle status change effects on current step
   React.useEffect(() => {
     const userStatus = formik.values.status;
+    const prevStatus = prevStatusRef.current;
 
-    // If status changed to "available" and we were in transfer section or after it
-    if (userStatus === "available") {
+    // Only adjust if status actually changed TO "available" from something else
+    if (userStatus === "available" && prevStatus !== "available") {
       const transferIndex = allFormSections.findIndex(
         (section) => section.id === "transfer"
       );
 
-      // If current step is at transfer section, move to the next section (which becomes contact)
-      if (currentStep === transferIndex) {
-        // Stay at the same index but now it points to contact section
-        // No need to change currentStep as the filtered array will shift automatically
-        return;
-      }
-
       // If current step is after transfer section, adjust the index down by 1
-      if (currentStep > transferIndex) {
-        setCurrentStep(currentStep - 1);
-        return;
-      }
+      setCurrentStep((currentStep) => {
+        if (currentStep > transferIndex) {
+          return currentStep - 1;
+        }
+        return currentStep;
+      });
     }
-  }, [formik.values.status, currentStep, allFormSections]);
+
+    // Update previous status reference
+    prevStatusRef.current = userStatus;
+  }, [formik.values.status, allFormSections]);
 
   const nextStep = async () => {
     const currentSection = formSections[currentStep].id;
@@ -102,12 +111,9 @@ export const useFormSteps = (formik) => {
       formik.setFieldTouched("position", true, true);
     }
 
-    // Also mark customPosition as touched if position is "other"
+    // Also mark customPosition as touched if position is "other" and user is a player
     // This ensures validation for custom position field when "Other" option is selected
-    if (
-      requiredFields.includes("position") &&
-      formik.values.position === "other"
-    ) {
+    if (formik.values.jop === "player" && formik.values.position === "other") {
       formik.setFieldTouched("customPosition", true, true);
     }
 
@@ -151,11 +157,27 @@ export const useFormSteps = (formik) => {
         ) {
           currentSectionErrors[path] = mergedErrors[path];
         }
-        // Special case: include customPosition error when position is "other"
+        // Special case: include customPosition error when position is "other" and user is a player
         if (
           path === "customPosition" &&
-          requiredFields.includes("position") &&
+          formik.values.jop === "player" &&
           formik.values.position === "other"
+        ) {
+          currentSectionErrors[path] = mergedErrors[path];
+        }
+        // Special case: include customRoleType error when roleType is "other"
+        if (
+          path === "customRoleType" &&
+          requiredFields.includes("roleType") &&
+          formik.values.roleType === "other"
+        ) {
+          currentSectionErrors[path] = mergedErrors[path];
+        }
+        // Special case: include customSport error when sport is "other"
+        if (
+          path === "customSport" &&
+          requiredFields.includes("game") &&
+          formik.values.game === "other"
         ) {
           currentSectionErrors[path] = mergedErrors[path];
         }

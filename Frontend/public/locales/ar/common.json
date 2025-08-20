@@ -354,6 +354,8 @@
         "title": "المعلومات الرياضية",
         "sport": "الرياضة",
         "sportPlaceholder": "اختر رياضتك",
+        "customSport": "رياضة مخصصة",
+        "customSportPlaceholder": "حدد رياضتك",
         "position": "المركز/التخصص",
         "positionPlaceholder": "اختر مركزك",
         "selectSportFirst": "يرجى اختيار الرياضة أولاً",
@@ -367,6 +369,10 @@
         "coachType": "نوع المدرب",
         "selectPlayerType": "اختر نوع اللاعب",
         "selectCoachType": "اختر نوع المدرب",
+        "customPlayerType": "نوع لاعب مخصص",
+        "customPlayerTypePlaceholder": "حدد نوع اللاعب",
+        "customCoachType": "نوع مدرب مخصص",
+        "customCoachTypePlaceholder": "حدد نوع المدرب",
         "currentStatus": "الحالة الحالية",
         "currentStatusPlaceholder": "اختر حالتك الحالية",
         "available": "حر (بحث عن فريق)",
@@ -671,6 +677,9 @@
   },
   "sportsValidation": {
     "sportRequired": "الرياضة مطلوبة",
+    "customSportRequired": "يرجى تحديد رياضتك",
+    "customSportTooShort": "اسم الرياضة يجب أن يكون على الأقل حرفين",
+    "customSportTooLong": "اسم الرياضة طويل جداً",
     "positionRequired": "المركز/التخصص مطلوب للاعبين",
     "categoryRequired": "الفئة مطلوبة - يرجى اختيار الفئة",
     "categoryInvalid": "الفئة مطلوبة - يجب اختيار لاعب أو مدرب",
@@ -678,6 +687,9 @@
     "statusInvalid": "الحالة الحالية مطلوبة - يجب اختيار حالة صالحة",
     "termsAcceptanceRequired": "يجب الموافقة على الشروط والأحكام",
     "roleTypeRequired": "نوع الدور مطلوب - يرجى اختيار دورك المحدد",
+    "customRoleTypeRequired": "يرجى تحديد نوع دورك",
+    "customRoleTypeTooShort": "نوع الدور يجب أن يكون على الأقل حرفين",
+    "customRoleTypeTooLong": "نوع الدور طويل جداً",
     "positionTooShort": "المركز يجب أن يكون على الأقل حرفين",
     "customPositionRequired": "يرجى تحديد مركزك",
     "customPositionTooShort": "المركز المخصص يجب أن يكون على الأقل حرفين",
@@ -962,7 +974,8 @@
     "reservePlayer": "لاعب احتياط",
     "professionalPlayer": "لاعب محترف",
     "amateurPlayer": "لاعب هاوي",
-    "academyPlayer": "لاعب أكاديمية"
+    "academyPlayer": "لاعب أكاديمية",
+    "other": "أخرى"
   },
   "coachRoles": {
     "headCoach": "مدرب رئيسي",
@@ -973,7 +986,8 @@
     "youthCoach": "مدرب شباب",
     "physio": "أخصائي علاج طبيعي",
     "tacticalAnalyst": "محلل تكتيكي",
-    "strengthConditioningCoach": "مدرب إعداد بدني"
+    "strengthConditioningCoach": "مدرب إعداد بدني",
+    "other": "أخرى"
   },
   "notifications": {
     "customNationalityRequired": "يرجى تحديد جنسيتك",
@@ -1068,7 +1082,8 @@
     "rowing": "التجديف",
     "triathlon": "الترايثلون",
     "marathon": "الماراثون",
-    "pentathlon": "الخماسي الحديث"
+    "pentathlon": "الخماسي الحديث",
+    "other": "أخرى"
   },
 
   "positions": {

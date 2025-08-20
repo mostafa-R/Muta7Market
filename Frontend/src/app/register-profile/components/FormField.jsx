@@ -1,6 +1,7 @@
 // components/FormField.jsx
 import { Input } from "@/app/component/ui/input";
 import { Label } from "@/app/component/ui/label";
+import { cn } from "@/lib/utils";
 import { get } from "lodash";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,19 +49,12 @@ export const FormField = ({
           onFocus={() => setIsFocused(true)}
           aria-describedby={hasError ? `${name}-error` : undefined}
           aria-invalid={hasError ? "true" : "false"}
-          className={`
-            bg-white 
-            border-gray-300
-            transition-all
-            duration-200
-            ${hasError ? "border-red-500 ring-1 ring-red-200" : ""} 
-            ${
-              isFocused
-                ? "border-blue-500 ring-2 ring-blue-200 ring-opacity-50"
-                : ""
-            }
-            ${type === "number" ? "appearance-textfield" : ""}
-          `}
+          className={cn(
+            "bg-white border-gray-300 transition-all duration-200",
+            hasError && "border-red-500 ring-1 ring-red-200",
+            isFocused && "border-blue-500 ring-2 ring-blue-200 ring-opacity-50",
+            type === "number" && "appearance-textfield"
+          )}
         />
       </div>
       {hasError && (

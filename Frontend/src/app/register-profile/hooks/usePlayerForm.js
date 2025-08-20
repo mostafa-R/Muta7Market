@@ -154,6 +154,17 @@ export const usePlayerForm = (idParam, router) => {
           errors.game = t("sportsValidation.sportRequired");
         }
 
+        // Custom sport validation when "other" is selected
+        if (values.game === "other") {
+          if (!values.customSport || values.customSport.trim() === "") {
+            errors.customSport = t("sportsValidation.customSportRequired");
+          } else if (values.customSport.trim().length < 2) {
+            errors.customSport = t("sportsValidation.customSportTooShort");
+          } else if (values.customSport.trim().length > 50) {
+            errors.customSport = t("sportsValidation.customSportTooLong");
+          }
+        }
+
         if (!values.jop) {
           errors.jop = t("sportsValidation.categoryRequired");
         }
@@ -163,10 +174,43 @@ export const usePlayerForm = (idParam, router) => {
           errors.roleType = t("sportsValidation.roleTypeRequired");
         }
 
-        if (!values.position || values.position.trim() === "") {
-          errors.position = t("sportsValidation.positionRequired");
-        } else if (values.position.length < 2) {
-          errors.position = t("sportsValidation.positionTooShort");
+        // Custom role type validation when "other" is selected
+        if (values.roleType === "other") {
+          if (!values.customRoleType || values.customRoleType.trim() === "") {
+            errors.customRoleType = t(
+              "sportsValidation.customRoleTypeRequired"
+            );
+          } else if (values.customRoleType.trim().length < 2) {
+            errors.customRoleType = t(
+              "sportsValidation.customRoleTypeTooShort"
+            );
+          } else if (values.customRoleType.trim().length > 50) {
+            errors.customRoleType = t("sportsValidation.customRoleTypeTooLong");
+          }
+        }
+
+        // Position validation - only required for players, not coaches
+        if (values.jop === "player") {
+          if (!values.position || values.position.trim() === "") {
+            errors.position = t("sportsValidation.positionRequired");
+          } else if (values.position.length < 2) {
+            errors.position = t("sportsValidation.positionTooShort");
+          }
+        }
+
+        // Custom position validation when "other" is selected (only for players)
+        if (values.jop === "player" && values.position === "other") {
+          if (!values.customPosition || values.customPosition.trim() === "") {
+            errors.customPosition = t(
+              "sportsValidation.customPositionRequired"
+            );
+          } else if (values.customPosition.trim().length < 2) {
+            errors.customPosition = t(
+              "sportsValidation.customPositionTooShort"
+            );
+          } else if (values.customPosition.trim().length > 50) {
+            errors.customPosition = t("sportsValidation.customPositionTooLong");
+          }
         }
 
         if (!values.status) {
@@ -189,6 +233,7 @@ export const usePlayerForm = (idParam, router) => {
         toast.error(t("formErrors.loginRequired"));
         return;
       }
+
       if (!API_URL) {
         toast.error(t("formErrors.serverConfigError"));
         return;
@@ -533,7 +578,12 @@ export const usePlayerForm = (idParam, router) => {
   };
 
   const handleSubmissionSuccess = (response) => {
-    toast.success(getSuccessMessage(response, t("formErrors.profileCreated")));
+    const successMessage = getSuccessMessage(
+      response,
+      t("formErrors.profileCreated")
+    );
+
+    toast.success(successMessage);
 
     try {
       const createdPlayer = response?.data?.data?.player;
@@ -549,13 +599,16 @@ export const usePlayerForm = (idParam, router) => {
           }));
         }
       }
-    } catch {}
+    } catch {
+      // Silent error handling for success response processing
+    }
 
     setCanPay(true);
   };
 
   const handleSubmissionError = (error) => {
-    toast.error(getErrorMessage(error, t("formErrors.uploadError")));
+    const errorMessage = getErrorMessage(error, t("formErrors.uploadError"));
+    toast.error(errorMessage);
   };
 
   return {

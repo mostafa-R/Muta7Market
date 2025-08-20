@@ -17,8 +17,8 @@ export const createPlayerFormSchema = (t) =>
       .required()
       .messages({
         "string.empty": t("fieldValidation.nameRequired"),
-        "string.min": t("formValidation.customNationalityTooShort"),
-        "string.max": t("formValidation.customNationalityTooLong"),
+        "string.min": t("formValidation.nameTooShort"),
+        "string.max": t("formValidation.nameTooLong"),
       }),
 
     age: Joi.number()
@@ -144,29 +144,53 @@ export const createPlayerFormSchema = (t) =>
       otherwise: Joi.optional(),
     }),
 
-    // Updated position validation to handle "other" option with custom input
-    position: Joi.string()
-      .min(2)
-      .max(100)
-      .required()
-      .messages({
-        "string.empty": t("sportsValidation.positionRequired"),
-        "string.min": t("sportsValidation.positionTooShort"),
-        "string.max": t("sportsValidation.positionTooShort"),
-      }),
-
-    // New field for custom position when "other" is selected (required)
-    customPosition: Joi.when("position", {
+    // Custom role type validation when "other" is selected
+    customRoleType: Joi.when("roleType", {
       is: "other",
       then: Joi.string()
         .min(2)
         .max(50)
         .required()
         .messages({
-          "string.empty": t("sportsValidation.customPositionRequired"),
-          "string.min": t("sportsValidation.customPositionTooShort"),
-          "string.max": t("sportsValidation.customPositionTooLong"),
+          "string.empty": t("sportsValidation.customRoleTypeRequired"),
+          "string.min": t("sportsValidation.customRoleTypeTooShort"),
+          "string.max": t("sportsValidation.customRoleTypeTooLong"),
         }),
+      otherwise: Joi.optional(),
+    }),
+
+    // Updated position validation to handle "other" option with custom input
+    // Position is only required for players, not coaches
+    position: Joi.when("jop", {
+      is: "player",
+      then: Joi.string()
+        .min(2)
+        .max(100)
+        .required()
+        .messages({
+          "string.empty": t("sportsValidation.positionRequired"),
+          "string.min": t("sportsValidation.positionTooShort"),
+          "string.max": t("sportsValidation.positionTooShort"),
+        }),
+      otherwise: Joi.string().allow("").optional(),
+    }),
+
+    // New field for custom position when "other" is selected (required only for players)
+    customPosition: Joi.when(Joi.ref("jop"), {
+      is: "player",
+      then: Joi.when("position", {
+        is: "other",
+        then: Joi.string()
+          .min(2)
+          .max(50)
+          .required()
+          .messages({
+            "string.empty": t("sportsValidation.customPositionRequired"),
+            "string.min": t("sportsValidation.customPositionTooShort"),
+            "string.max": t("sportsValidation.customPositionTooLong"),
+          }),
+        otherwise: Joi.optional(),
+      }),
       otherwise: Joi.optional(),
     }),
 
@@ -184,30 +208,42 @@ export const createPlayerFormSchema = (t) =>
       .max(30)
       .optional()
       .messages({
-        "number.base": t("fieldValidation.ageMustBeNumber"),
-        "number.min": t("fieldValidation.ageRange"),
-        "number.max": t("fieldValidation.ageRange"),
+        "number.base": t("fieldValidation.experienceMustBeNumber"),
+        "number.min": t("fieldValidation.experienceRange"),
+        "number.max": t("fieldValidation.experienceRange"),
       }),
 
     // Financial information
     monthlySalary: Joi.object({
-      amount: Joi.number().min(0).optional(),
+      amount: Joi.alternatives()
+        .try(Joi.number().min(0), Joi.string().allow("").optional())
+        .optional(),
       currency: Joi.string().default("SAR"),
     }).optional(),
 
     yearSalary: Joi.object({
-      amount: Joi.number().min(0).optional(),
+      amount: Joi.alternatives()
+        .try(Joi.number().min(0), Joi.string().allow("").optional())
+        .optional(),
       currency: Joi.string().default("SAR"),
     }).optional(),
 
-    contractEndDate: Joi.date().optional(),
+    contractEndDate: Joi.alternatives()
+      .try(Joi.date(), Joi.string().allow("").optional())
+      .optional(),
 
     // Transfer information
     transferredTo: Joi.object({
-      club: Joi.string().optional(),
-      startDate: Joi.date().optional(),
-      endDate: Joi.date().optional(),
-      amount: Joi.number().min(0).optional(),
+      club: Joi.string().allow("").optional(),
+      startDate: Joi.alternatives()
+        .try(Joi.date(), Joi.string().allow("").optional())
+        .optional(),
+      endDate: Joi.alternatives()
+        .try(Joi.date(), Joi.string().allow("").optional())
+        .optional(),
+      amount: Joi.alternatives()
+        .try(Joi.number().min(0), Joi.string().allow("").optional())
+        .optional(),
     }).optional(),
 
     // Social links
@@ -221,8 +257,8 @@ export const createPlayerFormSchema = (t) =>
     // Promotion settings
     isPromoted: Joi.object({
       status: Joi.boolean().default(false),
-      startDate: Joi.date().optional(),
-      endDate: Joi.date().optional(),
+      startDate: Joi.string().allow("").optional(),
+      endDate: Joi.string().allow("").optional(),
       type: Joi.string().valid("featured", "premium").default("featured"),
     }).optional(),
 
@@ -245,6 +281,21 @@ export const createPlayerFormSchema = (t) =>
         "string.empty": t("sportsValidation.sportRequired"),
         "string.min": t("sportsValidation.sportRequired"),
       }),
+
+    // Custom sport validation when "other" is selected
+    customSport: Joi.when("game", {
+      is: "other",
+      then: Joi.string()
+        .min(2)
+        .max(50)
+        .required()
+        .messages({
+          "string.empty": t("sportsValidation.customSportRequired"),
+          "string.min": t("sportsValidation.customSportTooShort"),
+          "string.max": t("sportsValidation.customSportTooLong"),
+        }),
+      otherwise: Joi.optional(),
+    }),
 
     // Media and documents
     media: Joi.object({
@@ -364,10 +415,23 @@ export const playerFormSchema = Joi.object({
     then: Joi.string().required(),
     otherwise: Joi.optional(),
   }),
-  position: Joi.string().min(2).max(100).required(),
-  customPosition: Joi.when("position", {
+  customRoleType: Joi.when("roleType", {
     is: "other",
     then: Joi.string().min(2).max(50).required(),
+    otherwise: Joi.optional(),
+  }),
+  position: Joi.when("jop", {
+    is: "player",
+    then: Joi.string().min(2).max(100).required(),
+    otherwise: Joi.string().allow("").optional(),
+  }),
+  customPosition: Joi.when(Joi.ref("jop"), {
+    is: "player",
+    then: Joi.when("position", {
+      is: "other",
+      then: Joi.string().min(2).max(50).required(),
+      otherwise: Joi.optional(),
+    }),
     otherwise: Joi.optional(),
   }),
   status: Joi.string()
@@ -375,19 +439,31 @@ export const playerFormSchema = Joi.object({
     .required(),
   experience: Joi.number().integer().min(0).max(30).optional(),
   monthlySalary: Joi.object({
-    amount: Joi.number().min(0).optional(),
+    amount: Joi.alternatives()
+      .try(Joi.number().min(0), Joi.string().allow("").optional())
+      .optional(),
     currency: Joi.string().default("SAR"),
   }).optional(),
   yearSalary: Joi.object({
-    amount: Joi.number().min(0).optional(),
+    amount: Joi.alternatives()
+      .try(Joi.number().min(0), Joi.string().allow("").optional())
+      .optional(),
     currency: Joi.string().default("SAR"),
   }).optional(),
-  contractEndDate: Joi.date().optional(),
+  contractEndDate: Joi.alternatives()
+    .try(Joi.date(), Joi.string().allow("").optional())
+    .optional(),
   transferredTo: Joi.object({
-    club: Joi.string().optional(),
-    startDate: Joi.date().optional(),
-    endDate: Joi.date().optional(),
-    amount: Joi.number().min(0).optional(),
+    club: Joi.string().allow("").optional(),
+    startDate: Joi.alternatives()
+      .try(Joi.date(), Joi.string().allow("").optional())
+      .optional(),
+    endDate: Joi.alternatives()
+      .try(Joi.date(), Joi.string().allow("").optional())
+      .optional(),
+    amount: Joi.alternatives()
+      .try(Joi.number().min(0), Joi.string().allow("").optional())
+      .optional(),
   }).optional(),
   socialLinks: Joi.object({
     instagram: Joi.string().uri().allow("").optional(),
@@ -397,8 +473,8 @@ export const playerFormSchema = Joi.object({
   }).optional(),
   isPromoted: Joi.object({
     status: Joi.boolean().default(false),
-    startDate: Joi.date().optional(),
-    endDate: Joi.date().optional(),
+    startDate: Joi.string().allow("").optional(),
+    endDate: Joi.string().allow("").optional(),
     type: Joi.string().valid("featured", "premium").default("featured"),
   }).optional(),
   contactInfo: Joi.object({
@@ -412,6 +488,11 @@ export const playerFormSchema = Joi.object({
     }).optional(),
   }).optional(),
   game: Joi.string().min(2).required(),
+  customSport: Joi.when("game", {
+    is: "other",
+    then: Joi.string().min(2).max(50).required(),
+    otherwise: Joi.optional(),
+  }),
   media: Joi.object({
     video: Joi.object({
       url: Joi.string().allow(null).optional(),

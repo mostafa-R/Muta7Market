@@ -37,69 +37,7 @@ export const SportsInfoCard = ({ formik }) => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* الرياضة */}
-          <div className="space-y-2 relative">
-            <Label
-              htmlFor="game"
-              className="flex items-center text-base font-medium"
-            >
-              <span className="flex items-center">
-                {t("registerProfile.form.sportsInfo.sport")}{" "}
-                <span className="text-red-500 mx-1">*</span>
-              </span>
-            </Label>
-            <Select
-              value={formik.values.game || ""}
-              onValueChange={(value) => {
-                formik.setFieldValue("game", value);
-                formik.setFieldValue("gameSelected", true);
-                formik.setFieldTouched("game", true);
-                // Clear position when sport changes
-                formik.setFieldValue("position", "");
-                formik.setFieldTouched("position", false);
-              }}
-              onOpenChange={(open) => {
-                if (!open) {
-                  formik.setFieldTouched("game", true);
-                }
-              }}
-            >
-              <SelectTrigger
-                className={`h-11 transition-all focus:ring-2 focus:ring-blue-400 ${
-                  get(formik.touched, "game") && get(formik.errors, "game")
-                    ? "border-red-300 bg-red-50"
-                    : "border-gray-200 hover:border-blue-400"
-                }`}
-              >
-                <SelectValue
-                  placeholder={t(
-                    "registerProfile.form.sportsInfo.sportPlaceholder"
-                  )}
-                />
-              </SelectTrigger>
-              <SelectContent className="max-h-80">
-                {sportsOptions.map((sport) => (
-                  <SelectItem key={sport.value} value={sport.value}>
-                    {t(sport.name)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {get(formik.touched, "game") && get(formik.errors, "game") ? (
-              <div className="text-red-600 text-sm font-medium mt-1 flex items-center">
-                <span className="inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
-                {get(formik.errors, "game")}
-              </div>
-            ) : (
-              !formik.values.gameSelected && (
-                <div className="text-gray-500 text-xs mt-1">
-                  {t("registerProfile.form.sportsInfo.sportPlaceholder")}
-                </div>
-              )
-            )}
-          </div>
-
-          {/* الفئة */}
+          {/* الفئة - moved to first position for better UX flow */}
           <ConditionalSelect
             label={t("registerProfile.form.sportsInfo.category")}
             name="jop"
@@ -110,6 +48,7 @@ export const SportsInfoCard = ({ formik }) => {
               formik.setFieldTouched("jop", true);
               // Clear role type and position when changing category
               formik.setFieldValue("roleType", "");
+              formik.setFieldValue("customRoleType", "");
               formik.setFieldValue("position", "");
               formik.setFieldTouched("position", false);
             }}
@@ -146,6 +85,11 @@ export const SportsInfoCard = ({ formik }) => {
                   onValueChange={(value) => {
                     formik.setFieldValue("roleType", value);
                     formik.setFieldTouched("roleType", true);
+                    // Clear custom role type when changing from "other" to a predefined option
+                    if (value !== "other") {
+                      formik.setFieldValue("customRoleType", "");
+                      formik.setFieldTouched("customRoleType", false);
+                    }
                   }}
                   onOpenChange={(open) => {
                     if (!open) {
@@ -193,9 +137,166 @@ export const SportsInfoCard = ({ formik }) => {
                       {get(formik.errors, "roleType")}
                     </div>
                   )}
+
+                {/* Custom role type input field when "other" is selected */}
+                {formik.values.roleType === "other" && (
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      {formik.values.jop === "player"
+                        ? t("registerProfile.form.sportsInfo.customPlayerType")
+                        : t("registerProfile.form.sportsInfo.customCoachType")}
+                      <span className="text-red-500 mx-1">*</span>
+                    </Label>
+                    <input
+                      id="customRoleType"
+                      name="customRoleType"
+                      type="text"
+                      value={formik.values.customRoleType || ""}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={
+                        formik.values.jop === "player"
+                          ? t(
+                              "registerProfile.form.sportsInfo.customPlayerTypePlaceholder"
+                            )
+                          : t(
+                              "registerProfile.form.sportsInfo.customCoachTypePlaceholder"
+                            )
+                      }
+                      className={`w-full h-11 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors ${
+                        get(formik.touched, "customRoleType") &&
+                        get(formik.errors, "customRoleType")
+                          ? "border-red-300 bg-red-50"
+                          : "border-gray-200 hover:border-blue-400"
+                      }`}
+                    />
+                    {get(formik.touched, "customRoleType") &&
+                    get(formik.errors, "customRoleType") ? (
+                      <div className="text-red-600 text-xs mt-1">
+                        {get(formik.errors, "customRoleType")}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-xs mt-1">
+                        {formik.values.jop === "player"
+                          ? t(
+                              "registerProfile.form.sportsInfo.customPlayerTypePlaceholder"
+                            )
+                          : t(
+                              "registerProfile.form.sportsInfo.customCoachTypePlaceholder"
+                            )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </ConditionalSelect>
+
+          {/* الرياضة - moved to second position */}
+          <div className="space-y-2 relative">
+            <Label
+              htmlFor="game"
+              className="flex items-center text-base font-medium"
+            >
+              <span className="flex items-center">
+                {t("registerProfile.form.sportsInfo.sport")}{" "}
+                <span className="text-red-500 mx-1">*</span>
+              </span>
+            </Label>
+            <Select
+              value={formik.values.game || ""}
+              onValueChange={(value) => {
+                formik.setFieldValue("game", value);
+                formik.setFieldValue("gameSelected", true);
+                formik.setFieldTouched("game", true);
+                // Clear position when sport changes
+                formik.setFieldValue("position", "");
+                formik.setFieldTouched("position", false);
+                // Clear custom sport when changing from "other" to a predefined option
+                if (value !== "other") {
+                  formik.setFieldValue("customSport", "");
+                  formik.setFieldTouched("customSport", false);
+                }
+              }}
+              onOpenChange={(open) => {
+                if (!open) {
+                  formik.setFieldTouched("game", true);
+                }
+              }}
+            >
+              <SelectTrigger
+                className={`h-11 transition-all focus:ring-2 focus:ring-blue-400 ${
+                  get(formik.touched, "game") && get(formik.errors, "game")
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-200 hover:border-blue-400"
+                }`}
+              >
+                <SelectValue
+                  placeholder={t(
+                    "registerProfile.form.sportsInfo.sportPlaceholder"
+                  )}
+                />
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                {sportsOptions.map((sport) => (
+                  <SelectItem key={sport.value} value={sport.value}>
+                    {t(sport.name)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Custom sport input field when "other" is selected */}
+            {formik.values.game === "other" && (
+              <div className="mt-4 space-y-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  {t("registerProfile.form.sportsInfo.customSport")}
+                  <span className="text-red-500 mx-1">*</span>
+                </Label>
+                <input
+                  id="customSport"
+                  name="customSport"
+                  type="text"
+                  value={formik.values.customSport || ""}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder={t(
+                    "registerProfile.form.sportsInfo.customSportPlaceholder"
+                  )}
+                  className={`w-full h-11 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors ${
+                    get(formik.touched, "customSport") &&
+                    get(formik.errors, "customSport")
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-200 hover:border-blue-400"
+                  }`}
+                />
+                {get(formik.touched, "customSport") &&
+                get(formik.errors, "customSport") ? (
+                  <div className="text-red-600 text-xs mt-1">
+                    {get(formik.errors, "customSport")}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-xs mt-1">
+                    {t(
+                      "registerProfile.form.sportsInfo.customSportPlaceholder"
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {get(formik.touched, "game") && get(formik.errors, "game") ? (
+              <div className="text-red-600 text-sm font-medium mt-1 flex items-center">
+                <span className="inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
+                {get(formik.errors, "game")}
+              </div>
+            ) : (
+              !formik.values.gameSelected && (
+                <div className="text-gray-500 text-xs mt-1">
+                  {t("registerProfile.form.sportsInfo.sportPlaceholder")}
+                </div>
+              )
+            )}
+          </div>
 
           {/* المركز/التخصص - للاعبين فقط */}
           {/* Enhanced position selection with "Other" option support */}
@@ -314,7 +415,7 @@ export const SportsInfoCard = ({ formik }) => {
             </div>
           )}
 
-          {/* الحالة الحالية */}
+          {/* الحالة الحالية - moved to better position for UX flow */}
           <div className="space-y-2 relative">
             <Label
               htmlFor="status"

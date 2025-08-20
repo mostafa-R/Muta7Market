@@ -23,7 +23,7 @@ export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 // Form section required fields
 export const sectionRequiredFields = {
   personal: ["name", "age", "gender", "nationality", "birthCountry"],
-  sports: ["game", "jop", "position", "status", "roleType"], // position is now required
+  sports: ["game", "jop", "status", "roleType", "position"], // position is conditionally required only for players
   financial: [], // Optional fields
   transfer: [], // Optional fields
   contact: [], // Optional fields
@@ -44,6 +44,7 @@ export const initialFormValues = {
   jop: "",
   jopSelected: false,
   roleType: "",
+  customRoleType: "", // Added custom role type field
   position: "",
   customPosition: "", // Added custom position field
   status: "",
@@ -108,6 +109,7 @@ export const initialFormValues = {
   profilePictureFile: null,
   documentFile: null,
   game: "",
+  customSport: "", // Added custom sport field
   isActive: true,
   agreeToTerms: false,
 };

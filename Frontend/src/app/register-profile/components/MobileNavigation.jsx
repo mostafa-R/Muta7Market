@@ -2,6 +2,7 @@ import { Button } from "@/app/component/ui/button";
 import { useDirection } from "@/hooks/use-direction";
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import PropTypes from "prop-types";
+import { useTranslation } from "react-i18next";
 
 export const MobileNavigation = ({
   currentStep,
@@ -12,14 +13,20 @@ export const MobileNavigation = ({
   isSubmitting,
 }) => {
   const { isRTL } = useDirection();
+  const { t } = useTranslation();
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center z-10 shadow-lg">
+    <nav
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center z-10 shadow-lg md:hidden"
+      role="navigation"
+      aria-label={t("navigation.mobileStepNavigation")}
+    >
       <Button
         type="button"
         variant="outline"
         onClick={onPrevStep}
         disabled={currentStep === 0}
         className={`px-3 py-2 ${currentStep === 0 ? "opacity-50" : ""}`}
+        aria-label={t("navigation.previousStep")}
       >
         {isRTL ? (
           <ChevronRight className="w-5 h-5" />
@@ -28,7 +35,11 @@ export const MobileNavigation = ({
         )}
       </Button>
 
-      <div className="text-center">
+      <div
+        className="text-center"
+        aria-live="polite"
+        aria-label={t("navigation.currentStepIndicator")}
+      >
         <span className="text-sm font-medium">
           {currentStep + 1}/{totalSteps}
         </span>
@@ -39,6 +50,7 @@ export const MobileNavigation = ({
           type="button"
           onClick={onNextStep}
           className="px-3 py-2 bg-blue-600 hover:bg-blue-700"
+          aria-label={t("navigation.nextStep")}
         >
           {isRTL ? (
             <ChevronLeft className="w-5 h-5" />
@@ -52,11 +64,12 @@ export const MobileNavigation = ({
           onClick={onSubmit}
           className="px-3 py-2 bg-blue-600 hover:bg-blue-700"
           disabled={isSubmitting}
+          aria-label={t("navigation.submitForm")}
         >
           <Save className="w-5 h-5" />
         </Button>
       )}
-    </div>
+    </nav>
   );
 };
 

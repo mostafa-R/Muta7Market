@@ -160,7 +160,7 @@ function RegisterProfileContent() {
               <div className="p-6 md:p-8">{renderFormSection()}</div>
 
               {/* Navigation buttons */}
-              <div className="px-6 md:px-8 pb-6 md:pb-8 pt-4 border-t flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
+              <div className="px-6 md:px-8 pb-6 md:pb-8 pt-4 border-t hidden md:flex md:flex-col-reverse md:justify-between md:items-center md:gap-4 lg:flex-row">
                 <div className="flex gap-3 w-full sm:w-auto">
                   {currentStep > 0 && (
                     <Button
