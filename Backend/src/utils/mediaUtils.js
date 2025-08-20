@@ -82,6 +82,10 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
       size: 0,
       uploadedAt: null,
     },
+    images : [{
+      url: null,
+      publicId: null
+    }]
   };
 
   // Handle profile image

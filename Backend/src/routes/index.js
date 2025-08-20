@@ -23,6 +23,7 @@ router.use('/offers', offerRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/entitlements', entitlementRoutes);
+
 // Public pricing endpoint for frontend to fetch static prices
 router.get('/config/pricing', (req, res) => {
   res.status(200).json({

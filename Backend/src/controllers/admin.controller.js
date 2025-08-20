@@ -1,3 +1,4 @@
+import coachModel from "../models/coach.model.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
@@ -275,13 +276,16 @@ export const createPlayer = asyncHandler(async (req, res) => {
 
   // الخطوة 1: التحقق من وجود الـ email في الطلب
   if (!email) {
-    throw new ApiError(400, 'Email is required to associate the player with a user');
+    throw new ApiError(
+      400,
+      "Email is required to associate the player with a user"
+    );
   }
 
   // الخطوة 2: البحث عن المستخدم بواسطة الـ email
-  const user = await User.findOne({ email }).select('_id name email phone'); // حدد الحقول الضرورية للأداء
+  const user = await User.findOne({ email }).select("_id name email phone"); // حدد الحقول الضرورية للأداء
   if (!user) {
-    throw new ApiError(404, 'User not found with the provided email');
+    throw new ApiError(404, "User not found with the provided email");
   }
 
   // الخطوة 3: التعامل مع الملفات إذا وجدت
@@ -290,8 +294,11 @@ export const createPlayer = asyncHandler(async (req, res) => {
     try {
       media = await processPlayerMedia(req.files, {}); // لا يوجد media سابق لأنه إنشاء جديد
     } catch (error) {
-      console.error('Error processing media files:', error);
-      throw new ApiError(500, 'Failed to process media files for player creation');
+      console.error("Error processing media files:", error);
+      throw new ApiError(
+        500,
+        "Failed to process media files for player creation"
+      );
     }
   }
 
@@ -306,11 +313,13 @@ export const createPlayer = asyncHandler(async (req, res) => {
 
   // الخطوة 5: populate المستخدم للإرجاع
   const populatedPlayer = await Player.findById(savedPlayer._id)
-    .populate('user', 'name email phone')
+    .populate("user", "name email phone")
     .lean();
 
   // الخطوة 6: إرجاع الرد
-  res.status(201).json(new ApiResponse(201, populatedPlayer, 'Player created successfully'));
+  res
+    .status(201)
+    .json(new ApiResponse(201, populatedPlayer, "Player created successfully"));
 });
 
 // ✅ Update Player (Admin)
@@ -368,7 +377,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   if (soft === "true") {
     // Soft delete - just deactivate
     const player = await Player.findByIdAndUpdate(
-      id, 
+      id,
       { isActive: false, deletedAt: new Date() },
       { new: true }
     ).populate("user", "name email phone");
@@ -407,11 +416,16 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     activePlayers,
     recentUsers,
     recentPlayers,
+    totalCoaches,
+    activeCoaches,
+    recentCoaches,
+    confirmedPlayers,
+    confirmedCoaches
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ isActive: true }),
     Player.countDocuments(),
-    Player.countDocuments({ isActive: true }),
+    Player.countDocuments({ isActive: true  }),
     User.find()
       .sort({ createdAt: -1 })
       .limit(5)
@@ -422,6 +436,16 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       .limit(5)
       .populate("user", "name email")
       .lean(),
+    coachModel.countDocuments(),
+    coachModel.countDocuments({ isActive: true }),
+    coachModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("user", "name email")
+      .lean(),
+    Player.countDocuments({ isConfirmed: true }),
+    coachModel.countDocuments({ isConfirmed: true })
   ]);
 
   const stats = {
@@ -434,10 +458,18 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       total: totalPlayers,
       active: activePlayers,
       inactive: totalPlayers - activePlayers,
+      confirmed: confirmedPlayers
+    },
+    coaches: {
+      total: totalCoaches,
+      active: activeCoaches,
+      inactive: totalCoaches - activeCoaches,
+      confirmed: confirmedCoaches
     },
     recent: {
       users: recentUsers,
       players: recentPlayers,
+      coaches: recentCoaches,
     },
   };
 

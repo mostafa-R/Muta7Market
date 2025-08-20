@@ -127,12 +127,6 @@ const playerSchema = new mongoose.Schema(
       whatsapp: { type: String, default: null },
       youtube: { type: String, default: null },
     },
-    isPromoted: {
-      status: { type: Boolean, default: false },
-      startDate: { type: Date, default: null },
-      endDate: { type: Date, default: null },
-      type: { type: String, default: null },
-    },
     contactInfo: {
       isHidden: { type: Boolean, default: true },
       email: { type: String, default: null },
@@ -156,6 +150,16 @@ const playerSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: false,
+    },
+    isConfirmed: {
+      type: Boolean,
+      default: false,
+    },
+    isPromoted: {
+      status: { type: Boolean, default: false },
+      startDate: { type: Date, default: null },
+      endDate: { type: Date, default: null },
+      type: { type: String, default: null },
     },
   },
   {

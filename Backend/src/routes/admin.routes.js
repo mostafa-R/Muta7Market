@@ -1,18 +1,15 @@
 import express from "express";
 import {
   bulkUpdatePlayers,
-  // Bulk Operations
   bulkUpdateUsers,
+
   createPlayer,
   createUser,
   deletePlayer,
   deleteUser,
 
-  // Player Management
   getAllPlayers,
-  // User Management
   getAllUsers,
-  // Analytics & Stats
   getDashboardStats,
   getPlayerById,
   getUserById,
@@ -51,6 +48,7 @@ router.use(authMiddleware, authorize("admin", "super_admin"));
 
 // Get dashboard statistics
 router.get("/dashboard/stats", getDashboardStats);
+
 
 // ================================
 // USER MANAGEMENT ROUTES

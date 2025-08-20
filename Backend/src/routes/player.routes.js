@@ -15,10 +15,10 @@ import {
   createPlayerSchema,
   updatePlayerSchema,
 } from "../validators/player.validator.js";
-// import {
-//   uploadSingle,
-//   uploadMultiple,
-// } from "../middleware/upload.middleware.js";
+  // import {
+  //   uploadSingle,
+  //   uploadMultiple,
+  // } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
