@@ -232,7 +232,7 @@ const PlayerCard = ({ player }) => {
             aria-label={t("player.viewProfile")}
           >
             <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="font-medium text-sm sm:text-base">
+            <span className="text-sm sm:text-base">
               {t("player.viewProfile")}
             </span>
           </button>
