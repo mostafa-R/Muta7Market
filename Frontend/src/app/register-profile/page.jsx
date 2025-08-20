@@ -223,17 +223,21 @@ function RegisterProfileContent() {
             {/* Upload progress */}
             <UploadProgress progress={uploadProgress} />
 
-            {/* Success message */}
-            <SuccessMessage
-              isUpdate={Boolean(idParam)}
-              playerId={player?._id}
-            />
+            {/* Success message — show only after successful creation */}
+            {!idParam && canPay && player?._id && (
+              <SuccessMessage
+                isUpdate={Boolean(idParam)}
+                playerId={player?._id}
+              />
+            )}
 
-            {/* Publish profile prompt */}
-            <PublishProfilePrompt
-              playerId={player?._id}
-              isActive={player?.isActive ?? true}
-            />
+            {/* Publish profile prompt — appears only when a profile exists and is not active */}
+            {player?._id && (
+              <PublishProfilePrompt
+                playerId={player._id}
+                isActive={player?.isActive ?? true}
+              />
+            )}
           </form>
         )}
       </div>

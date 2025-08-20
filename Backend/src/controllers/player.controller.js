@@ -10,10 +10,10 @@ import {
   replaceMediaItem,
 } from "../utils/mediaUtils.js";
 import { sendInternalNotification } from "./notification.controller.js";
-import { PRICING } from "../config/constants.js";
 import { ensurePendingInvoice } from "../services/invoice.service.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import Invoice from "../models/invoice.model.js";
+import { PRICING } from "../config/constants.js";
 
 // Create Player Profile
 
@@ -23,118 +23,133 @@ import Invoice from "../models/invoice.model.js";
 // Create Player Profile
 // Create Player Profile (guaranteed invoice)
 export const createPlayer = asyncHandler(async (req, res) => {
-  // --- hard guard: must be authenticated ---
-  if (!req.user?._id) {
-    throw new ApiError(401, "Unauthorized");
-  }
   const userId = req.user._id;
 
-  console.log("[createPlayer] START", { userId: String(userId) });
+  try {
+    // لو كل يوزر مسموح له بروفايل واحد
+    const exists = await Player.findOne({ user: userId });
+    if (exists) throw new ApiError(400, "Player profile already exists");
 
-  // one profile per user
-  const exists = await Player.findOne({ user: userId });
-  if (exists) throw new ApiError(400, "Player profile already exists");
+    // ارفع الميديا (لو عندك نفس الهيلبرز)
+    const media = await processPlayerMedia(req.files);
 
-  // Process media files
-  const media = await processPlayerMedia(req.files);
+    // أنشئ البروفايل — بيظهر في الليست بعد الدفع
+    const player = await Player.create({
+      isListed: false,
+      isActive: false, // هتتفعّل بعد الدفع
+      user: userId,
 
-  // Create profile HIDDEN by default
-  const player = await Player.create({
-    isListed: false, // flips to true after paid
-    isActive: false, // optional: keep disabled until paid
-    user: userId,
-    name: req.body.name,
-    age: req.body.age,
-    gender: req.body.gender,
-    nationality: req.body.nationality,
-    jop: req.body.jop,
-    position: req.body.position,
-    status: req.body.status,
-    expreiance: req.body.expreiance,
-    monthlySalary: req.body.monthlySalary,
-    yearSalary: req.body.yearSalary,
-    contractEndDate: req.body.contractEndDate,
-    transferredTo: req.body.transferredTo,
-    socialLinks: req.body.socialLinks,
-    contactInfo: req.body.contactInfo,
-    game: req.body.game,
-    media,
-  });
-
-  console.log("[createPlayer] profile created", {
-    playerId: String(player._id),
-  });
-
-  // ---- Inline upsert of pending invoice (no external helper dependencies) ----
-  const amount = Number(process.env.PRICE_PLAYER_LISTING || 55);
-
-  // 1) Check if a pending already exists for (user, player)
-  let invoice = await Invoice.findOne({
-    userId,
-    product: "player_listing",
-    playerProfileId: player._id,
-    status: "pending",
-  });
-
-  if (invoice) {
-    console.log("[createPlayer] reuse pending invoice", {
-      invoiceId: String(invoice._id),
-    });
-  } else {
-    // 2) Also check if already paid (rare but prevents duplicates)
-    const alreadyPaid = await Invoice.findOne({
-      userId,
-      product: "player_listing",
-      playerProfileId: player._id,
-      status: "paid",
+      name: req.body.name,
+      age: req.body.age,
+      gender: req.body.gender,
+      nationality: req.body.nationality,
+      jop: req.body.jop, //mody fetch job
+      position: req.body.position,
+      status: req.body.status,
+      expreiance: req.body.expreiance,
+      monthlySalary: req.body.monthlySalary,
+      yearSalary: req.body.yearSalary,
+      contractEndDate: req.body.contractEndDate,
+      transferredTo: req.body.transferredTo,
+      socialLinks: req.body.socialLinks,
+      contactInfo: req.body.contactInfo,
+      game: req.body.game,
+      media,
     });
 
-    if (alreadyPaid) {
-      console.log(
-        "[createPlayer] invoice already PAID earlier; no new pending created",
+    try {
+      const raw = String(req.body.jop || player.jop || "").toLowerCase();
+      const targetType = raw === "coach" ? "coach" : "player";
+
+      const amount =
+        targetType === "coach"
+          ? PRICING.listing_year.coach
+          : PRICING.listing_year.player;
+
+      const orderNo = makeOrderNumber("listing", String(req.user._id));
+
+      await Invoice.findOneAndUpdate(
         {
-          invoiceId: String(alreadyPaid._id),
-        }
-      );
-    } else {
-      // 3) Create brand-new pending invoice
-      const orderNumber = makeOrderNumber("player_listing", String(userId));
-      try {
-        invoice = await Invoice.create({
-          orderNumber,
-          userId,
-          product: "player_listing",
-          amount,
-          currency: "SAR",
+          userId: req.user._id,
+          product: "listing",
+          targetType,
+          profileId: player._id,
           status: "pending",
-          playerProfileId: player._id,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        });
-        console.log("[createPlayer] NEW pending invoice created", {
-          invoiceId: String(invoice._id),
-          orderNumber,
-          amount,
-        });
-      } catch (err) {
-        console.error(
-          "[createPlayer] Invoice.create FAILED",
-          err?.message || err
-        );
-      }
+        },
+        {
+          $setOnInsert: {
+            orderNumber: orderNo,
+            invoiceNumber: orderNo,
+            amount,
+            currency: "SAR",
+            durationDays: PRICING.ONE_YEAR_DAYS,
+            featureType: null,
+            status: "pending",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        },
+        { upsert: true }
+      );
+    } catch (e) {
+      console.error("[createPlayer] seed listing draft failed", e);
     }
-  }
 
-  // --- respond only after invoice step attempt ---
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      {
-        player,
-        pendingInvoiceId: invoice ? String(invoice._id) : null,
-      },
-      "Player profile created successfully"
-    )
-  );
+    res
+      .status(201)
+      .json(
+        new ApiResponse(201, player, "Player profile created successfully")
+      );
+
+    // ---------- بعد الرد: أنشئ Draft Invoice للـ LISTING حسب jop ----------
+    try {
+      // حدّد النوع من "jop" (لو كتب أي حاجة غير coach، هنعتبره player)
+      const raw = String(req.body.jop || "").toLowerCase();
+      const targetType = raw === "coach" ? "coach" : "player";
+
+      // سعر سنوي حسب النوع ومتخزّن في PRICING
+      const amount =
+        targetType === "coach"
+          ? PRICING.listing_year.coach
+          : PRICING.listing_year.player;
+
+      // فواتيرنا الداخلية المفروض تبقى pending ومش بنكلم Paylink هنا
+      const orderNo = makeOrderNumber("listing", String(userId));
+
+      await Invoice.findOneAndUpdate(
+        {
+          userId,
+          product: "listing",
+          targetType, // "player" أو "coach"
+          profileId: player._id,
+          status: "pending",
+        },
+        {
+          $setOnInsert: {
+            orderNumber: orderNo,
+            invoiceNumber: orderNo,
+            amount,
+            currency: "SAR",
+            durationDays: PRICING.ONE_YEAR_DAYS || 365, // سنة
+            featureType: null,
+            status: "pending",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // صلاحية صفحة الدفع لما نبدأها
+          },
+        },
+        { upsert: true }
+      );
+
+      // ✅ مفيش أي اتصال بـ Paylink هنا. ده مجرد Draft داخلي يظهر في تبويب المدفوعات.
+      // ✅ لما يضغط "Pay" في الفرونت → بننادي /payments/invoices/:id/initiate → ساعتها بس بنكلم Paylink.
+    } catch (e) {
+      console.error("[createPlayer] seed listing draft failed", e);
+    }
+  } catch (error) {
+    console.error("Error creating player profile:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Failed to create player profile"
+    );
+  }
 });
 
 // Get All Players (with advanced filtering)
