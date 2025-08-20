@@ -12,6 +12,152 @@ import { PRICING } from "../config/constants.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
 
+
+
+const SAR = "SAR";
+
+function priceOr(envKey, fallback) {
+  const v = process.env[envKey];
+  if (v != null && v !== "") return Number(v);
+  if (fallback != null) return Number(fallback);
+  return 55; // fallback أخير
+}
+
+// نحاول نجيب سعر من PRICING / ENV حسب النوع
+function resolvePrice({ product, targetType, durationDays }) {
+  const days = Number(durationDays || 365);
+  if (product === "contacts_access") {
+    return priceOr("PRICE_CONTACTS_ACCESS", PRICING?.CONTACTS_ACCESS);
+  }
+  if (product === "listing") {
+    if (targetType === "coach")
+      return priceOr("PRICE_COACH_LISTING", PRICING?.LISTING_COACH);
+    return priceOr("PRICE_PLAYER_LISTING", PRICING?.LISTING_PLAYER);
+  }
+  if (product === "promotion") {
+    // خرائط أسعار حسب المدة (عدّل المفاتيح حسب PRICING عندك)
+    const bucket = days <= 30 ? 30 : days <= 90 ? 90 : 365;
+    if (targetType === "coach") {
+      if (bucket === 30) return priceOr("PRICE_PROMOTION_COACH_30", PRICING?.PROMOTION_COACH_30);
+      if (bucket === 90) return priceOr("PRICE_PROMOTION_COACH_90", PRICING?.PROMOTION_COACH_90);
+      return priceOr("PRICE_PROMOTION_COACH_365", PRICING?.PROMOTION_COACH_365);
+    } else {
+      if (bucket === 30) return priceOr("PRICE_PROMOTION_PLAYER_30", PRICING?.PROMOTION_PLAYER_30);
+      if (bucket === 90) return priceOr("PRICE_PROMOTION_PLAYER_90", PRICING?.PROMOTION_PLAYER_90);
+      return priceOr("PRICE_PROMOTION_PLAYER_365", PRICING?.PROMOTION_PLAYER_365);
+    }
+  }
+  return 55;
+}
+
+// يحوّل الدوكيومنت لشكل الـUI
+function toDto(inv) {
+  return {
+    id: String(inv._id),
+    createdAt: inv.createdAt,
+    product: inv.product,
+    targetType: inv.targetType || null,
+    amount: inv.amount,
+    currency: inv.currency || SAR,
+    status: String(inv.status || "").toLowerCase(),
+    paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
+    receiptUrl: inv.paymentReceiptUrl || null,
+    orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
+    playerProfileId: inv.playerProfileId || inv.profileId || null,
+    paidAt: inv.paidAt || null,
+  };
+}
+
+// ---------- الدالة المطلوبة ----------
+export const createDraftInvoice = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) return res.status(401).json({ success: false, message: "unauthorized" });
+
+    const { product, profileId: bodyProfileId, playerProfileId: bodyPlayerId, durationDays } = req.body || {};
+    const productNorm = String(product || "").toLowerCase();
+
+    if (!["contacts_access", "listing", "promotion"].includes(productNorm)) {
+      return res.status(400).json({ success: false, message: "invalid_product" });
+    }
+
+    // نقبل profileId أو playerProfileId (توافق رجعي)
+    const profileId = bodyPlayerId || bodyProfileId || null;
+
+    let targetType = null;
+    let amount = 0;
+
+    if (productNorm === "contacts_access") {
+      amount = resolvePrice({ product: productNorm });
+      // أعد استخدام أي pending قديم
+      const existing = await Invoice.findOne({
+        $or: [{ userId }, { user: userId }],
+        product: "contacts_access",
+        status: "pending",
+      }).lean();
+      if (existing) {
+        return res.status(200).json({ success: true, data: toDto(existing) });
+      }
+    } else {
+      // listing / promotion لازم profileId
+      if (!profileId) {
+        return res.status(400).json({ success: false, message: "profileId_required" });
+      }
+      // تأكيد ملكية البروفايل
+      const prof = await PlayerProfile.findOne({ _id: profileId, user: userId }).lean();
+      if (!prof) {
+        return res.status(404).json({ success: false, message: "profile_not_found_or_not_owned" });
+      }
+      targetType = String(prof.jop || "").toLowerCase() === "coach" ? "coach" : "player";
+
+      amount = resolvePrice({ product: productNorm, targetType, durationDays });
+
+      // أعد استخدام pending قديم مطابق
+      const existing = await Invoice.findOne({
+        $or: [{ userId }, { user: userId }],
+        product: productNorm,
+        status: "pending",
+        $or: [{ playerProfileId: profileId }, { profileId }], // دعم الاسمين
+        ...(productNorm === "promotion" ? { durationDays: Number(durationDays || 365) } : {}),
+      }).lean();
+      if (existing) {
+        return res.status(200).json({ success: true, data: toDto(existing) });
+      }
+    }
+
+    // إنشاء الفاتورة المحلية فقط (بدون Paylink)
+    const orderPrefix =
+      productNorm === "contacts_access" ? "ACC" :
+      productNorm === "listing" ? "LST" : "PRM";
+
+    const inv = await Invoice.create({
+      orderNumber: makeOrderNumber(orderPrefix, String(userId)),
+      userId,
+      product: productNorm,
+      targetType,
+      amount,
+      currency: SAR,
+      status: "pending",
+      // نخزن الاسمين للتوافق
+      playerProfileId: profileId || null,
+      profileId: profileId || null,
+      durationDays: productNorm === "promotion" ? Number(durationDays || 365) : undefined,
+      featureType: productNorm === "promotion" ? "toplist" : undefined,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // صلاحية داخلية اختيارية
+    });
+
+    return res.status(201).json({ success: true, data: toDto(inv) });
+  } catch (e) {
+    console.error("createDraftInvoice error:", e);
+    return res.status(500).json({
+      success: false,
+      message: "draft_failed",
+      reason: e?.message,
+    });
+  }
+};
+
+
 // helper: تطبيق آثار الدفع المدفوع (نفس منطق الويبهوك)
 async function applyPaidEffects(invoice, verify, session) {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -249,112 +395,6 @@ function mapPaymentErrors(inv, verify) {
   }
 }
 
-/* ========== 1) إنشاء فاتورة داخلية (Draft) فقط ========== */
-export const createDraftInvoice = async (req, res) => {
-  try {
-    const userId = req.user?._id;
-    if (!userId)
-      return res.status(401).json({ success: false, message: "unauthorized" });
-
-    const { product, profileId, durationDays, force } = req.body;
-    const prod = String(product || "").toLowerCase();
-
-    if (!["contacts_access", "listing", "promotion"].includes(prod)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "invalid_product" });
-    }
-
-    let targetType = null;
-    let amount = 0;
-    let dur = Number(durationDays) || PRICING.ONE_YEAR_DAYS; // سنة افتراضيًا
-    let featureType = null;
-
-    if (prod === "contacts_access") {
-      amount = PRICING.contacts_access_year;
-    } else {
-      if (!profileId)
-        return res
-          .status(400)
-          .json({ success: false, message: "profileId_required" });
-      const profile = await PlayerProfile.findOne({
-        _id: profileId,
-        user: userId,
-      }).select("jop job user");
-      if (!profile)
-        return res
-          .status(404)
-          .json({ success: false, message: "profile_not_found" });
-      targetType = detectTargetTypeFromProfile(profile);
-
-      if (prod === "listing") {
-        amount = PRICING.listing_year[targetType];
-        dur = PRICING.ONE_YEAR_DAYS;
-      } else if (prod === "promotion") {
-        featureType = "toplist";
-        // سنوي ثابت
-        if (PRICING.promotion_year[targetType] > 0 && !durationDays) {
-          amount = PRICING.promotion_year[targetType];
-          dur = PRICING.ONE_YEAR_DAYS;
-        } else {
-          // أو باليوم
-          const perDay = PRICING.promotion_per_day[targetType] || 0;
-          const d = Number(durationDays || PRICING.ONE_YEAR_DAYS);
-          amount = perDay * d;
-          dur = d;
-        }
-      }
-    }
-
-    const q = {
-      userId,
-      product: prod,
-      targetType: targetType || null,
-      profileId: profileId || null,
-      status: "pending",
-    };
-    let invoice = await Invoice.findOne(q);
-    if (!invoice || force) {
-      const orderNo = makeOrderNumber(prod, String(userId));
-      invoice = await Invoice.findOneAndUpdate(
-        q,
-        {
-          $setOnInsert: {
-            orderNumber: orderNo,
-            invoiceNumber: orderNo,
-            userId,
-            product: prod,
-            targetType: targetType || null,
-            profileId: profileId || null,
-            durationDays: dur,
-            featureType,
-            amount,
-            currency: "SAR",
-            status: "pending",
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          },
-        },
-        { new: true, upsert: true }
-      );
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        id: String(invoice._id),
-        product: invoice.product,
-        targetType: invoice.targetType,
-        profileId: invoice.profileId,
-        amount: invoice.amount,
-        durationDays: invoice.durationDays,
-        status: invoice.status,
-      },
-    });
-  } catch (e) {
-    console.error("createDraftInvoice error", e);
-    return res.status(500).json({ success: false, message: "draft_failed" });
-  }
-};
 
 /* ========== 2) بدء الدفع لفاتورة داخلية (إنشاء فاتورة Paylink) ========== */
 export const initiatePaymentByInvoiceId = async (req, res) => {
