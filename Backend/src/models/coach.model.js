@@ -1,42 +1,42 @@
-import mongoose from 'mongoose';
-import { PROFILE_STATUS, GENDER } from '../config/constants.js';
+import mongoose from "mongoose";
+import { GENDER, PROFILE_STATUS } from "../config/constants.js";
 
 const coachSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+      ref: "User",
+      required: true,
     },
     name: {
       en: { type: String, required: true },
-      ar: { type: String, required: true }
+      ar: { type: String, required: true },
     },
     age: {
       type: Number,
       required: true,
       min: 25,
-      max: 70
+      max: 70,
     },
     gender: {
       type: String,
       enum: Object.values(GENDER),
-      required: true
+      required: true,
     },
     nationality: {
       type: String,
-      required: true
+      required: true,
     },
     category: {
       type: String,
       required: true,
       enum: [
-        'head_coach',
-        'assistant_coach',
-        'goalkeeper_coach',
-        'fitness_coach',
-        'technical_director'
-      ]
+        "head_coach",
+        "assistant_coach",
+        "goalkeeper_coach",
+        "fitness_coach",
+        "technical_director",
+      ],
     },
     experience: {
       years: { type: Number, default: 0 },
@@ -46,9 +46,9 @@ const coachSchema = new mongoose.Schema(
           position: String,
           from: Date,
           to: Date,
-          achievements: [String]
-        }
-      ]
+          achievements: [String],
+        },
+      ],
     },
     licenses: [
       {
@@ -56,42 +56,42 @@ const coachSchema = new mongoose.Schema(
         issuedBy: String,
         issuedDate: Date,
         expiryDate: Date,
-        documentUrl: String
-      }
+        documentUrl: String,
+      },
     ],
     monthlySalary: {
       amount: { type: Number, default: 0 },
-      currency: { type: String, default: 'SAR' }
+      currency: { type: String, default: "SAR" },
     },
     annualContract: {
       amount: { type: Number, default: 0 },
-      currency: { type: String, default: 'SAR' }
+      currency: { type: String, default: "SAR" },
     },
     contractEndDate: {
-      type: Date
+      type: Date,
     },
     status: {
       type: String,
       enum: Object.values(PROFILE_STATUS),
-      default: PROFILE_STATUS.AVAILABLE
+      default: PROFILE_STATUS.AVAILABLE,
     },
     transferredTo: {
       club: String,
       date: Date,
-      amount: Number
+      amount: Number,
     },
     media: {
       profileImage: {
         url: String,
-        publicId: String
+        publicId: String,
       },
       images: [
         {
           url: String,
           publicId: String,
           title: String,
-          uploadedAt: { type: Date, default: Date.now }
-        }
+          uploadedAt: { type: Date, default: Date.now },
+        },
       ],
       videos: [
         {
@@ -99,8 +99,8 @@ const coachSchema = new mongoose.Schema(
           publicId: String,
           title: String,
           duration: Number,
-          uploadedAt: { type: Date, default: Date.now }
-        }
+          uploadedAt: { type: Date, default: Date.now },
+        },
       ],
       documents: [
         {
@@ -108,29 +108,29 @@ const coachSchema = new mongoose.Schema(
           publicId: String,
           title: String,
           type: String,
-          uploadedAt: { type: Date, default: Date.now }
-        }
-      ]
+          uploadedAt: { type: Date, default: Date.now },
+        },
+      ],
     },
 
     socialLinks: {
       instagram: String,
       twitter: String,
       whatsapp: String,
-      linkedin: String
+      linkedin: String,
     },
     achievements: [
       {
         title: String,
         year: Number,
-        description: String
-      }
+        description: String,
+      },
     ],
     isPromoted: {
       status: { type: Boolean, default: false },
       startDate: Date,
       endDate: Date,
-      type: { type: String, enum: ['featured', 'premium'] }
+      type: { type: String, enum: ["featured", "premium"] },
     },
     contactInfo: {
       isHidden: { type: Boolean, default: true },
@@ -139,41 +139,41 @@ const coachSchema = new mongoose.Schema(
       agent: {
         name: String,
         phone: String,
-        email: String
-      }
+        email: String,
+      },
     },
     seo: {
       metaTitle: {
         en: String,
-        ar: String
+        ar: String,
       },
       metaDescription: {
         en: String,
-        ar: String
+        ar: String,
       },
-      keywords: [String]
+      keywords: [String],
     },
     views: {
       type: Number,
-      default: 0
+      default: 0,
     },
     isActive: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 // Indexes
-coachSchema.index({ 'name.en': 'text', 'name.ar': 'text' });
+coachSchema.index({ "name.en": "text", "name.ar": "text" });
 coachSchema.index({ nationality: 1, category: 1, status: 1 });
-coachSchema.index({ 'isPromoted.status': 1, 'isPromoted.endDate': 1 });
+coachSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
 
 // Virtual for checking if promoted
-coachSchema.virtual('isCurrentlyPromoted').get(function () {
+coachSchema.virtual("isCurrentlyPromoted").get(function () {
   return (
     this.isPromoted.status &&
     this.isPromoted.endDate &&
@@ -182,12 +182,12 @@ coachSchema.virtual('isCurrentlyPromoted').get(function () {
 });
 
 // Method to promote coach
-coachSchema.methods.promote = async function (days, type = 'featured') {
+coachSchema.methods.promote = async function (days, type = "featured") {
   this.isPromoted = {
     status: true,
     startDate: new Date(),
     endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
-    type
+    type,
   };
   return this.save();
 };
@@ -198,9 +198,9 @@ coachSchema.methods.transfer = async function (clubName, amount) {
   this.transferredTo = {
     club: clubName,
     date: new Date(),
-    amount
+    amount,
   };
   return this.save();
 };
 
-export default mongoose.model('Coach', coachSchema);
+export default mongoose.model("Coach", coachSchema);

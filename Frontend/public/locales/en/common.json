@@ -25,7 +25,19 @@
     "annualContract": "Annual Contract Value",
     "notSpecified": "Not Specified",
     "transferDeadline": "Transfer Deadline",
-    "viewProfile": "View Profile"
+    "viewProfile": "View Profile",
+    "promoted": "Promoted",
+    "featured": "Featured",
+    "premiumPlayer": "Premium Player",
+    "experienceYears": "Years of Experience",
+    "contactPlayer": "Contact Player",
+    "playerCard": "Player Card",
+    "playerPhoto": "Player Photo",
+    "playerInitials": "Player Initials",
+    "availabilityStatus": "Availability Status",
+    "sportsPosition": "Sports Position",
+    "playerLocation": "Player Location",
+    "clickToViewDetails": "Click to view player details"
   },
   "common": {
     "player": "Player",
@@ -69,7 +81,15 @@
     "or": "or",
     "termsAndConditions": "Terms and Conditions",
     "and": "and",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "showMore": "Show More",
+    "showLess": "Show Less",
+    "noData": "No Data Available",
+    "updated": "Updated",
+    "created": "Created",
+    "featured": "Featured",
+    "premium": "Premium",
+    "verified": "Verified"
   },
   "brand": {
     "name": "Muta7Market",
@@ -271,7 +291,16 @@
     "views": "Views",
     "nationality": "Nationality",
     "availableForPaidUsers": "Available for paid users only",
-    "activateToViewContacts": "Activate your account to view contact information. One-time payment (200 SAR)."
+    "activateToViewContacts": "Activate your account to view contact information. One-time payment (200 SAR).",
+    "activateToViewFinancials": "Activate your account to view financial and transfer information. One-time payment (200 SAR).",
+    "activateToDownloadFiles": "Document download is available for activated accounts only. Activate your account to download player documents and files.",
+    "noFinancialData": "No financial information available",
+    "playerImages": "Player Images",
+    "noImagesAvailable": "No images available for this player",
+    "profilePhoto": "Profile",
+    "sportsPhoto": "Sports",
+    "clickToZoom": "Click image to view in full size",
+    "imageGallery": "Image Gallery"
   },
   "registerProfile": {
     "editPlayerProfile": "Edit Player Profile",
@@ -329,6 +358,8 @@
         "position": "Position/Specialization",
         "positionPlaceholder": "Select your position",
         "selectSportFirst": "Please select a sport first",
+        "customPosition": "Custom Position",
+        "customPositionPlaceholder": "Enter your specific position",
         "category": "Category",
         "categoryPlaceholder": "Choose your category",
         "player": "Player",
@@ -410,6 +441,16 @@
           "maxSize": "Maximum file size: 10 MB",
           "selectFiles": "Choose Files",
           "uploadedDocument": "Uploaded Document"
+        },
+        "sportsImages": {
+          "title": "Upload Sports Images",
+          "description": "You can upload up to 4 images in JPG, PNG or WebP format",
+          "maxSize": "Maximum file size: 10 MB per image",
+          "selectImages": "Choose Images",
+          "uploadedImages": "Uploaded Images",
+          "new": "New",
+          "uploaded": "Uploaded",
+          "processing": "Processing"
         }
       },
       "terms": {
@@ -607,6 +648,12 @@
     "unsupportedFileType": "File type not supported",
     "fileTooLarge": "File size too large (maximum 10MB)"
   },
+  "mediaUpload": {
+    "errors": {
+      "imageProcessingFailed": "Failed to process image",
+      "imageLoadingFailed": "Failed to load image"
+    }
+  },
   "fieldValidation": {
     "nameRequired": "Name is required",
     "ageRequired": "Age is required",
@@ -632,7 +679,10 @@
     "statusInvalid": "Current status is required - must select a valid status",
     "termsAcceptanceRequired": "You must agree to the terms and conditions",
     "roleTypeRequired": "Role type is required - please select your specific role",
-    "positionTooShort": "Position must be at least 2 characters"
+    "positionTooShort": "Position must be at least 2 characters",
+    "customPositionRequired": "Please specify your position",
+    "customPositionTooShort": "Custom position must be at least 2 characters",
+    "customPositionTooLong": "Custom position is too long"
   },
 
   "fileUpload": {
@@ -658,7 +708,8 @@
   },
   "actions": {
     "removeVideo": "Remove Video",
-    "removeDocument": "Remove Document"
+    "removeDocument": "Remove Document",
+    "removeImage": "Remove Image"
   },
   "payments": {
     "title": "Payments",
@@ -890,6 +941,17 @@
     "algeria": "Algeria",
     "sudan": "Sudan",
     "yemen": "Yemen",
+    "palestine": "Palestine",
+    "mauritania": "Mauritania",
+    "somalia": "Somalia",
+    "djibouti": "Djibouti",
+    "comoros": "Comoros",
+    "turkish": "Turkey",
+    "iran": "Iran",
+    "pakistan": "Pakistan",
+    "india": "India",
+    "bangladesh": "Bangladesh",
+    "afghanistan": "Afghanistan",
     "other": "Other"
   },
   "playerRoles": {
@@ -944,6 +1006,25 @@
     "gymnastics": "Gymnastics",
     "billiards": "Billiards",
     "wrestling": "Wrestling",
+    "rugby": "Rugby",
+    "hockey": "Hockey",
+    "cricket": "Cricket",
+    "golf": "Golf",
+    "skiing": "Skiing",
+    "surfing": "Surfing",
+    "climbing": "Climbing",
+    "skating": "Skating",
+    "snowboarding": "Snowboarding",
+    "waterpolo": "Water Polo",
+    "lacrosse": "Lacrosse",
+    "polo": "Polo",
+    "crossfit": "CrossFit",
+    "motorsport": "Motorsport",
+    "sailing": "Sailing",
+    "rowing": "Rowing",
+    "triathlon": "Triathlon",
+    "marathon": "Marathon",
+    "pentathlon": "Pentathlon",
     "description": "Discover talents in various sports and connect with professional players and coaches",
     "allSports": "All Sports",
     "explorePlayers": "Explore Players",
@@ -1011,11 +1092,12 @@
     "coach": "Coach",
     "trainer": "Trainer",
     "instructor": "Instructor",
+    "other": "Other",
     "handball": {
       "goalkeeper": "Goalkeeper",
       "leftWing": "Left Wing",
       "leftBack": "Left Back",
-      "centerBack": "Center Back",
+      "playmaker": "Playmaker",
       "rightBack": "Right Back",
       "rightWing": "Right Wing",
       "pivot": "Pivot"
@@ -1031,9 +1113,10 @@
       "setter": "Setter",
       "outsideHitter": "Outside Hitter",
       "middleBlocker": "Middle Blocker",
-      "oppositeHitter": "Opposite Hitter",
+      "oppositeHitter": "Opposite",
       "libero": "Libero",
-      "defensiveSpecialist": "Defensive Specialist"
+      "defensiveSpecialist": "Defensive Specialist",
+      "servingSpecialist": "Serving Specialist"
     },
     "badminton": {
       "singles": "Singles",
@@ -1041,19 +1124,26 @@
       "mixedDoubles": "Mixed Doubles"
     },
     "athletics": {
-      "sprinter": "Sprinter",
-      "middleDistance": "Middle Distance",
-      "longDistance": "Long Distance",
-      "hurdler": "Hurdler",
-      "highJump": "High Jump",
+      "100m": "100m",
+      "200m": "200m",
+      "400m": "400m",
+      "800m": "800m",
+      "1500m": "1500m",
+      "5000m": "5000m",
+      "10000m": "10000m",
+      "marathon": "Marathon",
+      "100mHurdles": "100m Hurdles",
+      "110mHurdles": "110m Hurdles",
+      "400mHurdles": "400m Hurdles",
       "longJump": "Long Jump",
+      "highJump": "High Jump",
+      "tripleJump": "Triple Jump",
       "poleVault": "Pole Vault",
       "shotPut": "Shot Put",
-      "discus": "Discus",
-      "javelin": "Javelin",
+      "discusThrow": "Discus Throw",
       "hammerThrow": "Hammer Throw",
-      "decathlon": "Decathlon",
-      "heptathlon": "Heptathlon"
+      "javelinThrow": "Javelin Throw",
+      "raceWalking": "Race Walking"
     },
     "tennis": {
       "singles": "Singles",
@@ -1066,37 +1156,71 @@
       "mixedDoubles": "Mixed Doubles"
     },
     "karate": {
-      "kata": "Kata",
-      "kumite": "Kumite",
-      "teamKata": "Team Kata"
+      "whiteBelt": "White Belt",
+      "yellowBelt": "Yellow Belt",
+      "orangeBelt": "Orange Belt",
+      "greenBelt": "Green Belt",
+      "blueBelt": "Blue Belt",
+      "brownBelt": "Brown Belt",
+      "redBelt": "Red Belt"
     },
     "taekwondo": {
-      "poomsae": "Poomsae",
-      "kyorugi": "Kyorugi (Sparring)",
-      "breaking": "Breaking"
+      "whiteBelt": "White Belt",
+      "yellowBelt": "Yellow Belt",
+      "greenBelt": "Green Belt",
+      "blueBelt": "Blue Belt",
+      "redBelt": "Red Belt",
+      "blackBelt": "Black Belt"
     },
     "archery": {
-      "recurve": "Recurve",
-      "compound": "Compound",
-      "barebow": "Barebow",
-      "traditional": "Traditional"
+      "whiteArrow": "White Arrow",
+      "blackArrow": "Black Arrow",
+      "blueArrow": "Blue Arrow",
+      "redArrow": "Red Arrow",
+      "yellowArrow": "Yellow Arrow",
+      "greenArrow": "Green Arrow"
     },
     "esports": {
-      "shooter": "First Person Shooter",
-      "strategy": "Real-Time Strategy",
       "moba": "MOBA",
-      "racing": "Racing",
-      "fighting": "Fighting",
-      "sportsSimulation": "Sports Simulation"
+      "fightingGames": "Fighting Games",
+      "rts": "RTS",
+      "fps": "FPS",
+      "battleRoyale": "Battle Royale",
+      "sportsSimulation": "Sports Simulation",
+      "racingSimulation": "Racing Simulation",
+      "mobileGames": "Mobile Games",
+      "fifa": "FIFA",
+      "rocketLeague": "Rocket League"
+    },
+    "football": {
+      "goalkeeper": "Goalkeeper",
+      "rightBack": "Right Back",
+      "leftBack": "Left Back",
+      "centerBack": "Center Back",
+      "cdm": "CDM",
+      "rightWinger": "Right Winger",
+      "leftWinger": "Left Winger",
+      "midfielder": "Midfielder",
+      "cam": "CAM",
+      "striker": "Striker"
     },
     "swimming": {
-      "freestyle": "Freestyle",
-      "backstroke": "Backstroke",
-      "breaststroke": "Breaststroke",
-      "butterfly": "Butterfly",
-      "individualMedley": "Individual Medley",
-      "relay": "Relay",
-      "openWater": "Open Water"
+      "freestyle50m": "Freestyle 50m",
+      "freestyle100m": "Freestyle 100m",
+      "freestyle200m": "Freestyle 200m",
+      "backstroke50m": "Backstroke 50m",
+      "backstroke100m": "Backstroke 100m",
+      "backstroke200m": "Backstroke 200m",
+      "breaststroke50m": "Breaststroke 50m",
+      "breaststroke100m": "Breaststroke 100m",
+      "breaststroke200m": "Breaststroke 200m",
+      "butterfly50m": "Butterfly 50m",
+      "butterfly100m": "Butterfly 100m",
+      "butterfly200m": "Butterfly 200m",
+      "relay200m": "Relay 200m",
+      "relay400m": "Relay 400m",
+      "relay800m": "Relay 800m",
+      "medleyRace": "Medley Race"
     },
     "judo": {
       "lightweight": "Lightweight",
@@ -1105,10 +1229,14 @@
       "team": "Team"
     },
     "fencing": {
+      "eUnder": "E & Under",
+      "dUnder": "D & Under",
+      "cUnder": "C & Under",
+      "beginner": "Beginner",
+      "unclassified": "Unclassified",
       "foil": "Foil",
       "epee": "Épée",
-      "sabre": "Sabre",
-      "team": "Team"
+      "sabre": "Sabre"
     },
     "cycling": {
       "roadRacing": "Road Racing",
@@ -1129,9 +1257,9 @@
     "futsal": {
       "goalkeeper": "Goalkeeper",
       "defender": "Defender",
-      "midfielder": "Midfielder",
-      "forward": "Forward",
-      "pivot": "Pivot"
+      "winger": "Winger",
+      "pivotFlank": "Pivot/Flank",
+      "fixoPivot": "Fixo/Pivot"
     },
     "boxing": {
       "lightweight": "Lightweight",
@@ -1158,9 +1286,8 @@
       "straightPool": "Straight Pool"
     },
     "wrestling": {
-      "freestyle": "Freestyle",
-      "grecoRoman": "Greco-Roman",
-      "folkstyle": "Folkstyle"
+      "freestyle": "Freestyle Wrestling",
+      "grecoRoman": "Greco-Roman Wrestling"
     }
   }
 }

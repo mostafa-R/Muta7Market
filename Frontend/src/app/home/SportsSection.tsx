@@ -10,7 +10,6 @@ import {
   FaChessKnight,
   FaDumbbell,
   FaFistRaised,
-  FaFootballBall,
   FaRunning,
   FaSwimmer,
   FaTableTennis,
@@ -32,22 +31,22 @@ const sports = [
   {
     id: "handball",
     name: "كرة اليد",
-    icon: FaFootballBall,
+    icon: "./assets/handball.svg",
   },
   {
     id: "basketball",
     name: "كرة السلة",
-    icon: FaBasketballBall,
+    icon: "./assets/basketball.svg",
   },
   {
     id: "volleyball",
     name: "الكرة الطائرة",
-    icon: FaVolleyballBall,
+    icon: "./assets/volleyball.svg",
   },
   {
     id: "badminton",
     name: "الريشة الطائرة",
-    icon: GiTennisRacket,
+    icon: "./assets/badminton.svg",
   },
   {
     id: "athletics",
@@ -72,7 +71,7 @@ const sports = [
   {
     id: "taekwondo",
     name: "التايكوندو",
-    icon: FaFistRaised,
+    icon: "./assets/taekwondo.svg",
   },
   {
     id: "archery",
@@ -87,7 +86,7 @@ const sports = [
   {
     id: "judo",
     name: "الجودو",
-    icon: GiKimono,
+    icon: "./assets/judo.svg",
   },
   {
     id: "fencing",
@@ -102,7 +101,7 @@ const sports = [
   {
     id: "squash",
     name: "الإسكواش",
-    icon: GiTennisRacket,
+    icon: "./assets/squash.svg",
   },
   {
     id: "weightlifting",
@@ -113,6 +112,11 @@ const sports = [
     id: "futsal",
     name: "كرة قدم الصالات",
     icon: GiGoalKeeper,
+  },
+  {
+    id: "football",
+    name: "كرة قدم",
+    icon: "./assets/football-ball.svg",
   },
   {
     id: "boxing",
@@ -127,12 +131,12 @@ const sports = [
   {
     id: "billiards",
     name: "البلياردو",
-    icon: FaChessKnight,
+    icon: "./assets/billiards.svg",
   },
   {
     id: "wrestling",
     name: "المصارعة",
-    icon: GiMuscleUp,
+    icon: "./assets/wrestling.svg",
   },
   {
     id: "swimming",
@@ -195,7 +199,17 @@ const SportsSection = () => {
                     <div className="flex flex-col items-center justify-center min-w-[70px] md:min-w-[80px] lg:min-w-[90px] p-2 md:p-3 rounded-lg transition-all duration-300 ease-in-out hover:bg-gray-50">
                       {/* Icon Container */}
                       <div className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 mb-1 md:mb-2 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Icon className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-gray-600 group-hover:text-[#00184d] transition-colors duration-300" />
+                        {typeof sport.icon === "string" ? (
+                          // For SVG file paths
+                          <img
+                            src={sport.icon}
+                            alt={sport.name}
+                            className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-gray-600 group-hover:text-[#00184d] transition-colors duration-300"
+                          />
+                        ) : (
+                          // For React Icons and custom SVG components
+                          <Icon className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-gray-600 group-hover:text-[#00184d] transition-colors duration-300" />
+                        )}
                       </div>
 
                       {/* Sport Name */}

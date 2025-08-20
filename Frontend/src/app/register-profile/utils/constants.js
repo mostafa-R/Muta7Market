@@ -45,6 +45,7 @@ export const initialFormValues = {
   jopSelected: false,
   roleType: "",
   position: "",
+  customPosition: "", // Added custom position field
   status: "",
   statusSelected: false,
   experience: "0",
@@ -101,6 +102,7 @@ export const initialFormValues = {
       size: 0,
       uploadedAt: null,
     },
+    images: [], // Array for up to 4 images
   },
   profilePicturePreview: "",
   profilePictureFile: null,

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 
 const WhatsAppButton = () => {
   const [isArabic, setIsArabic] = useState(false);
-  const phoneNumber = "966501234567"; // استبدل هذا برقم الهاتف الفعلي مع رمز الدولة
+  const phoneNumber = "00966531540229"; 
   const message = "مرحبا! كيف يمكنني مساعدتك؟";
 
   useEffect(() => {

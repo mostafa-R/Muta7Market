@@ -27,6 +27,7 @@ import { UploadProgress } from "./components/UploadProgress";
 import { useFormSteps } from "./hooks/useFormSteps";
 import { useMediaHandling } from "./hooks/useMediaHandling";
 import { usePlayerForm } from "./hooks/usePlayerForm";
+// Updated imports to use new organized constants structure
 import {
   ALLOWED_DOCUMENT_TYPES,
   ALLOWED_IMAGE_TYPES,
@@ -56,7 +57,9 @@ function RegisterProfileContent() {
         return (
           <PersonalInfoCard
             formik={formik}
-            handleFileValidation={(file, types, size) => handleFileValidation(file, types, size, t)}
+            handleFileValidation={(file, types, size) =>
+              handleFileValidation(file, types, size, t)
+            }
             ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
             MAX_FILE_SIZE={MAX_FILE_SIZE}
           />
@@ -75,9 +78,12 @@ function RegisterProfileContent() {
         return (
           <MediaUploadCard
             formik={formik}
-            handleFileValidation={(file, types, size) => handleFileValidation(file, types, size, t)}
+            handleFileValidation={(file, types, size) =>
+              handleFileValidation(file, types, size, t)
+            }
             ALLOWED_VIDEO_TYPES={ALLOWED_VIDEO_TYPES}
             ALLOWED_DOCUMENT_TYPES={ALLOWED_DOCUMENT_TYPES}
+            ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
             MAX_FILE_SIZE={MAX_FILE_SIZE}
           />
         );

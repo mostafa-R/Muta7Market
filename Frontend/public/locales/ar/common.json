@@ -25,7 +25,19 @@
     "annualContract": "قيمة العقد السنوي",
     "notSpecified": "غير محدد",
     "transferDeadline": "موعد انتهاء الانتقال",
-    "viewProfile": "عرض الملف الشخصي"
+    "viewProfile": "عرض الملف الشخصي",
+    "promoted": "مميز",
+    "featured": "مُقترح",
+    "premiumPlayer": "لاعب مميز",
+    "experienceYears": "سنوات الخبرة",
+    "contactPlayer": "تواصل مع اللاعب",
+    "playerCard": "بطاقة اللاعب",
+    "playerPhoto": "صورة اللاعب",
+    "playerInitials": "أحرف اللاعب الأولى",
+    "availabilityStatus": "حالة التوفر",
+    "sportsPosition": "المركز الرياضي",
+    "playerLocation": "موقع اللاعب",
+    "clickToViewDetails": "انقر لعرض تفاصيل اللاعب"
   },
   "common": {
     "player": "لاعب",
@@ -69,7 +81,15 @@
     "or": "أو",
     "termsAndConditions": "الشروط والأحكام",
     "and": "و",
-    "privacyPolicy": "سياسة الخصوصية"
+    "privacyPolicy": "سياسة الخصوصية",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل",
+    "noData": "لا توجد بيانات متاحة",
+    "updated": "محدث",
+    "created": "تم الإنشاء",
+    "featured": "مُقترح",
+    "premium": "مميز",
+    "verified": "مُتحقق منه"
   },
   "brand": {
     "name": "متاح ماركت",
@@ -270,7 +290,16 @@
     "views": "المشاهدات",
     "nationality": "الجنسية",
     "availableForPaidUsers": "متاح للمستخدمين المدفوعين فقط",
-    "activateToViewContacts": "فعّل حسابك لعرض معلومات الاتصال. دفعة واحدة (200 ريال سعودي)."
+    "activateToViewContacts": "فعّل حسابك لعرض معلومات الاتصال. دفعة واحدة (200 ريال سعودي).",
+    "activateToViewFinancials": "فعّل حسابك لعرض المعلومات المالية ومعلومات الانتقال. دفعة واحدة (200 ريال سعودي).",
+    "activateToDownloadFiles": "تحميل المستندات متاح للحسابات المفعّلة فقط. فعّل حسابك لتحميل مستندات وملفات اللاعب.",
+    "noFinancialData": "لا توجد معلومات مالية متاحة",
+    "playerImages": "صور اللاعب",
+    "noImagesAvailable": "لا توجد صور متاحة لهذا اللاعب",
+    "profilePhoto": "شخصية",
+    "sportsPhoto": "رياضية",
+    "clickToZoom": "انقر على الصورة لعرضها بالحجم الكامل",
+    "imageGallery": "معرض الصور"
   },
   "registerProfile": {
     "editPlayerProfile": "تعديل ملف اللاعب",
@@ -328,6 +357,8 @@
         "position": "المركز/التخصص",
         "positionPlaceholder": "اختر مركزك",
         "selectSportFirst": "يرجى اختيار الرياضة أولاً",
+        "customPosition": "مركز مخصص",
+        "customPositionPlaceholder": "أدخل مركزك المحدد",
         "category": "الفئة",
         "categoryPlaceholder": "اختر فئتك",
         "player": "لاعب",
@@ -409,6 +440,16 @@
           "maxSize": "الحد الأقصى للملف: 10 ميجابايت",
           "selectFiles": "اختيار ملفات",
           "uploadedDocument": "المستند المرفوع"
+        },
+        "sportsImages": {
+          "title": "رفع صور رياضية",
+          "description": "يمكنك رفع حتى 4 صور بتنسيق JPG أو PNG أو WebP",
+          "maxSize": "الحد الأقصى: 10 ميجابايت لكل صورة",
+          "selectImages": "اختيار صور",
+          "uploadedImages": "الصور المرفوعة",
+          "new": "جديد",
+          "uploaded": "تم الرفع",
+          "processing": "جاري المعالجة"
         }
       },
       "terms": {
@@ -606,6 +647,12 @@
     "unsupportedFileType": "نوع الملف غير مدعوم",
     "fileTooLarge": "حجم الملف كبير جدًا (الحد الأقصى 10MB)"
   },
+  "mediaUpload": {
+    "errors": {
+      "imageProcessingFailed": "فشل في معالجة الصورة",
+      "imageLoadingFailed": "فشل في تحميل الصورة"
+    }
+  },
   "fieldValidation": {
     "nameRequired": "الاسم مطلوب",
     "ageRequired": "العمر مطلوب",
@@ -631,7 +678,10 @@
     "statusInvalid": "الحالة الحالية مطلوبة - يجب اختيار حالة صالحة",
     "termsAcceptanceRequired": "يجب الموافقة على الشروط والأحكام",
     "roleTypeRequired": "نوع الدور مطلوب - يرجى اختيار دورك المحدد",
-    "positionTooShort": "المركز يجب أن يكون على الأقل حرفين"
+    "positionTooShort": "المركز يجب أن يكون على الأقل حرفين",
+    "customPositionRequired": "يرجى تحديد مركزك",
+    "customPositionTooShort": "المركز المخصص يجب أن يكون على الأقل حرفين",
+    "customPositionTooLong": "المركز المخصص طويل جداً"
   },
 
   "fileUpload": {
@@ -657,7 +707,8 @@
   },
   "actions": {
     "removeVideo": "إزالة الفيديو",
-    "removeDocument": "إزالة المستند"
+    "removeDocument": "إزالة المستند",
+    "removeImage": "إزالة الصورة"
   },
   "payments": {
     "title": "المدفوعات",
@@ -873,6 +924,7 @@
     }
   },
   "nationalities": {
+    "SaudiArabia": "السعودية",
     "saudi": "السعودية",
     "uae": "الإمارات",
     "egypt": "مصر",
@@ -890,6 +942,17 @@
     "algeria": "الجزائر",
     "sudan": "السودان",
     "yemen": "اليمن",
+    "palestine": "فلسطين",
+    "mauritania": "موريتانيا",
+    "somalia": "الصومال",
+    "djibouti": "جيبوتي",
+    "comoros": "جزر القمر",
+    "turkish": "تركيا",
+    "iran": "إيران",
+    "pakistan": "باكستان",
+    "india": "الهند",
+    "bangladesh": "بنغلاديش",
+    "afghanistan": "أفغانستان",
     "other": "أخرى"
   },
   "playerRoles": {
@@ -986,7 +1049,26 @@
     "boxing": "الملاكمة",
     "gymnastics": "الجمباز",
     "billiards": "البلياردو",
-    "wrestling": "المصارعة"
+    "wrestling": "المصارعة",
+    "rugby": "الرغبي",
+    "hockey": "الهوكي",
+    "cricket": "الكريكت",
+    "golf": "الغولف",
+    "skiing": "التزلج",
+    "surfing": "ركوب الأمواج",
+    "climbing": "التسلق",
+    "skating": "التزلج على الجليد",
+    "snowboarding": "التزلج على الثلج",
+    "waterpolo": "كرة الماء",
+    "lacrosse": "لاكروس",
+    "polo": "البولو",
+    "crossfit": "كروس فيت",
+    "motorsport": "رياضة السيارات",
+    "sailing": "الإبحار",
+    "rowing": "التجديف",
+    "triathlon": "الترايثلون",
+    "marathon": "الماراثون",
+    "pentathlon": "الخماسي الحديث"
   },
 
   "positions": {
@@ -1012,15 +1094,16 @@
     "coach": "مدرب",
     "trainer": "مدرب لياقة",
     "instructor": "مدرب تعليمي",
+    "other": "أخرى",
 
     "handball": {
-      "goalkeeper": "حارس المرمى",
-      "leftWing": "الجناح الأيسر",
-      "leftBack": "الظهير الأيسر",
-      "centerBack": "صانع الألعاب",
-      "rightBack": "الظهير الأيمن",
-      "rightWing": "الجناح الأيمن",
-      "pivot": "المحور"
+      "goalkeeper": "حارس مرمى",
+      "leftWing": "جناح أيسر",
+      "leftBack": "ظهير أيسر",
+      "playmaker": "صانع ألعاب",
+      "rightBack": "ظهير أيمن",
+      "rightWing": "جناح أيمن",
+      "pivot": "دائرة"
     },
     "basketball": {
       "pointGuard": "صانع الألعاب",
@@ -1030,12 +1113,13 @@
       "center": "المركز"
     },
     "volleyball": {
-      "setter": "معد الكرات",
+      "setter": "مُعد",
       "outsideHitter": "ضارب خارجي",
-      "middleBlocker": "صاد أوسط",
-      "oppositeHitter": "ضارب مقابل",
-      "libero": "الليبرو",
-      "defensiveSpecialist": "أخصائي دفاع"
+      "middleBlocker": "حاجب أوسط",
+      "oppositeHitter": "مقابل",
+      "libero": "ليبيرو",
+      "defensiveSpecialist": "متخصص دفاعي",
+      "servingSpecialist": "متخصص إرسال"
     },
     "badminton": {
       "singles": "فردي",
@@ -1043,19 +1127,26 @@
       "mixedDoubles": "زوجي مختلط"
     },
     "athletics": {
-      "sprinter": "عداء سريع",
-      "middleDistance": "متوسط المسافة",
-      "longDistance": "مسافات طويلة",
-      "hurdler": "الحواجز",
-      "highJump": "الوثب العالي",
-      "longJump": "الوثب الطويل",
-      "poleVault": "الوثب بالعصا",
-      "shotPut": "دفع الجلة",
-      "discus": "قرص",
-      "javelin": "رمح",
+      "100m": "100م",
+      "200m": "200م",
+      "400m": "400م",
+      "800m": "800م",
+      "1500m": "1500م",
+      "5000m": "5000م",
+      "10000m": "10000م",
+      "marathon": "الماراثون",
+      "100mHurdles": "100م حواجز",
+      "110mHurdles": "110م حواجز",
+      "400mHurdles": "400م حواجز",
+      "longJump": "وثب طويل",
+      "highJump": "وثب عالي",
+      "tripleJump": "وثب ثلاثي",
+      "poleVault": "قفز بالزانة",
+      "shotPut": "رمي الجلة",
+      "discusThrow": "رمي القرص",
       "hammerThrow": "رمي المطرقة",
-      "decathlon": "عشاري",
-      "heptathlon": "سباعي"
+      "javelinThrow": "رمي الرمح",
+      "raceWalking": "سباق مشي"
     },
     "tennis": {
       "singles": "فردي",
@@ -1068,37 +1159,71 @@
       "mixedDoubles": "زوجي مختلط"
     },
     "karate": {
-      "kata": "كاتا",
-      "kumite": "كوميتيه",
-      "teamKata": "كاتا فريق"
+      "whiteBelt": "الحزام الأبيض",
+      "yellowBelt": "الحزام الأصفر",
+      "orangeBelt": "الحزام البرتقالي",
+      "greenBelt": "الحزام الأخضر",
+      "blueBelt": "الحزام الأزرق",
+      "brownBelt": "الحزام البني",
+      "redBelt": "الحزام الأحمر"
     },
     "taekwondo": {
-      "poomsae": "بومزة",
-      "kyorugi": "قتال",
-      "breaking": "كسر الألواح"
+      "whiteBelt": "الحزام الأبيض",
+      "yellowBelt": "الحزام الأصفر",
+      "greenBelt": "الحزام الأخضر",
+      "blueBelt": "الحزام الأزرق",
+      "redBelt": "الحزام الأحمر",
+      "blackBelt": "الحزام الأسود"
     },
     "archery": {
-      "recurve": "قوس منحني",
-      "compound": "قوس مركب",
-      "barebow": "قوس تقليدي",
-      "traditional": "قوس شعبي"
+      "whiteArrow": "سهم أبيض",
+      "blackArrow": "سهم أسود",
+      "blueArrow": "سهم أزرق",
+      "redArrow": "سهم أحمر",
+      "yellowArrow": "سهم أصفر",
+      "greenArrow": "سهم أخضر"
     },
     "esports": {
-      "shooter": "إطلاق نار",
-      "strategy": "استراتيجية",
-      "moba": "موبا",
-      "racing": "سباق",
-      "fighting": "قتال",
-      "sportsSimulation": "محاكاة رياضية"
+      "moba": "MOBA",
+      "fightingGames": "ألعاب القتال",
+      "rts": "RTS",
+      "fps": "FPS",
+      "battleRoyale": "Battle Royale",
+      "sportsSimulation": "محاكاة الرياضة",
+      "racingSimulation": "سباقات المحاكاة",
+      "mobileGames": "الهواتف المحمولة",
+      "fifa": "FIFA",
+      "rocketLeague": "Rocket League"
+    },
+    "football": {
+      "goalkeeper": "حارس مرمى",
+      "rightBack": "ظهير أيمن",
+      "leftBack": "ظهير أيسر",
+      "centerBack": "قلب دفاع",
+      "cdm": "محور دفاعي",
+      "rightWinger": "جناح يمين",
+      "leftWinger": "جناح يسار",
+      "midfielder": "وسط",
+      "cam": "صانع ألعاب",
+      "striker": "مهاجم"
     },
     "swimming": {
-      "freestyle": "حرة",
-      "backstroke": "ظهر",
-      "breaststroke": "صدر",
-      "butterfly": "فراشة",
-      "individualMedley": "متنوع فردي",
-      "relay": "تتابع",
-      "openWater": "مياه مفتوحة"
+      "freestyle50m": "سباحة حرة 50م",
+      "freestyle100m": "سباحة حرة 100م",
+      "freestyle200m": "سباحة حرة 200م",
+      "backstroke50m": "سباحة ظهر 50م",
+      "backstroke100m": "سباحة ظهر 100م",
+      "backstroke200m": "سباحة ظهر 200م",
+      "breaststroke50m": "سباحة صدر 50م",
+      "breaststroke100m": "سباحة صدر 100م",
+      "breaststroke200m": "سباحة صدر 200م",
+      "butterfly50m": "سباحة فراشة 50م",
+      "butterfly100m": "سباحة فراشة 100م",
+      "butterfly200m": "سباحة فراشة 200م",
+      "relay200m": "سباقات تتابع 200م",
+      "relay400m": "سباقات تتابع 400م",
+      "relay800m": "سباقات تتابع 800م",
+      "medleyRace": "سباق متنوع"
     },
     "judo": {
       "lightweight": "وزن خفيف",
@@ -1107,10 +1232,14 @@
       "team": "فريق"
     },
     "fencing": {
-      "foil": "شيش",
-      "epee": "سيف",
-      "sabre": "سابر",
-      "team": "فريق"
+      "eUnder": "E & Under",
+      "dUnder": "D & Under",
+      "cUnder": "C & Under",
+      "beginner": "مبتدئ",
+      "unclassified": "غير مصنف",
+      "foil": "سلاح الشيش",
+      "epee": "سلاح المبارزة",
+      "sabre": "سلاح السابر"
     },
     "cycling": {
       "roadRacing": "سباق طريق",
@@ -1129,11 +1258,11 @@
       "powerlifting": "رفع أثقال قوة"
     },
     "futsal": {
-      "goalkeeper": "حارس المرمى",
+      "goalkeeper": "حارس مرمى",
       "defender": "مدافع",
-      "midfielder": "وسط",
-      "forward": "مهاجم",
-      "pivot": "محور"
+      "winger": "جناح",
+      "pivotFlank": "لاعب متأخر",
+      "fixoPivot": "مهاجم"
     },
     "boxing": {
       "lightweight": "وزن خفيف",
@@ -1160,9 +1289,8 @@
       "straightPool": "بركة مستقيمة"
     },
     "wrestling": {
-      "freestyle": "حرة",
-      "grecoRoman": "رومانية",
-      "folkstyle": "شعبي"
+      "freestyle": "مصارعة حرة",
+      "grecoRoman": "مصارعة رومانية"
     }
   }
 }

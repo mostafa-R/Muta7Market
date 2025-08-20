@@ -2,25 +2,18 @@
 
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 import {
-  FaBasketballBall,
   FaBiking,
-  FaChessKnight,
   FaDumbbell,
-  FaFistRaised,
-  FaFootballBall,
   FaRunning,
   FaSwimmer,
   FaTableTennis,
-  FaVolleyballBall,
 } from "react-icons/fa";
 import {
   GiArcheryTarget,
   GiBoxingGlove,
   GiGoalKeeper,
   GiKimono,
-  GiMuscleUp,
   GiSwordman,
-  GiTennisRacket,
 } from "react-icons/gi";
 import { IoGameControllerOutline } from "react-icons/io5";
 import { MdSportsGymnastics, MdSportsTennis } from "react-icons/md";
@@ -43,22 +36,27 @@ function SportCard({ searchTerm }: SportCardProps) {
     {
       id: "handball",
       name: t("sports.handball"),
-      icon: FaFootballBall,
+      icon: "./assets/handball.svg",
     },
     {
       id: "basketball",
       name: t("sports.basketball"),
-      icon: FaBasketballBall,
+      icon: "./assets/basketball.svg",
     },
     {
       id: "volleyball",
       name: t("sports.volleyball"),
-      icon: FaVolleyballBall,
+      icon: "./assets/volleyball.svg",
+    },
+    {
+      id: "football",
+      name: t("sports.football"),
+      icon: "./assets/football-ball.svg",
     },
     {
       id: "badminton",
       name: t("sports.badminton"),
-      icon: GiTennisRacket,
+      icon: "./assets/badminton.svg",
     },
     {
       id: "athletics",
@@ -83,7 +81,7 @@ function SportCard({ searchTerm }: SportCardProps) {
     {
       id: "taekwondo",
       name: t("sports.taekwondo"),
-      icon: FaFistRaised,
+      icon: "./assets/taekwondo.svg",
     },
     {
       id: "archery",
@@ -98,7 +96,7 @@ function SportCard({ searchTerm }: SportCardProps) {
     {
       id: "judo",
       name: t("sports.judo"),
-      icon: GiKimono,
+      icon: "./assets/judo.svg",
     },
     {
       id: "fencing",
@@ -113,7 +111,7 @@ function SportCard({ searchTerm }: SportCardProps) {
     {
       id: "squash",
       name: t("sports.squash"),
-      icon: GiTennisRacket,
+      icon: "./assets/squash.svg",
     },
     {
       id: "weightlifting",
@@ -138,12 +136,12 @@ function SportCard({ searchTerm }: SportCardProps) {
     {
       id: "billiards",
       name: t("sports.billiards"),
-      icon: FaChessKnight,
+      icon: "./assets/billiards.svg",
     },
     {
       id: "wrestling",
       name: t("sports.wrestling"),
-      icon: GiMuscleUp,
+      icon: "./assets/wrestling.svg",
     },
     {
       id: "swimming",
@@ -176,7 +174,18 @@ function SportCard({ searchTerm }: SportCardProps) {
                 <div className="p-6">
                   {/* Icon Container with improved styling */}
                   <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
-                    <Icon className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
+                    {typeof sport.icon === "string" ? (
+                      // For SVG file paths
+                      <img
+                        src={sport.icon}
+                        alt={sport.name}
+                        className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300"
+                        style={{ filter: "brightness(0) invert(1)" }} // Makes SVG white
+                      />
+                    ) : (
+                      // For React Icons and custom SVG components
+                      <Icon className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
+                    )}
                   </div>
 
                   {/* Sport Name with better typography */}

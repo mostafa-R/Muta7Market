@@ -4,7 +4,14 @@ import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
 import { get } from "lodash";
 import { useTranslation } from "react-i18next";
-import { FiFile, FiFilePlus, FiUpload, FiVideo, FiX } from "react-icons/fi";
+import {
+  FiFile,
+  FiFilePlus,
+  FiImage,
+  FiUpload,
+  FiVideo,
+  FiX,
+} from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 
 export const MediaUploadCard = ({
@@ -12,6 +19,7 @@ export const MediaUploadCard = ({
   handleFileValidation,
   ALLOWED_VIDEO_TYPES,
   ALLOWED_DOCUMENT_TYPES,
+  ALLOWED_IMAGE_TYPES,
   MAX_FILE_SIZE,
 }) => {
   const { t } = useTranslation();
@@ -47,6 +55,100 @@ export const MediaUploadCard = ({
       size: 0,
       uploadedAt: null,
     });
+  };
+
+  const removeImage = (index) => {
+    const images = formik.values.media.images || [];
+    const imageToRemove = images[index];
+
+    // Clean up blob URL if it exists
+    if (imageToRemove && imageToRemove.url) {
+      if (imageToRemove.url.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(imageToRemove.url);
+          console.log("Revoked blob URL for:", imageToRemove.title);
+        } catch (err) {
+          console.error("Error revoking blob URL:", err);
+        }
+      }
+    }
+
+    const newImages = images.filter((_, i) => i !== index);
+    formik.setFieldValue("media.images", newImages);
+    console.log(
+      "Removed image at index:",
+      index,
+      "Remaining images:",
+      newImages.length
+    );
+  };
+
+  const addImages = (files) => {
+    const currentImages = formik.values.media.images || [];
+    const newImages = [];
+
+    console.log("🚀 Starting simple image processing...");
+
+    for (
+      let i = 0;
+      i < files.length && currentImages.length + newImages.length < 4;
+      i++
+    ) {
+      const file = files[i];
+
+      console.log(`📁 Processing file ${i + 1}/${files.length}:`, {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      });
+
+      // Simple validation
+      if (!file.type.startsWith("image/")) {
+        console.error("❌ File is not an image:", file.name, file.type);
+        continue;
+      }
+
+      // Create simple object URL
+      try {
+        const objectUrl = URL.createObjectURL(file);
+        console.log("✅ Created object URL:", objectUrl);
+
+        const imageData = {
+          url: objectUrl,
+          publicId: uuidv4(),
+          title: file.name,
+          type: file.type,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          file,
+        };
+
+        newImages.push(imageData);
+        console.log("✅ Added image to array:", imageData.title);
+      } catch (err) {
+        console.error("❌ Error creating object URL:", err);
+      }
+    }
+
+    if (newImages.length > 0) {
+      console.log(
+        "🎉 Adding images to form state:",
+        newImages.length,
+        "images"
+      );
+      const finalImages = [...currentImages, ...newImages];
+      formik.setFieldValue("media.images", finalImages);
+      console.log("📊 Total images now:", finalImages.length);
+      console.log(
+        "📊 Images URLs:",
+        finalImages.map((img) => ({
+          title: img.title,
+          url: img.url?.substring(0, 50) + "...",
+        }))
+      );
+    } else {
+      console.log("⚠️ No valid images to add");
+    }
   };
 
   return (
@@ -208,6 +310,176 @@ export const MediaUploadCard = ({
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Images section */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <div className="bg-green-50 p-2 rounded-full">
+            <FiImage className="w-5 h-5 text-green-600" />
+          </div>
+          <h2 className="text-xl font-semibold">
+            {t("registerProfile.form.mediaUpload.sportsImages.title")}
+          </h2>
+          <Badge variant="outline" className="mr-auto font-normal text-xs">
+            {t("labels.optional")}
+          </Badge>
+        </div>
+
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-50 transition-colors p-6">
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <FiImage className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                {t("registerProfile.form.mediaUpload.sportsImages.description")}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t("registerProfile.form.mediaUpload.sportsImages.maxSize")}
+              </p>
+            </div>
+
+            <Input
+              id="images-upload"
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+
+                console.log("Files selected:", files.length);
+
+                if (files.length > 0) {
+                  // Clear any previous errors
+                  formik.setFieldError("media.images", "");
+                  addImages(files);
+                }
+                // Reset the input
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById("images-upload")?.click()}
+              className="bg-white border-green-200 text-green-700 hover:bg-green-50 transition-colors focus:ring-2 focus:ring-green-200 focus:ring-opacity-50"
+              disabled={(formik.values.media.images || []).length >= 4}
+            >
+              <FiImage className="w-4 h-4 ml-2" />
+              اختر صور ({(formik.values.media.images || []).length}/4)
+            </Button>
+          </div>
+        </div>
+
+        {get(formik.errors, "media.images") && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="text-red-500 text-xs mt-2 bg-red-50 p-2 px-3 rounded-md border border-red-100"
+          >
+            {get(formik.errors, "media.images")}
+          </div>
+        )}
+
+        {/* Debug info */}
+        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+          <strong>Debug:</strong> Total images in state:{" "}
+          {(formik.values.media.images || []).length}
+          {(formik.values.media.images || []).map((img, i) => (
+            <div key={i}>
+              Image {i}: {img.title} - URL exists: {!!img.url} - URL type:{" "}
+              {img.url?.startsWith("blob:") ? "blob" : "other"}
+            </div>
+          ))}
+        </div>
+
+        {/* Uploaded images display */}
+        {(formik.values.media.images || []).length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-base font-medium flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+              الصور المرفوعة ({(formik.values.media.images || []).length}/4)
+            </h3>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {(formik.values.media.images || []).map((image, index) => {
+                console.log(`🖼️ Rendering image ${index}:`, {
+                  title: image.title,
+                  type: image.type,
+                  hasUrl: !!image.url,
+                  urlType: image.url?.startsWith("data:")
+                    ? "data URL"
+                    : image.url?.startsWith("blob:")
+                    ? "blob URL"
+                    : "other",
+                  urlLength: image.url?.length,
+                  actualUrl: image.url?.substring(0, 100) + "...",
+                });
+
+                return (
+                  <div
+                    key={`${image.publicId}-${index}`}
+                    className="relative group"
+                  >
+                    <div className="w-full h-48 bg-blue-100 rounded-lg border-2 border-blue-300 overflow-hidden relative">
+                      {/* Show URL for debugging */}
+                      <div className="absolute top-0 left-0 bg-black bg-opacity-75 text-white text-xs p-1 z-20 max-w-full truncate">
+                        URL: {image.url ? "EXISTS" : "NULL"} -{" "}
+                        {image.url?.substring(0, 30)}...
+                      </div>
+
+                      <img
+                        src={image.url}
+                        alt={image.title || `صورة ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        style={{
+                          backgroundColor: "yellow", // لرؤية ما إذا كانت الصورة تحمل
+                          border: "2px solid green",
+                        }}
+                        onLoad={(e) => {
+                          console.log(
+                            "✅ Image displayed successfully:",
+                            image.title
+                          );
+                          e.target.style.backgroundColor = "transparent";
+                          e.target.style.border = "none";
+                        }}
+                        onError={(e) => {
+                          console.error(
+                            "❌ Failed to display image:",
+                            image.title
+                          );
+                          console.error("URL:", image.url);
+                          e.target.style.backgroundColor = "red";
+                          e.target.alt = "خطأ في تحميل الصورة";
+                          e.target.style.border = "2px solid red";
+                        }}
+                      />
+
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        style={{ zIndex: 30 }}
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-1">
+                      <p className="text-xs text-gray-600 truncate">
+                        {image.title}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

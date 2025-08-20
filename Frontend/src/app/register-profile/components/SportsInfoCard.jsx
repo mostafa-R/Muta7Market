@@ -15,12 +15,13 @@ import {
 import { get } from "lodash";
 import { Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
+// Updated imports to use new constants structure for better organization
 import {
   coachRoleTypes,
   playerRoleTypes,
   sportPositions,
   sportsOptions,
-} from "../types/constants";
+} from "../constants/sportsPositions";
 import { ConditionalSelect } from "./ConditionalSelect";
 
 export const SportsInfoCard = ({ formik }) => {
@@ -197,6 +198,7 @@ export const SportsInfoCard = ({ formik }) => {
           </ConditionalSelect>
 
           {/* المركز/التخصص - للاعبين فقط */}
+          {/* Enhanced position selection with "Other" option support */}
           {formik.values.jop === "player" && (
             <div className="space-y-2 relative">
               <Label
@@ -209,40 +211,86 @@ export const SportsInfoCard = ({ formik }) => {
                 </span>
               </Label>
               {formik.values.game && sportPositions[formik.values.game] ? (
-                <Select
-                  value={formik.values.position || ""}
-                  onValueChange={(value) => {
-                    formik.setFieldValue("position", value);
-                    formik.setFieldTouched("position", true);
-                  }}
-                  onOpenChange={(open) => {
-                    if (!open) {
+                <>
+                  <Select
+                    value={formik.values.position || ""}
+                    onValueChange={(value) => {
+                      formik.setFieldValue("position", value);
                       formik.setFieldTouched("position", true);
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    className={`h-11 transition-all focus:ring-2 focus:ring-blue-400 ${
-                      get(formik.touched, "position") &&
-                      get(formik.errors, "position")
-                        ? "border-red-300 bg-red-50"
-                        : "border-gray-200 hover:border-blue-400"
-                    }`}
+                      // Clear custom position when changing from "other" to a predefined option
+                      if (value !== "other") {
+                        formik.setFieldValue("customPosition", "");
+                        formik.setFieldTouched("customPosition", false);
+                      }
+                    }}
+                    onOpenChange={(open) => {
+                      if (!open) {
+                        formik.setFieldTouched("position", true);
+                      }
+                    }}
                   >
-                    <SelectValue
-                      placeholder={t(
-                        "registerProfile.form.sportsInfo.positionPlaceholder"
+                    <SelectTrigger
+                      className={`h-11 transition-all focus:ring-2 focus:ring-blue-400 ${
+                        get(formik.touched, "position") &&
+                        get(formik.errors, "position")
+                          ? "border-red-300 bg-red-50"
+                          : "border-gray-200 hover:border-blue-400"
+                      }`}
+                    >
+                      <SelectValue
+                        placeholder={t(
+                          "registerProfile.form.sportsInfo.positionPlaceholder"
+                        )}
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-80">
+                      {sportPositions[formik.values.game].map((position) => (
+                        <SelectItem key={position.value} value={position.value}>
+                          {t(position.name)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Custom position input field when "other" is selected */}
+                  {formik.values.position === "other" && (
+                    <div className="mt-4 space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">
+                        {t("registerProfile.form.sportsInfo.customPosition")}
+                        <span className="text-red-500 mx-1">*</span>
+                      </Label>
+                      <input
+                        id="customPosition"
+                        name="customPosition"
+                        type="text"
+                        value={formik.values.customPosition || ""}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder={t(
+                          "registerProfile.form.sportsInfo.customPositionPlaceholder"
+                        )}
+                        className={`w-full h-11 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors ${
+                          get(formik.touched, "customPosition") &&
+                          get(formik.errors, "customPosition")
+                            ? "border-red-300 bg-red-50"
+                            : "border-gray-200 hover:border-blue-400"
+                        }`}
+                      />
+                      {get(formik.touched, "customPosition") &&
+                      get(formik.errors, "customPosition") ? (
+                        <div className="text-red-600 text-xs mt-1">
+                          {get(formik.errors, "customPosition")}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 text-xs mt-1">
+                          {t(
+                            "registerProfile.form.sportsInfo.customPositionPlaceholder"
+                          )}
+                        </div>
                       )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-80">
-                    {sportPositions[formik.values.game].map((position) => (
-                      <SelectItem key={position.value} value={position.value}>
-                        {t(position.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="h-11 px-3 py-2 border border-gray-200 rounded-md bg-gray-50 flex items-center">
                   <span className="text-gray-500">

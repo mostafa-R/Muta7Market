@@ -22,6 +22,7 @@ import {
   Clock,
   DollarSign,
   Download,
+  Image as ImageIcon,
   Mail,
   MapPin,
   Maximize2,
@@ -35,15 +36,54 @@ import {
   Video,
   Volume2,
   X,
+  ZoomIn,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
+
+// Translation helper functions
+const getSportText = (sport, t) => {
+  // Convert sport name to lowercase and try to get translation
+  const sportKey = sport?.toLowerCase();
+  const translatedSport = t(`sports.${sportKey}`, { defaultValue: sport });
+  return translatedSport;
+};
+
+const getNationalityText = (nationality, t) => {
+  // Convert nationality to lowercase and try to get translation
+  const nationalityKey = nationality?.toLowerCase();
+  const translatedNationality = t(`nationalities.${nationalityKey}`, {
+    defaultValue: nationality,
+  });
+  return translatedNationality;
+};
+
+const getPositionText = (position, sport, t) => {
+  if (!position) return null;
+
+  // Try sport-specific position first
+  const sportKey = sport?.toLowerCase();
+  let translatedPosition = t(
+    `positions.${sportKey}.${position.toLowerCase().replace(/\s+/g, "")}`,
+    { defaultValue: null }
+  );
+
+  // If no sport-specific position found, try general position
+  if (!translatedPosition) {
+    translatedPosition = t(
+      `positions.${position.toLowerCase().replace(/\s+/g, "")}`,
+      { defaultValue: position }
+    );
+  }
+
+  return translatedPosition;
+};
 
 const PlayerProfile = () => {
   const { t } = useTranslation();
@@ -59,6 +99,23 @@ const PlayerProfile = () => {
   const [isVideoPopupOpen, setIsVideoPopupOpen] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState(null);
   const [isUserActive, setIsUserActive] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Memoized translations
+  const sportText = useMemo(
+    () => player && getSportText(player.game, t),
+    [player?.game, t]
+  );
+  const nationalityText = useMemo(
+    () => player && getNationalityText(player.nationality, t),
+    [player?.nationality, t]
+  );
+  const positionText = useMemo(
+    () => player && getPositionText(player.position, player.game, t),
+    [player?.position, player?.game, t]
+  );
 
   const getFirstVideoUrl = () => {
     // Based on player model structure, videos are stored in player.media.video
@@ -89,6 +146,39 @@ const PlayerProfile = () => {
     if (docs && typeof docs === "object" && !Array.isArray(docs)) return docs;
 
     return null;
+  };
+
+  const getPlayerImages = () => {
+    // Get sports images from player media
+    const images = player?.media?.images || [];
+    const profileImage = player?.media?.profileImage;
+
+    // Create images array
+    let allImages = [];
+
+    // Add profile image if exists
+    if (profileImage && profileImage.url) {
+      allImages.push({
+        url: profileImage.url,
+        type: "profile",
+        alt: `${player.name} - Profile Photo`,
+      });
+    }
+
+    // Add sports images if they exist
+    if (Array.isArray(images)) {
+      images.forEach((img, index) => {
+        if (img && img.url) {
+          allImages.push({
+            url: img.url,
+            type: "sports",
+            alt: `${player.name} - Sports Photo ${index + 1}`,
+          });
+        }
+      });
+    }
+
+    return allImages;
   };
 
   const handleSendMessage = async () => {
@@ -360,6 +450,130 @@ const PlayerProfile = () => {
     );
   };
 
+  // Image Modal Component
+  const ImageModal = ({
+    imageUrl,
+    onClose,
+    onNext,
+    onPrev,
+    currentIndex,
+    totalImages,
+  }) => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
+    const modalRef = useRef();
+
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    useEffect(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+      const handleKeyPress = (e) => {
+        if (e.key === "Escape") onClose();
+        if (e.key === "ArrowLeft") onPrev();
+        if (e.key === "ArrowRight") onNext();
+      };
+      document.addEventListener("keydown", handleKeyPress);
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleKeyPress);
+      };
+    }, [onClose, onNext, onPrev]);
+
+    return (
+      <>
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-fadeIn"
+          onClick={onClose}
+        />
+
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div
+            ref={modalRef}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-slideUp"
+            dir={language === "ar" ? "rtl" : "ltr"}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                  <ImageIcon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {t("playerDetail.playerImages")}
+                  </h2>
+                  <p className="text-sm text-gray-300">
+                    {currentIndex + 1} {t("common.of")} {totalImages}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors duration-200"
+                aria-label={t("common.close")}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Image Container */}
+            <div className="relative bg-gray-100 aspect-video flex items-center justify-center">
+              <img
+                src={imageUrl}
+                alt={`${player?.name} - Image ${currentIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+                loading="lazy"
+              />
+
+              {/* Navigation Arrows */}
+              {totalImages > 1 && (
+                <>
+                  <button
+                    onClick={onPrev}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all duration-200"
+                    aria-label={t("common.previous")}
+                  >
+                    <ArrowRight className="w-6 h-6 rotate-180" />
+                  </button>
+                  <button
+                    onClick={onNext}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all duration-200"
+                    aria-label={t("common.next")}
+                  >
+                    <ArrowRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-100 p-4 border-t">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <ZoomIn className="w-4 h-4" />
+                  <span>{t("playerDetail.clickToZoom")}</span>
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 font-medium"
+                >
+                  {t("common.close")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   const handleWatchVideo = () => {
     const url = getFirstVideoUrl();
     console.log("Video URL:", url);
@@ -374,6 +588,11 @@ const PlayerProfile = () => {
   };
 
   const handleDownloadFile = () => {
+    if (!isUserActive) {
+      toast.info(t("playerDetail.activateToDownloadFiles"));
+      return;
+    }
+
     const doc = getFirstDocument();
     console.log("Document:", doc);
 
@@ -434,6 +653,35 @@ const PlayerProfile = () => {
   const closeVideoPopup = () => {
     setIsVideoPopupOpen(false);
     setCurrentVideoUrl(null);
+  };
+
+  const handleImageClick = (imageUrl, index) => {
+    setCurrentImageUrl(imageUrl);
+    setCurrentImageIndex(index);
+    setIsImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setCurrentImageUrl(null);
+    setCurrentImageIndex(0);
+  };
+
+  const navigateImage = (direction) => {
+    const images = getPlayerImages();
+    if (!images.length) return;
+
+    let newIndex;
+    if (direction === "next") {
+      newIndex =
+        currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0;
+    } else {
+      newIndex =
+        currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1;
+    }
+
+    setCurrentImageIndex(newIndex);
+    setCurrentImageUrl(images[newIndex].url);
   };
 
   const getStatusColor = (status) => {
@@ -517,9 +765,15 @@ const PlayerProfile = () => {
                           player.category
                         )} text-white`}
                       >
-                        {player.category === "player"
+                        {player.category === "Elite"
+                          ? t("players.category.elite")
+                          : player.category === "Professional"
                           ? t("players.category.professional")
-                          : t("players.category.elite")}
+                          : player.category === "Amateur"
+                          ? t("players.category.amateur")
+                          : player.jop === "player"
+                          ? t("common.player")
+                          : t("common.coach")}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -537,24 +791,22 @@ const PlayerProfile = () => {
                         <span className="text-muted-foreground">
                           {t("playerDetail.nationality")}:
                         </span>
-                        <span className="font-medium">
-                          {player.nationality}
-                        </span>
+                        <span className="font-medium">{nationalityText}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Trophy className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">
                           {t("player.sport")}:
                         </span>
-                        <span className="font-medium">{player.game}</span>
+                        <span className="font-medium">{sportText}</span>
                       </div>
-                      {player.position && (
+                      {positionText && (
                         <div className="flex items-center space-x-2">
                           <Star className="w-4 h-4 text-muted-foreground" />
                           <span className="text-muted-foreground">
                             {t("player.position")}:
                           </span>
-                          <span className="font-medium">{player.position}</span>
+                          <span className="font-medium">{positionText}</span>
                         </div>
                       )}
                     </div>
@@ -572,116 +824,210 @@ const PlayerProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {player.monthlySalary && (
-                  <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-gray-700" />
-                      <span className="text-gray-700 font-medium">
-                        {t("player.monthlySalary")}
-                      </span>
-                    </div>
-                    <span className="text-2xl font-bold text-gray-800">
-                      {player.monthlySalary.amount.toLocaleString(
-                        language === "ar" ? "en-US" : "en-US"
-                      )}{" "}
-                      {player.monthlySalary.currency}
-                    </span>
-                  </div>
-                )}
-                {player.yearSalary && (
-                  <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-gray-700" />
-                      <span className="text-gray-700 font-medium">
-                        {t("player.annualContract")}
-                      </span>
-                    </div>
-                    <span className="text-2xl font-bold text-gray-800">
-                      {player.yearSalary.amount.toLocaleString(
-                        language === "ar" ? "en-US" : "en-US"
-                      )}{" "}
-                      {player.yearSalary.currency}
-                    </span>
-                  </div>
-                )}
-                {player.transferredTo && player.transferredTo.club && (
+                {!isUserActive && (
                   <>
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <ArrowRightLeft className="w-5 h-5 text-primary" />
-                        {t("playerDetail.transferDetails")}
-                      </h4>
+                    <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
+                      {t("playerDetail.activateToViewFinancials")}
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <Building className="w-5 h-5 text-gray-700" />
-                        <span className="text-gray-700 font-medium">
-                          {t("playerDetail.transferredToClub")}
-                        </span>
-                      </div>
-                      <span className="text-lg font-bold text-gray-800">
-                        {player.transferredTo.club}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-gray-700" />
-                        <span className="text-gray-700 font-medium">
-                          {t("playerDetail.transferDate")}
-                        </span>
-                      </div>
-                      <span className="text-lg font-bold text-gray-800">
-                        {new Date(player.transferredTo.date).toLocaleDateString(
-                          language === "ar" ? "ar-EG" : "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          }
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <Banknote className="w-5 h-5 text-gray-700" />
-                        <span className="text-gray-700 font-medium">
-                          {t("playerDetail.transferAmount")}
-                        </span>
-                      </div>
-                      <span className="text-2xl font-bold text-gray-800">
-                        {player.transferredTo.amount.toLocaleString(
-                          language === "ar" ? "en-US" : "en-US"
-                        )}{" "}
-                        SAR
-                      </span>
+                    <div className="pt-2">
+                      <PaymentBtn type="unlock_contacts" />
                     </div>
                   </>
                 )}
-                {player.contractEndDate && (
-                  <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-gray-700" />
-                      <span className="text-gray-700 font-medium">
-                        {t("player.transferDeadline")}
-                      </span>
-                    </div>
-                    <span className="text-lg font-bold text-gray-800">
-                      {new Date(player.contractEndDate).toLocaleDateString(
-                        language === "ar" ? "ar-EG" : "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
+                {isUserActive && (
+                  <>
+                    {player.monthlySalary && (
+                      <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-5 h-5 text-gray-700" />
+                          <span className="text-gray-700 font-medium">
+                            {t("player.monthlySalary")}
+                          </span>
+                        </div>
+                        <span className="text-2xl font-bold text-gray-800">
+                          {player.monthlySalary.amount.toLocaleString(
+                            language === "ar" ? "en-US" : "en-US"
+                          )}{" "}
+                          {player.monthlySalary.currency}
+                        </span>
+                      </div>
+                    )}
+                    {player.yearSalary && (
+                      <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-gray-700" />
+                          <span className="text-gray-700 font-medium">
+                            {t("player.annualContract")}
+                          </span>
+                        </div>
+                        <span className="text-2xl font-bold text-gray-800">
+                          {player.yearSalary.amount.toLocaleString(
+                            language === "ar" ? "en-US" : "en-US"
+                          )}{" "}
+                          {player.yearSalary.currency}
+                        </span>
+                      </div>
+                    )}
+                    {player.transferredTo && player.transferredTo.club && (
+                      <>
+                        <div className="border-t pt-4 mt-4">
+                          <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <ArrowRightLeft className="w-5 h-5 text-primary" />
+                            {t("playerDetail.transferDetails")}
+                          </h4>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <Building className="w-5 h-5 text-gray-700" />
+                            <span className="text-gray-700 font-medium">
+                              {t("playerDetail.transferredToClub")}
+                            </span>
+                          </div>
+                          <span className="text-lg font-bold text-gray-800">
+                            {player.transferredTo.club}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-gray-700" />
+                            <span className="text-gray-700 font-medium">
+                              {t("playerDetail.transferDate")}
+                            </span>
+                          </div>
+                          <span className="text-lg font-bold text-gray-800">
+                            {new Date(
+                              player.transferredTo.date
+                            ).toLocaleDateString(
+                              language === "ar" ? "ar-EG" : "en-US",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <Banknote className="w-5 h-5 text-gray-700" />
+                            <span className="text-gray-700 font-medium">
+                              {t("playerDetail.transferAmount")}
+                            </span>
+                          </div>
+                          <span className="text-2xl font-bold text-gray-800">
+                            {player.transferredTo.amount.toLocaleString(
+                              language === "ar" ? "en-US" : "en-US"
+                            )}{" "}
+                            SAR
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {player.contractEndDate && (
+                      <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-5 h-5 text-gray-700" />
+                          <span className="text-gray-700 font-medium">
+                            {t("player.transferDeadline")}
+                          </span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-800">
+                          {new Date(player.contractEndDate).toLocaleDateString(
+                            language === "ar" ? "ar-EG" : "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {!player.monthlySalary &&
+                      !player.yearSalary &&
+                      !player.transferredTo?.club &&
+                      !player.contractEndDate && (
+                        <div className="p-4 text-center bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+                          {t("playerDetail.noFinancialData")}
+                        </div>
                       )}
-                    </span>
-                  </div>
+                  </>
                 )}
               </CardContent>
             </Card>
 
+            {/* Player Images Gallery */}
+            <Card className="border-0 shadow-card bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <ImageIcon className="w-5 h-5 text-primary" />
+                  <span>{t("playerDetail.playerImages")}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const images = getPlayerImages();
+
+                  if (images.length === 0) {
+                    return (
+                      <div className="p-8 text-center bg-gray-50 border border-gray-200 rounded-lg">
+                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600 text-sm">
+                          {t("playerDetail.noImagesAvailable")}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {images.map((image, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer group hover:shadow-lg transition-all duration-200"
+                          onClick={() => handleImageClick(image.url, index)}
+                        >
+                          <img
+                            src={image.url}
+                            alt={image.alt}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            loading="lazy"
+                          />
+
+                          {/* Overlay */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="bg-white/90 rounded-full p-2">
+                                <ZoomIn className="w-5 h-5 text-gray-800" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Image Type Badge */}
+                          {image.type === "profile" && (
+                            <div className="absolute top-2 left-2">
+                              <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                {t("playerDetail.profilePhoto")}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Image Number */}
+                          <div className="absolute bottom-2 right-2">
+                            <span className="bg-black/60 text-white text-xs px-2 py-1 rounded-full font-medium">
+                              {index + 1}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
             {/* Contract Information */}
-            {player.contractEndDate && (
+            {/* {player.contractEndDate && (
               <Card className="border-0 shadow-card">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -706,7 +1052,7 @@ const PlayerProfile = () => {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            )} */}
           </div>
 
           {/* Sidebar */}
@@ -728,30 +1074,57 @@ const PlayerProfile = () => {
                     <PaymentBtn type="unlock_contacts" />
                   </div>
                 )}
-                <Button
-                  variant="default"
-                  className="w-full"
-                  onClick={handleSendMessage}
-                >
-                  <MessageCircle className="w-4 h-4 ml-2" />
-                  {t("playerDetail.sendMessage")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleRequestPhone}
-                >
-                  <Phone className="w-4 h-4 ml-2" />
-                  {t("playerDetail.requestPhone")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleSendEmail}
-                >
-                  <Mail className="w-4 h-4 ml-2" />
-                  {t("playerDetail.sendEmail")}
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant="default"
+                    className={`w-full ${!isUserActive ? "opacity-60" : ""}`}
+                    onClick={handleSendMessage}
+                  >
+                    <MessageCircle className="w-4 h-4 ml-2" />
+                    {t("playerDetail.sendMessage")}
+                  </Button>
+                  {!isUserActive && (
+                    <div className="absolute -top-1 -right-1">
+                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                        💎
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    className={`w-full ${!isUserActive ? "opacity-60" : ""}`}
+                    onClick={handleRequestPhone}
+                  >
+                    <Phone className="w-4 h-4 ml-2" />
+                    {t("playerDetail.requestPhone")}
+                  </Button>
+                  {!isUserActive && (
+                    <div className="absolute -top-1 -right-1">
+                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                        💎
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    className={`w-full ${!isUserActive ? "opacity-60" : ""}`}
+                    onClick={handleSendEmail}
+                  >
+                    <Mail className="w-4 h-4 ml-2" />
+                    {t("playerDetail.sendEmail")}
+                  </Button>
+                  {!isUserActive && (
+                    <div className="absolute -top-1 -right-1">
+                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                        💎
+                      </span>
+                    </div>
+                  )}
+                </div>
                 {isUserActive &&
                   (player?.user?.phone || player?.user?.email) && (
                     <div className="pt-2 text-sm text-gray-600">
@@ -791,14 +1164,23 @@ const PlayerProfile = () => {
                   {t("playerDetail.playerVideo")}
                 </Button>
 
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleDownloadFile}
-                >
-                  <Download className="w-4 h-4 ml-2" />
-                  {t("playerDetail.downloadFile")}
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    className={`w-full ${!isUserActive ? "opacity-60" : ""}`}
+                    onClick={handleDownloadFile}
+                  >
+                    <Download className="w-4 h-4 ml-2" />
+                    {t("playerDetail.downloadFile")}
+                  </Button>
+                  {!isUserActive && (
+                    <div className="absolute -top-1 -right-1">
+                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                        💎
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 <Button
                   variant="outline"
@@ -847,6 +1229,18 @@ const PlayerProfile = () => {
       {/* Video Popup */}
       {isVideoPopupOpen && (
         <VideoPopup videoUrl={currentVideoUrl} onClose={closeVideoPopup} />
+      )}
+
+      {/* Image Modal */}
+      {isImageModalOpen && (
+        <ImageModal
+          imageUrl={currentImageUrl}
+          onClose={closeImageModal}
+          onNext={() => navigateImage("next")}
+          onPrev={() => navigateImage("prev")}
+          currentIndex={currentImageIndex}
+          totalImages={getPlayerImages().length}
+        />
       )}
     </div>
   );
