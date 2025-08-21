@@ -571,6 +571,11 @@ const PlayerProfile = () => {
   };
 
   const handleWatchVideo = () => {
+    if (!isUserActive) {
+      toast.info(t("playerDetail.activateToWatchVideos"));
+      return;
+    }
+
     const url = getFirstVideoUrl();
     console.log("Video URL:", url);
     console.log("Player media:", player?.media);
@@ -928,65 +933,76 @@ const PlayerProfile = () => {
                   <span>{t("playerDetail.mediaGallery")}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {(() => {
-                  const images = getPlayerImages();
+              <CardContent className="space-y-4">
+                {!isUserActive && (
+                  <>
+                    <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
+                      {t("playerDetail.activateToViewGallery")}
+                    </div>
+                    <div className="pt-2">
+                      <PaymentBtn type="unlock_contacts" />
+                    </div>
+                  </>
+                )}
+                {isUserActive &&
+                  (() => {
+                    const images = getPlayerImages();
 
-                  if (images.length === 0) {
+                    if (images.length === 0) {
+                      return (
+                        <div className="p-8 text-center bg-gray-50 border border-gray-200 rounded-lg">
+                          <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-600 text-sm">
+                            {t("playerDetail.noImagesAvailable")}
+                          </p>
+                        </div>
+                      );
+                    }
+
                     return (
-                      <div className="p-8 text-center bg-gray-50 border border-gray-200 rounded-lg">
-                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600 text-sm">
-                          {t("playerDetail.noImagesAvailable")}
-                        </p>
-                      </div>
-                    );
-                  }
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {images.map((image, index) => (
+                          <div
+                            key={index}
+                            className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer group hover:shadow-lg transition-all duration-200"
+                            onClick={() => handleImageClick(image.url, index)}
+                          >
+                            <img
+                              src={image.url}
+                              alt={image.alt}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              loading="lazy"
+                            />
 
-                  return (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {images.map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer group hover:shadow-lg transition-all duration-200"
-                          onClick={() => handleImageClick(image.url, index)}
-                        >
-                          <img
-                            src={image.url}
-                            alt={image.alt}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            loading="lazy"
-                          />
-
-                          {/* Overlay */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <div className="bg-white/90 rounded-full p-2">
-                                <ZoomIn className="w-5 h-5 text-gray-800" />
+                            {/* Overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <div className="bg-white/90 rounded-full p-2">
+                                  <ZoomIn className="w-5 h-5 text-gray-800" />
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Image Type Badge */}
-                          {image.type === "profile" && (
-                            <div className="absolute top-2 left-2">
-                              <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                {t("playerDetail.profilePhoto")}
+                            {/* Image Type Badge */}
+                            {image.type === "profile" && (
+                              <div className="absolute top-2 left-2">
+                                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                  {t("playerDetail.profilePhoto")}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Image Number */}
+                            <div className="absolute bottom-2 right-2">
+                              <span className="bg-black/60 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                {index + 1}
                               </span>
                             </div>
-                          )}
-
-                          {/* Image Number */}
-                          <div className="absolute bottom-2 right-2">
-                            <span className="bg-black/60 text-white text-xs px-2 py-1 rounded-full font-medium">
-                              {index + 1}
-                            </span>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+                        ))}
+                      </div>
+                    );
+                  })()}
               </CardContent>
             </Card>
 
@@ -1030,14 +1046,25 @@ const PlayerProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button
-                  variant="default"
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
-                  onClick={handleWatchVideo}
-                >
-                  <Video className="w-4 h-4 mr-2" />
-                  {t("playerDetail.playerVideo")}
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant="default"
+                    className={`w-full bg-red-600 hover:bg-red-700 text-white ${
+                      !isUserActive ? "opacity-60" : ""
+                    }`}
+                    onClick={handleWatchVideo}
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    {t("playerDetail.playerVideo")}
+                  </Button>
+                  {!isUserActive && (
+                    <div className="absolute -top-1 -right-1">
+                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                        💎
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <Button
                   variant="outline"
                   className="w-full"
