@@ -93,7 +93,8 @@
     "created": "تم الإنشاء",
     "featured": "مُقترح",
     "premium": "مميز",
-    "verified": "مُتحقق منه"
+    "verified": "مُتحقق منه",
+    "currentSection": "القسم الحالي"
   },
   "brand": {
     "name": "متاح ماركت",
@@ -232,7 +233,9 @@
     "accountStatus": "حالة الحساب",
     "activated": "مفعل",
     "notActivated": "غير مفعل",
-    "inactive": "غير نشط"
+    "inactive": "غير نشط",
+    "sidebarNavigation": "تنقل الملف الشخصي",
+    "tapToNavigate": "انقر على أي قسم للتنقل"
   },
   "notFound": {
     "title": "صفحة غير موجودة",
