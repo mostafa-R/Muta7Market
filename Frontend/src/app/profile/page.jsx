@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 // Import Components
 import LoadingSpinner from "../component/LoadingSpinner";
 import ConfirmModal from "./components/ConfirmModal";
@@ -23,8 +23,9 @@ import { createProfileFormSchema } from "./components/validation.js";
 import PromoteNowButton from "./components/PromoteNowButton";
 
 // Ensure API base includes /api/v1
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
-  }`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}`.replace(/\/$/, "").endsWith("/api/v1")
+  ? `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}`.replace(/\/$/, "")
+  : `${(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "")}/api/v1`;
 
 const UserProfile = () => {
   const { t } = useTranslation();
@@ -44,6 +45,7 @@ const UserProfile = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [player, setPlayer] = useState(null);
+  const [paymentBanner, setPaymentBanner] = useState(null); // { type: 'success'|'info'|'error', message: string }
 
   const router = useRouter();
 
@@ -147,7 +149,7 @@ const UserProfile = () => {
   const fetchPricing = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/config/pricing`);
-      const data = res.data?.data;
+      const data = res.data?.data; 
       if (!data) throw new Error(t("formErrors.missingPricingData"));
       setPricing(data);
       setPricingError("");
@@ -216,85 +218,137 @@ const UserProfile = () => {
 
   // Handle Paylink return (/?pid=...&paid=1)
   useEffect(() => {
+    // Respect tab query param on initial load
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["profile", "edit", "payments", "playerProfile"].includes(tab)) {
+        setActiveSection(tab);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const paid = params.get("paid");
       if (paid === "1") {
         setSuccess(t("profile.paymentSuccess"));
+        setPaymentBanner({ type: "success", message: t("formErrors.paymentSuccess") });
+        toast.success(t("formErrors.paymentSuccess"));
         // Refresh user, invoices, and player data after webhook processes
         fetchUserData();
         fetchPendingPayments();
         fetchPlayerData();
       } else if (paid === "0") {
         setError(t("profile.paymentFailed"));
+        setPaymentBanner({ type: "error", message: t("profile.paymentFailed") });
+        toast.error(t("formErrors.paymentFailed"));
         fetchPendingPayments();
       }
     } catch { }
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
 
-  // Handle Paylink callback with invoiceId/orderNumber/transactionNo → one-time toast and recheck
+  // Handle Paylink callback with invoiceId/orderNumber/transactionNo → one-time reconcile + recheck
   useEffect(() => {
     const run = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const invoiceId = params.get("invoiceId");
+      const orderNumber = params.get("orderNumber");
+      const transactionNo = params.get("transactionNo");
+      if (!invoiceId && !orderNumber && !transactionNo) return;
+
+      // Ensure payments tab is visible for user
+      setActiveSection("payments");
+
+      // Let user know we are processing callback
+      toast.info(t("formErrors.paymentPending"));
+
+      // Clean URL params ASAP to avoid duplicate triggers in StrictMode
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete("invoiceId");
+      currentUrl.searchParams.delete("orderNumber");
+      currentUrl.searchParams.delete("transactionNo");
+      currentUrl.searchParams.delete("paid");
+      window.history.replaceState({}, "", currentUrl.toString());
+
+      // Session guard to ensure one-time handling
+      const guardKey = `paylink_cb_${orderNumber || invoiceId || transactionNo}`;
+      if (sessionStorage.getItem(guardKey)) return;
+      sessionStorage.setItem(guardKey, "1");
+
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // 1) Try reconciling first (best-effort)
       try {
-        const params = new URLSearchParams(window.location.search);
-        const invoiceId = params.get("invoiceId");
-        const orderNumber = params.get("orderNumber");
-        const transactionNo = params.get("transactionNo");
-        if (!invoiceId && !orderNumber && !transactionNo) return;
+        await axios.post(`${API_URL}/payments/reconcile`, {}, { headers });
+      } catch {}
 
-        // Clean URL params ASAP to avoid duplicate triggers in StrictMode
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.delete("invoiceId");
-        currentUrl.searchParams.delete("orderNumber");
-        currentUrl.searchParams.delete("transactionNo");
-        currentUrl.searchParams.delete("paid");
-        window.history.replaceState({}, "", currentUrl.toString());
-
-        // Session guard to ensure one-time handling
-        const guardKey = `paylink_cb_${orderNumber || invoiceId || transactionNo
-          }`;
-        if (sessionStorage.getItem(guardKey)) return;
-        sessionStorage.setItem(guardKey, "1");
-
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const headers = { Authorization: `Bearer ${token}` };
-
-        if (orderNumber) {
+      // 2) Check status by orderNumber or invoiceId; avoid failing hard
+      let handled = false;
+      if (orderNumber) {
+        try {
           const res = await axios.post(
-            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(
-              orderNumber
-            )}`,
+            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(orderNumber)}`,
             {},
             { headers }
           );
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid" || res.data?.data?.paid) {
             toast.success(t("formErrors.paymentSuccess"));
+            setPaymentBanner({ type: "success", message: t("formErrors.paymentSuccess") });
           } else {
-            toast.info(t("formErrors.paymentPending"));
+            const backendMsg = res.data?.data?.error || "";
+            if (backendMsg) {
+              toast.error(String(backendMsg));
+              setPaymentBanner({ type: "error", message: String(backendMsg) });
+            } else {
+              toast.info(t("formErrors.paymentPending"));
+              setPaymentBanner({ type: "info", message: t("formErrors.paymentPending") });
+            }
           }
-        } else if (invoiceId) {
-          const res = await axios.get(
-            `${API_URL}/payments/status/${invoiceId}`,
-            { headers }
-          );
+          handled = true;
+        } catch (e) {
+          console.warn("recheck by orderNumber failed", e);
+        }
+      }
+
+      if (!handled && invoiceId) {
+        try {
+          const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
             toast.success(t("formErrors.paymentSuccess"));
+            setPaymentBanner({ type: "success", message: t("formErrors.paymentSuccess") });
           } else {
-            toast.info(t("formErrors.paymentPending"));
+            const errs = res.data?.data?.paymentErrors || [];
+            const firstErr = Array.isArray(errs) && errs.length ? (errs[0]?.message || errs[0]?.title || "") : "";
+            if (firstErr) {
+              toast.error(String(firstErr));
+              setPaymentBanner({ type: "error", message: String(firstErr) });
+            } else {
+              toast.info(t("formErrors.paymentPending"));
+              setPaymentBanner({ type: "info", message: t("formErrors.paymentPending") });
+            }
           }
+          handled = true;
+        } catch (e) {
+          console.warn("status by invoiceId failed", e);
         }
-
-        // Refresh UI
-        fetchUserData();
-        fetchPendingPayments();
-        fetchPlayerData();
-      } catch (e) {
-        console.error("Paylink callback handling failed", e);
-        toast.error(t("formErrors.paymentFailed"));
       }
+
+      if (!handled) {
+        // As a soft fallback, don't scare the user with an error
+        toast.info(t("formErrors.paymentPending"));
+        setPaymentBanner({ type: "info", message: t("formErrors.paymentPending") });
+      }
+
+      // Refresh UI regardless
+      fetchUserData();
+      fetchPendingPayments();
+      fetchPlayerData();
     };
     run();
     // Intentionally run once on mount
@@ -482,6 +536,28 @@ const UserProfile = () => {
 
             {activeSection === "payments" && (
               <div className="mt-6">
+                {paymentBanner && (
+                  <div
+                    className={
+                      paymentBanner.type === "success"
+                        ? "mb-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-3"
+                        : paymentBanner.type === "error"
+                        ? "mb-4 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-4 py-3"
+                        : "mb-4 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 px-4 py-3"
+                    }
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {paymentBanner.message}
+                  </div>
+                )}
+                {/* Local toast container to guarantee visibility on this page */}
+                <ToastContainer
+                  position={language === "ar" ? "top-left" : "top-right"}
+                  rtl={language === "ar"}
+                  autoClose={3000}
+                  newestOnTop
+                />
                 <PaymentsSection />
               </div>
             )}
