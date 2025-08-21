@@ -4,6 +4,7 @@ import { Eye, EyeOff, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import PromoteNowButton from "./PromoteNowButton";
 
 const PlayerProfile = ({
   player,
@@ -193,6 +194,8 @@ const PlayerProfile = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+
+
       <div className="bg-[#00183D] p-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <i className="fas fa-user"></i>
@@ -201,6 +204,11 @@ const PlayerProfile = ({
       </div>
 
       <div className="p-6 lg:p-8">
+        {player?.isActive && (
+          <div className="p-4 flex justify-center  ">
+            <PromoteNowButton profileId={player?._id} />
+          </div>
+        )}
         <form onSubmit={handleFormSubmit} className="space-y-6">
           {/* Player Information Section */}
           <div className="bg-gray-50 p-6 rounded-xl">
@@ -275,16 +283,14 @@ const PlayerProfile = ({
               />
               <FormField
                 label={t("monthlySalary")}
-                value={`${formData.monthlySalary?.toLocaleString()} ${
-                  formData.monthlySalaryCurrency
-                }`}
+                value={`${formData.monthlySalary?.toLocaleString()} ${formData.monthlySalaryCurrency
+                  }`}
                 isDisabled={true}
               />
               <FormField
                 label={t("annualContract")}
-                value={`${formData.yearSalary?.toLocaleString()} ${
-                  formData.yearSalaryCurrency
-                }`}
+                value={`${formData.yearSalary?.toLocaleString()} ${formData.yearSalaryCurrency
+                  }`}
                 isDisabled={true}
               />
               <FormField
@@ -308,9 +314,8 @@ const PlayerProfile = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    player?.isActive ? "bg-green-500" : "bg-red-500"
-                  }`}
+                  className={`w-3 h-3 rounded-full ${player?.isActive ? "bg-green-500" : "bg-red-500"
+                    }`}
                 ></div>
                 <span className="text-sm">
                   {player?.isActive ? t("active") : t("inactive")}
@@ -318,9 +323,8 @@ const PlayerProfile = ({
               </div>
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    player?.isConfirmed ? "bg-green-500" : "bg-yellow-500"
-                  }`}
+                  className={`w-3 h-3 rounded-full ${player?.isConfirmed ? "bg-green-500" : "bg-yellow-500"
+                    }`}
                 ></div>
                 <span className="text-sm">
                   {player?.isConfirmed ? t("confirmed") : t("pending")}
@@ -328,9 +332,8 @@ const PlayerProfile = ({
               </div>
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    player?.isListed ? "bg-green-500" : "bg-gray-500"
-                  }`}
+                  className={`w-3 h-3 rounded-full ${player?.isListed ? "bg-green-500" : "bg-gray-500"
+                    }`}
                 ></div>
                 <span className="text-sm">
                   {player?.isListed ? t("listed") : t("notListed")}
@@ -338,9 +341,8 @@ const PlayerProfile = ({
               </div>
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    player?.isPromoted?.status ? "bg-purple-500" : "bg-gray-500"
-                  }`}
+                  className={`w-3 h-3 rounded-full ${player?.isPromoted?.status ? "bg-purple-500" : "bg-gray-500"
+                    }`}
                 ></div>
                 <span className="text-sm">
                   {player?.isPromoted?.status
@@ -374,8 +376,8 @@ const PlayerProfile = ({
                   value={
                     player.transferredTo.startDate
                       ? new Date(
-                          player.transferredTo.startDate
-                        ).toLocaleDateString()
+                        player.transferredTo.startDate
+                      ).toLocaleDateString()
                       : t("notSpecified")
                   }
                   isDisabled={true}
@@ -385,8 +387,8 @@ const PlayerProfile = ({
                   value={
                     player.transferredTo.endDate
                       ? new Date(
-                          player.transferredTo.endDate
-                        ).toLocaleDateString()
+                        player.transferredTo.endDate
+                      ).toLocaleDateString()
                       : t("notSpecified")
                   }
                   isDisabled={true}

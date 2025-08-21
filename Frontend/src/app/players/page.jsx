@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
+import PromoteNowButton from "@/app/profile/components/PromoteNowButton";
 
 // Player object structure used in PlayerCard
 // Expected properties: id, name, age, status, gender, nationality, category,
@@ -63,6 +64,7 @@ export default function PlayersPage() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [myProfile, setMyProfile] = useState(null);
 
   // جلب البيانات باستخدام Axios
   useEffect(() => {
@@ -82,6 +84,26 @@ export default function PlayersPage() {
     };
 
     fetchPlayers();
+  }, []);
+
+  // Check if user has active player/coach profile (to show Promote button)
+  useEffect(() => {
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return;
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
+        "http://localhost:5000/api/v1";
+      fetch(`${API_BASE}/players/playerprofile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j?.data) setMyProfile(j.data);
+        })
+        .catch(() => {});
+    } catch {}
   }, []);
 
   // Get unique values for filters
@@ -171,8 +193,10 @@ export default function PlayersPage() {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
             {t("players.discoverTalents")}
           </p>
+        
           <div className="flex items-center justify-center space-x-4 space-x-reverse">
             <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
+              
               <Users className="w-4 h-4" />
               <span>
                 {players.length} {t("players.registeredPlayers")}
@@ -300,7 +324,11 @@ export default function PlayersPage() {
             </Link>
           </div>
         </div>
-
+        {myProfile?.isActive && (
+            <div className="mt-4 flex justify-center w-full">
+              <PromoteNowButton profileId={myProfile?._id} />
+            </div>
+          )}
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
