@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 
 const WhatsAppButton = () => {
   const [isArabic, setIsArabic] = useState(false);
-   const phoneNumber = "966531540229"; 
+  const phoneNumber = "966531540229"; 
   const message = "مرحبا! كيف يمكنني مساعدتك؟";
 
   useEffect(() => {
@@ -22,8 +22,8 @@ const WhatsAppButton = () => {
       href={whatsappLink}
       target="_blank"
       rel="noopener noreferrer"
-      className={`fixed bottom-6 ${
-        isArabic ? "right-6" : "left-6"
+      className={`fixed bottom-15 ${
+        isArabic ? "right-4" : "left-4"
       } bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all transform hover:scale-110 z-50`}
       aria-label="WhatsApp"
     >
