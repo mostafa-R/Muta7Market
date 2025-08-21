@@ -310,6 +310,8 @@
     "activateToViewFinancials": "Activate your account to view financial and transfer information. One-time payment (200 SAR).",
     "activateToDownloadFiles": "Document download is available for activated accounts only. Activate your account to download player documents and files.",
     "activateToViewSocialLinks": "Activate your account to view social media links. One-time payment (200 SAR).",
+    "activateToViewGallery": "Activate your account to view the player's image gallery. One-time payment (200 SAR).",
+    "activateToWatchVideos": "Video viewing is available for activated accounts only. Activate your account to watch player videos.",
     "noFinancialData": "No financial information available",
     "playerImages": "Player Images",
     "noImagesAvailable": "No images available for this player",
@@ -997,6 +999,7 @@
     "afghanistan": "Afghanistan",
     "other": "Other"
   },
+
   "playerRoles": {
     "youthPlayer": "Youth Player",
     "juniorPlayer": "Junior Player",
