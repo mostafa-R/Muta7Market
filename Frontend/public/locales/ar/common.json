@@ -79,6 +79,7 @@
     "select": "اختر",
     "years": "سنة",
     "or": "أو",
+    "sar": "SAR",
     "termsAndConditions": "الشروط والأحكام",
     "and": "و",
     "privacyPolicy": "سياسة الخصوصية",
@@ -249,6 +250,7 @@
     "contactUs": "اتصل بنا لعرض إعلانك في هذه المساحة"
   },
   "playerDetail": {
+    "agentInformation": "معلومات الوكيل",
     "transferDeadline": "تاريخ نهاية العقد",
     "loginRequired": "يجب عليك تسجيل الدخول أولاً",
     "noPhoneAvailable": "لا يوجد رقم هاتف متاح لهذا اللاعب",
@@ -290,17 +292,32 @@
     "yearsOfExperience": "سنوات الخبرة",
     "views": "المشاهدات",
     "nationality": "الجنسية",
+    "birthCountry": "بلد المولد",
+    "roleType": "نوع الدور",
     "availableForPaidUsers": "متاح للمستخدمين المدفوعين فقط",
     "activateToViewContacts": "فعّل حسابك لعرض معلومات الاتصال. دفعة واحدة (200 ريال سعودي).",
     "activateToViewFinancials": "فعّل حسابك لعرض المعلومات المالية ومعلومات الانتقال. دفعة واحدة (200 ريال سعودي).",
     "activateToDownloadFiles": "تحميل المستندات متاح للحسابات المفعّلة فقط. فعّل حسابك لتحميل مستندات وملفات اللاعب.",
+    "activateToViewSocialLinks": "فعّل حسابك لعرض روابط التواصل الاجتماعي. دفعة واحدة (200 ريال سعودي).",
     "noFinancialData": "لا توجد معلومات مالية متاحة",
     "playerImages": "صور اللاعب",
     "noImagesAvailable": "لا توجد صور متاحة لهذا اللاعب",
     "profilePhoto": "شخصية",
     "sportsPhoto": "رياضية",
     "clickToZoom": "انقر على الصورة لعرضها بالحجم الكامل",
-    "imageGallery": "معرض الصور"
+    "imageGallery": "معرض الصور",
+    "socialLinks": "روابط التواصل الاجتماعي",
+    "agentInfo": "معلومات الوكيل (اختياري)",
+    "agentName": "اسم الوكيل",
+    "agentPhone": "هاتف الوكيل",
+    "agentEmail": "بريد الوكيل",
+    "promoted": "مميز",
+    "quickActions": "إجراءات سريعة",
+    "contactCommunication": "التواصل والاتصال",
+    "professionalInfo": "المعلومات المهنية",
+    "playerInformation": "معلومات اللاعب",
+    "mediaGallery": "معرض الوسائط",
+    "financialInfo": "المعلومات المالية"
   },
   "registerProfile": {
     "editPlayerProfile": "تعديل ملف اللاعب",
@@ -972,6 +989,7 @@
     "youthPlayer": "لاعب ناشئ",
     "juniorPlayer": "لاعب شباب",
     "firstTeamPlayer": "لاعب فريق أول",
+    "first_team_player": "لاعب فريق أول",
     "reservePlayer": "لاعب احتياط",
     "professionalPlayer": "لاعب محترف",
     "amateurPlayer": "لاعب هاوي",
@@ -1126,16 +1144,25 @@
       "shootingGuard": "حارس الرماية",
       "smallForward": "الجناح الصغير",
       "powerForward": "الجناح القوي",
-      "center": "المركز"
+      "center": "المركز",
+
+      "point_guard": "صانع الألعاب",
+      "shooting_guard": "حارس الرماية",
+      "small_forward": "الجناح الصغير",
+      "power_forward": "الجناح القوي"
     },
     "volleyball": {
       "setter": "مُعد",
       "outsideHitter": "ضارب خارجي",
       "middleBlocker": "حاجب أوسط",
       "oppositeHitter": "مقابل",
+      "opposite_hitter": "مقابل",
       "libero": "ليبيرو",
       "defensiveSpecialist": "متخصص دفاعي",
-      "servingSpecialist": "متخصص إرسال"
+      "servingSpecialist": "متخصص إرسال",
+      "spiker": "ضارب",
+      "blocker": "حاجب",
+      "server": "مرسل"
     },
     "badminton": {
       "singles": "فردي",
@@ -1221,7 +1248,21 @@
       "leftWinger": "جناح يسار",
       "midfielder": "وسط",
       "cam": "صانع ألعاب",
-      "striker": "مهاجم"
+      "striker": "مهاجم",
+
+      "right_back": "ظهير أيمن",
+      "left_back": "ظهير أيسر",
+      "center_back": "قلب دفاع",
+
+      "right_winger": "جناح يمين",
+      "left_winger": "جناح يسار",
+
+      "forward": "مهاجم",
+      "defender": "مدافع",
+
+      "winger": "جناح",
+      "fullback": "ظهير",
+      "sweeper": "كاسح"
     },
     "swimming": {
       "freestyle50m": "سباحة حرة 50م",
@@ -1239,7 +1280,11 @@
       "relay200m": "سباقات تتابع 200م",
       "relay400m": "سباقات تتابع 400م",
       "relay800m": "سباقات تتابع 800م",
-      "medleyRace": "سباق متنوع"
+      "medleyRace": "سباق متنوع",
+      "freestyle": "سباحة حرة",
+      "backstroke": "سباحة ظهر",
+      "breaststroke": "سباحة صدر",
+      "butterfly": "سباحة فراشة"
     },
     "judo": {
       "lightweight": "وزن خفيف",
@@ -1296,7 +1341,14 @@
       "unevenBars": "متوازي مختلف",
       "balanceBeam": "عارضة التوازن",
       "rhythmic": "إيقاعي",
-      "trampoline": "ترامبولين"
+      "trampoline": "ترامبولين",
+      "parallel_bars": "متوازي",
+      "pommel_horse": "حصان حلق",
+      "floor_exercise": "حرة أرضي",
+      " still_rings": "حلق ثابت",
+      "horizontal_bar": "عقلة",
+      "uneven_bars": "متوازي مختلف",
+      "balance_beam": "عارضة التوازن"
     },
     "billiards": {
       "eightBall": "الكرة الثامنة",
@@ -1324,5 +1376,59 @@
     "questionsSubtitle": "تواصل معنا إذا كان لديك أي استفسارات حول سياسة الخصوصية أو الشروط والأحكام",
     "legalInquiries": "الاستفسارات القانونية",
     "contactUs": "تواصل معنا"
-  }
+  },
+  "transferStartDate": "تاريخ بداية الانتقال",
+  "transferEndDate": "تاريخ نهاية الانتقال",
+  "transferDate": "تاريخ الانتقال",
+  "sar": "ريال سعودي",
+  "agentInformation": "معلومات الوكيل",
+  "agentName": "اسم الوكيل",
+  "agentPhone": "هاتف الوكيل",
+  "agentEmail": "بريد الوكيل",
+  "notSpecified": "غير محدد",
+  "deletePlayerProfile": "حذف ملف اللاعب",
+  "confirmDeletePlayerProfile": "هل أنت متأكد من حذف ملف اللاعب؟ لا يمكن التراجع عن هذا الإجراء.",
+  "mustLoginFirst": "يجب تسجيل الدخول أولاً",
+  "deletingPlayerProfile": "جاري حذف ملف اللاعب...",
+  "playerProfileDeletedSuccessfully": "تم حذف ملف اللاعب بنجاح",
+  "playerProfileNotFound": "لم يتم العثور على ملف اللاعب",
+  "noPermissionToDelete": "ليس لديك صلاحية لحذف هذا الملف",
+  "errorDeletingProfile": "خطأ في حذف الملف",
+  "deleting": "جاري الحذف...",
+  "notRegisteredYet": "لم تسجل كلاعب بعد",
+  "registerNow": "سجل الآن",
+  "nationality": "الجنسية",
+  "yearsOfExperience": "سنوات الخبرة",
+  "views": "المشاهدات",
+  "transferDetails": "معلومات الانتقال",
+  "transferredToClub": "انتقل إلى النادي",
+  "transferAmount": "مبلغ الانتقال",
+  "mediaFiles": "الملفات الوسائطية",
+  "profileImage": "الصورة الشخصية",
+  "viewImage": "عرض الصورة",
+  "playerVideo": "فيديو اللاعب",
+  "uploadedAt": "تم الرفع",
+  "watchVideo": "مشاهدة الفيديو",
+  "document": "المستند",
+  "downloadFile": "تحميل المستند",
+  "playerImages": "معرض الصور",
+  "clickToViewFullSize": "انقر على أي صورة لعرضها بالحجم الكامل",
+
+  "sport": "الرياضة",
+  "experience": "الخبرة",
+  "monthlySalary": "الراتب الشهري",
+  "annualContract": "العقد السنوي",
+  "accountStatus": "حالة الحساب",
+  "active": "نشط",
+  "inactive": "غير نشط",
+  "confirmed": "مؤكد",
+  "pending": "معلق",
+  "listed": "مدرج",
+  "notListed": "غير مدرج",
+  "promoted": "مميز",
+  "notPromoted": "غير مميز",
+  "email": "البريد الإلكتروني",
+  "phone": "الهاتف",
+  "profilePhoto": "الصورة الشخصية",
+  "years": "سنوات"
 }

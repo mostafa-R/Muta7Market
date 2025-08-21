@@ -85,6 +85,7 @@ function RegisterProfileContent() {
             ALLOWED_DOCUMENT_TYPES={ALLOWED_DOCUMENT_TYPES}
             ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
             MAX_FILE_SIZE={MAX_FILE_SIZE}
+            playerId={player?._id || idParam} // Pass the player ID for delete functionality
           />
         );
       case "terms":
@@ -155,7 +156,13 @@ function RegisterProfileContent() {
 
         {/* Form content */}
         {!isLoading && (
-          <form onSubmit={formik.handleSubmit} className="w-full">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault(); // منع الـ auto-submit
+              // السماح بالـ submit فقط عند الضغط على الـ Save button بشكل صريح
+            }}
+            className="w-full"
+          >
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
               <div className="p-6 md:p-8">{renderFormSection()}</div>
 
@@ -209,6 +216,13 @@ function RegisterProfileContent() {
                       type="submit"
                       disabled={formik.isSubmitting}
                       className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        console.log(
+                          "Save button clicked - manually triggering submission"
+                        );
+                        formik.handleSubmit();
+                      }}
                     >
                       <Save className="w-4 h-4 mr-1" />
                       {idParam
@@ -250,7 +264,12 @@ function RegisterProfileContent() {
         totalSteps={formSections.length}
         onPrevStep={prevStep}
         onNextStep={nextStep}
-        onSubmit={formik.handleSubmit}
+        onSubmit={(e) => {
+          console.log(
+            "Mobile submit button clicked - manually triggering submission"
+          );
+          formik.handleSubmit();
+        }}
         isSubmitting={formik.isSubmitting}
       />
     </div>

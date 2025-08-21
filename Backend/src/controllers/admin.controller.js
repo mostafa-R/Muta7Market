@@ -232,8 +232,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     .populate("user", "name email phone")
     .sort({ createdAt: -1 })
     .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .lean();
+    .skip((page - 1) * limit);
 
   const total = await Player.countDocuments(filter);
 
@@ -257,9 +256,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 export const getPlayerById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const player = await Player.findById(id)
-    .populate("user", "name email phone role isActive")
-    .lean();
+  const player = await Player.findById(id).populate(
+    "user",
+    "name email phone role isActive"
+  );
 
   if (!player) {
     throw new ApiError(404, "Player not found");
@@ -420,12 +420,12 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     activeCoaches,
     recentCoaches,
     confirmedPlayers,
-    confirmedCoaches
+    confirmedCoaches,
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ isActive: true }),
     Player.countDocuments(),
-    Player.countDocuments({ isActive: true  }),
+    Player.countDocuments({ isActive: true }),
     User.find()
       .sort({ createdAt: -1 })
       .limit(5)
@@ -445,7 +445,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       .populate("user", "name email")
       .lean(),
     Player.countDocuments({ isConfirmed: true }),
-    coachModel.countDocuments({ isConfirmed: true })
+    coachModel.countDocuments({ isConfirmed: true }),
   ]);
 
   const stats = {
@@ -458,13 +458,13 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       total: totalPlayers,
       active: activePlayers,
       inactive: totalPlayers - activePlayers,
-      confirmed: confirmedPlayers
+      confirmed: confirmedPlayers,
     },
     coaches: {
       total: totalCoaches,
       active: activeCoaches,
       inactive: totalCoaches - activeCoaches,
-      confirmed: confirmedCoaches
+      confirmed: confirmedCoaches,
     },
     recent: {
       users: recentUsers,

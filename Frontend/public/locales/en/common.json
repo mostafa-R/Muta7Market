@@ -79,6 +79,7 @@
     "select": "Select",
     "years": "years",
     "or": "or",
+    "sar": "SAR",
     "termsAndConditions": "Terms and Conditions",
     "and": "and",
     "privacyPolicy": "Privacy Policy",
@@ -250,6 +251,7 @@
     "contactUs": "Contact us to display your ad in this space"
   },
   "playerDetail": {
+    "agentInformation": "Agent Information",
     "transferDeadline": "Transfer Deadline",
     "loginRequired": "You must be logged in first",
     "noPhoneAvailable": "No phone number available for this player",
@@ -291,17 +293,32 @@
     "yearsOfExperience": "Years of Experience",
     "views": "Views",
     "nationality": "Nationality",
+    "birthCountry": "Country of Birth",
+    "roleType": "Role Type",
     "availableForPaidUsers": "Available for paid users only",
     "activateToViewContacts": "Activate your account to view contact information. One-time payment (200 SAR).",
     "activateToViewFinancials": "Activate your account to view financial and transfer information. One-time payment (200 SAR).",
     "activateToDownloadFiles": "Document download is available for activated accounts only. Activate your account to download player documents and files.",
+    "activateToViewSocialLinks": "Activate your account to view social media links. One-time payment (200 SAR).",
     "noFinancialData": "No financial information available",
     "playerImages": "Player Images",
     "noImagesAvailable": "No images available for this player",
     "profilePhoto": "Profile",
     "sportsPhoto": "Sports",
     "clickToZoom": "Click image to view in full size",
-    "imageGallery": "Image Gallery"
+    "imageGallery": "Image Gallery",
+    "socialLinks": "Social Links",
+    "agentInfo": "Agent Information (Optional)",
+    "agentName": "Agent Name",
+    "agentPhone": "Agent Phone",
+    "agentEmail": "Agent Email",
+    "promoted": "Promoted",
+    "quickActions": "Quick Actions",
+    "contactCommunication": "Contact & Communication",
+    "professionalInfo": "Professional Information",
+    "playerInformation": "Player Information",
+    "mediaGallery": "Media Gallery",
+    "financialInfo": "Financial Information"
   },
   "registerProfile": {
     "editPlayerProfile": "Edit Player Profile",
@@ -971,6 +988,7 @@
     "youthPlayer": "Youth Player",
     "juniorPlayer": "Junior Player",
     "firstTeamPlayer": "First Team Player",
+    "first_team_player": "First Team Player",
     "reservePlayer": "Reserve Player",
     "professionalPlayer": "Professional Player",
     "amateurPlayer": "Amateur Player",
@@ -1123,13 +1141,22 @@
       "shootingGuard": "Shooting Guard",
       "smallForward": "Small Forward",
       "powerForward": "Power Forward",
+      "point_guard": "Point Guard",
+      "shooting_guard": "Shooting Guard",
+      "small_forward": "Small Forward",
+      "power_forward": "Power Forward",
+
       "center": "Center"
     },
     "volleyball": {
       "setter": "Setter",
+      "spiker": "Spiker",
+      "blocker": "Blocker",
+      "server": "Server",
       "outsideHitter": "Outside Hitter",
       "middleBlocker": "Middle Blocker",
       "oppositeHitter": "Opposite",
+      "opposite_hitter": "Opposite",
       "libero": "Libero",
       "defensiveSpecialist": "Defensive Specialist",
       "servingSpecialist": "Serving Specialist"
@@ -1160,6 +1187,7 @@
       "hammerThrow": "Hammer Throw",
       "javelinThrow": "Javelin Throw",
       "raceWalking": "Race Walking"
+
     },
     "tennis": {
       "singles": "Singles",
@@ -1195,6 +1223,7 @@
       "redArrow": "Red Arrow",
       "yellowArrow": "Yellow Arrow",
       "greenArrow": "Green Arrow"
+
     },
     "esports": {
       "moba": "MOBA",
@@ -1217,7 +1246,18 @@
       "rightWinger": "Right Winger",
       "leftWinger": "Left Winger",
       "midfielder": "Midfielder",
-      "cam": "CAM",
+      "right_back": "Right Back",
+      "left_back": "Left Back",
+      "center_back": "Center Back",
+      "right_winger": "Right Winger",
+      "left_winger": "Left Winger",
+      "cam": "Attacking Midfielder",
+      "forward": "Forward",
+      "defender": "Defender",
+
+      "winger": "Winger",
+      "fullback": "Fullback",
+      "sweeper": "Sweeper",
       "striker": "Striker"
     },
     "swimming": {
@@ -1236,7 +1276,11 @@
       "relay200m": "Relay 200m",
       "relay400m": "Relay 400m",
       "relay800m": "Relay 800m",
-      "medleyRace": "Medley Race"
+      "medleyRace": "Medley Race",
+      "freestyle": "Freestyle",
+      "backstroke": "Backstroke",
+      "breaststroke": "Breaststroke",
+      "butterfly": "Butterfly"
     },
     "judo": {
       "lightweight": "Lightweight",
@@ -1293,7 +1337,15 @@
       "unevenBars": "Uneven Bars",
       "balanceBeam": "Balance Beam",
       "rhythmic": "Rhythmic",
-      "trampoline": "Trampoline"
+      "trampoline": "Trampoline",
+      "parallel_bars": "Parallel Bars",
+      "floor_exercise": "Floor Exercise",
+      "pommel_horse": "Pommel Horse",
+      "still_rings": "Still Rings",
+
+      "horizontal_bar": "Horizontal Bar",
+      "uneven_bars": "Uneven Bars",
+      "balance_beam": "Balance Beam"
     },
     "billiards": {
       "eightBall": "8-Ball",
@@ -1321,5 +1373,64 @@
     "questionsSubtitle": "Contact us if you have any questions about our privacy policy or terms and conditions",
     "legalInquiries": "Legal inquiries",
     "contactUs": "Contact Us"
-  }
+  },
+  "transferStartDate": "Transfer Start Date",
+  "transferEndDate": "Transfer End Date",
+  "transferDate": "Transfer Date",
+  "sar": "SAR",
+  "agentInformation": "Agent Information",
+  "agentName": "Agent Name",
+  "agentPhone": "Agent Phone",
+  "agentEmail": "Agent Email",
+  "notSpecified": "Not Specified",
+  "deletePlayerProfile": "Delete Player Profile",
+  "confirmDeletePlayerProfile": "Are you sure you want to delete your player profile? This action cannot be undone.",
+  "mustLoginFirst": "You must login first",
+  "deletingPlayerProfile": "Deleting player profile...",
+  "playerProfileDeletedSuccessfully": "Player profile deleted successfully",
+  "playerProfileNotFound": "Player profile not found",
+  "noPermissionToDelete": "You don't have permission to delete this profile",
+  "errorDeletingProfile": "Error deleting profile",
+  "deleting": "Deleting...",
+  "notRegisteredYet": "You haven't registered as a player yet",
+  "registerNow": "Register Now",
+  "nationality": "Nationality",
+  "yearsOfExperience": "Years of Experience",
+  "views": "Views",
+  "transferDetails": "Transfer Information",
+  "transferredToClub": "Transferred To Club",
+  "transferAmount": "Transfer Amount",
+  "mediaFiles": "Media Files",
+  "profileImage": "Profile Image",
+  "viewImage": "View Image",
+  "playerVideo": "Player Video",
+  "uploadedAt": "Uploaded",
+  "watchVideo": "Watch Video",
+  "document": "Document",
+  "downloadFile": "Download Document",
+  "playerImages": "Image Gallery",
+  "clickToViewFullSize": "Click on any image to view full size",
+  "agentInformation": "Agent Information",
+  "agentName": "Agent Name",
+  "agentPhone": "Agent Phone",
+  "agentEmail": "Agent Email",
+  "sport": "Sport",
+  "experience": "Experience",
+  "monthlySalary": "Monthly Salary",
+  "annualContract": "Annual Contract",
+  "accountStatus": "Account Status",
+  "active": "Active",
+  "inactive": "Inactive",
+  "confirmed": "Confirmed",
+  "pending": "Pending",
+  "listed": "Listed",
+  "notListed": "Not Listed",
+  "promoted": "Promoted",
+  "notPromoted": "Not Promoted",
+  "email": "Email",
+  "phone": "Phone",
+  "profilePhoto": "Profile Photo",
+  "years": "years"
+
+
 }

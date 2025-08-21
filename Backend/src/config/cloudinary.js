@@ -1,8 +1,8 @@
 // uploads/cloudinary.js
 import { v2 as cloudinary } from "cloudinary";
+import dotenv from "dotenv";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -86,7 +86,8 @@ export const mixedStorage = new CloudinaryStorage({
 export const uploadMixed = multer({
   storage: mixedStorage,
   limits: {
-    fileSize: 120 * 1024 * 1024,
+    fileSize: 120 * 1024 * 1024, // 120MB file size limit
+    fieldSize: 10 * 1024 * 1024, // 10MB field size limit for form fields
   },
   fileFilter: (req, file, cb) => {
     if (
@@ -104,7 +105,10 @@ export const uploadMixed = multer({
 // Dedicated uploader for video-only endpoint
 export const uploadVideoOnly = multer({
   storage: mixedStorage,
-  limits: { fileSize: 500 * 1024 * 1024 },
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB file size limit for videos
+    fieldSize: 10 * 1024 * 1024, // 10MB field size limit for form fields
+  },
   fileFilter: (req, file, cb) => {
     if (isVideo(file.mimetype)) return cb(null, true);
     cb(new Error("Not a video! Please upload only videos."), false);

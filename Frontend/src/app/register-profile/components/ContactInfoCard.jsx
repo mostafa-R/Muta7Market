@@ -24,7 +24,7 @@ export const ContactInfoCard = ({ formik }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label className="flex items-center space-x-2 space-x-reverse">
             <Checkbox
               className="mr-2 ml-2"
@@ -44,7 +44,7 @@ export const ContactInfoCard = ({ formik }) => {
                 {get(formik.errors, "contactInfo.isHidden")}
               </div>
             )}
-        </div>
+        </div> */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             label={t("registerProfile.form.contactInfo.email")}

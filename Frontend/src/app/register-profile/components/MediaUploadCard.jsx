@@ -12,6 +12,7 @@ import {
   FiVideo,
   FiX,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 
 export const MediaUploadCard = ({
@@ -21,16 +22,115 @@ export const MediaUploadCard = ({
   ALLOWED_DOCUMENT_TYPES,
   ALLOWED_IMAGE_TYPES,
   MAX_FILE_SIZE,
+  playerId, // Add playerId prop to identify the player
 }) => {
   const { t } = useTranslation();
 
-  const removeVideo = () => {
+  // Delete images from server
+  const deleteImagesFromServer = async (publicIds) => {
+    if (!playerId || !publicIds || publicIds.length === 0) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      const API_URL = API_BASE_URL.includes("/api/v1")
+        ? API_BASE_URL
+        : `${API_BASE_URL}/api/v1`;
+
+      const response = await fetch(`${API_URL}/players/${playerId}/images`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ publicIds }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log("🗑️ Successfully deleted images from server:", result);
+        return true;
+      } else {
+        console.error("❌ Failed to delete images from server:", result);
+        return false;
+      }
+    } catch (error) {
+      console.error("💥 Error deleting images:", error);
+      return false;
+    }
+  };
+
+  // Delete video from server
+  const deleteVideoFromServer = async () => {
+    if (!playerId) return false;
+
+    try {
+      const token = localStorage.getItem("token");
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      const API_URL = API_BASE_URL.includes("/api/v1")
+        ? API_BASE_URL
+        : `${API_BASE_URL}/api/v1`;
+
+      const response = await fetch(`${API_URL}/players/${playerId}/video`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log("🗑️ Successfully deleted video from server:", result);
+        return true;
+      } else {
+        console.error("❌ Failed to delete video from server:", result);
+        return false;
+      }
+    } catch (error) {
+      console.error("💥 Error deleting video:", error);
+      return false;
+    }
+  };
+
+  const removeVideo = async () => {
     const video = formik.values.media.video;
+
+    console.log("🗑️ Removing video:", {
+      hasPublicId: !!video?.publicId,
+      isBlob: video?.url?.startsWith("blob:"),
+    });
+
+    // Handle server-stored videos (have publicId and not blob URLs)
+    if (video?.publicId && !video.url?.startsWith("blob:")) {
+      console.log("🗑️ Deleting video from server:", video.publicId);
+
+      const success = await deleteVideoFromServer();
+
+      if (!success) {
+        console.error("❌ Failed to delete video from server, keeping in UI");
+        toast.error("Failed to delete video from server. Please try again.");
+        return;
+      }
+
+      console.log("✅ Video deleted from server successfully");
+      toast.success("Video deleted successfully!");
+    }
+
+    // Handle local blob URLs
     if (video && video.file && video.url?.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(video.url);
-      } catch {}
+        console.log("🧹 Cleaned up video blob URL");
+      } catch (err) {
+        console.error("Error revoking video blob URL:", err);
+      }
     }
+
+    // Remove from form state
     formik.setFieldValue("media.video", {
       url: null,
       publicId: null,
@@ -38,15 +138,81 @@ export const MediaUploadCard = ({
       duration: 0,
       uploadedAt: null,
     });
+
+    console.log("✅ Video removed from form");
   };
 
-  const removeDocument = () => {
+  // Delete document from server
+  const deleteDocumentFromServer = async () => {
+    if (!playerId) return false;
+
+    try {
+      const token = localStorage.getItem("token");
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      const API_URL = API_BASE_URL.includes("/api/v1")
+        ? API_BASE_URL
+        : `${API_BASE_URL}/api/v1`;
+
+      const response = await fetch(`${API_URL}/players/${playerId}/document`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log("🗑️ Successfully deleted document from server:", result);
+        return true;
+      } else {
+        console.error("❌ Failed to delete document from server:", result);
+        return false;
+      }
+    } catch (error) {
+      console.error("💥 Error deleting document:", error);
+      return false;
+    }
+  };
+
+  const removeDocument = async () => {
     const document = formik.values.media.document;
+
+    console.log("🗑️ Removing document:", {
+      hasPublicId: !!document?.publicId,
+      isBlob: document?.url?.startsWith("blob:"),
+    });
+
+    // Handle server-stored documents (have publicId and not blob URLs)
+    if (document?.publicId && !document.url?.startsWith("blob:")) {
+      console.log("🗑️ Deleting document from server:", document.publicId);
+
+      const success = await deleteDocumentFromServer();
+
+      if (!success) {
+        console.error(
+          "❌ Failed to delete document from server, keeping in UI"
+        );
+        toast.error("Failed to delete document from server. Please try again.");
+        return;
+      }
+
+      console.log("✅ Document deleted from server successfully");
+      toast.success("Document deleted successfully!");
+    }
+
+    // Handle local blob URLs
     if (document && document.file && document.url?.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(document.url);
-      } catch {}
+        console.log("🧹 Cleaned up document blob URL");
+      } catch (err) {
+        console.error("Error revoking document blob URL:", err);
+      }
     }
+
+    // Remove from form state
     formik.setFieldValue("media.document", {
       url: null,
       publicId: null,
@@ -55,25 +221,52 @@ export const MediaUploadCard = ({
       size: 0,
       uploadedAt: null,
     });
+
+    console.log("✅ Document removed from form");
   };
 
-  const removeImage = (index) => {
+  const removeImage = async (index) => {
     const images = formik.values.media.images || [];
     const imageToRemove = images[index];
 
-    // Clean up blob URL if it exists
-    if (imageToRemove && imageToRemove.url) {
-      if (imageToRemove.url.startsWith("blob:")) {
-        try {
-          URL.revokeObjectURL(imageToRemove.url);
-        } catch (err) {
-          toast.error("Error revoking");
-        }
+    console.log("🗑️ Removing image:", {
+      index,
+      title: imageToRemove?.title,
+      hasPublicId: !!imageToRemove?.publicId,
+      isBlob: imageToRemove?.url?.startsWith("blob:"),
+    });
+
+    // Handle server-stored images (have publicId and not blob URLs)
+    if (imageToRemove?.publicId && !imageToRemove.url?.startsWith("blob:")) {
+      console.log("🗑️ Deleting image from server:", imageToRemove.publicId);
+
+      const success = await deleteImagesFromServer([imageToRemove.publicId]);
+
+      if (!success) {
+        console.error("❌ Failed to delete image from server, keeping in UI");
+        toast.error("Failed to delete image from server. Please try again.");
+        return;
+      }
+
+      console.log("✅ Image deleted from server successfully");
+      toast.success("Image deleted successfully!");
+    }
+
+    // Handle local blob URLs
+    if (imageToRemove && imageToRemove.url?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(imageToRemove.url);
+        console.log("🧹 Cleaned up blob URL");
+      } catch (err) {
+        console.error("Error revoking blob URL:", err);
       }
     }
 
+    // Remove from form state
     const newImages = images.filter((_, i) => i !== index);
     formik.setFieldValue("media.images", newImages);
+
+    console.log(`✅ Image removed. Remaining: ${newImages.length}`);
   };
 
   const addImages = (files) => {

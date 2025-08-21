@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 
 const getStatusColor = (status) => {
   const colors = {
-    "Free Agent": "bg-emerald-500",
+    "Free Agent": "bg-[#016666]",
     Contracted: "bg-blue-600",
     Transferred: "bg-purple-500",
   };
@@ -58,6 +58,33 @@ const getNationalityText = (nationality, t) => {
 
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
+
+  // Check if position is already a nested key like "positions.gymnastics.parallel_bars"
+  if (position.includes(".")) {
+    // Direct translation of the nested key
+    let translatedPosition = t(position, { defaultValue: null });
+    if (
+      translatedPosition &&
+      translatedPosition !== position &&
+      translatedPosition !== null
+    ) {
+      return translatedPosition;
+    }
+
+    // If nested key translation failed, extract the last part (original DB value)
+    const positionKey = position.split(".").pop();
+
+    // Try to translate the cleaned key, fallback to original DB value
+    const finalTranslation = t(`positions.${positionKey}`, {
+      defaultValue: null,
+    });
+    if (finalTranslation && finalTranslation !== `positions.${positionKey}`) {
+      return finalTranslation;
+    }
+
+    // Final fallback: return original DB value
+    return positionKey;
+  }
 
   // Try sport-specific position first
   const sportKey = sport?.toLowerCase();
@@ -118,7 +145,7 @@ const PlayerCard = ({ player }) => {
             title={t("player.promoted")}
             aria-label={t("player.promoted")}
           >
-            <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full shadow-sm transition-transform group-hover:scale-110">
+            <div className="flex items-center justify-center w-6 h-6 bg-[#cd9834] rounded-full shadow-sm transition-transform group-hover:scale-110">
               <Pin className="w-3 h-3 text-white" />
             </div>
           </div>

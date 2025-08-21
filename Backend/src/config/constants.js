@@ -44,18 +44,18 @@ export const NOTIFICATION_TYPES = {
 // كل الأسعار لسنة كاملة
 export const PRICING = {
   // يوزر يدفع سنة ليفتح وسائل التواصل
-  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR || 5),
+  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR || 55),
 
   // اشتراك الظهور في الليست لسنة
   listing_year: {
-    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR || 5),
-    coach: Number(process.env.PRICE_LISTING_COACH_YEAR || 5),
+    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR || 199),
+    coach: Number(process.env.PRICE_LISTING_COACH_YEAR || 249),
   },
 
   // ترقية التوب ليست لسنة
   promotion_year: {
-    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR || 5),
-    coach: Number(process.env.PRICE_PROMO_COACH_YEAR || 5),
+    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR || 299),
+    coach: Number(process.env.PRICE_PROMO_COACH_YEAR || 349),
   },
 
   // مدة الاشتراكات: 365 يوم

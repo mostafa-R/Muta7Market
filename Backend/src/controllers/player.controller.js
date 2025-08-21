@@ -1,3 +1,5 @@
+import { PRICING } from "../config/constants.js";
+import Invoice from "../models/invoice.model.js";
 import { default as Player } from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
@@ -5,15 +7,13 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
 import {
+  deleteAllPlayerMedia,
   deleteMediaFromCloudinary,
   processPlayerMedia,
   replaceMediaItem,
 } from "../utils/mediaUtils.js";
-import { sendInternalNotification } from "./notification.controller.js";
-import { ensurePendingInvoice } from "../services/invoice.service.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
-import Invoice from "../models/invoice.model.js";
-import { PRICING } from "../config/constants.js";
+import { sendInternalNotification } from "./notification.controller.js";
 
 // Create Player Profile
 
@@ -31,7 +31,21 @@ export const createPlayer = asyncHandler(async (req, res) => {
     if (exists) throw new ApiError(400, "Player profile already exists");
 
     // ارفع الميديا (لو عندك نفس الهيلبرز)
-    const media = await processPlayerMedia(req.files);
+    let media;
+    try {
+      media = await processPlayerMedia(req.files);
+    } catch (mediaError) {
+      console.error("Media processing error:", mediaError.message);
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            `Failed to process media: ${mediaError.message}`
+          )
+        );
+    }
 
     // أنشئ البروفايل — بيظهر في الليست بعد الدفع
     const player = await Player.create({
@@ -43,10 +57,16 @@ export const createPlayer = asyncHandler(async (req, res) => {
       age: req.body.age,
       gender: req.body.gender,
       nationality: req.body.nationality,
-      jop: req.body.jop, //mody fetch job
+      customNationality: req.body.customNationality,
+      birthCountry: req.body.birthCountry,
+      customBirthCountry: req.body.customBirthCountry,
+      jop: req.body.jop,
+      roleType: req.body.roleType,
+      customRoleType: req.body.customRoleType,
       position: req.body.position,
+      customPosition: req.body.customPosition,
       status: req.body.status,
-      expreiance: req.body.expreiance,
+      experience: req.body.experience,
       monthlySalary: req.body.monthlySalary,
       yearSalary: req.body.yearSalary,
       contractEndDate: req.body.contractEndDate,
@@ -54,6 +74,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
       socialLinks: req.body.socialLinks,
       contactInfo: req.body.contactInfo,
       game: req.body.game,
+      customSport: req.body.customSport,
       media,
     });
 
@@ -120,7 +141,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
           userId,
           product: "listing",
           targetType, // "player" أو "coach"
-          profileId: player._id,
+          playerProfileId: player._id,
           status: "pending",
         },
         {
@@ -257,8 +278,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
         .sort(sort)
         .limit(limitNum)
         .skip(skip)
-        .populate("user", "name email")
-        .lean(),
+        .populate("user", "name email"),
       Player.countDocuments(query),
     ]);
 
@@ -342,7 +362,7 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     canSeeContacts = Boolean(isOwner || requesterIsActive);
   } catch {}
 
-  const playerData = player.toObject();
+  const playerData = player.toJSON(); // ✅ استخدم toJSON عشان السحر يشتغل
   if (!canSeeContacts && playerData?.user) {
     delete playerData.user.email;
     delete playerData.user.phone;
@@ -373,12 +393,25 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (req.body.gender !== undefined) player.gender = req.body.gender;
   if (req.body.nationality !== undefined)
     player.nationality = req.body.nationality;
+  if (req.body.customNationality !== undefined)
+    player.customNationality = req.body.customNationality;
+  if (req.body.birthCountry !== undefined)
+    player.birthCountry = req.body.birthCountry;
+  if (req.body.customBirthCountry !== undefined)
+    player.customBirthCountry = req.body.customBirthCountry;
   if (req.body.jop !== undefined) player.jop = req.body.jop;
+  if (req.body.roleType !== undefined) player.roleType = req.body.roleType;
+  if (req.body.customRoleType !== undefined)
+    player.customRoleType = req.body.customRoleType;
   if (req.body.position !== undefined) player.position = req.body.position;
+  if (req.body.customPosition !== undefined)
+    player.customPosition = req.body.customPosition;
   if (req.body.status !== undefined) player.status = req.body.status;
-  if (req.body.expreiance !== undefined)
-    player.expreiance = req.body.expreiance;
+  if (req.body.experience !== undefined)
+    player.experience = req.body.experience;
   if (req.body.game !== undefined) player.game = req.body.game;
+  if (req.body.customSport !== undefined)
+    player.customSport = req.body.customSport;
   if (req.body.views !== undefined) player.views = req.body.views;
   if (req.body.isActive !== undefined) player.isActive = req.body.isActive;
 
@@ -409,9 +442,16 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     if (!player.transferredTo) player.transferredTo = {};
     if (req.body.transferredTo.club !== undefined)
       player.transferredTo.club = req.body.transferredTo.club;
-    if (req.body.transferredTo.date !== undefined)
-      player.transferredTo.date =
-        req.body.transferredTo.date === "" ? null : req.body.transferredTo.date;
+    if (req.body.transferredTo.startDate !== undefined)
+      player.transferredTo.startDate =
+        req.body.transferredTo.startDate === ""
+          ? null
+          : req.body.transferredTo.startDate;
+    if (req.body.transferredTo.endDate !== undefined)
+      player.transferredTo.endDate =
+        req.body.transferredTo.endDate === ""
+          ? null
+          : req.body.transferredTo.endDate;
     if (req.body.transferredTo.amount !== undefined)
       player.transferredTo.amount = req.body.transferredTo.amount;
   }
@@ -465,39 +505,166 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
 
   // Process media files if any are provided
+  let mediaUpdateResults = {
+    updated: [],
+    deleted: [],
+    errors: [],
+  };
+
   try {
     if (req.files && Object.keys(req.files).length > 0) {
-      // If media doesn't exist, initialize it
-      if (!player.media) {
-        player.media = {
-          profileImage: { url: null, publicId: null },
-          videos: [],
-          documents: [],
-        };
-      }
+      console.log(
+        "Processing media updates for player:",
+        playerId,
+        "Files:",
+        Object.keys(req.files)
+      );
+
+      // Track what old media will be replaced
+      const oldMedia = player.media
+        ? JSON.parse(JSON.stringify(player.media))
+        : null;
 
       // Use the processPlayerMedia utility to handle media updates
       // This will delete old files when needed and upload new ones
-      const updatedMedia = await processPlayerMedia(req.files, player.media);
+      let updatedMedia;
+      try {
+        updatedMedia = await processPlayerMedia(req.files, player.media);
+      } catch (mediaError) {
+        console.error("Media processing error:", mediaError.message);
+        return res.status(400).json(
+          new ApiResponse(
+            400,
+            {
+              player,
+              mediaErrors: [
+                {
+                  message: mediaError.message,
+                  type: "media_processing_error",
+                },
+              ],
+            },
+            `Failed to process media: ${mediaError.message}`
+          )
+        );
+      }
 
-      // Update player's media object with the processed media
-      if (updatedMedia.profileImage) {
+      // Ensure player.media exists
+      if (!player.media) player.media = {};
+
+      // Update profile image if provided
+      if (
+        req.files.profileImage &&
+        updatedMedia.profileImage &&
+        updatedMedia.profileImage.url
+      ) {
+        // Log old image deletion
+        if (oldMedia?.profileImage?.publicId) {
+          mediaUpdateResults.deleted.push({
+            type: "profile image",
+            publicId: oldMedia.profileImage.publicId,
+          });
+        }
+
         player.media.profileImage = updatedMedia.profileImage;
+        mediaUpdateResults.updated.push({
+          type: "profile image",
+          publicId: updatedMedia.profileImage.publicId,
+        });
+        console.log(
+          "Profile image updated:",
+          updatedMedia.profileImage.publicId
+        );
       }
 
-      // Update single video if provided
-      if (updatedMedia.video && updatedMedia.video.url) {
+      // Update video if provided
+      if (
+        req.files.playerVideo &&
+        updatedMedia.video &&
+        updatedMedia.video.url
+      ) {
+        // Log old video deletion
+        if (oldMedia?.video?.publicId) {
+          mediaUpdateResults.deleted.push({
+            type: "video",
+            publicId: oldMedia.video.publicId,
+          });
+        }
+
         player.media.video = updatedMedia.video;
+        mediaUpdateResults.updated.push({
+          type: "video",
+          publicId: updatedMedia.video.publicId,
+        });
+        console.log("Video updated:", updatedMedia.video.publicId);
       }
 
-      // Update single document if provided
-      if (updatedMedia.document && updatedMedia.document.url) {
+      // Update document if provided
+      if (
+        req.files.document &&
+        updatedMedia.document &&
+        updatedMedia.document.url
+      ) {
+        // Log old document deletion
+        if (oldMedia?.document?.publicId) {
+          mediaUpdateResults.deleted.push({
+            type: "document",
+            publicId: oldMedia.document.publicId,
+          });
+        }
+
         player.media.document = updatedMedia.document;
+        mediaUpdateResults.updated.push({
+          type: "document",
+          publicId: updatedMedia.document.publicId,
+        });
+        console.log("Document updated:", updatedMedia.document.publicId);
       }
+
+      // Update images array if provided
+      if (
+        req.files.images &&
+        updatedMedia.images &&
+        Array.isArray(updatedMedia.images) &&
+        updatedMedia.images.length > 0
+      ) {
+        // Log old images deletion
+        if (oldMedia?.images && Array.isArray(oldMedia.images)) {
+          oldMedia.images.forEach((img, index) => {
+            if (img?.publicId) {
+              mediaUpdateResults.deleted.push({
+                type: `gallery image ${index + 1}`,
+                publicId: img.publicId,
+              });
+            }
+          });
+        }
+
+        player.media.images = updatedMedia.images;
+        updatedMedia.images.forEach((img, index) => {
+          if (img?.publicId) {
+            mediaUpdateResults.updated.push({
+              type: `gallery image ${index + 1}`,
+              publicId: img.publicId,
+            });
+          }
+        });
+        console.log(`${updatedMedia.images.length} gallery images updated`);
+      }
+
+      console.log("Media update completed:", {
+        updated: mediaUpdateResults.updated.length,
+        deleted: mediaUpdateResults.deleted.length,
+        errors: mediaUpdateResults.errors.length,
+      });
     }
   } catch (error) {
     console.error("Error processing media files:", error);
-    throw new ApiError(500, "Failed to process media files");
+    mediaUpdateResults.errors.push({
+      type: "media processing",
+      error: error.message,
+    });
+    throw new ApiError(500, "Failed to process media files: " + error.message);
   }
 
   // حفظ
@@ -512,10 +679,355 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     { playerId: player._id }
   );
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, player, "Player profile updated successfully"));
+  // Prepare response with media update information
+  let responseMessage = "Player profile updated successfully";
+  let responseData = {
+    player,
+    mediaUpdates: null,
+  };
+
+  // Add media update information to response if any media was processed
+  if (
+    mediaUpdateResults.updated.length > 0 ||
+    mediaUpdateResults.deleted.length > 0 ||
+    mediaUpdateResults.errors.length > 0
+  ) {
+    responseData.mediaUpdates = {
+      updated: mediaUpdateResults.updated,
+      deleted: mediaUpdateResults.deleted,
+      errors: mediaUpdateResults.errors,
+      summary: {
+        totalUpdated: mediaUpdateResults.updated.length,
+        totalDeleted: mediaUpdateResults.deleted.length,
+        totalErrors: mediaUpdateResults.errors.length,
+      },
+    };
+
+    if (mediaUpdateResults.updated.length > 0) {
+      responseMessage += `. ${mediaUpdateResults.updated.length} media file(s) updated`;
+    }
+
+    if (mediaUpdateResults.deleted.length > 0) {
+      responseMessage += `. ${mediaUpdateResults.deleted.length} old media file(s) removed from cloud storage`;
+    }
+
+    if (mediaUpdateResults.errors.length > 0) {
+      responseMessage += `. ${mediaUpdateResults.errors.length} media error(s) occurred`;
+    }
+  }
+
+  res.status(200).json(new ApiResponse(200, responseData, responseMessage));
 });
+
+export const deleteSpecicImage = async (req, res) => {
+  try {
+    const { id: playerId } = req.params;
+    const { publicIds } = req.body; // Array of image publicIds to delete
+
+    if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide publicIds array of images to delete",
+      });
+    }
+
+    const player = await Player.findById(playerId);
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        message: "Player not found",
+      });
+    }
+
+    // Check if user owns this profile
+    if (player.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete images from your own profile",
+      });
+    }
+
+    const deleteResults = [];
+
+    if (player.media?.images && Array.isArray(player.media.images)) {
+      // Filter out images that should be deleted
+      const imagesToKeep = player.media.images.filter((image) => {
+        const shouldDelete = publicIds.includes(image.publicId);
+        if (shouldDelete) {
+          deleteResults.push({
+            publicId: image.publicId,
+            title: image.title,
+            status: "marked_for_deletion",
+          });
+        }
+        return !shouldDelete;
+      });
+
+      // Delete from Cloudinary
+      for (const publicId of publicIds) {
+        try {
+          await deleteMediaFromCloudinary(publicId, "image");
+          const result = deleteResults.find((r) => r.publicId === publicId);
+          if (result) result.status = "deleted_successfully";
+        } catch (error) {
+          const result = deleteResults.find((r) => r.publicId === publicId);
+          if (result) {
+            result.status = "deletion_failed";
+            result.error = error.message;
+          }
+        }
+      }
+
+      // Update player with remaining images
+      player.media.images = imagesToKeep;
+      await player.save();
+
+      console.log(
+        `🗑️ Deleted ${publicIds.length} images from player ${playerId}`
+      );
+
+      res.json({
+        success: true,
+        message: `Successfully processed ${publicIds.length} image deletions`,
+        data: {
+          deleteResults,
+          remainingImagesCount: imagesToKeep.length,
+          player: player,
+        },
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "No images found in player profile",
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting player images:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting images",
+      error: error.message,
+    });
+  }
+};
+
+export const deletePlayerDocument = async (req, res) => {
+  try {
+    const { id: playerId } = req.params;
+
+    const player = await Player.findById(playerId);
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        message: "Player not found",
+      });
+    }
+
+    // Check if user owns this profile
+    if (player.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete document from your own profile",
+      });
+    }
+
+    if (player.media?.document?.publicId) {
+      try {
+        await deleteMediaFromCloudinary(player.media.document.publicId, "raw");
+        console.log(
+          `🗑️ Deleted document from player ${playerId}: ${player.media.document.publicId}`
+        );
+      } catch (error) {
+        console.warn(
+          "Failed to delete document from Cloudinary:",
+          error.message
+        );
+      }
+
+      // Remove document from player
+      player.media.document = {
+        url: null,
+        publicId: null,
+        title: null,
+        type: null,
+        size: 0,
+        uploadedAt: null,
+      };
+      await player.save();
+
+      res.json({
+        success: true,
+        message: "Document deleted successfully",
+        data: { player },
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "No document found in player profile",
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting player document:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting document",
+      error: error.message,
+    });
+  }
+};
+
+export const deletePlayerVideo = async (req, res) => {
+  try {
+    const { id: playerId } = req.params;
+
+    const player = await Player.findById(playerId);
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        message: "Player not found",
+      });
+    }
+
+    // Check if user owns this profile
+    if (player.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete video from your own profile",
+      });
+    }
+
+    if (player.media?.video?.publicId) {
+      try {
+        await deleteMediaFromCloudinary(player.media.video.publicId, "video");
+        console.log(
+          `🗑️ Deleted video from player ${playerId}: ${player.media.video.publicId}`
+        );
+      } catch (error) {
+        console.warn("Failed to delete video from Cloudinary:", error.message);
+      }
+
+      // Remove video from player
+      player.media.video = {
+        url: null,
+        publicId: null,
+        title: null,
+        duration: 0,
+        uploadedAt: null,
+      };
+      await player.save();
+
+      res.json({
+        success: true,
+        message: "Video deleted successfully",
+        data: { player },
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "No video found in player profile",
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting player video:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting video",
+      error: error.message,
+    });
+  }
+};
+
+export const deletePlayerImages = async (req, res) => {
+  try {
+    const { id: playerId } = req.params;
+    const { publicIds } = req.body; // Array of image publicIds to delete
+
+    if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide publicIds array of images to delete",
+      });
+    }
+
+    const player = await Player.findById(playerId);
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        message: "Player not found",
+      });
+    }
+
+    // Check if user owns this profile
+    if (player.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete images from your own profile",
+      });
+    }
+
+    const deleteResults = [];
+
+    if (player.media?.images && Array.isArray(player.media.images)) {
+      // Filter out images that should be deleted
+      const imagesToKeep = player.media.images.filter((image) => {
+        const shouldDelete = publicIds.includes(image.publicId);
+        if (shouldDelete) {
+          deleteResults.push({
+            publicId: image.publicId,
+            title: image.title,
+            status: "marked_for_deletion",
+          });
+        }
+        return !shouldDelete;
+      });
+
+      // Delete from Cloudinary
+      for (const publicId of publicIds) {
+        try {
+          await deleteMediaFromCloudinary(publicId, "image");
+          const result = deleteResults.find((r) => r.publicId === publicId);
+          if (result) result.status = "deleted_successfully";
+        } catch (error) {
+          const result = deleteResults.find((r) => r.publicId === publicId);
+          if (result) {
+            result.status = "deletion_failed";
+            result.error = error.message;
+          }
+        }
+      }
+
+      // Update player with remaining images
+      player.media.images = imagesToKeep;
+      await player.save();
+
+      console.log(
+        `🗑️ Deleted ${publicIds.length} images from player ${playerId}`
+      );
+
+      res.json({
+        success: true,
+        message: `Successfully processed ${publicIds.length} image deletions`,
+        data: {
+          deleteResults,
+          remainingImagesCount: imagesToKeep.length,
+          player: player,
+        },
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "No images found in player profile",
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting player images:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting images",
+      error: error.message,
+    });
+  }
+};
 
 // Delete Player Profile
 export const deletePlayer = asyncHandler(async (req, res) => {
@@ -952,8 +1464,7 @@ export const getPromotedPlayers = asyncHandler(async (req, res) => {
   const players = await Player.find(query)
     .sort({ "isPromoted.startDate": -1 })
     .limit(parseInt(limit))
-    .populate("user", "name email")
-    .lean();
+    .populate("user", "name email");
 
   res
     .status(200)
@@ -1051,8 +1562,7 @@ export const searchPlayers = asyncHandler(async (req, res) => {
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip)
-      .populate("user", "name email")
-      .lean(),
+      .populate("user", "name email"),
     Player.countDocuments(query),
   ]);
 
@@ -1149,9 +1659,7 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
   const similarPlayers = await Player.find(query)
     .sort({ createdAt: -1 })
     .limit(parseInt(limit))
-    .populate("user", "name email")
-    .lean();
-
+    .populate("user", "name email");
   res
     .status(200)
     .json(
@@ -1180,8 +1688,7 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
       .sort({ "isPromoted.status": -1, createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip)
-      .populate("user", "name email")
-      .lean(),
+      .populate("user", "name email"),
     Player.countDocuments(query),
   ]);
 
@@ -1216,9 +1723,7 @@ export const getFeaturedPlayers = asyncHandler(async (req, res) => {
   const players = await Player.find(query)
     .sort({ "isPromoted.startDate": -1, views: -1 })
     .limit(parseInt(limit))
-    .populate("user", "name email")
-    .lean();
-
+    .populate("user", "name email");
   res
     .status(200)
     .json(
@@ -1310,59 +1815,56 @@ export const deletePlayerProfile = asyncHandler(async (req, res) => {
 
   try {
     // Delete all media files from Cloudinary first
-    if (player.media) {
-      // Delete profile image
-      if (player.media.profileImage?.publicId) {
-        await deleteMediaFromCloudinary(
-          player.media.profileImage.publicId,
-          "image"
-        ).catch((err) =>
-          console.warn("Failed to delete profile image:", err.message)
-        );
-      }
+    const mediaDeleteResults = await deleteAllPlayerMedia(player.media);
 
-      // Delete video
-      if (player.media.video && player.media.video.publicId) {
-        await deleteMediaFromCloudinary(
-          player.media.video.publicId,
-          "video"
-        ).catch((err) => console.warn("Failed to delete video:", err.message));
-      }
+    // Log deletion results for debugging
+    if (mediaDeleteResults.successful.length > 0) {
+      console.log(
+        `Successfully deleted ${mediaDeleteResults.successful.length} media files:`,
+        mediaDeleteResults.successful
+          .map((item) => `${item.type} (${item.publicId})`)
+          .join(", ")
+      );
+    }
 
-      // Delete document
-      if (player.media.document && player.media.document.publicId) {
-        await deleteMediaFromCloudinary(
-          player.media.document.publicId,
-          "raw"
-        ).catch((err) =>
-          console.warn("Failed to delete document:", err.message)
-        );
-      }
-
-      // Delete any legacy images if they exist
-      if (player.media.images && player.media.images.length > 0) {
-        for (const image of player.media.images) {
-          if (image.publicId) {
-            await deleteMediaFromCloudinary(image.publicId, "image").catch(
-              (err) => console.warn("Failed to delete image:", err.message)
-            );
-          }
-        }
-      }
+    if (mediaDeleteResults.failed.length > 0) {
+      console.warn(
+        `Failed to delete ${mediaDeleteResults.failed.length} media files:`,
+        mediaDeleteResults.failed
+          .map((item) => `${item.type} (${item.publicId}): ${item.error}`)
+          .join("; ")
+      );
     }
 
     // Finally, remove player from the database completely
     await Player.findByIdAndDelete(player._id);
 
-    res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          null,
-          "Player profile and all related media permanently deleted"
-        )
-      );
+    // Prepare response message
+    const totalMediaAttempted =
+      mediaDeleteResults.successful.length + mediaDeleteResults.failed.length;
+    let message = "Player profile permanently deleted";
+
+    if (totalMediaAttempted > 0) {
+      message += `. Media cleanup: ${mediaDeleteResults.successful.length}/${totalMediaAttempted} files deleted successfully`;
+
+      if (mediaDeleteResults.failed.length > 0) {
+        message += ` (${mediaDeleteResults.failed.length} files failed to delete from cloud storage but player record was removed)`;
+      }
+    }
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          mediaCleanup: {
+            attempted: totalMediaAttempted,
+            successful: mediaDeleteResults.successful.length,
+            failed: mediaDeleteResults.failed.length,
+          },
+        },
+        message
+      )
+    );
   } catch (error) {
     console.error("Error completely deleting player profile:", error);
     throw new ApiError(

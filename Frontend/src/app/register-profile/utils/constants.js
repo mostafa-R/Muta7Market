@@ -72,7 +72,7 @@ export const initialFormValues = {
     youtube: "",
   },
   contactInfo: {
-    isHidden: true,
+    isHidden: false,
     email: "",
     phone: "",
     agent: {

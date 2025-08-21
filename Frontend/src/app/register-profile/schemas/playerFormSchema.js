@@ -257,14 +257,17 @@ export const createPlayerFormSchema = (t) =>
     // Promotion settings
     isPromoted: Joi.object({
       status: Joi.boolean().default(false),
-      startDate: Joi.string().allow("").optional(),
-      endDate: Joi.string().allow("").optional(),
-      type: Joi.string().valid("featured", "premium").default("featured"),
+      startDate: Joi.string().allow("", null).optional(),
+      endDate: Joi.string().allow("", null).optional(),
+      type: Joi.string()
+        .valid("featured", "premium")
+        .allow(null)
+        .default("featured"),
     }).optional(),
 
     // Contact information
     contactInfo: Joi.object({
-      isHidden: Joi.boolean().default(true),
+      isHidden: Joi.boolean().default(false),
       email: Joi.string().email().allow("").optional(),
       phone: Joi.string().allow("").optional(),
       agent: Joi.object({
@@ -473,12 +476,15 @@ export const playerFormSchema = Joi.object({
   }).optional(),
   isPromoted: Joi.object({
     status: Joi.boolean().default(false),
-    startDate: Joi.string().allow("").optional(),
-    endDate: Joi.string().allow("").optional(),
-    type: Joi.string().valid("featured", "premium").default("featured"),
+    startDate: Joi.string().allow("", null).optional(),
+    endDate: Joi.string().allow("", null).optional(),
+    type: Joi.string()
+      .valid("featured", "premium")
+      .allow(null)
+      .default("featured"),
   }).optional(),
   contactInfo: Joi.object({
-    isHidden: Joi.boolean().default(true),
+    isHidden: Joi.boolean().default(false),
     email: Joi.string().email().allow("").optional(),
     phone: Joi.string().allow("").optional(),
     agent: Joi.object({

@@ -2,7 +2,11 @@ import express from "express";
 import { uploadMixed } from "../config/cloudinary.js";
 import {
   createPlayer,
+  deletePlayerDocument,
+  deletePlayerImages,
   deletePlayerProfile,
+  deletePlayerVideo,
+  deleteSpecicImage,
   getAllPlayers,
   getMyProfile,
   getPlayerById,
@@ -11,14 +15,15 @@ import {
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
 import { parseJsonFields } from "../middleware/parseJsonFields.js";
 import validate from "../middleware/validation.middleware.js";
+import { deleteMediaFromCloudinary } from "../utils/mediaUtils.js";
 import {
   createPlayerSchema,
   updatePlayerSchema,
 } from "../validators/player.validator.js";
-  // import {
-  //   uploadSingle,
-  //   uploadMultiple,
-  // } from "../middleware/upload.middleware.js";
+// import {
+//   uploadSingle,
+//   uploadMultiple,
+// } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -33,6 +38,20 @@ router.get("/", getAllPlayers);
 
 // Get my profile (only for verified users)
 router.get("/playerprofile", authMiddleware, verifiedOnly, getMyProfile);
+
+// Delete specific images from player profile (must be before /:id route)
+router.delete("/:id/images", authMiddleware, verifiedOnly, deletePlayerImages);
+
+// Delete specific video from player profile
+router.delete("/:id/video", authMiddleware, verifiedOnly, deletePlayerVideo);
+
+// Delete specific document from player profile
+router.delete(
+  "/:id/document",
+  authMiddleware,
+  verifiedOnly,
+  deletePlayerDocument
+);
 
 // Get player by ID (must be last in public routes to avoid overriding)
 router.get("/:id", getPlayerById);
@@ -52,6 +71,7 @@ router.post(
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
     { name: "playerVideo", maxCount: 1 },
+    { name: "images", maxCount: 5 }, // Support up to 5 additional images
   ]),
   parseJsonFields([
     "monthlySalary",
@@ -73,6 +93,7 @@ router.patch(
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
     { name: "playerVideo", maxCount: 1 },
+    { name: "images", maxCount: 5 }, // Support up to 5 additional images
   ]),
   parseJsonFields([
     "monthlySalary",
@@ -88,6 +109,9 @@ router.patch(
 
 // delete player profile
 router.delete("/delete-player-profile", verifiedOnly, deletePlayerProfile);
+
+// Delete specific images from player profile
+router.delete("/:id/images", verifiedOnly, deleteSpecicImage);
 
 // updatePlayer
 // router.patch(

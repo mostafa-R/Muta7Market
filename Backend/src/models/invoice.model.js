@@ -35,7 +35,7 @@ const InvoiceSchema = new mongoose.Schema(
       default: null,
       index: true,
     }, // ل listing/promotion
-    profileId: {
+    playerProfileId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
       index: true,
@@ -71,7 +71,7 @@ const InvoiceSchema = new mongoose.Schema(
 
 // draft pending واحدة لكل غرض
 InvoiceSchema.index(
-  { userId: 1, product: 1, targetType: 1, profileId: 1, status: 1 },
+  { userId: 1, product: 1, targetType: 1, playerProfileId: 1, status: 1 },
   { unique: true, partialFilterExpression: { status: "pending" } }
 );
 

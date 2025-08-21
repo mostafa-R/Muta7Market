@@ -24,6 +24,18 @@ const mediaDocumentSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const mediaImageSchema = new mongoose.Schema(
+  {
+    url: { type: String, default: null },
+    publicId: { type: String, default: null },
+    title: { type: String, default: null },
+    type: { type: String, default: null },
+    size: { type: Number, default: 0, min: 0 },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const playerSchema = new mongoose.Schema(
   {
     isListed: {
@@ -57,14 +69,44 @@ const playerSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    customNationality: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    birthCountry: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    customBirthCountry: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     jop: {
       type: String,
       enum: ["player", "coach"], // Restrict to specific values
       required: true,
     },
+    roleType: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    customRoleType: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     position: {
       type: String,
 
+      trim: true,
+    },
+    customPosition: {
+      type: String,
+      default: null,
       trim: true,
     },
     status: {
@@ -72,7 +114,7 @@ const playerSchema = new mongoose.Schema(
       enum: Object.values(PROFILE_STATUS),
       default: PROFILE_STATUS.AVAILABLE,
     },
-    expreiance: {
+    experience: {
       type: Number,
       default: 0,
       min: 0,
@@ -91,9 +133,35 @@ const playerSchema = new mongoose.Schema(
     },
     transferredTo: {
       club: { type: String, default: null },
-      date: { type: Date, default: null },
+      startDate: { type: Date, default: null },
+      endDate: { type: Date, default: null },
       amount: { type: Number, default: 0, min: 0 },
     },
+
+    socialLinks: {
+      instagram: { type: String, default: null },
+      twitter: { type: String, default: null },
+      whatsapp: { type: String, default: null },
+      youtube: { type: String, default: null },
+    },
+
+    contactInfo: {
+      email: { type: String, default: null },
+      phone: { type: String, default: null },
+      agent: {
+        name: { type: String, default: null },
+        phone: { type: String, default: null },
+        email: { type: String, default: null },
+      },
+    },
+
+    isPromoted: {
+      status: { type: Boolean, default: false },
+      startDate: { type: Date, default: null },
+      endDate: { type: Date, default: null },
+      type: { type: String, default: null },
+    },
+
     media: {
       profileImage: {
         url: { type: String, default: null },
@@ -120,26 +188,28 @@ const playerSchema = new mongoose.Schema(
           uploadedAt: null,
         }),
       },
-    },
-    socialLinks: {
-      instagram: { type: String, default: null },
-      twitter: { type: String, default: null },
-      whatsapp: { type: String, default: null },
-      youtube: { type: String, default: null },
-    },
-    contactInfo: {
-      isHidden: { type: Boolean, default: true },
-      email: { type: String, default: null },
-      phone: { type: String, default: null },
-      agent: {
-        name: { type: String, default: null },
-        phone: { type: String, default: null },
-        email: { type: String, default: null },
+      images: {
+        type: [mediaImageSchema],
+        default: () => [
+          {
+            url: null,
+            publicId: null,
+            title: null,
+            type: null,
+            size: 0,
+          },
+        ],
       },
     },
+
     game: {
       type: String,
       required: true,
+      trim: true,
+    },
+    customSport: {
+      type: String,
+      default: null,
       trim: true,
     },
     views: {
@@ -155,15 +225,42 @@ const playerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    isPromoted: {
-      status: { type: Boolean, default: false },
-      startDate: { type: Date, default: null },
-      endDate: { type: Date, default: null },
-      type: { type: String, default: null },
-    },
   },
   {
     timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        // اختفاء سحري للـ "other" - استبدال القيم في نفس الـ fields
+
+        // إذا nationality = "other" اعرض customNationality بدلاً منها
+        if (ret.nationality === "other" && ret.customNationality) {
+          ret.nationality = ret.customNationality;
+        }
+
+        // إذا birthCountry = "other" اعرض customBirthCountry بدلاً منها
+        if (ret.birthCountry === "other" && ret.customBirthCountry) {
+          ret.birthCountry = ret.customBirthCountry;
+        }
+
+        // إذا roleType = "other" اعرض customRoleType بدلاً منها
+        if (ret.roleType === "other" && ret.customRoleType) {
+          ret.roleType = ret.customRoleType;
+        }
+
+        // إذا position = "other" اعرض customPosition بدلاً منها
+        if (ret.position === "other" && ret.customPosition) {
+          ret.position = ret.customPosition;
+        }
+
+        // إذا game = "other" اعرض customSport بدلاً منها
+        if (ret.game === "other" && ret.customSport) {
+          ret.game = ret.customSport;
+        }
+
+        return ret;
+      },
+    },
   }
 );
 

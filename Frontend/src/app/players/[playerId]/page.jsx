@@ -16,10 +16,7 @@ import {
   ArrowRight,
   ArrowRightLeft,
   Award,
-  Banknote,
   Building,
-  Calendar,
-  Clock,
   DollarSign,
   Download,
   Image as ImageIcon,
@@ -31,7 +28,6 @@ import {
   Play,
   Share2,
   Star,
-  TrendingUp,
   Trophy,
   Video,
   Volume2,
@@ -192,7 +188,7 @@ const PlayerProfile = () => {
       return;
     }
 
-    const phoneNumber = player?.user?.phone;
+    const phoneNumber = player?.contactInfo?.phone;
     if (phoneNumber) {
       const formattedNumber = phoneNumber.replace(/^0/, "");
       window.open(`https://wa.me/${formattedNumber}`, "_blank");
@@ -212,7 +208,7 @@ const PlayerProfile = () => {
       return;
     }
 
-    const phone = player?.user?.phone;
+    const phone = player?.contactInfo?.phone;
     if (phone) {
       navigator.clipboard
         .writeText(phone)
@@ -237,7 +233,7 @@ const PlayerProfile = () => {
       toast.error(t("playerDetail.loginRequired"));
       return;
     }
-    const email = player?.user?.email;
+    const email = player?.contactInfo?.email;
     if (email) {
       window.open(`mailto:${email}`, "_blank");
       toast.success(t("playerDetail.emailSent"));
@@ -728,240 +724,208 @@ const PlayerProfile = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-0 shadow-card">
-              <CardContent className="p-8 bg-white rounded-xl">
-                <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-6">
-                  <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                    <AvatarImage
-                      src={player.media?.profileImage?.url}
-                      alt={player.name}
-                    />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
-                      {player.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-4">
-                    <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                      {player.name}
-                    </h1>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <Badge
-                        className={`${getStatusColor(
-                          player.status
-                        )} text-white`}
-                      >
-                        {player.status === "available"
-                          ? t("player.status.freeAgent")
-                          : player.status === "contracted"
-                          ? t("player.status.contracted")
-                          : t("player.status.transferred")}
-                      </Badge>
-                      <Badge
-                        className={`${getCategoryColor(
-                          player.category
-                        )} text-white`}
-                      >
-                        {player.category === "Elite"
-                          ? t("players.category.elite")
-                          : player.category === "Professional"
-                          ? t("players.category.professional")
-                          : player.category === "Amateur"
-                          ? t("players.category.amateur")
-                          : player.jop === "player"
-                          ? t("common.player")
-                          : t("common.coach")}
-                      </Badge>
+          <div className="lg:col-span-2 space-y-8">
+            {/* Hero Profile Section */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
+                  <div className="relative">
+                    <Avatar className="w-40 h-40 border-4 border-white shadow-xl">
+                      <AvatarImage
+                        src={player.media?.profileImage?.url}
+                        alt={player.name}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-4xl font-bold">
+                        {player.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div
+                      className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-2 border-white ${
+                        player.isActive ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    ></div>
+                  </div>
+                  <div className="flex-1 space-y-6">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                        <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
+                          {player.name}
+                        </h1>
+                        {player.isPromoted?.status && (
+                          <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
+                            <Trophy className="w-4 h-4" />
+                            <span>{t("player.promoted")}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-3 mb-6">
+                        <Badge
+                          className={`${getStatusColor(
+                            player.status
+                          )} text-white px-4 py-2 text-sm font-medium`}
+                        >
+                          {player.status === "available"
+                            ? t("player.status.freeAgent")
+                            : player.status === "contracted"
+                            ? t("player.status.contracted")
+                            : t("player.status.transferred")}
+                        </Badge>
+                        <Badge
+                          className={`${getCategoryColor(
+                            player.category || player.jop
+                          )} text-white px-4 py-2 text-sm font-medium`}
+                        >
+                          {player.category === "Elite"
+                            ? t("players.category.elite")
+                            : player.category === "Professional"
+                            ? t("players.category.professional")
+                            : player.category === "Amateur"
+                            ? t("players.category.amateur")
+                            : player.jop === "player"
+                            ? t("common.player")
+                            : player.jop === "coach"
+                            ? t("common.coach")
+                            : t("common.player")}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {t("player.age")}:
-                        </span>
-                        <span className="font-medium">
-                          {player.age} {t("player.years")}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {t("playerDetail.nationality")}:
-                        </span>
-                        <span className="font-medium">{nationalityText}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Trophy className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {t("player.sport")}:
-                        </span>
-                        <span className="font-medium">{sportText}</span>
-                      </div>
-                      {positionText && (
-                        <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            {t("player.position")}:
-                          </span>
-                          <span className="font-medium">{positionText}</span>
+
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                        <div className="text-2xl font-bold text-primary">
+                          {player.age}
                         </div>
-                      )}
+                        <div className="text-xs text-gray-500">
+                          {t("player.years")}
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                        <div className="text-2xl font-bold text-primary">
+                          {player.experience !== undefined &&
+                          player.experience !== null
+                            ? player.experience
+                            : "0"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {t("playerDetail.yearsOfExperience")}
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                        <div className="text-2xl font-bold text-primary">
+                          {player.views?.toLocaleString(
+                            language === "ar" ? "ar-EG" : "en-US"
+                          ) || "0"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {t("playerDetail.views")}
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                        <div
+                          className={`text-2xl font-bold ${
+                            player.isActive ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {player.isActive
+                            ? t("profile.active")
+                            : t("profile.inactive")}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {t("profile.accountStatus")}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Financial Information */}
+            {/* Player Details */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5 text-primary" />
-                  <span>{t("playerDetail.financialAndTransferInfo")}</span>
+                  <Award className="w-5 h-5 text-primary" />
+                  <span>{t("playerDetail.playerInformation")}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {!isUserActive && (
-                  <>
-                    <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                      {t("playerDetail.activateToViewFinancials")}
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <div>
+                      <div className="text-sm text-gray-500">
+                        {t("playerDetail.nationality")}
+                      </div>
+                      <div className="font-medium">{nationalityText}</div>
                     </div>
-                    <div className="pt-2">
-                      <PaymentBtn type="unlock_contacts" />
+                  </div>
+                  {player.birthCountry && (
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <Building className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-gray-500">
+                          {t("playerDetail.birthCountry")}
+                        </div>
+                        <div className="font-medium">
+                          {getNationalityText(player.birthCountry, t)}
+                        </div>
+                      </div>
                     </div>
-                  </>
-                )}
-                {isUserActive && (
-                  <>
-                    {player.monthlySalary && (
-                      <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-gray-700" />
-                          <span className="text-gray-700 font-medium">
-                            {t("player.monthlySalary")}
-                          </span>
-                        </div>
-                        <span className="text-2xl font-bold text-gray-800">
-                          {player.monthlySalary.amount.toLocaleString(
-                            language === "ar" ? "en-US" : "en-US"
-                          )}{" "}
-                          {player.monthlySalary.currency}
-                        </span>
+                  )}
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <Trophy className="w-5 h-5 text-primary" />
+                    <div>
+                      <div className="text-sm text-gray-500">
+                        {t("player.sport")}
                       </div>
-                    )}
-                    {player.yearSalary && (
-                      <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-gray-700" />
-                          <span className="text-gray-700 font-medium">
-                            {t("player.annualContract")}
-                          </span>
+                      <div className="font-medium">{sportText}</div>
+                    </div>
+                  </div>
+                  {positionText && (
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <Star className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-gray-500">
+                          {t("player.position")}
                         </div>
-                        <span className="text-2xl font-bold text-gray-800">
-                          {player.yearSalary.amount.toLocaleString(
-                            language === "ar" ? "en-US" : "en-US"
-                          )}{" "}
-                          {player.yearSalary.currency}
-                        </span>
+                        <div className="font-medium">{positionText}</div>
                       </div>
-                    )}
-                    {player.transferredTo && player.transferredTo.club && (
-                      <>
-                        <div className="border-t pt-4 mt-4">
-                          <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <ArrowRightLeft className="w-5 h-5 text-primary" />
-                            {t("playerDetail.transferDetails")}
-                          </h4>
+                    </div>
+                  )}
+                  {player.roleType && (
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <Award className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-gray-500">
+                          {t("playerDetail.roleType")}
                         </div>
-                        <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <Building className="w-5 h-5 text-gray-700" />
-                            <span className="text-gray-700 font-medium">
-                              {t("playerDetail.transferredToClub")}
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-gray-800">
-                            {player.transferredTo.club}
-                          </span>
+                        <div className="font-medium">
+                          {player.jop === "player"
+                            ? t(`playerRoles.${player.roleType}`, {
+                                defaultValue: player.roleType,
+                              })
+                            : t(`coachRoles.${player.roleType}`, {
+                                defaultValue: player.roleType,
+                              })}
                         </div>
-                        <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-gray-700" />
-                            <span className="text-gray-700 font-medium">
-                              {t("playerDetail.transferDate")}
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-gray-800">
-                            {new Date(
-                              player.transferredTo.date
-                            ).toLocaleDateString(
-                              language === "ar" ? "ar-EG" : "en-US",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              }
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <Banknote className="w-5 h-5 text-gray-700" />
-                            <span className="text-gray-700 font-medium">
-                              {t("playerDetail.transferAmount")}
-                            </span>
-                          </div>
-                          <span className="text-2xl font-bold text-gray-800">
-                            {player.transferredTo.amount.toLocaleString(
-                              language === "ar" ? "en-US" : "en-US"
-                            )}{" "}
-                            SAR
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    {player.contractEndDate && (
-                      <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-5 h-5 text-gray-700" />
-                          <span className="text-gray-700 font-medium">
-                            {t("player.transferDeadline")}
-                          </span>
-                        </div>
-                        <span className="text-lg font-bold text-gray-800">
-                          {new Date(player.contractEndDate).toLocaleDateString(
-                            language === "ar" ? "ar-EG" : "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
-                        </span>
                       </div>
-                    )}
-                    {!player.monthlySalary &&
-                      !player.yearSalary &&
-                      !player.transferredTo?.club &&
-                      !player.contractEndDate && (
-                        <div className="p-4 text-center bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
-                          {t("playerDetail.noFinancialData")}
-                        </div>
-                      )}
-                  </>
-                )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Player Images Gallery */}
+            {/* Media Gallery */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <ImageIcon className="w-5 h-5 text-primary" />
-                  <span>{t("playerDetail.playerImages")}</span>
+                  <span>{t("playerDetail.mediaGallery")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1057,11 +1021,58 @@ const PlayerProfile = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Contact Actions */}
+            {/* Quick Actions */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
-                {}
-                <CardTitle>{t("playerDetail.contactPlayer")}</CardTitle>
+                <CardTitle className="flex items-center space-x-2">
+                  <Play className="w-5 h-5 text-primary" />
+                  <span>{t("playerDetail.quickActions")}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="default"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleWatchVideo}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  {t("playerDetail.playerVideo")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleShareProfile}
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  {t("playerDetail.shareProfile")}
+                </Button>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    className={`w-full ${!isUserActive ? "opacity-60" : ""}`}
+                    onClick={handleDownloadFile}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {t("playerDetail.downloadFile")}
+                  </Button>
+                  {!isUserActive && (
+                    <div className="absolute -top-1 -right-1">
+                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                        💎
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact & Communication */}
+            <Card className="border-0 shadow-card bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MessageCircle className="w-5 h-5 text-primary" />
+                  <span>{t("playerDetail.contactCommunication")}</span>
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isUserActive && (
@@ -1126,100 +1137,237 @@ const PlayerProfile = () => {
                   )}
                 </div>
                 {isUserActive &&
-                  (player?.user?.phone || player?.user?.email) && (
+                  (player?.contactInfo?.phone ||
+                    player?.contactInfo?.email) && (
                     <div className="pt-2 text-sm text-gray-600">
-                      {player?.user?.phone && (
+                      {player?.contactInfo?.phone && (
                         <div className="flex items-center gap-2">
                           <Phone className="w-4 h-4" />
                           <span className="font-medium">
-                            {player.user.phone}
+                            {player.contactInfo.phone}
                           </span>
                         </div>
                       )}
-                      {player?.user?.email && (
+                      {player?.contactInfo?.email && (
                         <div className="flex items-center gap-2 mt-1">
                           <Mail className="w-4 h-4" />
                           <span className="font-medium">
-                            {player.user.email}
+                            {player.contactInfo.email}
                           </span>
                         </div>
                       )}
                     </div>
                   )}
-              </CardContent>
-            </Card>
 
-            {/* Profile Actions */}
-            <Card className="border-0 shadow-card bg-white">
-              <CardHeader>
-                <CardTitle>{t("playerDetail.actions")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleWatchVideo}
-                >
-                  <Video className="w-4 h-4 ml-2" />
-                  {t("playerDetail.playerVideo")}
-                </Button>
-
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    className={`w-full ${!isUserActive ? "opacity-60" : ""}`}
-                    onClick={handleDownloadFile}
-                  >
-                    <Download className="w-4 h-4 ml-2" />
-                    {t("playerDetail.downloadFile")}
-                  </Button>
-                  {!isUserActive && (
-                    <div className="absolute -top-1 -right-1">
-                      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
-                        💎
-                      </span>
+                {/* Social Links Section */}
+                {isUserActive &&
+                  (player.socialLinks?.instagram ||
+                    player.socialLinks?.twitter ||
+                    player.socialLinks?.whatsapp ||
+                    player.socialLinks?.youtube) && (
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                        <Share2 className="w-4 h-4" />
+                        {t("playerDetail.socialLinks")}
+                      </h4>
+                      <div className="space-y-2">
+                        {player.socialLinks?.instagram && (
+                          <a
+                            href={player.socialLinks.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border border-pink-200 hover:border-pink-300 transition-colors text-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">
+                                  IG
+                                </span>
+                              </div>
+                              <span className="text-gray-700">Instagram</span>
+                            </div>
+                            <ArrowRight className="w-3 h-3 text-gray-500" />
+                          </a>
+                        )}
+                        {player.socialLinks?.twitter && (
+                          <a
+                            href={player.socialLinks.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-300 transition-colors text-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">
+                                  X
+                                </span>
+                              </div>
+                              <span className="text-gray-700">X (Twitter)</span>
+                            </div>
+                            <ArrowRight className="w-3 h-3 text-gray-500" />
+                          </a>
+                        )}
+                        {player.socialLinks?.whatsapp && (
+                          <a
+                            href={`https://wa.me/${player.socialLinks.whatsapp}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-200 hover:border-green-300 transition-colors text-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                <MessageCircle className="w-3 h-3 text-white" />
+                              </div>
+                              <span className="text-gray-700">WhatsApp</span>
+                            </div>
+                            <ArrowRight className="w-3 h-3 text-gray-500" />
+                          </a>
+                        )}
+                        {player.socialLinks?.youtube && (
+                          <a
+                            href={player.socialLinks.youtube}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-200 hover:border-red-300 transition-colors text-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                                <Video className="w-3 h-3 text-white" />
+                              </div>
+                              <span className="text-gray-700">YouTube</span>
+                            </div>
+                            <ArrowRight className="w-3 h-3 text-gray-500" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleShareProfile}
-                >
-                  <Share2 className="w-4 h-4 ml-2" />
-                  {t("playerDetail.shareProfile")}
-                </Button>
               </CardContent>
             </Card>
 
-            {/* Stats */}
+            {/* Professional Information */}
             <Card className="border-0 shadow-card bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Award className="w-5 h-5 text-primary" />
-                  <span>{t("playerDetail.statistics")}</span>
+                  <Building className="w-5 h-5 text-primary" />
+                  <span>{t("playerDetail.professionalInfo")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    {t("playerDetail.yearsOfExperience")}
-                  </span>
-                  <span className="font-semibold">
-                    {player.experience || t("player.notSpecified")}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    {t("playerDetail.views")}
-                  </span>
-                  <span className="font-semibold">
-                    {player.views?.toLocaleString(
-                      language === "ar" ? "ar-EG" : "en-US"
-                    ) || "15,678"}
-                  </span>
-                </div>
+                {!isUserActive && (
+                  <>
+                    <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
+                      {t("playerDetail.activateToViewFinancials")}
+                    </div>
+                    <div className="pt-2">
+                      <PaymentBtn type="unlock_contacts" />
+                    </div>
+                  </>
+                )}
+                {isUserActive && (
+                  <div className="space-y-3">
+                    {/* Financial Information */}
+                    {(player.monthlySalary || player.yearSalary) && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4" />
+                          {t("playerDetail.financialInfo")}
+                        </h4>
+                        {player.monthlySalary && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">
+                              {t("player.monthlySalary")}
+                            </span>
+                            <span className="font-medium">
+                              {player.monthlySalary.amount.toLocaleString()}{" "}
+                              {player.monthlySalary.currency}
+                            </span>
+                          </div>
+                        )}
+                        {player.yearSalary && (
+                          <div className="flex justify-between items-center text-sm mt-2">
+                            <span className="text-gray-600">
+                              {t("player.annualContract")}
+                            </span>
+                            <span className="font-medium">
+                              {player.yearSalary.amount.toLocaleString()}{" "}
+                              {player.yearSalary.currency}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Transfer Information */}
+                    {player.transferredTo?.club && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <ArrowRightLeft className="w-4 h-4" />
+                          {t("playerDetail.transferDetails")}
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">
+                              {t("playerDetail.transferredToClub")}
+                            </span>
+                            <span className="font-medium">
+                              {player.transferredTo.club}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">
+                              {t("playerDetail.transferAmount")}
+                            </span>
+                            <span className="font-medium">
+                              {player.transferredTo.amount.toLocaleString()}{" "}
+                              {t("common.sar")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Agent Information */}
+                    {player.contactInfo?.agent && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          {t("playerDetail.agentInformation")}
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">
+                              {t("playerDetail.agentName")}
+                            </span>
+                            <span className="font-medium">
+                              {player.contactInfo.agent.name}
+                            </span>
+                          </div>
+                          {player.contactInfo.agent.phone && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600">
+                                {t("playerDetail.agentPhone")}
+                              </span>
+                              <span className="font-medium">
+                                {player.contactInfo.agent.phone}
+                              </span>
+                            </div>
+                          )}
+                          {player.contactInfo.agent.email && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600">
+                                {t("playerDetail.agentEmail")}
+                              </span>
+                              <span className="font-medium text-xs">
+                                {player.contactInfo.agent.email}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

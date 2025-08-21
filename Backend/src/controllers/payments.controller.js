@@ -1,162 +1,15 @@
 import mongoose from "mongoose";
+import { PRICING } from "../config/constants.js";
+import Entitlement from "../models/entitlement.model.js";
 import Invoice from "../models/invoice.model.js";
 import PaymentEvent from "../models/paymentEvent.model.js";
-import Entitlement from "../models/entitlement.model.js";
-import User from "../models/user.model.js";
 import PlayerProfile from "../models/player.model.js";
+import User from "../models/user.model.js";
 import {
   paylinkCreateInvoice,
   paylinkGetInvoice,
 } from "../services/paylink.client.js";
-import { PRICING } from "../config/constants.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
-
-
-
-
-const SAR = "SAR";
-
-function priceOr(envKey, fallback) {
-  const v = process.env[envKey];
-  if (v != null && v !== "") return Number(v);
-  if (fallback != null) return Number(fallback);
-  return 55; // fallback أخير
-}
-
-// نحاول نجيب سعر من PRICING / ENV حسب النوع
-function resolvePrice({ product, targetType, durationDays }) {
-  const days = Number(durationDays || 365);
-  if (product === "contacts_access") {
-    return priceOr("PRICE_CONTACTS_ACCESS", PRICING?.CONTACTS_ACCESS);
-  }
-  if (product === "listing") {
-    if (targetType === "coach")
-      return priceOr("PRICE_COACH_LISTING", PRICING?.LISTING_COACH);
-    return priceOr("PRICE_PLAYER_LISTING", PRICING?.LISTING_PLAYER);
-  }
-  if (product === "promotion") {
-    // خرائط أسعار حسب المدة (عدّل المفاتيح حسب PRICING عندك)
-    const bucket = days <= 30 ? 30 : days <= 90 ? 90 : 365;
-    if (targetType === "coach") {
-      if (bucket === 30) return priceOr("PRICE_PROMOTION_COACH_30", PRICING?.PROMOTION_COACH_30);
-      if (bucket === 90) return priceOr("PRICE_PROMOTION_COACH_90", PRICING?.PROMOTION_COACH_90);
-      return priceOr("PRICE_PROMOTION_COACH_365", PRICING?.PROMOTION_COACH_365);
-    } else {
-      if (bucket === 30) return priceOr("PRICE_PROMOTION_PLAYER_30", PRICING?.PROMOTION_PLAYER_30);
-      if (bucket === 90) return priceOr("PRICE_PROMOTION_PLAYER_90", PRICING?.PROMOTION_PLAYER_90);
-      return priceOr("PRICE_PROMOTION_PLAYER_365", PRICING?.PROMOTION_PLAYER_365);
-    }
-  }
-  return 55;
-}
-
-// يحوّل الدوكيومنت لشكل الـUI
-function toDto(inv) {
-  return {
-    id: String(inv._id),
-    createdAt: inv.createdAt,
-    product: inv.product,
-    targetType: inv.targetType || null,
-    amount: inv.amount,
-    currency: inv.currency || SAR,
-    status: String(inv.status || "").toLowerCase(),
-    paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
-    receiptUrl: inv.paymentReceiptUrl || null,
-    orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
-    playerProfileId: inv.playerProfileId || inv.profileId || null,
-    paidAt: inv.paidAt || null,
-  };
-}
-
-// ---------- الدالة المطلوبة ----------
-export const createDraftInvoice = async (req, res) => {
-  try {
-    const userId = req.user?._id;
-    if (!userId) return res.status(401).json({ success: false, message: "unauthorized" });
-
-    const { product, profileId: bodyProfileId, playerProfileId: bodyPlayerId, durationDays } = req.body || {};
-    const productNorm = String(product || "").toLowerCase();
-
-    if (!["contacts_access", "listing", "promotion"].includes(productNorm)) {
-      return res.status(400).json({ success: false, message: "invalid_product" });
-    }
-
-    // نقبل profileId أو playerProfileId (توافق رجعي)
-    const profileId = bodyPlayerId || bodyProfileId || null;
-
-    let targetType = null;
-    let amount = 0;
-
-    if (productNorm === "contacts_access") {
-      amount = resolvePrice({ product: productNorm });
-      // أعد استخدام أي pending قديم
-      const existing = await Invoice.findOne({
-        $or: [{ userId }, { user: userId }],
-        product: "contacts_access",
-        status: "pending",
-      }).lean();
-      if (existing) {
-        return res.status(200).json({ success: true, data: toDto(existing) });
-      }
-    } else {
-      // listing / promotion لازم profileId
-      if (!profileId) {
-        return res.status(400).json({ success: false, message: "profileId_required" });
-      }
-      // تأكيد ملكية البروفايل
-      const prof = await PlayerProfile.findOne({ _id: profileId, user: userId }).lean();
-      if (!prof) {
-        return res.status(404).json({ success: false, message: "profile_not_found_or_not_owned" });
-      }
-      targetType = String(prof.jop || "").toLowerCase() === "coach" ? "coach" : "player";
-
-      amount = resolvePrice({ product: productNorm, targetType, durationDays });
-
-      // أعد استخدام pending قديم مطابق
-      const existing = await Invoice.findOne({
-        $or: [{ userId }, { user: userId }],
-        product: productNorm,
-        status: "pending",
-        $or: [{ playerProfileId: profileId }, { profileId }], // دعم الاسمين
-        ...(productNorm === "promotion" ? { durationDays: Number(durationDays || 365) } : {}),
-      }).lean();
-      if (existing) {
-        return res.status(200).json({ success: true, data: toDto(existing) });
-      }
-    }
-
-    // إنشاء الفاتورة المحلية فقط (بدون Paylink)
-    const orderPrefix =
-      productNorm === "contacts_access" ? "ACC" :
-      productNorm === "listing" ? "LST" : "PRM";
-
-    const inv = await Invoice.create({
-      orderNumber: makeOrderNumber(orderPrefix, String(userId)),
-      userId,
-      product: productNorm,
-      targetType,
-      amount,
-      currency: SAR,
-      status: "pending",
-      // نخزن الاسمين للتوافق
-      playerProfileId: profileId || null,
-      profileId: profileId || null,
-      durationDays: productNorm === "promotion" ? Number(durationDays || 365) : undefined,
-      featureType: productNorm === "promotion" ? "toplist" : undefined,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // صلاحية داخلية اختيارية
-    });
-
-    return res.status(201).json({ success: true, data: toDto(inv) });
-  } catch (e) {
-    console.error("createDraftInvoice error:", e);
-    return res.status(500).json({
-      success: false,
-      message: "draft_failed",
-      reason: e?.message,
-    });
-  }
-};
-
 
 // helper: تطبيق آثار الدفع المدفوع (نفس منطق الويبهوك)
 async function applyPaidEffects(invoice, verify, session) {
@@ -203,9 +56,9 @@ async function applyPaidEffects(invoice, verify, session) {
     );
   } else if (invoice.product === "listing") {
     const end = new Date(Date.now() + ONE_YEAR_MS);
-    if (invoice.profileId) {
+    if (invoice.playerProfileId) {
       await PlayerProfile.updateOne(
-        { _id: invoice.profileId, user: invoice.userId },
+        { _id: invoice.playerProfileId, user: invoice.userId },
         { $set: { isListed: true, isActive: true, listingExpiresAt: end } },
         { session }
       );
@@ -214,7 +67,7 @@ async function applyPaidEffects(invoice, verify, session) {
       {
         userId: invoice.userId,
         type: `listed_${invoice.targetType}`,
-        playerProfileId: invoice.profileId,
+        playerProfileId: invoice.playerProfileId,
       },
       {
         $set: {
@@ -231,9 +84,9 @@ async function applyPaidEffects(invoice, verify, session) {
       Date.now() +
         Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS) * ONE_DAY_MS
     );
-    if (invoice.profileId) {
+    if (invoice.playerProfileId) {
       await PlayerProfile.updateOne(
-        { _id: invoice.profileId, user: invoice.userId },
+        { _id: invoice.playerProfileId, user: invoice.userId },
         {
           $set: {
             "isPromoted.status": true,
@@ -249,7 +102,7 @@ async function applyPaidEffects(invoice, verify, session) {
       {
         userId: invoice.userId,
         type: `promoted_${invoice.targetType}`,
-        playerProfileId: invoice.profileId,
+        playerProfileId: invoice.playerProfileId,
       },
       {
         $set: {
@@ -267,7 +120,8 @@ async function applyPaidEffects(invoice, verify, session) {
 // NEW: مصالحة فواتير المستخدم الـ pending مع Paylink وتحديث الحالة إن اتغيّرت هناك
 export const reconcileMyInvoices = async (req, res) => {
   const userId = req.user?._id;
-  if (!userId) return res.status(401).json({ success: false, message: "unauthorized" });
+  if (!userId)
+    return res.status(401).json({ success: false, message: "unauthorized" });
 
   // نجلب الفواتير التي لها providerInvoiceId واتعمل لها initiate قبل كده
   const candidates = await Invoice.find({
@@ -365,15 +219,19 @@ export const reconcileMyInvoices = async (req, res) => {
     {
       $or: [{ userId }, { user: userId }],
       status: "paid",
-      $or: [{ providerInvoiceId: null }, { providerInvoiceId: { $exists: false } }],
+      $or: [
+        { providerInvoiceId: null },
+        { providerInvoiceId: { $exists: false } },
+      ],
     },
     { $set: { status: "pending", paidAt: null, paymentReceiptUrl: null } }
   );
   updated += manualPaid?.modifiedCount || 0;
 
-  return res.status(200).json({ success: true, data: { checked: candidates.length, updated } });
+  return res
+    .status(200)
+    .json({ success: true, data: { checked: candidates.length, updated } });
 };
-
 
 function detectTargetTypeFromProfile(profileDoc) {
   const j = String(profileDoc?.jop || profileDoc?.job || "").toLowerCase();
@@ -395,6 +253,112 @@ function mapPaymentErrors(inv, verify) {
   }
 }
 
+/* ========== 1) إنشاء فاتورة داخلية (Draft) فقط ========== */
+export const createDraftInvoice = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId)
+      return res.status(401).json({ success: false, message: "unauthorized" });
+
+    const { product, playerProfileId, durationDays, force } = req.body;
+    const prod = String(product || "").toLowerCase();
+
+    if (!["contacts_access", "listing", "promotion"].includes(prod)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "invalid_product" });
+    }
+
+    let targetType = null;
+    let amount = 0;
+    let dur = Number(durationDays) || PRICING.ONE_YEAR_DAYS; // سنة افتراضيًا
+    let featureType = null;
+
+    if (prod === "contacts_access") {
+      amount = PRICING.contacts_access_year;
+    } else {
+      if (!playerProfileId)
+        return res
+          .status(400)
+          .json({ success: false, message: "playerProfileId_required" });
+      const profile = await PlayerProfile.findOne({
+        _id: playerProfileId,
+        user: userId,
+      }).select("jop job user");
+      if (!profile)
+        return res
+          .status(404)
+          .json({ success: false, message: "profile_not_found" });
+      targetType = detectTargetTypeFromProfile(profile);
+
+      if (prod === "listing") {
+        amount = PRICING.listing_year[targetType];
+        dur = PRICING.ONE_YEAR_DAYS;
+      } else if (prod === "promotion") {
+        featureType = "toplist";
+        // سنوي ثابت
+        if (PRICING.promotion_year[targetType] > 0 && !durationDays) {
+          amount = PRICING.promotion_year[targetType];
+          dur = PRICING.ONE_YEAR_DAYS;
+        } else {
+          // أو باليوم
+          const perDay = PRICING.promotion_per_day[targetType] || 0;
+          const d = Number(durationDays || PRICING.ONE_YEAR_DAYS);
+          amount = perDay * d;
+          dur = d;
+        }
+      }
+    }
+
+    const q = {
+      userId,
+      product: prod,
+      targetType: targetType || null,
+      playerProfileId: playerProfileId || null,
+      status: "pending",
+    };
+    let invoice = await Invoice.findOne(q);
+    if (!invoice || force) {
+      const orderNo = makeOrderNumber(prod, String(userId));
+      invoice = await Invoice.findOneAndUpdate(
+        q,
+        {
+          $setOnInsert: {
+            orderNumber: orderNo,
+            invoiceNumber: orderNo,
+            userId,
+            product: prod,
+            targetType: targetType || null,
+            playerProfileId: playerProfileId || null,
+            durationDays: dur,
+            featureType,
+            amount,
+            currency: "SAR",
+            status: "pending",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        },
+        { new: true, upsert: true }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: String(invoice._id),
+        product: invoice.product,
+        targetType: invoice.targetType,
+        playerProfileId: invoice.playerProfileId,
+        amount: invoice.amount,
+        durationDays: invoice.durationDays,
+        status: invoice.status,
+      },
+    });
+  } catch (e) {
+    console.error("createDraftInvoice error", e);
+    return res.status(500).json({ success: false, message: "draft_failed" });
+  }
+};
 
 /* ========== 2) بدء الدفع لفاتورة داخلية (إنشاء فاتورة Paylink) ========== */
 export const initiatePaymentByInvoiceId = async (req, res) => {
@@ -460,7 +424,7 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
       cancelUrl,
       note: `userId=${inv.userId};product=${inv.product};targetType=${
         inv.targetType || ""
-      };profileId=${inv.profileId || ""};durationDays=${
+      };profileId=${inv.playerProfileId || ""};durationDays=${
         inv.durationDays || ""
       };feature=${inv.featureType || ""}`,
     };
@@ -572,9 +536,9 @@ export const paymentWebhook = async (req, res) => {
 
       if (inv.product === "listing") {
         const end = new Date(Date.now() + ONE_YEAR_MS);
-        if (inv.profileId) {
+        if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
-            { _id: inv.profileId, user: inv.userId },
+            { _id: inv.playerProfileId, user: inv.userId },
             { $set: { isListed: true, isActive: true, listingExpiresAt: end } },
             { session }
           );
@@ -583,7 +547,7 @@ export const paymentWebhook = async (req, res) => {
           {
             userId: inv.userId,
             type: `listed_${inv.targetType}`,
-            playerProfileId: inv.profileId,
+            playerProfileId: inv.playerProfileId,
           },
           {
             $set: {
@@ -606,9 +570,9 @@ export const paymentWebhook = async (req, res) => {
               60 *
               1000
         );
-        if (inv.profileId) {
+        if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
-            { _id: inv.profileId, user: inv.userId },
+            { _id: inv.playerProfileId, user: inv.userId },
             {
               $set: {
                 "isPromoted.status": true,
@@ -624,7 +588,7 @@ export const paymentWebhook = async (req, res) => {
           {
             userId: inv.userId,
             type: `promoted_${inv.targetType}`,
-            playerProfileId: inv.profileId,
+            playerProfileId: inv.playerProfileId,
           },
           {
             $set: {
@@ -689,7 +653,7 @@ export const listMyInvoices = async (req, res) => {
     createdAt: inv.createdAt,
     product: inv.product,
     targetType: inv.targetType,
-    profileId: inv.profileId || null,
+    profileId: inv.playerProfileId || null,
     amount: inv.amount,
     currency: inv.currency || "SAR",
     status: String(inv.status || "").toLowerCase(),
@@ -785,9 +749,9 @@ export const simulateSuccess = async (req, res) => {
 
       if (inv.product === "listing") {
         const end = new Date(Date.now() + ONE_YEAR_MS);
-        if (inv.profileId) {
+        if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
-            { _id: inv.profileId, user: inv.userId },
+            { _id: inv.playerProfileId, user: inv.userId },
             { $set: { isListed: true, isActive: true, listingExpiresAt: end } }
           );
         }
@@ -795,7 +759,7 @@ export const simulateSuccess = async (req, res) => {
           {
             userId: inv.userId,
             type: `listed_${inv.targetType}`,
-            playerProfileId: inv.profileId,
+            playerProfileId: inv.playerProfileId,
           },
           {
             $set: {
@@ -818,9 +782,9 @@ export const simulateSuccess = async (req, res) => {
               60 *
               1000
         );
-        if (inv.profileId) {
+        if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
-            { _id: inv.profileId, user: inv.userId },
+            { _id: inv.playerProfileId, user: inv.userId },
             {
               $set: {
                 "isPromoted.status": true,
@@ -835,7 +799,7 @@ export const simulateSuccess = async (req, res) => {
           {
             userId: inv.userId,
             type: `promoted_${inv.targetType}`,
-            playerProfileId: inv.profileId,
+            playerProfileId: inv.playerProfileId,
           },
           {
             $set: {

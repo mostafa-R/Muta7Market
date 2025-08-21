@@ -1,19 +1,19 @@
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import express from 'express';
-import mongoSanitize from 'express-mongo-sanitize';
-import helmet from 'helmet';
-import i18n from 'i18n';
-import morgan from 'morgan';
-import { dirname, join } from 'path';
-import swaggerUi from 'swagger-ui-express';
-import { fileURLToPath } from 'url';
-import swaggerDocument from './docs/swagger.js';
-import errorMiddleware from './middleware/error.middleware.js';
-import rateLimiter from './middleware/rateLimiter.middleware.js';
-import routes from './routes/index.js';
-import { initializeEmailService } from './services/email.service.js';
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import mongoSanitize from "express-mongo-sanitize";
+import helmet from "helmet";
+import i18n from "i18n";
+import morgan from "morgan";
+import { dirname, join } from "path";
+import swaggerUi from "swagger-ui-express";
+import { fileURLToPath } from "url";
+import swaggerDocument from "./docs/swagger.js";
+import errorMiddleware from "./middleware/error.middleware.js";
+import rateLimiter from "./middleware/rateLimiter.middleware.js";
+import routes from "./routes/index.js";
+import { initializeEmailService } from "./services/email.service.js";
 
 // __dirname setup for ES Module
 const __filename = fileURLToPath(import.meta.url);
@@ -23,47 +23,47 @@ const __dirname = dirname(__filename);
 const app = express();
 
 // Trust Proxy
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // Security Middleware (Helmet CSP)
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ['\'self\''],
-        styleSrc: ['\'self\'', '\'unsafe-inline\''],
-        scriptSrc: ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\''],
-        imgSrc: ['\'self\'', 'data:', 'https:']
-      }
-    }
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
   })
 );
 
 // CORS Configuration
 const corsOptions = {
-  origin (origin, callback) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-      'http://localhost:3000',
-      'http://localhost:3001'
+  origin(origin, callback) {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
+      "http://localhost:3000",
+      "http://localhost:3001",
     ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
 // Data Sanitization against NoSQL Injection
 app.use(mongoSanitize());
 
 // Body Parsers
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Cookie Parser
 app.use(cookieParser());
@@ -72,71 +72,71 @@ app.use(cookieParser());
 app.use(compression());
 
 // Logging Middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 } else {
   app.use(
-    morgan('combined', {
-      skip: (req, res) => res.statusCode < 400
+    morgan("combined", {
+      skip: (req, res) => res.statusCode < 400,
     })
   );
 }
 
 // i18n Configuration
 i18n.configure({
-  locales: ['en', 'ar'],
-  directory: join(__dirname, 'locales'),
-  defaultLocale: 'en',
+  locales: ["en", "ar"],
+  directory: join(__dirname, "locales"),
+  defaultLocale: "en",
   objectNotation: true,
-  queryParameter: 'lang',
-  cookie: 'language',
-  autoReload: process.env.NODE_ENV === 'development',
-  updateFiles: process.env.NODE_ENV === 'development',
-  syncFiles: process.env.NODE_ENV === 'development'
+  queryParameter: "lang",
+  cookie: "language",
+  autoReload: process.env.NODE_ENV === "development",
+  updateFiles: process.env.NODE_ENV === "development",
+  syncFiles: process.env.NODE_ENV === "development",
 });
 app.use(i18n.init);
 
 // Static Files
-app.use('/uploads', express.static(join(__dirname, '../uploads')));
-app.use('/public', express.static(join(__dirname, '../public')));
+app.use("/uploads", express.static(join(__dirname, "../uploads")));
+app.use("/public", express.static(join(__dirname, "../public")));
 
 await initializeEmailService();
 
 // API Documentation (Swagger)
 app.use(
-  '/api-docs',
+  "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Sports Platform API Documentation'
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "Sports Platform API Documentation",
   })
 );
 
 // Rate Limiter for APIs
-app.use('/api/', rateLimiter);
+app.use("/api/", rateLimiter);
 
 // API Routes
-app.use('/api/v1', routes);
+app.use("/api/v1", routes);
 
 // Root Endpoint
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.json({
-    message: 'Welcome to Sports Platform API',
-    version: '1.0.0',
-    documentation: '/api-docs',
-    health: '/health',
-    api: '/api/v1'
+    message: "Welcome to Sports Platform API",
+    version: "1.0.0",
+    documentation: "/api-docs",
+    health: "/health",
+    api: "/api/v1",
   });
 });
 
 // Health Check Endpoint
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   const healthcheck = {
     uptime: process.uptime(),
-    status: 'OK',
+    status: "OK",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    memory: process.memoryUsage()
+    memory: process.memoryUsage(),
   };
   res.status(200).json(healthcheck);
 });
@@ -148,8 +148,8 @@ app.use((req, res) => {
     message: `Route ${req.originalUrl} not found`,
     error: {
       statusCode: 404,
-      message: 'The requested resource could not be found'
-    }
+      message: "The requested resource could not be found",
+    },
   });
 });
 

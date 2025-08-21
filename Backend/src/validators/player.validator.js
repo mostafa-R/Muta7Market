@@ -1,5 +1,5 @@
-import Joi from 'joi';
-import { GENDER, PROFILE_STATUS } from '../config/constants.js';
+import Joi from "joi";
+import { GENDER, PROFILE_STATUS } from "../config/constants.js";
 
 export const createPlayerSchema = Joi.object({
   // Core identity
@@ -10,31 +10,42 @@ export const createPlayerSchema = Joi.object({
     .valid(...Object.values(GENDER))
     .required(),
   nationality: Joi.string().trim().required(),
+  customNationality: Joi.string().trim().allow("", null).optional(),
+  birthCountry: Joi.string().trim().allow("", null).optional(),
+  customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
   // Role & position
   jop: Joi.string().valid("player", "coach").required(),
-  position: Joi.string().trim().allow("", null), // optional in your Mongoose
+  roleType: Joi.string().trim().allow("", null).optional(),
+  customRoleType: Joi.string().trim().allow("", null).optional(),
+  position: Joi.string().trim().allow("", null).optional(),
+  customPosition: Joi.string().trim().allow("", null).optional(),
   status: Joi.string()
     .valid(...Object.values(PROFILE_STATUS))
     .optional(),
 
   // Experience
-  expreiance: Joi.number().min(0).optional(),
+  experience: Joi.number().min(0).optional(),
 
-  // Compensation (matches Mongoose: monthlySalary + yearSalary)
+  // Transfer info
   transferredTo: Joi.object({
     club: Joi.string().allow("", null),
-    date: Joi.alternatives().try(Joi.date().iso(), Joi.string().valid("")).allow(null),
-    amount: Joi.number().min(0).empty("").optional(),   // 👈 key change
+    startDate: Joi.alternatives()
+      .try(Joi.date().iso(), Joi.string().valid(""))
+      .allow(null),
+    endDate: Joi.alternatives()
+      .try(Joi.date().iso(), Joi.string().valid(""))
+      .allow(null),
+    amount: Joi.number().min(0).empty("").optional(),
   }).optional(),
-  
+
   monthlySalary: Joi.object({
-    amount: Joi.number().min(0).empty("").optional(),   // 👈
+    amount: Joi.number().min(0).empty("").optional(), // 👈
     currency: Joi.string().trim(),
   }).optional(),
-  
+
   yearSalary: Joi.object({
-    amount: Joi.number().min(0).empty("").optional(),   // 👈
+    amount: Joi.number().min(0).empty("").optional(), // 👈
     currency: Joi.string().trim(),
   }).optional(),
 
@@ -82,6 +93,7 @@ export const createPlayerSchema = Joi.object({
 
   // Game & status
   game: Joi.string().trim().required(),
+  customSport: Joi.string().trim().allow("", null).optional(),
   views: Joi.number().min(0).optional(),
   isActive: Joi.boolean().optional(),
 }).prefs({
@@ -98,12 +110,18 @@ export const updatePlayerSchema = Joi.object({
   age: Joi.number().min(15).max(50),
   gender: Joi.string().valid(...Object.values(GENDER)),
   nationality: Joi.string().trim(),
+  customNationality: Joi.string().trim().allow("", null).optional(),
+  birthCountry: Joi.string().trim().allow("", null).optional(),
+  customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
   jop: Joi.string().valid("player", "coach"),
-  position: Joi.string().trim().allow("", null),
+  roleType: Joi.string().trim().allow("", null).optional(),
+  customRoleType: Joi.string().trim().allow("", null).optional(),
+  position: Joi.string().trim().allow("", null).optional(),
+  customPosition: Joi.string().trim().allow("", null).optional(),
   status: Joi.string().valid(...Object.values(PROFILE_STATUS)),
 
-  expreiance: Joi.number().min(0),
+  experience: Joi.number().min(0).optional(),
 
   monthlySalary: Joi.object({
     amount: Joi.number().min(0),
@@ -121,11 +139,14 @@ export const updatePlayerSchema = Joi.object({
 
   transferredTo: Joi.object({
     club: Joi.string().allow("", null),
-    date: Joi.alternatives()
+    startDate: Joi.alternatives()
       .try(Joi.date().iso(), Joi.string().valid(""))
       .allow(null),
-    amount: Joi.number().min(0),
-  }),
+    endDate: Joi.alternatives()
+      .try(Joi.date().iso(), Joi.string().valid(""))
+      .allow(null),
+    amount: Joi.number().min(0).empty("").optional(),
+  }).optional(),
 
   socialLinks: Joi.object({
     instagram: Joi.string().uri().allow("", null),
@@ -157,10 +178,10 @@ export const updatePlayerSchema = Joi.object({
   }),
 
   game: Joi.string().trim(),
+  customSport: Joi.string().trim().allow("", null).optional(),
   views: Joi.number().min(0),
   isActive: Joi.boolean(),
 }).prefs({ abortEarly: false, stripUnknown: true, convert: true });
-
 
 export const filterPlayerSchema = Joi.object({
   page: Joi.number().min(1).default(1),
@@ -175,17 +196,17 @@ export const filterPlayerSchema = Joi.object({
   salaryMin: Joi.number().min(0),
   salaryMax: Joi.number(),
   isPromoted: Joi.boolean(),
-  search: Joi.string()
+  search: Joi.string(),
 });
 
 export const promotePlayerSchema = Joi.object({
   days: Joi.number().min(1).max(365).required(),
-  type: Joi.string().valid('featured', 'premium').default('featured')
+  type: Joi.string().valid("featured", "premium").default("featured"),
 });
 
 export const transferPlayerSchema = Joi.object({
   clubName: Joi.string().required(),
-  amount: Joi.number().min(0).required()
+  amount: Joi.number().min(0).required(),
 });
 
 export const statisticsSchema = Joi.object({
@@ -193,5 +214,5 @@ export const statisticsSchema = Joi.object({
   assists: Joi.number().min(0),
   matches: Joi.number().min(0),
   yellowCards: Joi.number().min(0),
-  redCards: Joi.number().min(0)
+  redCards: Joi.number().min(0),
 });
