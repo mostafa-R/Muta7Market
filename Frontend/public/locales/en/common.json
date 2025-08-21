@@ -146,6 +146,13 @@
     "profile": "Profile",
     "userDataUnavailable": "User data unavailable",
     "failedToFetchUserData": "Failed to fetch user data. Please try again.",
+    "pinProfile": "Pin Profile for {{price}} SAR (15 days)",
+    "pinnedUntil": "Profile pinned until {{date}}",
+    "alreadyPinned": "Profile is already pinned",
+    "publishCoach": "Publish Coach Profile ({{price}} SAR/year)",
+    "publishPlayer": "Publish Player Profile ({{price}} SAR/year)",
+    "alreadyPublished": "Profile already published",
+    "publishFailed": "Failed to publish profile",
     "noPlayerDataFound": "No player data found",
     "unauthorizedAccess": "Unauthorized access. Please login again.",
     "playerDataNotFound": "Player data not found.",
@@ -252,6 +259,9 @@
   },
   "playerDetail": {
     "agentInformation": "Agent Information",
+    "accessPrivateInfo": "Access Player Info",
+    "unlockDetails": "Unlock Player Details",
+    "accessCost": "One-time payment ({{price}} SAR) for full access to this player's details for 1 year",
     "transferDeadline": "Transfer Deadline",
     "loginRequired": "You must be logged in first",
     "noPhoneAvailable": "No phone number available for this player",
@@ -850,6 +860,9 @@
     "paymentInitiated": "Payment initiated",
     "unexpectedError": "An unexpected error occurred",
     "completeProfileFirst": "Please complete your profile first, we'll redirect you to the payments page.",
+    "genericError": "An error occurred. Please try again.",
+    "failedToInitiate": "Failed to initiate payment",
+    "noPaymentUrl": "No payment URL received",
     "summary": {
       "title": "Professional Player Registration",
       "type": "Subscription",
@@ -1132,6 +1145,7 @@
       "leftWing": "Left Wing",
       "leftBack": "Left Back",
       "playmaker": "Playmaker",
+      "left_wing": "Left Wing",
       "rightBack": "Right Back",
       "rightWing": "Right Wing",
       "pivot": "Pivot"
@@ -1187,7 +1201,6 @@
       "hammerThrow": "Hammer Throw",
       "javelinThrow": "Javelin Throw",
       "raceWalking": "Race Walking"
-
     },
     "tennis": {
       "singles": "Singles",
@@ -1223,7 +1236,6 @@
       "redArrow": "Red Arrow",
       "yellowArrow": "Yellow Arrow",
       "greenArrow": "Green Arrow"
-
     },
     "esports": {
       "moba": "MOBA",
@@ -1430,7 +1442,38 @@
   "email": "Email",
   "phone": "Phone",
   "profilePhoto": "Profile Photo",
-  "years": "years"
+  "years": "years",
 
+  "access": {
+    "unlockPlayerInfo": "Unlock Player Info ({{price}} SAR)",
+    "youHaveAccess": "You have access to this information",
+    "alreadySubscribed": "You already have access to this player's information",
+    "subscriptionFailed": "Failed to create access subscription"
+  },
 
+  "invoice": {
+    "myInvoices": "My Invoices",
+    "invoiceNumber": "Invoice Number",
+    "product": "Product",
+    "amount": "Amount",
+    "date": "Date",
+    "status": "Status",
+    "viewPDF": "View PDF",
+    "downloadPDF": "Download PDF",
+    "showQR": "Show QR Code",
+    "hideQR": "Hide QR Code",
+    "scanQRCode": "Scan QR Code to view invoice details",
+    "zatcaCompliant": "ZATCA Compliant",
+    "loadingInvoices": "Loading invoices...",
+    "noInvoicesFound": "No invoices found",
+    "productsDesc": {
+      "contactsAccess": "Contact Access Subscription (1 year)",
+      "playerListing": "Player Profile Publishing (1 year)",
+      "coachListing": "Coach Profile Publishing (1 year)",
+      "playerPromotion": "Player Profile Promotion (1 year)",
+      "coachPromotion": "Coach Profile Promotion (1 year)",
+      "profilePinning": "Profile Pinning (15 days)",
+      "specificPlayerAccess": "Specific Player Access (1 year)"
+    }
+  }
 }
