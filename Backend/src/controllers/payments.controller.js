@@ -406,12 +406,14 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
           : "Top list (Player) (1 year)"
         : inv.product;
 
-    // Build callback URLs with safe fallback if APP_URL is missing
-    const originFallback =
-      req.get && req.get("origin") ? req.get("origin") : null;
-    const appUrl = process.env.APP_URL || originFallback || "http://localhost:3000";
-    const callBackUrl = `${appUrl}/profile?tab=payments&invoiceId=${String(inv._id)}`;
-    const cancelUrl = `${appUrl}/profile?tab=payments`;
+    // Build callback URLs using FRONTEND_URL if provided
+    const originFallback = req.get && req.get("origin") ? req.get("origin") : null;
+    const frontUrl =
+      process.env.FRONTEND_URL || originFallback || process.env.APP_URL || "http://localhost:3000";
+    const callBackUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments&invoiceId=${String(
+      inv._id
+    )}`;
+    const cancelUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments`;
 
     const payload = {
       orderNumber: inv.orderNumber,

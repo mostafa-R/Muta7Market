@@ -204,7 +204,7 @@ const PlayerProfile = ({
       </div>
 
       <div className="p-6 lg:p-8">
-        {player?.isActive && (
+        {player?.isActive && !player?.isPromoted?.status && (
           <div className="p-4 flex justify-center  ">
             <PromoteNowButton profileId={player?._id} />
           </div>

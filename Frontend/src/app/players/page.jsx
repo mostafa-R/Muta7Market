@@ -211,6 +211,13 @@ export default function PlayersPage() {
           </div>
         </div>
 
+        {/* Promote button for my active profile (not promoted) */}
+        {myProfile?.isActive && !myProfile?.isPromoted?.status && (
+          <div className="mt-4 flex justify-center w-full">
+            <PromoteNowButton profileId={myProfile?._id} />
+          </div>
+        )}
+
         {/* Filters */}
         <div className="bg-card rounded-xl p-6 mb-8 border shadow-card">
           <div className="flex items-center space-x-4 space-x-reverse mb-6">
@@ -324,11 +331,7 @@ export default function PlayersPage() {
             </Link>
           </div>
         </div>
-        {myProfile?.isActive && (
-            <div className="mt-4 flex justify-center w-full">
-              <PromoteNowButton profileId={myProfile?._id} />
-            </div>
-          )}
+        
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
