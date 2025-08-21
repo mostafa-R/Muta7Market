@@ -93,7 +93,8 @@
     "created": "Created",
     "featured": "Featured",
     "premium": "Premium",
-    "verified": "Verified"
+    "verified": "Verified",
+    "currentSection": "Current Section"
   },
   "brand": {
     "name": "Muta7Market",
@@ -240,7 +241,9 @@
     "accountStatus": "Account Status",
     "activated": "Activated",
     "notActivated": "Not Activated",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "sidebarNavigation": "Profile Navigation",
+    "tapToNavigate": "Tap any section to navigate"
   },
   "notFound": {
     "title": "Page Not Found",
