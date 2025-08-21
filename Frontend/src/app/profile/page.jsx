@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 // Import Components
 import LoadingSpinner from "../component/LoadingSpinner";
 import ConfirmModal from "./components/ConfirmModal";
@@ -536,28 +536,7 @@ const UserProfile = () => {
 
             {activeSection === "payments" && (
               <div className="mt-6">
-                {paymentBanner && (
-                  <div
-                    className={
-                      paymentBanner.type === "success"
-                        ? "mb-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-3"
-                        : paymentBanner.type === "error"
-                        ? "mb-4 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-4 py-3"
-                        : "mb-4 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 px-4 py-3"
-                    }
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {paymentBanner.message}
-                  </div>
-                )}
-                {/* Local toast container to guarantee visibility on this page */}
-                <ToastContainer
-                  position={language === "ar" ? "top-left" : "top-right"}
-                  rtl={language === "ar"}
-                  autoClose={3000}
-                  newestOnTop
-                />
+           
                 <PaymentsSection />
               </div>
             )}

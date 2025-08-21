@@ -8,11 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 import "@/utils/i18n";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // This enables client-side control of toast RTL/LTR
-  const handleLanguageChange = () => {
-    // Logic will be handled by the LanguageProvider
-  };
-
   useEffect(() => {
     // Apply any global side effects needed for language switching
     return () => {
@@ -44,6 +39,8 @@ function DynamicToastContainer() {
       draggable
       pauseOnHover
       theme="light"
+      limit={5}
+      style={{ zIndex: 999999 }}
     />
   );
 }
