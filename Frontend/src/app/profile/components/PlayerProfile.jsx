@@ -35,6 +35,41 @@ const PlayerProfile = ({
     setCurrentImageUrl(null);
   };
 
+  // Helper function to get translated value with fallback
+  const getTranslatedValue = (key, value, translationNamespace = null) => {
+    if (!value) return "";
+
+    // Try to get translation from the specified namespace
+    let translatedValue = null;
+
+    if (translationNamespace) {
+      // Try with the namespace
+      translatedValue = t(`${translationNamespace}.${value.toLowerCase()}`, {
+        defaultValue: null,
+      });
+
+      // If not found and it's a sport, try sport-specific positions
+      if (
+        !translatedValue &&
+        translationNamespace === "positions" &&
+        formData.game
+      ) {
+        const sportKey = formData.game.toLowerCase();
+        translatedValue = t(`positions.${sportKey}.${value.toLowerCase()}`, {
+          defaultValue: null,
+        });
+      }
+    }
+
+    // If still not found, try without namespace
+    if (!translatedValue) {
+      translatedValue = t(value.toLowerCase(), { defaultValue: null });
+    }
+
+    // If translation found, return it, otherwise return original value
+    return translatedValue || value;
+  };
+
   const FormField = ({
     label,
     value,
@@ -240,44 +275,79 @@ const PlayerProfile = ({
                 />
                 <FormField
                   label={t("profile.gender")}
-                  value={formData.gender}
+                  value={
+                    formData.gender === "male"
+                      ? t("common.male")
+                      : formData.gender === "female"
+                      ? t("common.female")
+                      : formData.gender
+                  }
                   onChange={handleChange}
                   isDisabled={!isEditing}
                   name="gender"
                 />
                 <FormField
                   label={t("nationality")}
-                  value={formData.nationality}
+                  value={getTranslatedValue(
+                    "nationality",
+                    formData.nationality,
+                    "nationalities"
+                  )}
                   onChange={handleChange}
                   isDisabled={!isEditing}
                   name="nationality"
                 />
                 <FormField
                   label={t("profile.job")}
-                  value={formData.jop}
+                  value={
+                    formData.jop === "player"
+                      ? t("common.player")
+                      : formData.jop === "coach"
+                      ? t("common.coach")
+                      : formData.jop
+                  }
                   onChange={handleChange}
                   isDisabled={!isEditing}
                   name="jop"
                 />
                 <FormField
                   label={t("player.position")}
-                  value={formData.position}
+                  value={getTranslatedValue(
+                    "position",
+                    formData.position,
+                    "positions"
+                  )}
                   onChange={handleChange}
                   isDisabled={!isEditing}
                   name="position"
                 />
                 <FormField
                   label={t("profile.playerStatus")}
-                  value={formData.status}
+                  value={getTranslatedValue(
+                    "status",
+                    formData.status,
+                    "player.status"
+                  )}
                   onChange={handleChange}
                   isDisabled={!isEditing}
                   name="status"
                 />
                 <FormField
                   label={t("sport")}
-                  value={formData.game}
+                  value={getTranslatedValue("sport", formData.game, "sports")}
                   isDisabled={true}
                 />
+                {player?.roleType && (
+                  <FormField
+                    label={t("playerDetail.roleType")}
+                    value={getTranslatedValue(
+                      "roleType",
+                      player.roleType,
+                      player.jop === "player" ? "playerRoles" : "coachRoles"
+                    )}
+                    isDisabled={true}
+                  />
+                )}
                 <FormField
                   label={t("yearsOfExperience")}
                   value={`${formData.experience} ${t("years")}`}
