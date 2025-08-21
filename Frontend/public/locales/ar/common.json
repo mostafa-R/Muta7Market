@@ -1132,6 +1132,7 @@
 
     "handball": {
       "goalkeeper": "حارس مرمى",
+      "left_wing": "جناح يسار",
       "leftWing": "جناح أيسر",
       "leftBack": "ظهير أيسر",
       "playmaker": "صانع ألعاب",
