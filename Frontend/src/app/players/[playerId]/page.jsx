@@ -761,7 +761,7 @@ const PlayerProfile = () => {
                           {player.name}
                         </h1>
                         {player.isPromoted?.status && (
-                          <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
+                          <div className="flex items-center gap-2 bg-[#cd9834] text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
                             <Trophy className="w-4 h-4" />
                             <span>{t("player.promoted")}</span>
                           </div>
