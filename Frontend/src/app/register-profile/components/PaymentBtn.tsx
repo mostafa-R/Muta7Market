@@ -44,51 +44,80 @@ export default function PaymentBtn({
     setLoading(true);
 
     const promise = (async () => {
-      // Map to backend payment schema
-      const feature =
-        type === "promote_player"
-          ? "publish_profile"
-          : type === "activate_user"
-          ? "unlock_contacts"
-          : type;
-      const product =
-        feature === "unlock_contacts" ? "contacts_access" : "player_listing";
-      if (product === "player_listing" && !playerId) {
+      // Map to backend payment schema (draft -> initiate)
+      const mappedProduct =
+        type === "unlock_contacts" || type === "activate_user"
+          ? "contacts_access"
+          : type === "publish_profile"
+          ? "listing"
+          : type === "promote_player"
+          ? "promotion"
+          : "contacts_access";
+
+      if ((mappedProduct === "listing" || mappedProduct === "promotion") && !playerId) {
         toast.info(t("payment.completeProfileFirst"));
         window.location.href = "/profile?tab=payments";
         return "redirected_to_payments";
       }
-      const body =
-        product === "contacts_access"
-          ? { product }
-          : { product, playerProfileId: playerId };
-
-      const res = await fetch(`${API_BASE}/payments/initiate`, {
+      // 1) Create draft invoice
+      const draftRes = await fetch(`${API_BASE}/payments/drafts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(
+          mappedProduct === "contacts_access"
+            ? { product: mappedProduct }
+            : { product: mappedProduct, playerProfileId: playerId }
+        ),
       });
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 429) {
+      const draftJson = await draftRes.json();
+      if (!draftRes.ok) {
+        if (draftRes.status === 429) {
           throw new Error(t("payments.tooManyAttempts"));
-        } else if (res.status === 401) {
+        } else if (draftRes.status === 401) {
           throw new Error(t("formErrors.loginRequiredFirst"));
-        } else if (res.status === 400) {
-          throw new Error(json?.message || t("payments.invalidRequestData"));
-        } else if (res.status >= 500) {
+        } else if (draftRes.status === 400) {
+          throw new Error(draftJson?.message || t("payments.invalidRequestData"));
+        } else if (draftRes.status >= 500) {
           throw new Error(t("payments.serverError"));
         } else {
-          throw new Error(json?.message || t("payments.failedToCreateInvoice"));
+          throw new Error(draftJson?.message || t("payments.failedToCreateInvoice"));
         }
       }
 
-      const url = json?.data?.paymentUrl;
+      const invoiceId = draftJson?.data?.id;
+      if (!invoiceId) throw new Error(t("payments.failedToCreateInvoice"));
+
+      // 2) Initiate payment for that invoice
+      const initRes = await fetch(
+        `${API_BASE}/payments/invoices/${invoiceId}/initiate`,
+        {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+      const initJson = await initRes.json();
+
+      if (!initRes.ok) {
+        if (initRes.status === 429) {
+          throw new Error(t("payments.tooManyAttempts"));
+        } else if (initRes.status === 401) {
+          throw new Error(t("formErrors.loginRequiredFirst"));
+        } else if (initRes.status === 400) {
+          throw new Error(initJson?.message || t("payments.invalidRequestData"));
+        } else if (initRes.status >= 500) {
+          throw new Error(t("payments.serverError"));
+        } else {
+          throw new Error(initJson?.message || t("payments.failedToCreateInvoice"));
+        }
+      }
+
+      const url = initJson?.data?.paymentUrl;
       if (!url) throw new Error(t("payments.noPaymentUrlReceived"));
 
       window.location.href = url;
