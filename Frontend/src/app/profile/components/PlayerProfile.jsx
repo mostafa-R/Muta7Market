@@ -4,6 +4,7 @@ import { Eye, EyeOff, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import PromoteNowButton from "./PromoteNowButton";
 
 const PlayerProfile = ({
   player,
@@ -251,6 +252,11 @@ const PlayerProfile = ({
         </div>
 
         <div className="p-6 lg:p-8">
+          {player?.isActive && !player?.isPromoted?.status && (
+            <div className="mb-6">
+              <PromoteNowButton profileId={player?._id} />
+            </div>
+          )}
           <form onSubmit={handleFormSubmit} className="space-y-6">
             {/* Player Information Section */}
             <div className="bg-gray-50 p-6 rounded-xl">

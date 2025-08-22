@@ -213,7 +213,7 @@ export default function PlayersPage() {
 
         {/* Promote button for my active profile (not promoted) */}
         {myProfile?.isActive && !myProfile?.isPromoted?.status && (
-          <div className="mt-4 flex justify-center w-full">
+          <div className="mt-4 flex justify-center w-full m-5">
             <PromoteNowButton profileId={myProfile?._id} />
           </div>
         )}
