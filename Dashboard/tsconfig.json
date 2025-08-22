@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/(admin)/user/table/page.jsx", "src/app/(admin)/user/add/page.jsx", "src/app/(admin)/user/update/[id]/edit/page.jsx", "src/app/(admin)/players/table/page.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/(admin)/user/table/page.jsx", "src/app/(admin)/user/add/page.jsx", "src/app/(admin)/user/update/[id]/edit/page.jsx", "src/app/(admin)/players/table/page.jsx", "src/app/(admin)/players/update/[id]/page.jsx", "src/app/(admin)/coaches/table/page.jsx"],
   "exclude": ["node_modules"]
 }

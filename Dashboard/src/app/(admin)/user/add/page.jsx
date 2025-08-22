@@ -9,7 +9,7 @@ import {
   Lock, Eye, EyeOff, RotateCcw
 } from 'lucide-react';
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000/api/v1/admin';
+const BASE = `${process.env.NEXT_PUBLIC_BASE_URL}/admin`;
 const CREATE_ENDPOINT = `${BASE}/users`;
 
 // ------ Joi Schema ------
@@ -272,7 +272,6 @@ export default function CreateUserPage() {
                     >
                       <option value="user">مستخدم</option>
                       <option value="admin">مدير</option>
-                      <option value="editor">محرر</option>
                     </Field>
                   </div>
                 </div>
@@ -285,13 +284,6 @@ export default function CreateUserPage() {
                       كلمة المرور *
                     </label>
                     <div className="relative">
-                    <button
-                        type="button"
-                        onClick={() => setShowPw((s) => !s)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
                       <Field
                         id="password"
                         name="password"
@@ -305,7 +297,14 @@ export default function CreateUserPage() {
                             : 'border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:border-gray-400'
                         }`}
                       />
-                      
+                    <button
+                        type="button"
+                        onClick={() => setShowPw((s) => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPw ? <EyeOff className="w-4 h-4 " /> : <Eye className="w-4 h-4" />}
+                      </button>
+
                     </div>
                     {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
                   </div>
@@ -332,7 +331,7 @@ export default function CreateUserPage() {
                       <button
                         type="button"
                         onClick={() => setShowConfirm((s) => !s)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
