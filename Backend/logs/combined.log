@@ -916,3 +916,6 @@
 {"address":"127.0.0.1","code":"ESOCKET","command":"CONN","errno":-4078,"level":"error","message":"Email transporter error: connect ECONNREFUSED 127.0.0.1:587","port":587,"service":"sports-platform-api","stack":"Error: connect ECONNREFUSED 127.0.0.1:587\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)","syscall":"connect","timestamp":"2025-08-22 05:43:34"}
 {"level":"info","message":"MongoDB Connected: ac-tcgaivq-shard-00-02.gcrpdcs.mongodb.net","service":"sports-platform-api","timestamp":"2025-08-22 05:43:35"}
 {"level":"info","message":"Server running in development mode on port 5000","service":"sports-platform-api","timestamp":"2025-08-22 05:43:35"}
+{"address":"::1","code":"ESOCKET","command":"CONN","errno":-4078,"level":"error","message":"Email transporter error: connect ECONNREFUSED ::1:587","port":587,"service":"sports-platform-api","stack":"Error: connect ECONNREFUSED ::1:587\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)","syscall":"connect","timestamp":"2025-08-22 12:21:18"}
+{"level":"info","message":"MongoDB Connected: ac-tcgaivq-shard-00-02.gcrpdcs.mongodb.net","service":"sports-platform-api","timestamp":"2025-08-22 12:21:19"}
+{"level":"info","message":"Server running in development mode on port 5000","service":"sports-platform-api","timestamp":"2025-08-22 12:21:19"}

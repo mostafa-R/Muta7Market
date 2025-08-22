@@ -198,11 +198,12 @@ export default function PaymentsSection() {
         window.location.href = inv.paymentUrl;
         return;
       }
-      // fallback: re-initiate by id (if you expose such route),
-      // otherwise keep as-is (user will have to create payment from where invoice was created).
-      // Example (uncomment if you support it):
-      // const { data } = await apiPost(`/payments/invoices/${id}/initiate`);
-      // if (data?.paymentUrl) window.location.href = data.paymentUrl;
+      // fallback: re-initiate by id
+      const { data } = await apiPost(`/payments/invoices/${id}/initiate`);
+      if (data?.paymentUrl) {
+        window.location.href = data.paymentUrl;
+        return;
+      }
       throw new Error("No payment link available for this invoice");
     } catch (e) {
       const toast = await toastApi();
