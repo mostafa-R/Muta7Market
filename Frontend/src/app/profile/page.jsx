@@ -281,12 +281,7 @@ const UserProfile = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
 
-      // 1) Reconcile first (best-effort) – backend will verify with provider and update DB
-      try {
-        await axios.post(`${API_URL}/payments/reconcile`, {}, { headers });
-      } catch {}
-
-      // 2) Quick single check: prefer recheck by orderNumber; else status by invoiceId
+      // Prefer Paylink-backed recheck first; only fall back to DB status if no orderNumber
       let decided = false;
       if (orderNumber) {
         try {
@@ -342,6 +337,11 @@ const UserProfile = () => {
       fetchUserData();
       fetchPendingPayments();
       fetchPlayerData();
+
+      // Best-effort reconcile in the background to sync any other invoices
+      try {
+        axios.post(`${API_URL}/payments/reconcile`, {}, { headers }).catch(() => {});
+      } catch {}
     };
     run();
     // Intentionally run once on mount
