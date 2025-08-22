@@ -637,70 +637,51 @@ export const getPaymentStatus = async (req, res) => {
   });
 };
 
-export const listMyInvoices = async (req, res) => {
-  const userId = req.user?._id;
-  if (!userId)
-    return res.status(401).json({ success: false, message: "unauthorized" });
-
-  const statusQ = req.query.status
-    ? String(req.query.status).toLowerCase()
-    : null;
-  const q = { $or: [{ userId }, { user: userId }] };
-  if (statusQ) q.status = new RegExp(`^${statusQ}$`, "i");
-
-  const page = Math.max(1, Number(req.query.page || 1));
-  const pageSize = Math.max(1, Number(req.query.pageSize || 50));
-  const skip = (page - 1) * pageSize;
-
-  const [items, total] = await Promise.all([
-    Invoice.find(q).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
-    Invoice.countDocuments(q),
-  ]);
-
-  const mapped = items.map((inv) => ({
-    id: String(inv._id),
-    createdAt: inv.createdAt,
-    product: inv.product,
-    targetType: inv.targetType,
-    profileId: inv.playerProfileId || null,
-    amount: inv.amount,
-    currency: inv.currency || "SAR",
-    status: String(inv.status || "").toLowerCase(),
-    orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
-    providerInvoiceId:
-      inv.providerInvoiceId ||
-      (inv.provider && inv.provider.invoiceId) ||
-      inv.paylinkInvoiceId ||
-      inv.invoiceId ||
-      null,
-    paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
-    receiptUrl: inv.paymentReceiptUrl || null,
-    paidAt: inv.paidAt || null,
-    durationDays: inv.durationDays || null,
-  }));
-
-  return res
-    .status(200)
-    .json({ success: true, data: { total, page, pageSize, items: mapped } });
+const normalizeProductParam = (p) => {
+  const v = String(p || "")
+    .toLowerCase()
+    .trim();
+  // accept both "contact_access" and "contacts_access"
+  if (/^contacts?_access$/.test(v)) return "contact_access";
+  return v;
 };
 
-// Admin: list all invoices with optional filters
-export const listAllInvoices = async (req, res) => {
-  // Authorization is enforced at the route level
-  const statusQ = req.query.status
-    ? String(req.query.status).toLowerCase()
-    : null;
-  const userQ = req.query.userId ? String(req.query.userId) : null;
+const normalizeStatus = (s) => {
+  const v = String(s || "")
+    .toLowerCase()
+    .trim();
+  if (v === "notpaid" || v === "unpaid") return "pending";
+  return v;
+};
+
+export const listMyInvoices = async (req, res) => {
+  const userId = req.user?._id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "unauthorized" });
+  }
+
+  const statusQ = req.query.status ? normalizeStatus(req.query.status) : null;
   const productQ = req.query.product
-    ? String(req.query.product).toLowerCase()
+    ? normalizeProductParam(req.query.product)
     : null;
   const orderQ = req.query.orderNumber ? String(req.query.orderNumber) : null;
 
-  const q = {};
-  if (statusQ) q.status = new RegExp(`^${statusQ}$`, "i");
-  if (userQ) q.$or = [{ userId: userQ }, { user: userQ }];
-  if (productQ) q.product = new RegExp(`^${productQ}$`, "i");
-  if (orderQ) q.orderNumber = orderQ;
+  // build query with $and to allow multiple conditions together
+  const and = [{ $or: [{ userId }, { user: userId }] }];
+
+  if (statusQ) and.push({ status: new RegExp(`^${statusQ}$`, "i") });
+  if (productQ) {
+    if (productQ === "contact_access") {
+      and.push({
+        product: { $in: [/^contact_access$/i, /^contacts_access$/i] },
+      });
+    } else {
+      and.push({ product: new RegExp(`^${productQ}$`, "i") });
+    }
+  }
+  if (orderQ) and.push({ orderNumber: orderQ });
+
+  const q = and.length > 1 ? { $and: and } : and[0];
 
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.max(1, Math.min(200, Number(req.query.pageSize || 50)));
@@ -715,7 +696,80 @@ export const listAllInvoices = async (req, res) => {
     id: String(inv._id),
     createdAt: inv.createdAt,
     product: inv.product,
-    targetType: inv.targetType,
+    targetType: inv.targetType || "user", // fallback to 'user' if null
+    profileId: inv.playerProfileId || null,
+    amount: inv.amount,
+    currency: inv.currency || "SAR",
+    status: String(inv.status || "").toLowerCase(),
+    orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
+    providerInvoiceId:
+      inv.providerInvoiceId ||
+      (inv.provider && inv.provider.invoiceId) ||
+      inv.paylinkInvoiceId ||
+      inv.invoiceId ||
+      null,
+    paymentUrl:
+      String(inv.status).toLowerCase() === "pending"
+        ? inv.paymentUrl || null
+        : null,
+    receiptUrl: inv.paymentReceiptUrl || null,
+    paidAt: inv.paidAt || null,
+    durationDays: inv.durationDays || null,
+  }));
+
+  return res.status(200).json({
+    success: true,
+    data: { total, page, pageSize, items: mapped },
+  });
+};
+
+// Admin: list all invoices with optional filters
+export const listAllInvoices = async (req, res) => {
+  const statusQRaw = req.query.status ? String(req.query.status) : null;
+  const statusQ = statusQRaw ? normalizeStatus(statusQRaw) : null;
+
+  const userQ = req.query.userId ? String(req.query.userId) : null;
+
+  const productQRaw = req.query.product ? String(req.query.product) : null;
+  const productQ = productQRaw ? normalizeProductParam(productQRaw) : null;
+
+  const orderQ = req.query.orderNumber ? String(req.query.orderNumber) : null;
+
+  // use $and to safely combine conditions (and keep separate $ors inside)
+  const and = [];
+
+  if (statusQ) and.push({ status: new RegExp(`^${statusQ}$`, "i") });
+
+  if (userQ) and.push({ $or: [{ userId: userQ }, { user: userQ }] });
+
+  if (productQ) {
+    if (productQ === "contact_access") {
+      and.push({
+        product: { $in: [/^contact_access$/i, /^contacts_access$/i] },
+      });
+    } else {
+      and.push({ product: new RegExp(`^${productQ}$`, "i") });
+    }
+  }
+
+  if (orderQ) and.push({ orderNumber: orderQ });
+
+  const q = and.length ? { $and: and } : {};
+
+  const page = Math.max(1, Number(req.query.page || 1));
+  const pageSize = Math.max(1, Math.min(200, Number(req.query.pageSize || 50)));
+  const skip = (page - 1) * pageSize;
+
+  const [items, total] = await Promise.all([
+    Invoice.find(q).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+    Invoice.countDocuments(q),
+  ]);
+
+  const mapped = items.map((inv) => ({
+    id: String(inv._id),
+    createdAt: inv.createdAt,
+    product: inv.product,
+    targetType: inv.targetType || "user", // fallback to 'user' if null
     profileId: inv.playerProfileId || null,
     userId: inv.userId || inv.user || null,
     amount: inv.amount,
@@ -728,7 +782,10 @@ export const listAllInvoices = async (req, res) => {
       inv.paylinkInvoiceId ||
       inv.invoiceId ||
       null,
-    paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
+    paymentUrl:
+      String(inv.status).toLowerCase() === "pending"
+        ? inv.paymentUrl || null
+        : null,
     receiptUrl: inv.paymentReceiptUrl || null,
     paidAt: inv.paidAt || null,
     durationDays: inv.durationDays || null,
@@ -736,9 +793,10 @@ export const listAllInvoices = async (req, res) => {
     lastVerifiedAt: inv.lastVerifiedAt || null,
   }));
 
-  return res
-    .status(200)
-    .json({ success: true, data: { total, page, pageSize, items: mapped } });
+  return res.status(200).json({
+    success: true,
+    data: { total, page, pageSize, items: mapped },
+  });
 };
 
 export const recheckByOrderNumber = async (req, res) => {
