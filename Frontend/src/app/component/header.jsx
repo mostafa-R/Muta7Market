@@ -6,6 +6,7 @@ import axios from "axios";
 import {
   FileText,
   Home,
+  Loader2,
   LogOut,
   Menu as MenuIcon,
   Search,
@@ -41,6 +42,35 @@ const useAuthStore = create((set) => ({
   },
 }));
 
+// Navigation store for loading states and header visibility
+const useNavigationStore = create((set) => ({
+  isLoading: false,
+  currentPath: "",
+  progress: 0,
+  isHeaderVisible: true,
+  setLoading: (loading) =>
+    set({ isLoading: loading, progress: loading ? 0 : 100 }),
+  setCurrentPath: (path) => set({ currentPath: path }),
+  setProgress: (progress) => set({ progress }),
+  setHeaderVisible: (visible) => set({ isHeaderVisible: visible }),
+}));
+
+// Progress Bar Component
+const ProgressBar = () => {
+  const { isLoading, progress } = useNavigationStore();
+
+  if (!isLoading) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[70] h-1 bg-gray-200">
+      <div
+        className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 ease-out"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+};
+
 // User Profile Dropdown - محسن للموبايل
 const UserProfileDropdown = ({
   handleLogout,
@@ -50,6 +80,7 @@ const UserProfileDropdown = ({
 }) => {
   const { t } = useTranslation();
   const { isLoggedIn, user } = useAuthStore();
+  const { isLoading } = useNavigationStore();
   const router = useRouter();
 
   if (!isLoggedIn) {
@@ -57,20 +88,25 @@ const UserProfileDropdown = ({
       <button
         type="button"
         onClick={() => router.push("/signin")}
+        disabled={isLoading}
         className={`
           ${fullWidth ? "w-full justify-center" : ""}
           ${
             isMobile
-              ? "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all"
-              : "border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
+              ? "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              : "border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           }
           flex items-center gap-2
           ${className}
         `}
         aria-label={t("navbar.signin")}
       >
-        <User className="w-4 h-4" />
-        {t("navbar.signin")}
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <User className="w-4 h-4" />
+        )}
+        {isLoading ? t("common.loading") : t("navbar.signin")}
       </button>
     );
   }
@@ -124,7 +160,7 @@ const UserProfileDropdown = ({
         {/* Action Buttons */}
         <Link
           href="/profile"
-          className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
+          className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-xl hover:bg-gray-50 transition-colors border border-gray-200 hover:shadow-md"
         >
           <UserCircle className="w-5 h-5 text-blue-600" />
           <span className="font-medium">{t("user.profile")}</span>
@@ -132,10 +168,17 @@ const UserProfileDropdown = ({
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-200"
+          disabled={isLoading}
+          className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">{t("user.signout")}</span>
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <LogOut className="w-5 h-5" />
+          )}
+          <span className="font-medium">
+            {isLoading ? t("common.loading") : t("user.signout")}
+          </span>
         </button>
       </div>
     );
@@ -147,6 +190,7 @@ const UserProfileDropdown = ({
       <Menu.Button
         className="flex items-center justify-center rounded-full w-10 h-10 lg:w-11 lg:h-11 border-2 border-gray-200 hover:border-gray-300 transition-all hover:shadow-md"
         aria-label={t("user.openMenu")}
+        disabled={isLoading}
       >
         {profileImageUrl ? (
           <Image
@@ -193,7 +237,7 @@ const UserProfileDropdown = ({
                   href="/profile"
                   className={`${
                     active ? "bg-gray-100" : ""
-                  } flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors`}
+                  } flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:shadow-sm`}
                 >
                   <UserCircle className="w-4 h-4" />
                   {t("user.profile")}
@@ -207,12 +251,17 @@ const UserProfileDropdown = ({
               {({ active }) => (
                 <button
                   onClick={handleLogout}
+                  disabled={isLoading}
                   className={`${
                     active ? "bg-red-50" : ""
-                  } flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 transition-colors`}
+                  } flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  <LogOut className="w-4 h-4" />
-                  {t("user.signout")}
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LogOut className="w-4 h-4" />
+                  )}
+                  {isLoading ? t("common.loading") : t("user.signout")}
                 </button>
               )}
             </Menu.Item>
@@ -223,15 +272,87 @@ const UserProfileDropdown = ({
   );
 };
 
+// Global Loading Overlay Component
+const LoadingOverlay = () => {
+  const { isLoading } = useNavigationStore();
+  const { t } = useTranslation();
+
+  if (!isLoading) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-white/80 backdrop-blur-sm flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Trophy className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+        <p className="text-gray-700 font-medium">{t("common.loading")}</p>
+        <p className="text-sm text-gray-500">{t("common.pleaseWait")}</p>
+      </div>
+    </div>
+  );
+};
+
+// Navigation Link Component with loading state
+const NavLink = ({ item, isActive, onClick, isMobile = false }) => {
+  const { isLoading, currentPath } = useNavigationStore();
+  const isCurrentLoading = isLoading && currentPath === item.path;
+  const Icon = item.icon;
+
+  const baseClasses = `
+    flex items-center gap-3 transition-all duration-200
+    ${
+      isMobile
+        ? "px-4 py-3 rounded-xl"
+        : "px-4 py-2 rounded-lg text-sm font-medium"
+    }
+  `;
+
+  const activeClasses = isActive
+    ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 font-semibold shadow-sm"
+    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50";
+
+  const loadingClasses = isCurrentLoading ? "opacity-75 cursor-wait" : "";
+
+  return (
+    <Link
+      href={item.path}
+      onClick={onClick}
+      className={`${baseClasses} ${activeClasses} ${loadingClasses}`}
+      aria-disabled={isCurrentLoading}
+    >
+      {isCurrentLoading ? (
+        <Loader2 className="w-5 h-5 animate-spin" />
+      ) : (
+        <Icon
+          className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}`}
+        />
+      )}
+      <span className="text-base">{item.name}</span>
+      {isActive && !isCurrentLoading && (
+        <div className="mr-auto w-1 h-6 bg-blue-600 rounded-full" />
+      )}
+      {isCurrentLoading && (
+        <div className="mr-auto w-1 h-6 bg-blue-400 rounded-full animate-pulse" />
+      )}
+    </Link>
+  );
+};
+
 // Mobile Nav Menu - محسن بالكامل
 const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
   const { t } = useTranslation();
   const { isLoggedIn, setIsLoggedIn, user } = useAuthStore();
+  const { setLoading, setCurrentPath, setProgress, setHeaderVisible } =
+    useNavigationStore();
   const router = useRouter();
   const [isClosing, setIsClosing] = useState(false);
 
   const handleLogout = useCallback(async () => {
     try {
+      setLoading(true);
       localStorage.clear();
       setIsLoggedIn(false);
 
@@ -248,8 +369,50 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
     } catch (error) {
       console.error("Logout error:", error);
       router.push("/signin");
+    } finally {
+      setLoading(false);
     }
-  }, [router, setIsLoggedIn, onClose]);
+  }, [router, setIsLoggedIn, onClose, setLoading]);
+
+  const handleNavigation = useCallback(
+    (path) => {
+      if (path === currentPath) return; // Don't navigate if already on the same page
+
+      setLoading(true);
+      setCurrentPath(path);
+      setHeaderVisible(false); // Hide header on mobile/tablet
+      onClose();
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+
+      // Complete navigation after delay
+      setTimeout(() => {
+        clearInterval(progressInterval);
+        setProgress(100);
+        setTimeout(() => {
+          setLoading(false);
+          setCurrentPath("");
+        }, 200);
+      }, 800);
+    },
+    [
+      setLoading,
+      setCurrentPath,
+      currentPath,
+      onClose,
+      setProgress,
+      setHeaderVisible,
+    ]
+  );
 
   const handleClose = () => {
     setIsClosing(true);
@@ -311,32 +474,15 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
           <div className="flex-1 p-4 space-y-2">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
-              const Icon = item.icon;
 
               return (
-                <Link
+                <NavLink
                   key={item.path}
-                  href={item.path}
-                  onClick={handleClose}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 font-semibold shadow-sm"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }
-                  `}
-                >
-                  <Icon
-                    className={`w-5 h-5 ${
-                      isActive ? "text-blue-600" : "text-gray-500"
-                    }`}
-                  />
-                  <span className="text-base">{item.name}</span>
-                  {isActive && (
-                    <div className="mr-auto w-1 h-6 bg-blue-600 rounded-full" />
-                  )}
-                </Link>
+                  item={item}
+                  isActive={isActive}
+                  onClick={() => handleNavigation(item.path)}
+                  isMobile={true}
+                />
               );
             })}
           </div>
@@ -363,19 +509,72 @@ const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { checkAuth, isLoggedIn, setIsLoggedIn, setUser } = useAuthStore();
+  const {
+    setLoading,
+    setCurrentPath,
+    setProgress,
+    isHeaderVisible,
+    setHeaderVisible,
+  } = useNavigationStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
+  // Reset header visibility on screen size change and add touch gestures
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setHeaderVisible(true);
+      }
+    };
+
+    // Touch gesture to show header on mobile
+    let startY = 0;
+    let currentY = 0;
+
+    const handleTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      if (window.innerWidth >= 1024) return; // Only on mobile/tablet
+
+      currentY = e.touches[0].clientY;
+      const deltaY = startY - currentY;
+
+      // Show header when swiping down from top
+      if (deltaY < -50 && window.scrollY < 100) {
+        setHeaderVisible(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchmove", handleTouchMove);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [setHeaderVisible]);
+
   // تأثير السكرول
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
+
+      // Show header when scrolling up on mobile/tablet
+      if (window.innerWidth < 1024) {
+        if (window.scrollY < 50) {
+          setHeaderVisible(true);
+        }
+      }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [setHeaderVisible]);
 
   const navItems = useMemo(
     () => [
@@ -398,6 +597,7 @@ const Navbar = () => {
 
   const handleLogout = useCallback(async () => {
     try {
+      setLoading(true);
       localStorage.clear();
       setIsLoggedIn(false);
       setUser(null);
@@ -414,8 +614,47 @@ const Navbar = () => {
     } catch (error) {
       console.error("Logout error:", error);
       router.push("/signin");
+    } finally {
+      setLoading(false);
     }
-  }, [router, setIsLoggedIn, setUser]);
+  }, [router, setIsLoggedIn, setUser, setLoading]);
+
+  const handleNavigation = useCallback(
+    (path) => {
+      if (path === pathname) return; // Don't navigate if already on the same page
+
+      setLoading(true);
+      setCurrentPath(path);
+
+      // Hide header on mobile/tablet screens
+      if (window.innerWidth < 1024) {
+        // lg breakpoint
+        setHeaderVisible(false);
+      }
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+
+      // Complete navigation after delay
+      setTimeout(() => {
+        clearInterval(progressInterval);
+        setProgress(100);
+        setTimeout(() => {
+          setLoading(false);
+          setCurrentPath("");
+        }, 200);
+      }, 800);
+    },
+    [setLoading, setCurrentPath, pathname, setProgress, setHeaderVisible]
+  );
 
   return (
     <>
@@ -427,6 +666,7 @@ const Navbar = () => {
             ? "shadow-md border-b border-gray-200"
             : "border-b border-gray-100"
         }
+        ${!isHeaderVisible ? "transform -translate-y-full" : ""}
       `}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -445,24 +685,14 @@ const Navbar = () => {
             <div className="hidden lg:flex items-center gap-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.path;
-                const Icon = item.icon;
 
                 return (
-                  <Link
+                  <NavLink
                     key={item.path}
-                    href={item.path}
-                    className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
-                      ${
-                        isActive
-                          ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
+                    item={item}
+                    isActive={isActive}
+                    onClick={() => handleNavigation(item.path)}
+                  />
                 );
               })}
             </div>
@@ -494,6 +724,10 @@ const Navbar = () => {
           currentPath={pathname}
         />
       )}
+
+      {/* Global Loading Overlay */}
+      <LoadingOverlay />
+      <ProgressBar />
     </>
   );
 };
