@@ -673,6 +673,51 @@ export const listMyInvoices = async (req, res) => {
     .json({ success: true, data: { total, page, pageSize, items: mapped } });
 };
 
+// Admin: list all invoices with optional filters
+export const listAllInvoices = async (req, res) => {
+  // Authorization is enforced at the route level
+  const statusQ = req.query.status ? String(req.query.status).toLowerCase() : null;
+  const userQ = req.query.userId ? String(req.query.userId) : null;
+  const productQ = req.query.product ? String(req.query.product).toLowerCase() : null;
+  const orderQ = req.query.orderNumber ? String(req.query.orderNumber) : null;
+
+  const q = {};
+  if (statusQ) q.status = new RegExp(`^${statusQ}$`, "i");
+  if (userQ) q.$or = [{ userId: userQ }, { user: userQ }];
+  if (productQ) q.product = new RegExp(`^${productQ}$`, "i");
+  if (orderQ) q.orderNumber = orderQ;
+
+  const page = Math.max(1, Number(req.query.page || 1));
+  const pageSize = Math.max(1, Math.min(200, Number(req.query.pageSize || 50)));
+  const skip = (page - 1) * pageSize;
+
+  const [items, total] = await Promise.all([
+    Invoice.find(q).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+    Invoice.countDocuments(q),
+  ]);
+
+  const mapped = items.map((inv) => ({
+    id: String(inv._id),
+    createdAt: inv.createdAt,
+    product: inv.product,
+    targetType: inv.targetType,
+    profileId: inv.playerProfileId || null,
+    userId: inv.userId || inv.user || null,
+    amount: inv.amount,
+    currency: inv.currency || "SAR",
+    status: String(inv.status || "").toLowerCase(),
+    orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
+    paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
+    receiptUrl: inv.paymentReceiptUrl || null,
+    paidAt: inv.paidAt || null,
+    durationDays: inv.durationDays || null,
+    lastProviderStatus: inv.lastProviderStatus || null,
+    lastVerifiedAt: inv.lastVerifiedAt || null,
+  }));
+
+  return res.status(200).json({ success: true, data: { total, page, pageSize, items: mapped } });
+};
+
 export const recheckByOrderNumber = async (req, res) => {
   try {
     const userId = req.user?._id;

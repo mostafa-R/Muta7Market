@@ -149,7 +149,7 @@ const UserProfile = () => {
   const fetchPricing = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/config/pricing`);
-      const data = res.data?.data; 
+      const data = res.data?.data;
       if (!data) throw new Error(t("formErrors.missingPricingData"));
       setPricing(data);
       setPricingError("");
@@ -225,7 +225,7 @@ const UserProfile = () => {
       if (tab && ["profile", "edit", "payments", "playerProfile"].includes(tab)) {
         setActiveSection(tab);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -291,8 +291,9 @@ const UserProfile = () => {
             { headers }
           );
           const status = String(res.data?.data?.status || "").toLowerCase();
-          const paid = Boolean(res.data?.data?.paid) || status === "paid";
-          if (paid) {
+          const paid = Boolean(res.data?.data?.paid);
+          const verified = Boolean(res.data?.data?.verified);
+          if (paid || (status === "paid" && verified)) {
             toast.success(`${t("formErrors.paymentSuccess")} — verified with Paylink`);
           } else {
             const backendMsg = res.data?.data?.error || "";
@@ -314,7 +315,8 @@ const UserProfile = () => {
           const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
-            toast.success(`${t("formErrors.paymentSuccess")}`);
+            // Avoid showing success without Paylink recheck; show pending until recheck confirms
+            toast.info(t("formErrors.paymentPending"));
           } else {
             const errs = res.data?.data?.paymentErrors || [];
             const firstErr = Array.isArray(errs) && errs.length ? (errs[0]?.message || errs[0]?.title || "") : "";
@@ -342,8 +344,8 @@ const UserProfile = () => {
 
       // Best-effort reconcile in the background to sync any other invoices
       try {
-        axios.post(`${API_URL}/payments/reconcile`, {}, { headers }).catch(() => {});
-      } catch {}
+        axios.post(`${API_URL}/payments/reconcile`, {}, { headers }).catch(() => { });
+      } catch { }
     };
     run();
     // Intentionally run once on mount
@@ -484,7 +486,7 @@ const UserProfile = () => {
       className="min-h-screen bg-[#ffffff]"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
-    {/* {!player?.isPromoted?.status && (
+      {/* {!player?.isPromoted?.status && (
   <PromoteNowButton profileId={player?._id} />
 )} */}
 
@@ -531,7 +533,7 @@ const UserProfile = () => {
 
             {activeSection === "payments" && (
               <div className="mt-6">
-           
+
                 <PaymentsSection />
               </div>
             )}

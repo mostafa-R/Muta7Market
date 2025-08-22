@@ -8,8 +8,9 @@ import {
   simulateSuccess,
   recheckByOrderNumber,
   reconcileMyInvoices,
+  listAllInvoices,
 } from "../controllers/payments.controller.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 
 const r = Router();
 r.post("/reconcile", authMiddleware, reconcileMyInvoices);  // <-- NEW
@@ -27,6 +28,9 @@ r.post("/webhook", paymentWebhook);
 r.get("/status/:id", authMiddleware, getPaymentStatus);
 r.get("/invoices", authMiddleware, listMyInvoices);
 r.post("/invoices/recheck/:orderNumber", authMiddleware, recheckByOrderNumber);
+
+// Admin: fetch all invoices (with optional filters)
+r.get("/admin/invoices", authMiddleware, listAllInvoices);
 
 // DEV
 r.post("/simulate/success/:id", authMiddleware, simulateSuccess);
