@@ -281,13 +281,13 @@ const UserProfile = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
 
-      // 1) Try reconciling first (best-effort)
+      // 1) Reconcile first (best-effort) – backend will verify with provider and update DB
       try {
         await axios.post(`${API_URL}/payments/reconcile`, {}, { headers });
       } catch {}
 
-      // 2) Check status by orderNumber or invoiceId; avoid failing hard
-      let handled = false;
+      // 2) Quick single check: prefer recheck by orderNumber; else status by invoiceId
+      let decided = false;
       if (orderNumber) {
         try {
           const res = await axios.post(
@@ -296,53 +296,46 @@ const UserProfile = () => {
             { headers }
           );
           const status = String(res.data?.data?.status || "").toLowerCase();
-          if (status === "paid" || res.data?.data?.paid) {
+          const paid = Boolean(res.data?.data?.paid) || status === "paid";
+          if (paid) {
             toast.success(t("formErrors.paymentSuccess"));
-            setPaymentBanner({ type: "success", message: t("formErrors.paymentSuccess") });
           } else {
             const backendMsg = res.data?.data?.error || "";
             if (backendMsg) {
               toast.error(String(backendMsg));
-              setPaymentBanner({ type: "error", message: String(backendMsg) });
             } else {
               toast.info(t("formErrors.paymentPending"));
-              setPaymentBanner({ type: "info", message: t("formErrors.paymentPending") });
             }
           }
-          handled = true;
+          decided = true;
         } catch (e) {
-          console.warn("recheck by orderNumber failed", e);
+          console.warn("recheck failed", e);
         }
       }
 
-      if (!handled && invoiceId) {
+      if (!decided && invoiceId) {
         try {
           const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
             toast.success(t("formErrors.paymentSuccess"));
-            setPaymentBanner({ type: "success", message: t("formErrors.paymentSuccess") });
           } else {
             const errs = res.data?.data?.paymentErrors || [];
             const firstErr = Array.isArray(errs) && errs.length ? (errs[0]?.message || errs[0]?.title || "") : "";
             if (firstErr) {
               toast.error(String(firstErr));
-              setPaymentBanner({ type: "error", message: String(firstErr) });
             } else {
               toast.info(t("formErrors.paymentPending"));
-              setPaymentBanner({ type: "info", message: t("formErrors.paymentPending") });
             }
           }
-          handled = true;
+          decided = true;
         } catch (e) {
-          console.warn("status by invoiceId failed", e);
+          console.warn("status check failed", e);
         }
       }
 
-      if (!handled) {
-        // As a soft fallback, don't scare the user with an error
+      if (!decided) {
         toast.info(t("formErrors.paymentPending"));
-        setPaymentBanner({ type: "info", message: t("formErrors.paymentPending") });
       }
 
       // Refresh UI regardless
