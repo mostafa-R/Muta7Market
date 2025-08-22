@@ -10,10 +10,17 @@ import {
   reconcileMyInvoices,
   listAllInvoices,
 } from "../controllers/payments.controller.js";
+import {
+  reconcileInvoices,
+  getPaymentStatusByOrderNumber, // ⬅️ add
+} from "../controllers/payment.reconcile.controller.js";
 import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 
 const r = Router();
-r.post("/reconcile", authMiddleware, reconcileMyInvoices);  // <-- NEW
+
+r.get("/status/order/:orderNumber", getPaymentStatusByOrderNumber); // ⬅️ NEW: by orderNumber
+
+r.post("/reconcile", authMiddleware, reconcileMyInvoices); // <-- NEW
 
 // Draft داخلي (لا يتصل بـ Paylink)
 r.post("/drafts", authMiddleware, createDraftInvoice);

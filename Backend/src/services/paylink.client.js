@@ -59,3 +59,44 @@ export async function paylinkGetInvoice(transactionNo) {
   if (!r.ok) throw new Error(`getInvoice ${r.status}: ${JSON.stringify(j)}`);
   return j;
 }
+
+export async function paylinkGetOrderByNumber(orderNumber) {
+  const url = `${
+    process.env.PAYLINK_BASE_URL
+  }/api/getOrder/${encodeURIComponent(orderNumber)}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${await getPaylinkAccessToken()}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`paylink getOrder failed ${res.status}: ${txt}`);
+  }
+  return res.json();
+}
+
+// (optional) get all transactions of an order number
+export async function paylinkGetTransactionsOfOrder(orderNumber) {
+  const url = `${
+    process.env.PAYLINK_BASE_URL
+  }/api/getTransactionsOfOrderNumber/${encodeURIComponent(orderNumber)}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${await getPaylinkAccessToken()}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(
+      `paylink getTransactionsOfOrder failed ${res.status}: ${txt}`
+    );
+  }
+  return res.json();
+}

@@ -407,12 +407,17 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
         : inv.product;
 
     // Build callback URLs using FRONTEND_URL if provided
-    const originFallback = req.get && req.get("origin") ? req.get("origin") : null;
+    const originFallback =
+      req.get && req.get("origin") ? req.get("origin") : null;
     const frontUrl =
-      process.env.FRONTEND_URL || originFallback || process.env.APP_URL || "http://localhost:3000";
-    const callBackUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments&invoiceId=${String(
-      inv._id
-    )}`;
+      process.env.FRONTEND_URL ||
+      originFallback ||
+      process.env.APP_URL ||
+      "http://localhost:3000";
+    const callBackUrl = `${frontUrl.replace(
+      /\/$/,
+      ""
+    )}/profile?tab=payments&invoiceId=${String(inv._id)}`;
     const cancelUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments`;
 
     const payload = {
@@ -662,6 +667,12 @@ export const listMyInvoices = async (req, res) => {
     currency: inv.currency || "SAR",
     status: String(inv.status || "").toLowerCase(),
     orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
+    providerInvoiceId:
+      inv.providerInvoiceId ||
+      (inv.provider && inv.provider.invoiceId) ||
+      inv.paylinkInvoiceId ||
+      inv.invoiceId ||
+      null,
     paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
     receiptUrl: inv.paymentReceiptUrl || null,
     paidAt: inv.paidAt || null,
@@ -676,9 +687,13 @@ export const listMyInvoices = async (req, res) => {
 // Admin: list all invoices with optional filters
 export const listAllInvoices = async (req, res) => {
   // Authorization is enforced at the route level
-  const statusQ = req.query.status ? String(req.query.status).toLowerCase() : null;
+  const statusQ = req.query.status
+    ? String(req.query.status).toLowerCase()
+    : null;
   const userQ = req.query.userId ? String(req.query.userId) : null;
-  const productQ = req.query.product ? String(req.query.product).toLowerCase() : null;
+  const productQ = req.query.product
+    ? String(req.query.product).toLowerCase()
+    : null;
   const orderQ = req.query.orderNumber ? String(req.query.orderNumber) : null;
 
   const q = {};
@@ -707,6 +722,12 @@ export const listAllInvoices = async (req, res) => {
     currency: inv.currency || "SAR",
     status: String(inv.status || "").toLowerCase(),
     orderNumber: inv.orderNumber || inv.invoiceNumber || String(inv._id),
+    providerInvoiceId:
+      inv.providerInvoiceId ||
+      (inv.provider && inv.provider.invoiceId) ||
+      inv.paylinkInvoiceId ||
+      inv.invoiceId ||
+      null,
     paymentUrl: inv.status === "pending" ? inv.paymentUrl || null : null,
     receiptUrl: inv.paymentReceiptUrl || null,
     paidAt: inv.paidAt || null,
@@ -715,7 +736,9 @@ export const listAllInvoices = async (req, res) => {
     lastVerifiedAt: inv.lastVerifiedAt || null,
   }));
 
-  return res.status(200).json({ success: true, data: { total, page, pageSize, items: mapped } });
+  return res
+    .status(200)
+    .json({ success: true, data: { total, page, pageSize, items: mapped } });
 };
 
 export const recheckByOrderNumber = async (req, res) => {
