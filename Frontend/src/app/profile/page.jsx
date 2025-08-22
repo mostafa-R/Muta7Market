@@ -293,13 +293,14 @@ const UserProfile = () => {
           const status = String(res.data?.data?.status || "").toLowerCase();
           const paid = Boolean(res.data?.data?.paid) || status === "paid";
           if (paid) {
-            toast.success(t("formErrors.paymentSuccess"));
+            toast.success(`${t("formErrors.paymentSuccess")} — verified with Paylink`);
           } else {
             const backendMsg = res.data?.data?.error || "";
             if (backendMsg) {
               toast.error(String(backendMsg));
             } else {
-              toast.info(t("formErrors.paymentPending"));
+              const statusText = status ? `Payment status: ${status}` : t("formErrors.paymentPending");
+              toast.info(statusText);
             }
           }
           decided = true;
@@ -313,14 +314,15 @@ const UserProfile = () => {
           const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
-            toast.success(t("formErrors.paymentSuccess"));
+            toast.success(`${t("formErrors.paymentSuccess")}`);
           } else {
             const errs = res.data?.data?.paymentErrors || [];
             const firstErr = Array.isArray(errs) && errs.length ? (errs[0]?.message || errs[0]?.title || "") : "";
             if (firstErr) {
               toast.error(String(firstErr));
             } else {
-              toast.info(t("formErrors.paymentPending"));
+              const statusText = status ? `Payment status: ${status}` : t("formErrors.paymentPending");
+              toast.info(statusText);
             }
           }
           decided = true;
