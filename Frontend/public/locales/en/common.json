@@ -615,7 +615,13 @@
     }
   },
   "auth": {
+    "loginSuccess": "Successfully signed in!",
     "resetPassword": "Reset Password",
+    "newPassword": "New Password",
+    "enterNewPassword": "Enter new password",
+    "reEnterPassword": "Re-enter password",
+    "confirmAndReset": "Confirm and Reset",
+    "backToLogin": "Back to Login",
     "resetPasswordDescription": "Enter your email to receive a password reset link",
     "welcomeBack": "Welcome Back",
     "loginToContinue": "Sign in to continue",
@@ -627,6 +633,7 @@
     "hidePassword": "Hide Password",
     "forgotPassword": "Forgot Password?",
     "login": "Sign In",
+    "signin": "Sign In",
     "loggingIn": "Signing In...",
     "noAccount": "Don't have an account?",
     "signUpNow": "Sign Up Now",
@@ -1434,10 +1441,7 @@
   "downloadFile": "Download Document",
   "playerImages": "Image Gallery",
   "clickToViewFullSize": "Click on any image to view full size",
-  "agentInformation": "Agent Information",
-  "agentName": "Agent Name",
-  "agentPhone": "Agent Phone",
-  "agentEmail": "Agent Email",
+
   "sport": "Sport",
   "experience": "Experience",
   "monthlySalary": "Monthly Salary",

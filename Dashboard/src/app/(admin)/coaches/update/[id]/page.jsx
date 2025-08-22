@@ -69,7 +69,12 @@ export default function UpdatePlayerPage() {
     },
     onSubmit: async (values) => {
       try {
-        const token = localStorage.getItem("token");
+        let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
         if (!token) {
           toast.error("يرجى تسجيل الدخول");
           return;
@@ -123,7 +128,12 @@ export default function UpdatePlayerPage() {
           setLoading(false);
           return;
         }
-        const token = localStorage.getItem("token");
+        let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
         if (!token) {
           toast.error("يجب تسجيل الدخول أولاً");
           setLoading(false);

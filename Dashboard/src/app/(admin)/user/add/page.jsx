@@ -1,13 +1,18 @@
 'use client';
 
-import React from 'react';
-import { Formik, Form, Field } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import Joi from 'joi';
-import Swal from 'sweetalert2';
 import {
-  UserPlus, User as UserIcon, Mail, Phone, Shield,
-  Lock, Eye, EyeOff, RotateCcw
+  Eye, EyeOff,
+  Lock,
+  Mail, Phone,
+  RotateCcw,
+  Shield,
+  User as UserIcon,
+  UserPlus
 } from 'lucide-react';
+import React from 'react';
+import Swal from 'sweetalert2';
 
 const BASE = `${process.env.NEXT_PUBLIC_BASE_URL}/admin`;
 const CREATE_ENDPOINT = `${BASE}/users`;
@@ -97,10 +102,14 @@ export default function CreateUserPage() {
   const [showConfirm, setShowConfirm] = React.useState(false);
 
   const headers = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    let token; 
+    if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+    }
+    
     return {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}) ,
     };
   }, []);
 

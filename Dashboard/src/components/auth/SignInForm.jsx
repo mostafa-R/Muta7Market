@@ -1,11 +1,10 @@
 "use client";
-import React, { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import Joi from "joi";
 import axios from "axios";
+import { ErrorMessage, Field, Form, Formik } from "formik";
+import Joi from "joi";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 // Import components with fallbacks in case they don't exist
 let Checkbox, Input, Label, Button, ChevronLeftIcon, EyeCloseIcon, EyeIcon;
@@ -87,7 +86,6 @@ const loginSchema = Joi.object({
     }),
   password: Joi.string()
     .required()
-    .pattern(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/)
     .messages({
       "string.pattern.base":
         "Password must contain at least one letter, one number, and one special character (@$!%?&)",
@@ -161,8 +159,7 @@ export default function SignInForm() {
                     }
                   );
 
-                  console.log("Response status:", response.status);
-                  console.log("Response data:", response.data);
+                 
 
                   if (response.status === 200 && response.data.data?.token) {
                     login(response.data.data.user, response.data.data.token);
@@ -194,7 +191,7 @@ if (userRole === "admin" || userRole === "super_admin") {
                   // Handle Axios-specific errors
                   const errorMessage =
                     err.response?.data?.message ||
-                    err.message ||
+                    err.response?.data?.error.message ||
                     "An error occurred during login";
                   setServerError(errorMessage);
                 } finally {

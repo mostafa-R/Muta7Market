@@ -604,10 +604,16 @@
     }
   },
   "auth": {
+    "login": "تسجيل الدخول",
+    "loginSuccess": "تم تسجيل الدخول بنجاح!",
     "resetPassword": "إعادة تعيين كلمة المرور",
     "resetPasswordDescription": "أدخل بريدك الإلكتروني لاستلام رابط إعادة تعيين كلمة المرور",
     "welcomeBack": "مرحباً بعودتك",
     "loginToContinue": "سجل دخولك للمتابعة",
+    "enterNewPassword": "أدخل كلمة المرور الجديدة",
+    "reEnterPassword": "أعد إدخال كلمة المرور",
+    "confirmAndReset": "تأكيد وإعادة تعيين",
+    "backToLogin": "العودة إلى تسجيل الدخول",
     "email": "البريد الإلكتروني",
     "emailPlaceholder": "example@email.com",
     "password": "كلمة المرور",
@@ -615,7 +621,7 @@
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
     "forgotPassword": "نسيت كلمة المرور؟",
-    "login": "تسجيل الدخول",
+    "si": "تسجيل الدخول",
     "loggingIn": "جاري تسجيل الدخول...",
     "noAccount": "ليس لديك حساب؟",
     "signUpNow": "سجل الآن",
@@ -630,6 +636,7 @@
     "hideConfirmPassword": "إخفاء تأكيد كلمة المرور",
     "verifying": "جاري التحقق",
     "signIn": "تسجيل الدخول",
+    "signin": "تسجيل الدخول",
     "accountCreatedSuccessfully": "تم إنشاء الحساب بنجاح. سيتم تحويلك لصفحة التحقق.",
     "accountCreationError": "حدث خطأ أثناء إنشاء الحساب. حاول مرة أخرى.",
     "emailAlreadyExists": "البريد الإلكتروني مستخدم بالفعل",
@@ -1387,6 +1394,7 @@
     "legalInquiries": "الاستفسارات القانونية",
     "contactUs": "تواصل معنا"
   },
+
   "transferStartDate": "تاريخ بداية الانتقال",
   "transferEndDate": "تاريخ نهاية الانتقال",
   "transferDate": "تاريخ الانتقال",

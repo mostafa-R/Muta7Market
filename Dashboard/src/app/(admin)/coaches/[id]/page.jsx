@@ -95,7 +95,12 @@ export default function CoachProfilePage() {
   const [busy, setBusy] = React.useState(false);
 
   const headers = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
 

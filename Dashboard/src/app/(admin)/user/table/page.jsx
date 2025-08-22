@@ -1,23 +1,23 @@
 'use client';
 
-import React from 'react';
 import {
-  Search,
-  Trash2,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
-  XCircle,
   Download,
-  Users,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Eye,
   Edit3,
+  Eye,
   Image as ImageIcon,
+  Search,
+  Trash2,
+  Users,
+  XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 const BASE = `${process.env.NEXT_PUBLIC_BASE_URL}/admin`;
@@ -68,7 +68,12 @@ export default function UsersDashboardTable() {
   };
 
   const authHeaders = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+ let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
     return {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

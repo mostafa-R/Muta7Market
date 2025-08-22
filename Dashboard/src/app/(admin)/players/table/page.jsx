@@ -1,22 +1,22 @@
 'use client';
 
-import React from 'react';
 import {
-  Search,
-  Edit3,
-  Trash2,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
   Download,
-  Users,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  Edit3,
   Eye,
+  Search,
   Star,
+  Trash2,
+  Users,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 // ------------------------
@@ -131,7 +131,12 @@ export default function PlayersDashboardTable() {
   const [confirmFilter, setConfirmFilter] = React.useState('all'); // all | confirmed | unconfirmed
 
   const authHeaders = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+   let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
 

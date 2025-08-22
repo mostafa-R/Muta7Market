@@ -1,21 +1,21 @@
 'use client';
 
-import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowRight,
   CheckCircle,
-  XCircle,
-  Users,
   Copy,
+  Image as ImageIcon,
+  Mail,
+  Power,
+  RefreshCw,
   Shield,
   Smartphone,
-  Mail,
-  RefreshCw,
-  Power,
   Trash2,
-  Image as ImageIcon,
+  Users,
+  XCircle,
 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 function apiBase() {
@@ -41,7 +41,11 @@ export default function UserProfilePage() {
   const [busy, setBusy] = React.useState(false);
 
   const headers = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
     return {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

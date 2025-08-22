@@ -18,63 +18,63 @@ function PrivacyTermsPage() {
 
   const privacySections = [
     {
-      icon: <FiDatabase className="w-6 h-6" />,
-      title: isRTL ? "جمع البيانات" : "Data Collection",
+      icon: <FiUser className="w-6 h-6" />,
+      title: isRTL ? "الخدمة والمسؤولية" : "Service and Responsibility",
       content: isRTL
-        ? "نقوم بجمع المعلومات الشخصية التي تقدمها لنا عند التسجيل، إنشاء ملف شخصي، أو استخدام خدماتنا. هذا يشمل الاسم، البريد الإلكتروني، رقم الهاتف، والمعلومات الرياضية."
-        : "We collect personal information you provide when registering, creating a profile, or using our services. This includes name, email, phone number, and sports information.",
+        ? "الموقع يقدم خدمة الربط بين المستفيد (اللاعب أو المدرب أو الأخصائي) وبين الأندية في مختلف الدول دون أدنى مسؤولية على الشركة."
+        : "The website provides a connection service between the beneficiary (player, coach, or specialist) and clubs in different countries without any liability on the company.",
     },
     {
       icon: <FiLock className="w-6 h-6" />,
-      title: isRTL ? "استخدام البيانات" : "Data Usage",
+      title: isRTL ? "الرسوم والمدفوعات" : "Fees and Payments",
       content: isRTL
-        ? "نستخدم بياناتك لتوفير خدماتنا، تحسين تجربتك، التواصل معك، وربطك بالأندية والمدربين. لا نبيع أو نشارك معلوماتك مع أطراف ثالثة دون موافقتك."
-        : "We use your data to provide our services, improve your experience, communicate with you, and connect you with clubs and coaches. We don't sell or share your information with third parties without consent.",
+        ? "يدفع المستفيد (اللاعب أو المدرب أو الأخصائي) مبلغ 55 دولار امريكي لصالح الشركة غير مسترد لنشر المعلومات الخاصة به، كما يدفع المستخدم مبلغ 55 دولار امريكي غير مسترد للاستفادة من الموقع بالوصول لكافة المعلومات سواء الاتصال او السير الذاتية او المقاطع المرئية وما إلى ذلك."
+        : "The beneficiary (player, coach, or specialist) pays a non-refundable fee of 55 USD to the company to publish their information. Users also pay a non-refundable fee of 55 USD to access all information including contacts, resumes, videos, etc.",
     },
     {
       icon: <FiShield className="w-6 h-6" />,
-      title: isRTL ? "حماية البيانات" : "Data Protection",
+      title: isRTL ? "إخلاء المسؤولية" : "Disclaimer",
       content: isRTL
-        ? "نستخدم تقنيات الأمان المتقدمة لحماية بياناتك الشخصية، بما في ذلك التشفير والخوادم الآمنة. يحق لك الوصول لبياناتك وتعديلها أو حذفها في أي وقت."
-        : "We use advanced security technologies to protect your personal data, including encryption and secure servers. You have the right to access, modify, or delete your data anytime.",
+        ? 'يتم تقديم جميع المعلومات الواردة على الموقع الإلكتروني "كما هي"، أي بنفس الصورة التي حصلت عليها الشركة من المصدر. لا تقدم الشركة أي نوع من الضمانات (سواء صريحًا أو ضمنيًا) لمدى دقة وجودة المعلومات المقدمة، بما في ذلك الضمانات المتعلقة بالمعلومات ومدى دقتها، أو كفاءة اللاعب أو المدرب أو الأخصائي.'
+        : 'All information on the website is provided "as is", exactly as received by the company from the source. The company provides no warranties (express or implied) regarding the accuracy and quality of the information provided, including warranties related to the information and its accuracy, or the competence of the player, coach, or specialist.',
     },
     {
-      icon: <FiGlobe className="w-6 h-6" />,
-      title: isRTL ? "ملفات الارتباط" : "Cookies",
+      icon: <FiDatabase className="w-6 h-6" />,
+      title: isRTL ? "دقة المعلومات" : "Information Accuracy",
       content: isRTL
-        ? "نستخدم ملفات الارتباط لتحسين أداء الموقع وتخصيص تجربتك. يمكنك إدارة تفضيلات ملفات الارتباط من خلال إعدادات المتصفح."
-        : "We use cookies to improve website performance and personalize your experience. You can manage cookie preferences through your browser settings.",
+        ? "يبذل الموقع أقصى جهوده للتأكد من جودة المعلومات المنشورة على الموقع الإلكتروني، ومن مدى دقتها وحداثتها. ومع ذلك، فإن الموقع لا يضمن بأي شكل من الأشكال صحة أو اكتمال أو دقة أو شمولية المعلومات أو المحتوى المنشور، ويحتفظ بحقه في تعديل أو تصحيح محتوى المعلومات والوثائق المنشورة في أي وقت ودون إشعار مسبق."
+        : "The website makes every effort to ensure the quality, accuracy, and timeliness of information published. However, the website does not guarantee in any way the correctness, completeness, accuracy, or comprehensiveness of the published information or content, and reserves the right to modify or correct the content of information and documents published at any time without prior notice.",
     },
   ];
 
   const termsSections = [
     {
-      icon: <FiUser className="w-6 h-6" />,
-      title: isRTL ? "حساب المستخدم" : "User Account",
+      icon: <FiGlobe className="w-6 h-6" />,
+      title: isRTL ? "توفر الموقع" : "Website Availability",
       content: isRTL
-        ? "يجب أن تكون 15 عامًا على الأقل لإنشاء حساب. أنت مسؤول عن الحفاظ على سرية بيانات حسابك وجميع الأنشطة التي تحدث تحت حسابك."
-        : "You must be at least 15 years old to create an account. You are responsible for maintaining the confidentiality of your account data and all activities that occur under your account.",
-    },
-    {
-      icon: <FiFileText className="w-6 h-6" />,
-      title: isRTL ? "المحتوى المقبول" : "Acceptable Content",
-      content: isRTL
-        ? "يجب أن يكون المحتوى الذي تنشره دقيقًا وقانونيًا ولا ينتهك حقوق الآخرين. نحتفظ بالحق في إزالة أي محتوى غير مناسب أو مخالف لسياساتنا."
-        : "Content you publish must be accurate, legal, and not violate others' rights. We reserve the right to remove any inappropriate content that violates our policies.",
+        ? "تسعى الشركة لإتاحة موقعها الإلكتروني للمستخدمين على مدار الساعة (24 ساعة في اليوم، 7 أيام في الأسبوع). ومع ذلك، لا يمكن للشركة ضمان إتاحة الموقع الإلكتروني أو ضمان إمكانية الوصول إليه بصفة دائمة. تحتفظ الشركة بحقها في إلغاء أو تقييد أو تعليق أو المنع المؤقت للوصول إلى الموقع الإلكتروني (جزئيًا أو كليًا) في أي وقت ودون إشعار مسبق."
+        : "The company strives to make its website available to users 24/7. However, the company cannot guarantee the website's availability or permanent accessibility. The company reserves the right to cancel, restrict, suspend, or temporarily prevent access to the website (partially or completely) at any time without prior notice.",
     },
     {
       icon: <FiShield className="w-6 h-6" />,
-      title: isRTL ? "المسؤوليات" : "Responsibilities",
+      title: isRTL ? "أمن البيانات" : "Data Security",
       content: isRTL
-        ? "نحن نوفر المنصة كخدمة، ولسنا مسؤولين عن التفاعلات المباشرة بين المستخدمين. ننصح بتوخي الحذر عند التعامل مع أطراف أخرى."
-        : "We provide the platform as a service and are not responsible for direct interactions between users. We advise caution when dealing with other parties.",
+        ? "على الرغم من الوسائل المتقدمة التي تستخدمها الشركة ومقدمو الخدمات الفنية التابعون لها لضمان إتاحة الموقع وحماية البيانات، فإن الشركة تحرص على تحذير المستخدمين دائمًا من عدم موثوقية شبكة الإنترنت، خاصةً فيما يتعلق بأمان نقل البيانات، وسرعة نقل البيانات، وإمكانية نقل الفيروسات الإلكترونية."
+        : "Despite the advanced means used by the company and its technical service providers to ensure website availability and data protection, the company is keen to always warn users about the unreliability of the internet, especially regarding data transfer security, data transfer speed, and the possibility of transmitting electronic viruses.",
     },
     {
       icon: <FiLock className="w-6 h-6" />,
-      title: isRTL ? "إنهاء الحساب" : "Account Termination",
+      title: isRTL ? "الانقطاع والأعطال" : "Interruptions and Malfunctions",
       content: isRTL
-        ? "يمكنك إنهاء حسابك في أي وقت. نحتفظ بالحق في تعليق أو إنهاء الحسابات التي تنتهك شروط الاستخدام."
-        : "You can terminate your account anytime. We reserve the right to suspend or terminate accounts that violate terms of use.",
+        ? "يتم التأكيد هنا بشكل صريح على احتمال وقوع أخطاء تتعلق بشبكة الإنترنت وأنظمة تكنولوجيا المعلومات والاتصالات، والتي قد تؤدي بدورها إلى حدوث بعض الانقطاعات والأعطال في الموقع الإلكتروني للشركة."
+        : "It is explicitly confirmed here that there is a possibility of errors related to the internet and information and communication technology systems, which may in turn lead to some interruptions and malfunctions in the company's website.",
+    },
+    {
+      icon: <FiFileText className="w-6 h-6" />,
+      title: isRTL ? "الملكية الفكرية" : "Intellectual Property",
+      content: isRTL
+        ? "جميع أنواع المحتوى المتاحة على الموقع الإلكتروني تُعد ملكًا حصريًا للشركة، لذلك فهي محمية بموجب قوانين الملكية الفكرية المُطبقة. يُحظر حظرًا تامًا استخدام الموقع الإلكتروني أو أي مكون من مكوناته لأغراض تجارية، كما يُحظر نسخ أو توزيع أو إعادة إنتاج أو تعديل أو ترجمة أو نقل الموقع أو أي عنصر من عناصره بدون إذن خطي مسبق."
+        : "All types of content available on the website are the exclusive property of the company and are protected by applicable intellectual property laws. It is strictly prohibited to use the website or any of its components for commercial purposes, as well as copy, distribute, reproduce, modify, translate, or transfer the website or any of its elements without prior written permission.",
     },
   ];
 
@@ -86,31 +86,31 @@ function PrivacyTermsPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-              {isRTL ? "سياسة الخصوصية والشروط" : "Privacy Policy & Terms"}
+              {isRTL ? "الشروط والأحكام" : "Terms and Conditions"}
             </h1>
             <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-4xl mx-auto leading-relaxed">
               {isRTL
-                ? "نحن ملتزمون بحماية خصوصيتك وضمان شفافية كاملة في استخدام خدماتنا"
-                : "We are committed to protecting your privacy and ensuring complete transparency in using our services"}
+                ? "شروط وأحكام استخدام منصة متاح ماركت للاعبين والمدربين"
+                : "Terms and conditions for using Muta7Market platform for players and coaches"}
             </p>
             <p className="text-sm text-blue-200">
-              {isRTL ? "آخر تحديث:  أغسطس 2025" : "Last updated: August 2025"}
+              {isRTL ? "آخر تحديث: يناير 2024" : "Last updated: January 2024"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Privacy Policy Section */}
+      {/* Service Terms Section */}
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              {isRTL ? "سياسة الخصوصية" : "Privacy Policy"}
+              {isRTL ? "شروط الخدمة" : "Service Terms"}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               {isRTL
-                ? "كيف نجمع ونستخدم ونحمي بياناتك الشخصية"
-                : "How we collect, use, and protect your personal data"}
+                ? "الشروط الأساسية لاستخدام منصتنا والاستفادة من خدماتنا"
+                : "Basic terms for using our platform and benefiting from our services"}
             </p>
           </div>
 
@@ -229,32 +229,32 @@ function PrivacyTermsPage() {
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  {isRTL ? "الملكية الفكرية:" : "Intellectual Property:"}
+                  {isRTL ? "حقوق النشر:" : "Copyright:"}
                 </h4>
                 <p className="text-gray-600">
                   {isRTL
-                    ? "جميع المحتويات والعلامات التجارية في الموقع محمية بحقوق الطبع والنشر."
-                    : "All content and trademarks on the website are protected by copyright."}
+                    ? "يشمل المحتوى المحمي النصوص والمعلومات ورسومات الجرافيكس والتصاميم والرسوم التوضيحية والصور الفوتوغرافية والأصوات والفيديوهات وهيكل الموقع وتصميمه وشعاراته."
+                    : "Protected content includes text information, graphics, designs, illustrations, photographs, audio, video, website structure and design, and logos."}
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  {isRTL ? "تحديثات الشروط:" : "Terms Updates:"}
+                  {isRTL ? "الاستخدام المسموح:" : "Permitted Use:"}
                 </h4>
                 <p className="text-gray-600">
                   {isRTL
-                    ? "نحتفظ بالحق في تحديث هذه الشروط في أي وقت. سيتم إشعارك بأي تغييرات مهمة."
-                    : "We reserve the right to update these terms at any time. You will be notified of any important changes."}
+                    ? "يُسمح بالنسخ للاستخدام الشخصي فقط في حدود قوانين الملكية الفكرية. يُحظر النسخ أو التوزيع أو الترجمة أو النقل لأغراض تجارية."
+                    : "Copying for personal use is allowed only within the limits of intellectual property laws. Copying, distribution, translation, or transfer for commercial purposes is prohibited."}
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  {isRTL ? "القانون المطبق:" : "Applicable Law:"}
+                  {isRTL ? "طلبات الاستخدام:" : "Usage Requests:"}
                 </h4>
                 <p className="text-gray-600">
                   {isRTL
-                    ? "تخضع هذه الشروط لقوانين المملكة العربية السعودية."
-                    : "These terms are subject to the laws of the Kingdom of Saudi Arabia."}
+                    ? "يجب إرسال جميع طلبات تصريحات النسخ وإعادة الإنتاج لأي محتوى من محتويات الموقع إلى الشركة على عنوان البريد الإلكتروني الرسمي."
+                    : "All requests for copying and reproduction permissions for any website content must be sent to the company at the official email address."}
                 </p>
               </div>
             </div>
@@ -285,7 +285,7 @@ function PrivacyTermsPage() {
                 {isRTL ? "البريد الإلكتروني" : "Email"}
               </h3>
               <p className="text-gray-300">privacy@muta7market.com</p>
-              <p className="text-gray-300">legal@muta7market.com</p>
+              <p className="text-gray-300">info@muta7market.com</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -294,9 +294,9 @@ function PrivacyTermsPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "الهاتف" : "Phone"}
               </h3>
-              <p className="text-gray-300">00966531540229</p>
+              <p className="text-gray-300">+966 53 154 0229</p>
               <p className="text-sm text-gray-400 mt-2">
-                {isRTL ? "الاستفسارات القانونية" : "Legal inquiries"}
+                {isRTL ? "للاستفسارات والدعم" : "For inquiries and support"}
               </p>
             </div>
           </div>
