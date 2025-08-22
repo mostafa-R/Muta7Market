@@ -2,19 +2,23 @@ import express from "express";
 import {
   bulkUpdatePlayers,
   bulkUpdateUsers,
-
   createPlayer,
   createUser,
   deletePlayer,
   deleteUser,
-
   getAllPlayers,
   getAllUsers,
   getDashboardStats,
   getPlayerById,
+  // getRecentUnconfirmedPeople,
+  getRecentUnconfirmedPlayers,
   getUserById,
+  updateActivation,
+  updateConfirmation,
   updatePlayer,
+  updatePromotion,
   updateUser,
+  verifyUserEmail,
 } from "../controllers/admin.controller.js";
 
 import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
@@ -32,10 +36,16 @@ import {
   // User Validation Schemas
   createUserSchema,
   getPlayersQuerySchema,
+  getRecentPeopleQuerySchema,
   getUsersQuerySchema,
   updatePlayerSchema,
+  updatePromotionSchema,
   updateUserSchema,
+  verifyUserEmailSchema,
 } from "../validators/admin.validator.js";
+import Joi from "joi";
+
+const boolBody = (key) => Joi.object({ [key]: Joi.boolean().required() });
 
 const router = express.Router();
 
@@ -49,7 +59,6 @@ router.use(authMiddleware, authorize("admin", "super_admin"));
 // Get dashboard statistics
 router.get("/dashboard/stats", getDashboardStats);
 
-
 // ================================
 // USER MANAGEMENT ROUTES
 // ================================
@@ -59,6 +68,13 @@ router.get("/users", validateQuery(getUsersQuerySchema), getAllUsers);
 
 // Get a specific user by ID
 router.get("/users/:id", getUserById);
+
+// verify a user
+router.patch(
+  "/users/:id/email-verified",
+  validate(verifyUserEmailSchema),
+  verifyUserEmail
+);
 
 // Create a new user
 router.post("/users", validate(createUserSchema), createUser);
@@ -70,17 +86,42 @@ router.put("/users/:id", validate(updateUserSchema), updateUser);
 router.delete("/users/:id", deleteUser);
 
 // Bulk update users
+// delete this route
 router.patch("/users/bulk", validate(bulkUpdateUsersSchema), bulkUpdateUsers);
 
 // ================================
 // PLAYER MANAGEMENT ROUTES
 // ================================
 
+router.get(
+  "/players/recent",
+  validate(getRecentPeopleQuerySchema),
+  getRecentUnconfirmedPlayers
+);
+
 // Get all players with filtering and pagination
 router.get("/players", validateQuery(getPlayersQuerySchema), getAllPlayers);
 
 // Get a specific player by ID
 router.get("/players/:id", getPlayerById);
+
+router.patch(
+  "/players/:id/confirm",
+  validate(boolBody("isConfirmed")),
+  updateConfirmation
+);
+
+router.patch(
+  "/players/:id/active",
+  validate(boolBody("isActive")),
+  updateActivation
+);
+
+router.patch(
+  "/players/:id/promote",
+  validate(updatePromotionSchema),
+  updatePromotion
+);
 
 // Create a new player (with file upload support)
 // http://localhost:5000/api/v1/admin/players
@@ -125,11 +166,6 @@ router.post(
 // Update a player (with file upload support)
 router.patch(
   "/players/:id",
-  uploadMixed.fields([
-    { name: "profileImage", maxCount: 1 },
-    { name: "document", maxCount: 1 },
-    { name: "playerVideo", maxCount: 1 },
-  ]),
   parseJsonFields,
   validate(updatePlayerSchema),
   updatePlayer

@@ -6,6 +6,10 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { processPlayerMedia } from "../utils/mediaUtils.js";
 
+function escapeRegex(s = "") {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // ================================
 // USER MANAGEMENT
 // ================================
@@ -16,7 +20,6 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 
   const filter = {};
 
-  // Search by name or email
   if (search) {
     filter.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -24,7 +27,6 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     ];
   }
 
-  // Filter by role
   if (role) {
     filter.role = role;
   }
@@ -117,6 +119,25 @@ export const createUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User created successfully"));
 });
 
+export const verifyUserEmail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { isEmailVerified } = req.body;
+
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    { isEmailVerified },
+    { new: true, runValidators: true }
+  )
+    .select("-password -refreshTokens")
+    .lean();
+
+  if (!updatedUser) throw new ApiError(404, "User not found");
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Email verification toggled"));
+});
+
 // ✅ Update User (Admin Privileges)
 export const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -182,7 +203,7 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
 // ✅ Get All Players
 export const getAllPlayers = asyncHandler(async (req, res) => {
-  const {
+  let {
     page = 1,
     limit = 10,
     search,
@@ -192,9 +213,16 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     minAge,
     maxAge,
     isActive,
+    jop,
   } = req.query;
 
+  // تأكد أنها أرقام
+  page = parseInt(page) || 10;
+  limit = parseInt(limit) || 10;
+
   const filter = {};
+
+  filter.jop = jop || "player";
 
   // Search by name
   if (search) {
@@ -219,27 +247,39 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   // Filter by age range
   if (minAge || maxAge) {
     filter.age = {};
-    if (minAge) filter.age.$gte = parseInt(minAge);
-    if (maxAge) filter.age.$lte = parseInt(maxAge);
+    if (minAge) filter.age.$gte = parseInt(minAge, 10);
+    if (maxAge) filter.age.$lte = parseInt(maxAge, 10);
   }
 
-  // Filter by active status
-  if (isActive !== undefined) {
+  // Filter by active status (لو أُرسلت)
+  if (typeof isActive !== "undefined") {
     filter.isActive = isActive === "true";
   }
 
-  const players = await Player.find(filter)
-    .populate("user", "name email phone")
-    .sort({ createdAt: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+  // ✅ الترتيب المطلوب:
+  // 1) المروّجون أولًا (isPromoted.status: true)
+  // 2) ثم isActive: true
+  // 3) ثم isActive: false
+  // 4) الأحدث إنشاءً داخل كل مجموعة
+  const sort = {
+    "isPromoted.status": -1,
+    isActive: -1,
+    createdAt: -1,
+  };
 
-  const total = await Player.countDocuments(filter);
+  const [players, total] = await Promise.all([
+    Player.find(filter)
+      .populate("user", "name email phone")
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Player.countDocuments(filter),
+  ]);
 
   const response = {
     players,
     pagination: {
-      currentPage: parseInt(page),
+      currentPage: page,
       totalPages: Math.ceil(total / limit),
       totalPlayers: total,
       hasNext: page * limit < total,
@@ -268,6 +308,185 @@ export const getPlayerById = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json(new ApiResponse(200, player, "Player retrieved successfully"));
+});
+
+// ✅ Update Player isConfirmed (Admin)
+export const updateConfirmation = asyncHandler(async (req, res, next) => {
+  const p = await Player.findByIdAndUpdate(
+    req.params.id,
+    { $set: { isConfirmed: req.body.isConfirmed } },
+    { new: true, runValidators: true, select: "-__v" }
+  ).lean();
+  if (!p)
+    return res
+      .status(404)
+      .json({ success: false, message: "Player not found" });
+  res.json({ success: true, message: "Confirmation updated", data: p });
+});
+
+// ✅ Update Player isActive (Admin)
+export const updateActivation = asyncHandler(async (req, res, next) => {
+  const p = await Player.findByIdAndUpdate(
+    req.params.id,
+    { $set: { isActive: req.body.isActive } },
+    { new: true, runValidators: true, select: "-__v" }
+  ).lean();
+  if (!p)
+    return res
+      .status(404)
+      .json({ success: false, message: "Player not found" });
+  res.json({ success: true, message: "Active updated", data: p });
+});
+
+// ✅ Update Player isPromoted (Admin)
+export const updatePromotion = asyncHandler(async (req, res, next) => {
+  const { status, startDate, endDate, type } = req.body;
+  const p = await Player.findByIdAndUpdate(
+    req.params.id,
+    {
+      $set: {
+        "isPromoted.status": status,
+        "isPromoted.startDate": startDate ?? null,
+        "isPromoted.endDate": endDate ?? null,
+        "isPromoted.type": type ?? "featured",
+      },
+    },
+    { new: true, runValidators: true, select: "-__v" }
+  ).lean();
+  if (!p)
+    return res
+      .status(404)
+      .json({ success: false, message: "Player not found" });
+  res.json({ success: true, message: "Promotion updated", data: p });
+});
+
+// controllers/player.controller.js
+export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
+  let {
+    page = 1,
+    limit = 10,
+    search,
+    nationality,
+    game,
+    minAge,
+    maxAge,
+    jop = "all",
+    isActive,
+    isPromoted,
+    days,
+    from,
+    to,
+  } = req.query;
+
+  page = parseInt(page, 10) || 1;
+  limit = parseInt(limit, 10) || 10;
+
+  const baseFilter = [];
+
+  // فقط غير المؤكّدين
+  baseFilter.push({
+    $or: [{ isConfirmed: { $ne: true } }, { isConfirmed: { $exists: false } }],
+  });
+
+  // jop
+  if (jop === "player" || jop === "coach") {
+    baseFilter.push({ jop });
+  } else {
+    // all
+    baseFilter.push({ jop: { $in: ["player", "coach"] } });
+  }
+
+  // search بالاسم
+  if (search) {
+    baseFilter.push({ name: { $regex: search, $options: "i" } });
+  }
+
+  // الجنسية
+  if (nationality) {
+    baseFilter.push({ nationality });
+  }
+
+  // اللعبة
+  if (game) {
+    baseFilter.push({ game });
+  }
+
+  // العمر
+  if (minAge || maxAge) {
+    const ageCond = {};
+    if (minAge) ageCond.$gte = parseInt(minAge, 10);
+    if (maxAge) ageCond.$lte = parseInt(maxAge, 10);
+    baseFilter.push({ age: ageCond });
+  }
+
+  // isActive
+  if (typeof isActive !== "undefined") {
+    baseFilter.push({ isActive: isActive === "true" });
+  }
+
+  // isPromoted
+  if (isPromoted === "true") {
+    baseFilter.push({ "isPromoted.status": true });
+  } else if (isPromoted === "false") {
+    // يشمل غير الموجود أيضًا
+    baseFilter.push({
+      $or: [
+        { "isPromoted.status": false },
+        { isPromoted: { $exists: false } },
+        { "isPromoted.status": { $exists: false } },
+      ],
+    });
+  }
+
+  // النافذة الزمنية للأحدث
+  if (from || to) {
+    const createdAt = {};
+    if (from) createdAt.$gte = new Date(from);
+    if (to) createdAt.$lte = new Date(to);
+    baseFilter.push({ createdAt });
+  } else if (days) {
+    const since = new Date(Date.now() - Number(days) * 86400000);
+    baseFilter.push({ createdAt: { $gte: since } });
+  }
+
+  const query = baseFilter.length ? { $and: baseFilter } : {};
+
+  // الترتيب: الأحدث أولاً
+  const sort = { createdAt: -1 };
+
+  const [players, total] = await Promise.all([
+    Player.find(query)
+      .select(
+        "name jop createdAt isActive isConfirmed status age nationality game media.profileImage contactInfo.email contactInfo.phone isPromoted"
+      )
+      .populate("user", "name email phone role isActive")
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    Player.countDocuments(query),
+  ]);
+
+  const response = {
+    players, // تحتوي على كلٍ من اللاعبين والمدربين حسب jop
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit) || 1,
+      totalPlayers: total,
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    },
+  };
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        response,
+        "Recent unconfirmed players/coaches retrieved successfully"
+      )
+    );
 });
 
 // ✅ Create Player (Admin)

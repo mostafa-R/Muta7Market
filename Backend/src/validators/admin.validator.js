@@ -4,6 +4,32 @@ import Joi from "joi";
 // USER VALIDATION SCHEMAS
 // ================================
 
+export const verifyUserEmailSchema = Joi.object({
+  isEmailVerified: Joi.boolean().required(),
+});
+
+export const updatePromotionSchema = Joi.object({
+  status: Joi.boolean().required(),
+  startDate: Joi.date().allow(null),
+  endDate: Joi.date().allow(null),
+  type: Joi.string().allow(null),
+});
+
+export const getRecentPeopleQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  jop: Joi.string().valid("player", "coach", "all").default("all"),
+  isActive: Joi.string().valid("true", "false").optional(),
+  isPromoted: Joi.string().valid("true", "false").optional(),
+  minAge: Joi.number().integer().min(0).optional(),
+  maxAge: Joi.number().integer().min(0).optional(),
+  nationality: Joi.string().optional(),
+  game: Joi.string().optional(),
+  dateFrom: Joi.date().iso().optional(),
+  dateTo: Joi.date().iso().optional(),
+  search: Joi.string().optional(),
+});
+
 export const createUserSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required().messages({
     "string.empty": "Name is required",

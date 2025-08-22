@@ -10,17 +10,10 @@ import {
   reconcileMyInvoices,
   listAllInvoices,
 } from "../controllers/payments.controller.js";
-import {
-  reconcileInvoices,
-  getPaymentStatusByOrderNumber, // ⬅️ add
-} from "../controllers/payment.reconcile.controller.js";
-import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const r = Router();
-
-r.get("/status/order/:orderNumber", getPaymentStatusByOrderNumber); // ⬅️ NEW: by orderNumber
-
-r.post("/reconcile", authMiddleware, reconcileMyInvoices); // <-- NEW
+r.post("/reconcile", authMiddleware, reconcileMyInvoices);  // <-- NEW
 
 // Draft داخلي (لا يتصل بـ Paylink)
 r.post("/drafts", authMiddleware, createDraftInvoice);
@@ -33,11 +26,13 @@ r.post("/webhook", paymentWebhook);
 
 // Helpers للـ UI
 r.get("/status/:id", authMiddleware, getPaymentStatus);
-r.get("/invoices", authMiddleware, listMyInvoices);
-r.post("/invoices/recheck/:orderNumber", authMiddleware, recheckByOrderNumber);
 
-// Admin: fetch all invoices (with optional filters)
+r.get("/invoices", authMiddleware, listMyInvoices);
+
 r.get("/admin/invoices", authMiddleware, listAllInvoices);
+
+
+r.post("/invoices/recheck/:orderNumber", authMiddleware, recheckByOrderNumber);
 
 // DEV
 r.post("/simulate/success/:id", authMiddleware, simulateSuccess);
