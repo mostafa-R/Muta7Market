@@ -23,7 +23,9 @@ export default function UserStatsLineChart() {
       setLoading(true);
       setError(null);
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+     
+      
+        const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
       const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
         method: "GET",
         credentials: "include",
