@@ -97,10 +97,16 @@ export default function RecentUnconfirmedTable() {
   const [loading, setLoading] = React.useState(true);
   const [confirmingId, setConfirmingId] = React.useState(null);
 
-  const authHeaders = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+ const authHeaders = React.useCallback(() => {
+    let token = null;
+
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+    }
+    
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
+
 
   const buildQuery = React.useCallback(() => ({
     page, limit: rowsPerPage,
