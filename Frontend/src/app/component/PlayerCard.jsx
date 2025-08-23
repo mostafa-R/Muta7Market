@@ -104,6 +104,12 @@ const getPositionText = (position, sport, t) => {
   return translatedPosition;
 };
 
+const getGenderBorderColor = (gender) => {
+  return gender?.toLowerCase() === "female"
+    ? "border-pink-400"
+    : "border-sky-400";
+};
+
 const PlayerCard = ({ player }) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
@@ -130,9 +136,14 @@ const PlayerCard = ({ player }) => {
     [player.position, player.sport, t]
   );
 
+  const borderColorClass = useMemo(
+    () => getGenderBorderColor(player.gender),
+    [player.gender]
+  );
+
   return (
     <div
-      className="border border-gray-200 rounded-xl overflow-hidden group bg-[hsl(var(--card))] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col w-full max-w-[260px] min-w-[260px] min-h-[260px] mb-6 hover:border-[hsl(var(--primary)/0.2)]"
+      className={`border-2 ${borderColorClass} rounded-xl overflow-hidden group bg-[hsl(var(--card))] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col w-full max-w-[260px] min-w-[260px] min-h-[260px] mb-6 hover:border-[hsl(var(--primary)/0.2)]`}
       role="article"
       aria-label={`${t("player.playerCard")} - ${player.name}`}
     >
