@@ -1,6 +1,6 @@
 "use client";
-  import React, { useEffect, useState } from "react";
   import { BoxIconLine, GroupIcon } from "@/icons";
+import React, { useEffect, useState } from "react";
 
   // Coach/Trainer Icon Component
   const CoachIcon = ({ className }) => (
@@ -19,7 +19,10 @@
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Function to fetch dashboard stats
+    
+    const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+
+     // Function to fetch dashboard stats
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
@@ -31,6 +34,7 @@
           method: "GET",
           credentials: "include",
           headers: {
+            'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
             'Content-Type': 'application/json',
           },

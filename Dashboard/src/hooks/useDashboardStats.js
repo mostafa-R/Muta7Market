@@ -1,5 +1,5 @@
 // hooks/useDashboardStats.js
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 export const useDashboardStats = () => {

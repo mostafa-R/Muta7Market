@@ -17,6 +17,8 @@ export default function UserStatsLineChart() {
   const [error, setError] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+
   // دالة لجلب البيانات من الباك اند
   const fetchStatsData = async () => {
     try {
@@ -30,6 +32,7 @@ export default function UserStatsLineChart() {
         method: "GET",
         credentials: "include",
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
