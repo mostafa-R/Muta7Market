@@ -1015,25 +1015,40 @@
 
   "playerRoles": {
     "youthPlayer": "Youth Player",
+    "youth_player": "Youth Player",
     "juniorPlayer": "Junior Player",
+    "junior_player": "Junior Player",
     "firstTeamPlayer": "First Team Player",
     "first_team_player": "First Team Player",
     "reservePlayer": "Reserve Player",
+    "reserve_player": "Reserve Player",
     "professionalPlayer": "Professional Player",
+    "professional_player": "Professional Player",
     "amateurPlayer": "Amateur Player",
+    "amateur_player": "Amateur Player",
     "academyPlayer": "Academy Player",
+    "academy_player": "Academy Player",
     "other": "Other"
   },
   "coachRoles": {
     "headCoach": "Head Coach",
+    "head_coach": "Head Coach",
     "assistantCoach": "Assistant Coach",
+    "assistant_coach": "Assistant Coach",
     "goalkeeperCoach": "Goalkeeper Coach",
+    "goalkeeper_coach": "Goalkeeper Coach",
     "fitnessCoach": "Fitness Coach",
+    "fitness_coach": "Fitness Coach",
     "technicalCoach": "Technical Coach",
+    "technical_coach": "Technical Coach",
     "youthCoach": "Youth Coach",
+    "youth_coach": "Youth Coach",
     "physio": "Physiotherapist",
+    "physio_coach": "Physiotherapist",
     "tacticalAnalyst": "Tactical Analyst",
+    "tactical_analyst": "Tactical Analyst",
     "strengthConditioningCoach": "Strength & Conditioning Coach",
+    "strength_conditioning_coach": "Strength & Conditioning Coach",
     "other": "Other"
   },
   "notifications": {
@@ -1134,6 +1149,7 @@
   },
   "positions": {
     "goalkeeper": "Goalkeeper",
+    "goalkeeper_coach": "Goalkeeper Coach",
     "defender": "Defender",
     "midfielder": "Midfielder",
     "forward": "Forward",
@@ -1160,10 +1176,15 @@
       "goalkeeper": "Goalkeeper",
       "leftWing": "Left Wing",
       "leftBack": "Left Back",
+      "left_back": "Left Back",
       "playmaker": "Playmaker",
+      "play_maker": "Playmaker",
       "left_wing": "Left Wing",
+      "leftwing": "Left Wing",
       "rightBack": "Right Back",
       "rightWing": "Right Wing",
+      "right_wing": "Right Wing",
+      "rightwing": "Right Wing",
       "pivot": "Pivot"
     },
     "basketball": {
@@ -1171,6 +1192,7 @@
       "shootingGuard": "Shooting Guard",
       "smallForward": "Small Forward",
       "powerForward": "Power Forward",
+
       "point_guard": "Point Guard",
       "shooting_guard": "Shooting Guard",
       "small_forward": "Small Forward",
@@ -1184,13 +1206,22 @@
       "blocker": "Blocker",
       "server": "Server",
       "outsideHitter": "Outside Hitter",
+      "outside_hitter": "Outside Hitter",
+      "outside_hit": "Outside Hit",
       "middleBlocker": "Middle Blocker",
+      "middle_blocker": "Middle Blocker",
+      "middle_block": "Middle Block",
       "oppositeHitter": "Opposite",
+
       "opposite_hitter": "Opposite",
       "opposite_hit": "Opposite Hit",
       "libero": "Libero",
       "defensiveSpecialist": "Defensive Specialist",
-      "servingSpecialist": "Serving Specialist"
+      "defensive_specialist": "Defensive Specialist",
+      "defensive_spec": "Defensive Specialist",
+      "servingSpecialist": "Serving Specialist",
+      "serving_specialist": "Serving Specialist",
+      "serving_spec": "Serving Specialist"
     },
     "badminton": {
       "singles": "Singles",

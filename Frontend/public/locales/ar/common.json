@@ -1002,13 +1002,19 @@
   },
   "playerRoles": {
     "youthPlayer": "لاعب ناشئ",
+    "youth_player": "لاعب ناشئ",
     "juniorPlayer": "لاعب شباب",
+    "junior_player": "لاعب شباب",
     "firstTeamPlayer": "لاعب فريق أول",
     "first_team_player": "لاعب فريق أول",
     "reservePlayer": "لاعب احتياط",
+    "reserve_player": "لاعب احتياط",
     "professionalPlayer": "لاعب محترف",
+    "professional_player": "لاعب محترف",
     "amateurPlayer": "لاعب هاوي",
+    "amateur_player": "لاعب هاوي",
     "academyPlayer": "لاعب أكاديمية",
+    "academy_player": "لاعب أكاديمية",
     "other": "أخرى"
   },
   "coachRoles": {
