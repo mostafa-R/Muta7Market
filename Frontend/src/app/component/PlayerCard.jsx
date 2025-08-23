@@ -107,7 +107,7 @@ const getPositionText = (position, sport, t) => {
 const getGenderBorderColor = (gender) => {
   return gender?.toLowerCase() === "female"
     ? "border-pink-400"
-    : "border-sky-400";
+    : "border-[#00183d]";
 };
 
 const PlayerCard = ({ player }) => {
