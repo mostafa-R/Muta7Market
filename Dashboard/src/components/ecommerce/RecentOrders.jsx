@@ -1,12 +1,20 @@
 // app/recent/page.jsx
 'use client';
 
-import React from 'react';
 import {
-  Search, ChevronLeft, ChevronRight, Users, ArrowUpDown, ArrowUp, ArrowDown,
-  CheckCircle, XCircle, Star, Mail, Phone
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
+  ChevronLeft, ChevronRight,
+  Mail, Phone,
+  Search,
+  Star,
+  Users,
+  XCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 const API_ROOT  = (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
@@ -98,7 +106,12 @@ export default function RecentUnconfirmedTable() {
   const [confirmingId, setConfirmingId] = React.useState(null);
 
   const authHeaders = React.useCallback(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
 
