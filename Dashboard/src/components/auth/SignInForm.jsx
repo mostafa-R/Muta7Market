@@ -48,7 +48,7 @@ try {
 }
 
 try {
-  const ButtonModule = require("@/components/ui/button/Button");
+  const ButtonModule = require("@/components/ui/button/button");
   Button = ButtonModule.Button || ButtonModule.default;
 } catch {
   Button = ({ children, className = "", size = "sm", disabled = false, ...props }) => (

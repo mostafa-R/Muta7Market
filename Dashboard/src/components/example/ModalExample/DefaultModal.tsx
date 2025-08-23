@@ -1,10 +1,9 @@
 "use client";
-import React from "react";
 import ComponentCard from "../../common/ComponentCard";
 
-import { Modal } from "../../ui/modal";
-import Button from "../../ui/button/Button";
 import { useModal } from "@/hooks/useModal";
+import { Button } from "../../ui/button/button";
+import { Modal } from "../../ui/modal";
 
 export default function DefaultModal() {
   const { isOpen, openModal, closeModal } = useModal();

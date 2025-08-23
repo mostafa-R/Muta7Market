@@ -1,5 +1,4 @@
 // components/MediaUploadCard.tsx
-import { FiUpload } from "react-icons/fi";
 import {
   Card,
   CardContent,
@@ -9,7 +8,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { get } from "lodash";
-// import { v4 as uuidv4 } from "uuid";
+import { FiUpload } from "react-icons/fi";
+import { v4 as uuidv4 } from "uuid";
 
 interface MediaUploadCardProps {
   formik: any;
