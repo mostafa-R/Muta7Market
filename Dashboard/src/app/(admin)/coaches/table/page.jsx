@@ -1,13 +1,23 @@
 // app/(admin)/coaches/page.jsx
 'use client';
 
-import React from 'react';
 import {
-  Search, Edit3, Trash2, ChevronLeft, ChevronRight,
-  CheckCircle, Download, Users, ArrowUpDown, ArrowUp, ArrowDown,
-  Eye, XCircle, Star
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
+  ChevronLeft, ChevronRight,
+  Download,
+  Edit3,
+  Eye,
+  Search,
+  Star,
+  Trash2,
+  Users,
+  XCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 // ===== API base =====
@@ -110,28 +120,30 @@ if (typeof window !== 'undefined') {
   }, []);
 
   const mapCoaches = React.useCallback((items = []) => {
-    // لا نُسقِط السجلات إن لم يظهر jop لزيادة التحمّل
-    return items.map((p) => {
-      const st = deriveStatus(p);
-      const promoted = Boolean(p?.isPromoted?.status);
-      return {
-        _id: p._id,
-        jop: p.jop,
-        name: p.name || p.user?.name || '-',
-        email: p.user?.email || p.contactInfo?.email || '-',
-        nationality: p.nationality || '-',
-        game: p.game || '-',
-        age: Number(p.age ?? 0),
-        image: p.media?.profileImage?.url || '',
-        status: st,
-        statusLabel: statusLabel(st),
-        isActive: Boolean(p.isActive),
-        isConfirmed: Boolean(p.isConfirmed),
-        isPromoted: promoted,
-        createdAt: p.createdAt ? new Date(p.createdAt).getTime() : 0,
-        joinDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('ar-EG') : '-',
-      };
-    });
+    // فلترة المدربين فقط للتأكد
+    return items
+      .filter((p) => p.jop === 'coach') // التأكد من أنها مدربين فقط
+      .map((p) => {
+        const st = deriveStatus(p);
+        const promoted = Boolean(p?.isPromoted?.status);
+        return {
+          _id: p._id,
+          jop: p.jop,
+          name: p.name || p.user?.name || '-',
+          email: p.user?.email || p.contactInfo?.email || '-',
+          nationality: p.nationality || '-',
+          game: p.game || '-',
+          age: Number(p.age ?? 0),
+          image: p.media?.profileImage?.url || '',
+          status: st,
+          statusLabel: statusLabel(st),
+          isActive: Boolean(p.isActive),
+          isConfirmed: Boolean(p.isConfirmed),
+          isPromoted: promoted,
+          createdAt: p.createdAt ? new Date(p.createdAt).getTime() : 0,
+          joinDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('ar-EG') : '-',
+        };
+      });
   }, []);
 
   const fetchCoaches = React.useCallback(async () => {
@@ -148,6 +160,7 @@ if (typeof window !== 'undefined') {
       }
       const json = await res.json();
       const list = Array.isArray(json?.data?.players) ? json.data.players : [];
+      
       const mapped = mapCoaches(list);
       setRows(mapped);
       const total = json?.data?.pagination?.totalPlayers ?? json?.data?.pagination?.total ?? mapped.length;
@@ -549,21 +562,21 @@ if (typeof window !== 'undefined') {
                           <button
                             onClick={() => router.push(`/coaches/${r._id}`)}
                             className="p-2 rounded-lg hover:bg-sky-100 text-sky-600 transition-colors duration-200 hover:scale-110"
-                            title="عرض الملف"
+                            title="عرض ملف المدرب"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => router.push(`/coaches/update/${r._id}`)}
+                            onClick={() => router.push(`/players/update/${r._id}`)}
                             className="p-2 rounded-lg hover:bg-blue-100 text-yellow-600 transition-colors duration-200 hover:scale-110"
-                            title="تعديل"
+                            title="تعديل بيانات المدرب"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(r._id)}
                             className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors duration-200 hover:scale-110"
-                            title="حذف"
+                            title="حذف المدرب"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

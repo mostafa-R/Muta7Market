@@ -1,17 +1,15 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext.jsx";
 import {
-  BoxCubeIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
   PageIcon,
   PlugInIcon,
-  UserIcon,
-  UserCircleIcon,
+  UserCircleIcon
 } from "../icons/index";
 
 const navItems = [
@@ -36,7 +34,9 @@ const navItems = [
   {
     name: "اللاعبون",
     icon: <UserCircleIcon />,
-    subItems: [{ name: "جدول اللاعبين", path: "/players/table", pro: false }],
+    subItems: [{ name: "جدول اللاعبين", path: "/players/table", pro: false },
+      { name: "إضافة لاعب جديد", path: "/players/create-with-player", pro: false },
+    ],
   },
   {
     name: "المدربون",

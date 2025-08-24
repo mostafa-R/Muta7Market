@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadMixed } from "../config/cloudinary.js";
+import { uploadMixed } from "../middleware/upload.middleware.js";
 import {
   createPlayer,
   deletePlayerDocument,
@@ -15,7 +15,6 @@ import {
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
 import { parseJsonFields } from "../middleware/parseJsonFields.js";
 import validate from "../middleware/validation.middleware.js";
-import { deleteMediaFromCloudinary } from "../utils/mediaUtils.js";
 import {
   createPlayerSchema,
   updatePlayerSchema,

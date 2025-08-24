@@ -28,12 +28,22 @@ const getFileParams = (file) => {
     resource_type = "video";
   } else if (isDocument(file.mimetype)) {
     folder += "documents";
-    resource_type = "raw";
+    // استخدام "auto" بدلاً من "raw" للحفاظ على امتداد الملف
+    resource_type = "auto";
     // Preserve original file extension for documents
     format = file.originalname.split(".").pop().toLowerCase();
+    
+    // التأكد من أن الامتداد صحيح
+    if (!format || format.length > 4) {
+      // إذا لم يكن هناك امتداد، استخدم mimetype لتحديد الامتداد
+      if (file.mimetype === "application/pdf") format = "pdf";
+      else if (file.mimetype === "application/msword") format = "doc";
+      else if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") format = "docx";
+      else if (file.mimetype === "text/plain") format = "txt";
+    }
   } else {
     folder += "others";
-    resource_type = "raw";
+    resource_type = "auto";
   }
 
   return { folder, resource_type, format };
@@ -70,8 +80,13 @@ const storage = new CloudinaryStorage({
     };
 
     // Add format for documents to preserve extension
-    if (format && resource_type === "raw") {
+    if (format && resource_type === "auto") {
       params.format = format;
+      // إضافة معاملات إضافية لضمان الحفاظ على الامتداد
+      params.overwrite = false;
+      params.invalidate = true;
+      // إضافة fetch_format لضمان الحفاظ على الامتداد عند التحميل
+      params.fetch_format = format;
     }
 
     // Add transformation for images

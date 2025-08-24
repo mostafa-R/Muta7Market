@@ -46,13 +46,22 @@ export const mixedStorage = new CloudinaryStorage({
   params: async (req, file) => {
     const folder = `sports-platform/${folderFor(file)}`;
 
-    const resource_type = isImage(file.mimetype)
-      ? "image"
-      : isVideo(file.mimetype)
-      ? "video"
-      : isDoc(file.mimetype)
-      ? "raw"
-      : "auto";
+    // تحديد resource_type بناءً على نوع الملف
+    let resource_type;
+    let format;
+
+    if (isImage(file.mimetype)) {
+      resource_type = "image";
+    } else if (isVideo(file.mimetype)) {
+      resource_type = "video";
+    } else if (isDoc(file.mimetype)) {
+      // للمستندات، نستخدم "raw" مع الحفاظ على الامتداد
+      resource_type = "raw";
+      // استخراج امتداد الملف من الاسم الأصلي
+      format = file.originalname.split(".").pop().toLowerCase();
+    } else {
+      resource_type = "auto";
+    }
 
     const allowed_formats = isImage(file.mimetype)
       ? ALLOWED_IMAGE_EXTS
@@ -66,19 +75,19 @@ export const mixedStorage = new CloudinaryStorage({
       ? [{ width: 1000, height: 1000, crop: "limit" }]
       : undefined;
 
-    // --- التعديل هنا علشان يحتفظ بامتداد الـ PDF أو DOC ---
-    let format;
-    if (isDoc(file.mimetype)) {
-      format = file.originalname.split(".").pop().toLowerCase();
-    }
-
-    return {
+    const params = {
       folder,
       resource_type,
       allowed_formats,
       transformation,
-      format, // إضافة الفورمات هنا
     };
+
+    // إضافة format للمستندات للحفاظ على الامتداد
+    if (format && resource_type === "raw") {
+      params.format = format;
+    }
+
+    return params;
   },
 });
 

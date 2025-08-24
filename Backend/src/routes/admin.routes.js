@@ -4,6 +4,7 @@ import {
   bulkUpdateUsers,
   createPlayer,
   createUser,
+  createUserWithPlayerProfile,
   deletePlayer,
   deleteUser,
   getAllPlayers,
@@ -21,6 +22,7 @@ import {
   verifyUserEmail,
 } from "../controllers/admin.controller.js";
 
+import Joi from "joi";
 import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 import { parseJsonFields } from "../middleware/parseJsonFields.js";
 import { uploadMixed } from "../middleware/upload.middleware.js";
@@ -43,7 +45,6 @@ import {
   updateUserSchema,
   verifyUserEmailSchema,
 } from "../validators/admin.validator.js";
-import Joi from "joi";
 
 const boolBody = (key) => Joi.object({ [key]: Joi.boolean().required() });
 
@@ -123,29 +124,9 @@ router.patch(
   updatePromotion
 );
 
-// Create a new player (with file upload support)
-// http://localhost:5000/api/v1/admin/players
-// router.post(
-//   "/players",
-//   (req, res) => {
-//     console.log(req.body);
-//   }
-//   // uploadMixed.fields([
-//   //   { name: "profileImage", maxCount: 1 },
-//   //   { name: "document", maxCount: 1 },
-//   //   { name: "playerVideo", maxCount: 1 },
-//   // ]),
-//   // parseJsonFields,
-//   // (req ,res ) => {
-//   //   console.log("we");
-//   // }
-//   // validate(createPlayerSchema),
-//   // createPlayer
-// );
-
+// Create a new player (with existing user)
 router.post(
   "/players",
-  // verifiedOnly,
   uploadMixed.fields([
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
@@ -163,10 +144,43 @@ router.post(
   createPlayer
 );
 
+// Create both user and player in one operation
+router.post(
+  "/users-with-player",
+  uploadMixed.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "document", maxCount: 1 },
+    { name: "playerVideo", maxCount: 1 },
+    { name: "images", maxCount: 5 },
+  ]),
+  parseJsonFields([
+    "monthlySalary",
+    "yearSalary",
+    "transferredTo",
+    "socialLinks",
+    "isPromoted",
+    "contactInfo",
+  ]),
+  createUserWithPlayerProfile
+);
+
 // Update a player (with file upload support)
 router.patch(
   "/players/:id",
-  parseJsonFields,
+  uploadMixed.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "document", maxCount: 1 },
+    { name: "playerVideo", maxCount: 1 },
+    { name: "images", maxCount: 5 },
+  ]),
+  parseJsonFields([
+    "monthlySalary",
+    "yearSalary",
+    "transferredTo",
+    "socialLinks",
+    "contactInfo",
+    "existingMedia",
+  ]),
   validate(updatePlayerSchema),
   updatePlayer
 );

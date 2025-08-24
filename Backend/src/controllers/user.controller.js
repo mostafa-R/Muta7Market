@@ -1,10 +1,7 @@
 import bcrypt from "bcryptjs";
 import { deleteFromCloudinary } from "../config/cloudinary.js";
-import playerModel from "../models/player.model.js";
-import User from "../models/user.model.js";
-import ApiError from "../utils/ApiError.js";
-import { PRICING } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
+import User from "../models/user.model.js";
 
 export const update = async (req, res) => {
   try {
@@ -12,8 +9,6 @@ export const update = async (req, res) => {
     if (!id) {
       return res.status(401).json({ message: "You must be logged in" });
     }
-
-
 
     // جلب المستخدم الحالي
     const currentUser = await User.findById(id)
@@ -83,18 +78,13 @@ export const update = async (req, res) => {
     // Check for file in different possible locations
     if (req.files && req.files.profileImage && req.files.profileImage[0]) {
       imageFile = req.files.profileImage[0];
-      
     } else if (req.file) {
       imageFile = req.file;
-      
     } else if (req.files && Array.isArray(req.files) && req.files[0]) {
       imageFile = req.files[0];
-      
     }
 
     if (imageFile) {
-      
-
       // التحقق من نوع الملف
       if (!imageFile.mimetype || !imageFile.mimetype.startsWith("image/")) {
         return res
@@ -105,7 +95,6 @@ export const update = async (req, res) => {
       // حذف الصورة القديمة إذا وجدت
       if (currentUser.profileImage && currentUser.profileImage.public_id) {
         try {
-          
           await deleteFromCloudinary(
             currentUser.profileImage.public_id,
             "image"
@@ -121,8 +110,6 @@ export const update = async (req, res) => {
         url: imageFile.path || imageFile.secure_url || imageFile.url, // Cloudinary قد يرجع القيمة في أماكن مختلفة
         public_id: imageFile.filename || imageFile.public_id,
       };
-
-      
     }
 
     // معالجة رقم الهاتف
@@ -186,10 +173,8 @@ export const update = async (req, res) => {
     }
 
     // التحقق من وجود تحديثات
-    
 
     if (Object.keys(updates).length === 0) {
-      
       return res.status(400).json({ message: "No valid fields to update" });
     }
 
@@ -216,8 +201,6 @@ export const update = async (req, res) => {
     const updatedFields = Object.keys(updates).filter(
       (key) => key !== "lastLogin"
     );
-
-    
 
     res.status(200).json({
       message: "User updated successfully",

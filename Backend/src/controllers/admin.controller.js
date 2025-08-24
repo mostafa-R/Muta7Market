@@ -1,10 +1,13 @@
+import { PRICING } from "../config/constants.js";
 import coachModel from "../models/coach.model.js";
+import Invoice from "../models/invoice.model.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { processPlayerMedia } from "../utils/mediaUtils.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
 
 function escapeRegex(s = "") {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -490,6 +493,192 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
 });
 
 // ✅ Create Player (Admin)
+// Create User and Player Profile in a single operation
+export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
+  const {
+    // User data
+    email,
+    name,
+    password,
+    phone,
+    role = "user",
+    isActive = true,
+    isEmailVerified = true,
+
+    // Player data
+    age,
+    gender,
+    nationality,
+    customNationality,
+    birthCountry,
+    customBirthCountry,
+    jop,
+    roleType,
+    customRoleType,
+    position,
+    customPosition,
+    status,
+    experience,
+    monthlySalary,
+    yearSalary,
+    contractEndDate,
+    transferredTo,
+    socialLinks,
+    contactInfo,
+    game,
+    customSport,
+    isListed = true,
+    playerIsActive = true,
+    ...otherPlayerData
+  } = req.body;
+
+  // Validate required fields for user creation
+  if (!email || !name || !password) {
+    throw new ApiError(400, "Email, name, and password are required");
+  }
+
+  try {
+    // Step 1: Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ email }, { phone }],
+    });
+
+    if (existingUser) {
+      throw new ApiError(400, "User with this email or phone already exists");
+    }
+
+    // Step 2: Create the user account
+    const user = await User.create({
+      email,
+      name,
+      password,
+      phone,
+      role,
+      isActive,
+      isEmailVerified,
+      isPhoneVerified: true,
+    });
+
+    // Step 3: Process media files
+    let media = {};
+    if (req.files && Object.keys(req.files).length > 0) {
+      try {
+        media = await processPlayerMedia(req.files, {});
+      } catch (error) {
+        console.error("Error processing media files:", error);
+        // Delete the user we just created since player creation will fail
+        await User.findByIdAndDelete(user._id);
+        throw new ApiError(
+          500,
+          `Failed to process media files: ${error.message}`
+        );
+      }
+    }
+
+    // Step 4: Create player profile
+    const player = await Player.create({
+      user: user._id,
+      name,
+      age,
+      gender,
+      nationality,
+      customNationality,
+      birthCountry,
+      customBirthCountry,
+      jop,
+      roleType,
+      customRoleType,
+      position,
+      customPosition,
+      status,
+      experience,
+      monthlySalary,
+      yearSalary,
+      contractEndDate,
+      transferredTo,
+      socialLinks,
+      contactInfo,
+      game,
+      customSport,
+      media,
+      isListed,
+      isActive: playerIsActive,
+      ...otherPlayerData,
+    });
+
+    // Step 5: Create invoice entry
+    try {
+      const raw = String(jop || "").toLowerCase();
+      const targetType = raw === "coach" ? "coach" : "player";
+
+      const amount =
+        targetType === "coach"
+          ? PRICING.listing_year.coach
+          : PRICING.listing_year.player;
+
+      const orderNo = makeOrderNumber("listing", String(user._id));
+
+      await Invoice.findOneAndUpdate(
+        {
+          userId: user._id,
+          product: "listing",
+          targetType,
+          profileId: player._id,
+          status: "pending",
+        },
+        {
+          $setOnInsert: {
+            orderNumber: orderNo,
+            invoiceNumber: orderNo,
+            amount,
+            currency: "SAR",
+            durationDays: PRICING.ONE_YEAR_DAYS || 365,
+            featureType: null,
+            status: "pending",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        },
+        { upsert: true }
+      );
+    } catch (e) {
+      console.error(
+        "[createUserWithPlayerProfile] seed listing draft failed",
+        e
+      );
+      // Non-blocking error, continue
+    }
+
+    // Step 6: Return the populated player with user info
+    const populatedPlayer = await Player.findById(player._id)
+      .populate("user", "name email phone role")
+      .lean();
+
+    res.status(201).json(
+      new ApiResponse(
+        201,
+        {
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            isActive: user.isActive,
+          },
+          player: populatedPlayer,
+        },
+        "User and player profile created successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Error creating user with player profile:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Failed to create user with player profile"
+    );
+  }
+});
+
 export const createPlayer = asyncHandler(async (req, res) => {
   const { email, ...playerData } = req.body; // استخراج الـ email والبيانات الأخرى
 
@@ -541,47 +730,112 @@ export const createPlayer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, populatedPlayer, "Player created successfully"));
 });
 
-// ✅ Update Player (Admin)
+// ✅ Update Player (Admin Only)
 export const updatePlayer = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
 
-  // Get existing player to access old file references
+  // Get existing player
   const existingPlayer = await Player.findById(id);
   if (!existingPlayer) {
     throw new ApiError(404, "Player not found");
   }
 
-  // Handle file uploads and replacements
-  try {
-    if (req.files && Object.keys(req.files).length > 0) {
-      // Process all media files using our centralized utility
-      const processedMedia = await processPlayerMedia(
-        req.files,
-        existingPlayer.media
-      );
+  // ✅ All allowed fields for comprehensive player update
+  const allowedFields = [
+    // Basic Information
+    "name",
+    "age",
+    "gender",
+    "nationality",
+    "customNationality",
+    "birthCountry",
+    "customBirthCountry",
 
-      // Update the media object in the updates
-      updates.media = processedMedia;
-    } else {
-      // No new files uploaded, keep existing media
-      updates.media = existingPlayer.media;
+    // Professional Information
+    "jop",
+    "roleType",
+    "customRoleType",
+    "position",
+    "customPosition",
+    "status",
+    "experience",
+    "game",
+    "customSport",
+
+    // Nested Objects (will be handled separately)
+    "monthlySalary",
+    "yearSalary",
+    "contractEndDate",
+    "transferredTo",
+    "socialLinks",
+    "contactInfo",
+
+    // System Settings
+    "isListed",
+    "isActive",
+    "isConfirmed",
+    "views",
+
+    // Media and other fields
+    "media",
+    "stats",
+    "bio",
+    "isPromoted",
+  ];
+
+  const updates = {};
+
+  // Handle regular fields
+  Object.keys(req.body).forEach((key) => {
+    if (allowedFields.includes(key)) {
+      updates[key] = req.body[key];
     }
-  } catch (error) {
-    console.error("Error processing media files:", error);
-    throw new ApiError(500, "Failed to process media files for player update");
+  });
+
+  // ✅ Handle media update with existing media consideration
+  let existingMediaFromBody = {};
+  try {
+    existingMediaFromBody = req.body.existingMedia
+      ? JSON.parse(req.body.existingMedia)
+      : {};
+  } catch (e) {
+    console.log("Error parsing existingMedia:", e);
   }
 
-  const updatedPlayer = await Player.findByIdAndUpdate(id, updates, {
-    new: true,
-    runValidators: true,
-  })
-    .populate("user", "name email phone")
-    .lean();
-
-  if (!updatedPlayer) {
-    throw new ApiError(404, "Player not found");
+  if (req.files && Object.keys(req.files).length > 0) {
+    // Process new media files while preserving existing media state
+    updates.media = await processPlayerMedia(req.files, existingMediaFromBody);
+  } else if (req.body.existingMedia) {
+    // If only existingMedia is provided (no new files), update media with current state
+    updates.media = existingMediaFromBody;
   }
+
+  // ✅ Handle special field name mapping (expreiance -> experience)
+  if (req.body.expreiance !== undefined) {
+    updates.experience = req.body.expreiance;
+  }
+
+  // ✅ Handle boolean conversions (FormData sends strings)
+  if (typeof updates.isListed === "string") {
+    updates.isListed = updates.isListed === "true";
+  }
+  if (typeof updates.isActive === "string") {
+    updates.isActive = updates.isActive === "true";
+  }
+  if (typeof updates.isConfirmed === "string") {
+    updates.isConfirmed = updates.isConfirmed === "true";
+  }
+
+  // ✅ Handle numeric conversions
+  if (updates.age) updates.age = parseInt(updates.age);
+  if (updates.experience) updates.experience = parseInt(updates.experience);
+  if (updates.views) updates.views = parseInt(updates.views);
+
+  // ✅ Apply updates
+  Object.assign(existingPlayer, updates);
+  const updatedPlayer = await existingPlayer
+    .save()
+    .then((doc) => doc.populate("user", "name email phone"));
 
   res
     .status(200)

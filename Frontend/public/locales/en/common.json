@@ -21,6 +21,7 @@
     "years": "years",
     "sport": "Sport",
     "position": "Position",
+    "roleType": "Role Type",
     "monthlySalary": "Monthly Salary",
     "annualContract": "Annual Contract Value",
     "notSpecified": "Not Specified",
@@ -1175,16 +1176,14 @@
     "handball": {
       "goalkeeper": "Goalkeeper",
       "leftWing": "Left Wing",
+      "left_wing": "Left Wing",
       "leftBack": "Left Back",
       "left_back": "Left Back",
       "playmaker": "Playmaker",
-      "play_maker": "Playmaker",
-      "left_wing": "Left Wing",
-      "leftwing": "Left Wing",
       "rightBack": "Right Back",
+      "right_back": "Right Back",
       "rightWing": "Right Wing",
       "right_wing": "Right Wing",
-      "rightwing": "Right Wing",
       "pivot": "Pivot"
     },
     "basketball": {
@@ -1202,31 +1201,27 @@
     },
     "volleyball": {
       "setter": "Setter",
-      "spiker": "Spiker",
-      "blocker": "Blocker",
-      "server": "Server",
       "outsideHitter": "Outside Hitter",
       "outside_hitter": "Outside Hitter",
-      "outside_hit": "Outside Hit",
       "middleBlocker": "Middle Blocker",
       "middle_blocker": "Middle Blocker",
-      "middle_block": "Middle Block",
       "oppositeHitter": "Opposite",
-
       "opposite_hitter": "Opposite",
       "opposite_hit": "Opposite Hit",
       "libero": "Libero",
       "defensiveSpecialist": "Defensive Specialist",
       "defensive_specialist": "Defensive Specialist",
-      "defensive_spec": "Defensive Specialist",
       "servingSpecialist": "Serving Specialist",
       "serving_specialist": "Serving Specialist",
-      "serving_spec": "Serving Specialist"
+      "spiker": "Spiker",
+      "blocker": "Blocker",
+      "server": "Server"
     },
     "badminton": {
       "singles": "Singles",
       "doubles": "Doubles",
-      "mixedDoubles": "Mixed Doubles"
+      "mixedDoubles": "Mixed Doubles",
+      "mixed_doubles": "Mixed Doubles"
     },
     "athletics": {
       "100m": "100m",
@@ -1238,109 +1233,156 @@
       "10000m": "10000m",
       "marathon": "Marathon",
       "100mHurdles": "100m Hurdles",
+      "100m_hurdles": "100m Hurdles",
       "110mHurdles": "110m Hurdles",
+      "110m_hurdles": "110m Hurdles",
       "400mHurdles": "400m Hurdles",
+      "400m_hurdles": "400m Hurdles",
       "longJump": "Long Jump",
+      "long_jump": "Long Jump",
       "highJump": "High Jump",
+      "high_jump": "High Jump",
       "tripleJump": "Triple Jump",
+      "triple_jump": "Triple Jump",
       "poleVault": "Pole Vault",
+      "pole_vault": "Pole Vault",
       "shotPut": "Shot Put",
+      "shot_put": "Shot Put",
       "discusThrow": "Discus Throw",
+      "discus_throw": "Discus Throw",
       "hammerThrow": "Hammer Throw",
+      "hammer_throw": "Hammer Throw",
       "javelinThrow": "Javelin Throw",
-      "raceWalking": "Race Walking"
+      "javelin_throw": "Javelin Throw",
+      "raceWalking": "Race Walking",
+      "race_walking": "Race Walking"
     },
     "tennis": {
       "singles": "Singles",
       "doubles": "Doubles",
-      "mixedDoubles": "Mixed Doubles"
+      "mixedDoubles": "Mixed Doubles",
+      "mixed_doubles": "Mixed Doubles"
     },
     "tabletennis": {
       "singles": "Singles",
       "doubles": "Doubles",
-      "mixedDoubles": "Mixed Doubles"
+      "mixedDoubles": "Mixed Doubles",
+      "mixed_doubles": "Mixed Doubles"
     },
     "karate": {
       "whiteBelt": "White Belt",
+      "white_belt": "White Belt",
       "yellowBelt": "Yellow Belt",
+      "yellow_belt": "Yellow Belt",
       "orangeBelt": "Orange Belt",
+      "orange_belt": "Orange Belt",
       "greenBelt": "Green Belt",
+      "green_belt": "Green Belt",
       "blueBelt": "Blue Belt",
+      "blue_belt": "Blue Belt",
       "brownBelt": "Brown Belt",
-      "redBelt": "Red Belt"
+      "brown_belt": "Brown Belt",
+      "redBelt": "Red Belt",
+      "red_belt": "Red Belt"
     },
     "taekwondo": {
       "whiteBelt": "White Belt",
+      "white_belt": "White Belt",
       "yellowBelt": "Yellow Belt",
+      "yellow_belt": "Yellow Belt",
       "greenBelt": "Green Belt",
+      "green_belt": "Green Belt",
       "blueBelt": "Blue Belt",
+      "blue_belt": "Blue Belt",
       "redBelt": "Red Belt",
-      "blackBelt": "Black Belt"
+      "red_belt": "Red Belt",
+      "blackBelt": "Black Belt",
+      "black_belt": "Black Belt"
     },
     "archery": {
       "whiteArrow": "White Arrow",
+      "white_arrow": "White Arrow",
       "blackArrow": "Black Arrow",
+      "black_arrow": "Black Arrow",
       "blueArrow": "Blue Arrow",
+      "blue_arrow": "Blue Arrow",
       "redArrow": "Red Arrow",
+      "red_arrow": "Red Arrow",
       "yellowArrow": "Yellow Arrow",
-      "greenArrow": "Green Arrow"
+      "yellow_arrow": "Yellow Arrow",
+      "greenArrow": "Green Arrow",
+      "green_arrow": "Green Arrow"
     },
     "esports": {
       "moba": "MOBA",
       "fightingGames": "Fighting Games",
+      "fighting_games": "Fighting Games",
       "rts": "RTS",
-      "fps": "FPS",
       "battleRoyale": "Battle Royale",
+      "battle_royale": "Battle Royale",
       "sportsSimulation": "Sports Simulation",
+      "sports_simulation": "Sports Simulation",
       "racingSimulation": "Racing Simulation",
+      "racing_simulation": "Racing Simulation",
       "mobileGames": "Mobile Games",
+      "mobile_games": "Mobile Games",
       "fifa": "FIFA",
-      "rocketLeague": "Rocket League"
+      "rocketLeague": "Rocket League",
+      "rocket_league": "Rocket League"
     },
     "football": {
       "goalkeeper": "Goalkeeper",
       "rightBack": "Right Back",
+      "right_back": "Right Back",
       "leftBack": "Left Back",
+      "left_back": "Left Back",
       "centerBack": "Center Back",
+      "center_back": "Center Back",
       "cdm": "CDM",
       "rightWinger": "Right Winger",
-      "leftWinger": "Left Winger",
-      "midfielder": "Midfielder",
-      "right_back": "Right Back",
-      "left_back": "Left Back",
-      "center_back": "Center Back",
       "right_winger": "Right Winger",
+      "leftWinger": "Left Winger",
       "left_winger": "Left Winger",
+      "midfielder": "Midfielder",
       "cam": "Attacking Midfielder",
-      "forward": "Forward",
-      "defender": "Defender",
-
+      "striker": "Striker",
       "winger": "Winger",
       "fullback": "Fullback",
-      "sweeper": "Sweeper",
-      "striker": "Striker"
+      "sweeper": "Sweeper"
     },
     "swimming": {
       "freestyle50m": "Freestyle 50m",
+      "freestyle_50m": "Freestyle 50m",
       "freestyle100m": "Freestyle 100m",
+      "freestyle_100m": "Freestyle 100m",
       "freestyle200m": "Freestyle 200m",
+      "freestyle_200m": "Freestyle 200m",
       "backstroke50m": "Backstroke 50m",
+      "backstroke_50m": "Backstroke 50m",
       "backstroke100m": "Backstroke 100m",
+      "backstroke_100m": "Backstroke 100m",
       "backstroke200m": "Backstroke 200m",
+      "backstroke_200m": "Backstroke 200m",
       "breaststroke50m": "Breaststroke 50m",
+      "breaststroke_50m": "Breaststroke 50m",
       "breaststroke100m": "Breaststroke 100m",
+      "breaststroke_100m": "Breaststroke 100m",
       "breaststroke200m": "Breaststroke 200m",
+      "breaststroke_200m": "Breaststroke 200m",
       "butterfly50m": "Butterfly 50m",
+      "butterfly_50m": "Butterfly 50m",
       "butterfly100m": "Butterfly 100m",
+      "butterfly_100m": "Butterfly 100m",
       "butterfly200m": "Butterfly 200m",
+      "butterfly_200m": "Butterfly 200m",
       "relay200m": "Relay 200m",
+      "relay_200m": "Relay 200m",
       "relay400m": "Relay 400m",
+      "relay_400m": "Relay 400m",
       "relay800m": "Relay 800m",
+      "relay_800m": "Relay 800m",
       "medleyRace": "Medley Race",
-      "freestyle": "Freestyle",
-      "backstroke": "Backstroke",
-      "breaststroke": "Breaststroke",
-      "butterfly": "Butterfly"
+      "medley_race": "Medley Race"
     },
     "judo": {
       "lightweight": "Lightweight",
@@ -1350,8 +1392,11 @@
     },
     "fencing": {
       "eUnder": "E & Under",
+      "e_under": "E & Under",
       "dUnder": "D & Under",
+      "d_under": "D & Under",
       "cUnder": "C & Under",
+      "c_under": "C & Under",
       "beginner": "Beginner",
       "unclassified": "Unclassified",
       "foil": "Foil",
@@ -1360,8 +1405,11 @@
     },
     "cycling": {
       "roadRacing": "Road Racing",
+      "road_racing": "Road Racing",
       "trackCycling": "Track Cycling",
+      "track_cycling": "Track Cycling",
       "mountainBiking": "Mountain Biking",
+      "mountain_biking": "Mountain Biking",
       "bmx": "BMX",
       "cyclocross": "Cyclocross"
     },
@@ -1379,7 +1427,9 @@
       "defender": "Defender",
       "winger": "Winger",
       "pivotFlank": "Pivot/Flank",
-      "fixoPivot": "Fixo/Pivot"
+      "pivot_flank": "Pivot/Flank",
+      "fixoPivot": "Fixo/Pivot",
+      "fixo_pivot": "Fixo/Pivot"
     },
     "boxing": {
       "lightweight": "Lightweight",
@@ -1415,7 +1465,8 @@
     },
     "wrestling": {
       "freestyle": "Freestyle Wrestling",
-      "grecoRoman": "Greco-Roman Wrestling"
+      "grecoRoman": "Greco-Roman Wrestling",
+      "greco_roman": "Greco-Roman Wrestling"
     }
   },
 
