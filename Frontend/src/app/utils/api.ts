@@ -3,7 +3,7 @@
 import axios from "axios";
 
 export const API_BASE = (() => {
-  const v = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+  const v = process.env.NEXT_PUBLIC_API_BASE_URL;
   return v.endsWith("/api/v1") ? v : `${v}/api/v1`;
 })();
 

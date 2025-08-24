@@ -23,9 +23,9 @@ import { createProfileFormSchema } from "./components/validation.js";
 import PromoteNowButton from "./components/PromoteNowButton";
 
 // Ensure API base includes /api/v1
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}`.replace(/\/$/, "").endsWith("/api/v1")
-  ? `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}`.replace(/\/$/, "")
-  : `${(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "")}/api/v1`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`.replace(/\/$/, "").endsWith("/api/v1")
+  ? `${process.env.NEXT_PUBLIC_API_BASE_URL }`.replace(/\/$/, "")
+  : `${(process.env.NEXT_PUBLIC_API_BASE_URL).replace(/\/$/, "")}/api/v1`;
 
 const UserProfile = () => {
   const { t } = useTranslation();

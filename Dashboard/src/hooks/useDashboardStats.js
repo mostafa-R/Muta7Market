@@ -34,8 +34,7 @@ export const useDashboardStats = () => {
 
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL ||
-        process.env.NEXT_PUBLIC_API_BASE_URL ||
-        'http://localhost:5000';
+        process.env.NEXT_PUBLIC_API_BASE_URL
 
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/dashboard/stats`, {
         method: 'GET',
@@ -70,8 +69,7 @@ export const useDashboardStats = () => {
   useEffect(() => {
     const API_BASE_URL =
       process.env.NEXT_PUBLIC_API_URL ||
-      process.env.NEXT_PUBLIC_API_BASE_URL ||
-      'http://localhost:5000';
+      process.env.NEXT_PUBLIC_API_BASE_URL
 
     const socket = io(API_BASE_URL, {
       auth: { token: getAuthToken() },

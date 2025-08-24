@@ -93,8 +93,7 @@ export default function PlayersPage() {
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) return;
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-        "http://localhost:5000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
       fetch(`${API_BASE}/players/playerprofile`, {
         headers: { Authorization: `Bearer ${token}` },
       })

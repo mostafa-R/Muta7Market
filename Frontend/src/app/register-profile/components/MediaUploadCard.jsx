@@ -33,7 +33,7 @@ export const MediaUploadCard = ({
     try {
       const token = localStorage.getItem("token");
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+        process.env.NEXT_PUBLIC_API_BASE_URL ;
       const API_URL = API_BASE_URL.includes("/api/v1")
         ? API_BASE_URL
         : `${API_BASE_URL}/api/v1`;
@@ -69,7 +69,7 @@ export const MediaUploadCard = ({
     try {
       const token = localStorage.getItem("token");
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+        process.env.NEXT_PUBLIC_API_BASE_URL ;
       const API_URL = API_BASE_URL.includes("/api/v1")
         ? API_BASE_URL
         : `${API_BASE_URL}/api/v1`;
@@ -149,7 +149,7 @@ export const MediaUploadCard = ({
     try {
       const token = localStorage.getItem("token");
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+        process.env.NEXT_PUBLIC_API_BASE_URL ;
       const API_URL = API_BASE_URL.includes("/api/v1")
         ? API_BASE_URL
         : `${API_BASE_URL}/api/v1`;
