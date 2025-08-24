@@ -4,6 +4,10 @@ import axios from "axios";
 
 export const API_BASE = (() => {
   const v = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!v) {
+    // Fallback to a default URL if environment variable is not set
+    return "http://localhost:3001/api/v1";
+  }
   return v.endsWith("/api/v1") ? v : `${v}/api/v1`;
 })();
 
