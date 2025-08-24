@@ -1291,7 +1291,9 @@
       "right_winger": "جناح يمين",
       "left_winger": "جناح يسار",
       "forward": "مهاجم",
-      "defender": "مدافع"
+      "defender": "مدافع",
+      "assistantCoach": "مدرب مساعد",
+      "assistant_coach": "مدرب مساعد"
     },
     "swimming": {
       "freestyle50m": "سباحة حرة 50م",
