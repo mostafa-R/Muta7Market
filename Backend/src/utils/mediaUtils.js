@@ -39,8 +39,19 @@ export const handleMediaUpload = async (file, resourceType = null) => {
   // Make sure we're using the Cloudinary URL, not local path
   // Add timeout handling if needed in the future
   try {
+    let finalUrl = file.secure_url || file.path;
+    
+    // للمستندات، تأكد من أن URL يحتوي على الامتداد الصحيح
+    if (resourceType === "raw" || resourceType === "auto") {
+      const extension = file.originalname ? file.originalname.split(".").pop() : null;
+      if (extension && !finalUrl.endsWith(`.${extension}`)) {
+        // إذا لم يكن URL يحتوي على الامتداد، أضفه
+        finalUrl = `${finalUrl}.${extension}`;
+      }
+    }
+    
     return {
-      url: file.secure_url || file.path,
+      url: finalUrl,
       publicId: file.public_id || file.filename,
       type: file.mimetype,
       extension: file.originalname ? file.originalname.split(".").pop() : null,
@@ -131,7 +142,7 @@ export const deleteAllPlayerMedia = async (media) => {
     // Delete document
     if (media.document?.publicId) {
       try {
-        await deleteMediaFromCloudinary(media.document.publicId, "raw");
+        await deleteMediaFromCloudinary(media.document.publicId, "auto");
         deletionResults.successful.push({
           type: "document",
           publicId: media.document.publicId,
@@ -247,14 +258,14 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
     if (existingMedia?.document?.publicId) {
       await deleteMediaFromCloudinary(
         existingMedia.document.publicId,
-        "raw"
+        "auto"
       ).catch((err) =>
         console.warn("Failed to delete old document:", err.message)
       );
     }
 
     // Set new document
-    const documentData = await handleMediaUpload(files.document[0], "raw");
+    const documentData = await handleMediaUpload(files.document[0], "auto");
     documentData.title = files.document[0].originalname || "document";
     documentData.size = files.document[0].size || 0;
     documentData.type = files.document[0].mimetype || null;
@@ -262,21 +273,21 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
     media.document = documentData;
   }
 
-  // Handle multiple images - ADD to existing instead of replacing all
+  // Handle multiple images - Use existingMedia as base and add new ones
   if (files?.images && files.images.length > 0) {
-    console.log("📸 Processing new images - ADDITIVE approach");
+    console.log("📸 Processing new images - Using existingMedia as base");
     console.log(
       `📸 Existing images count: ${existingMedia?.images?.length || 0}`
     );
     console.log(`📸 New images to add: ${files.images.length}`);
 
-    // Keep existing images and add new ones
+    // Start with existing images from existingMedia (already filtered by frontend)
     const existingImages =
       existingMedia?.images && Array.isArray(existingMedia.images)
         ? [...existingMedia.images]
         : [];
 
-    // Process new images and add to existing
+    // Process new images
     const newImages = [];
     for (const imageFile of files.images) {
       const imageData = await handleMediaUpload(imageFile, "image");
@@ -292,6 +303,11 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
 
     console.log(`📸 Final images count: ${media.images.length}`);
     console.log("📸 Image update completed successfully");
+  } else if (existingMedia?.images) {
+    // If no new images but existingMedia provided, use existing images as is
+    media.images = Array.isArray(existingMedia.images)
+      ? [...existingMedia.images]
+      : [];
   }
 
   return media;

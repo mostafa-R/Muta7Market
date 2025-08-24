@@ -81,7 +81,7 @@ export const updateProfileSchema = Joi.object({
     .messages({
       "string.pattern.base": "Please provide a valid phone number",
     }),
-  bio: Joi.string().trim().max(200).messages({
+  bio: Joi.string().trim().allow(null, "").max(200).messages({
     "string.max": "Bio cannot exceed 200 characters",
   }),
   profileImage: Joi.string().uri().allow(null, "").messages({

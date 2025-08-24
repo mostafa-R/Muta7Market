@@ -234,27 +234,39 @@ const playerSchema = new mongoose.Schema(
         // اختفاء سحري للـ "other" - استبدال القيم في نفس الـ fields
 
         // إذا nationality = "other" اعرض customNationality بدلاً منها
-        if (ret.nationality === "other" && ret.customNationality) {
+        if (
+          (ret.nationality === "other" || ret.nationality === "") &&
+          ret.customNationality
+        ) {
           ret.nationality = ret.customNationality;
         }
 
-        // إذا birthCountry = "other" اعرض customBirthCountry بدلاً منها
-        if (ret.birthCountry === "other" && ret.customBirthCountry) {
+        // إذا birthCountry = "other" أو "" اعرض customBirthCountry بدلاً منها
+        if (
+          (ret.birthCountry === "other" || ret.birthCountry === "") &&
+          ret.customBirthCountry
+        ) {
           ret.birthCountry = ret.customBirthCountry;
         }
 
-        // إذا roleType = "other" اعرض customRoleType بدلاً منها
-        if (ret.roleType === "other" && ret.customRoleType) {
+        // إذا roleType = "other" أو "" اعرض customRoleType بدلاً منها
+        if (
+          (ret.roleType === "other" || ret.roleType === "") &&
+          ret.customRoleType
+        ) {
           ret.roleType = ret.customRoleType;
         }
 
-        // إذا position = "other" اعرض customPosition بدلاً منها
-        if (ret.position === "other" && ret.customPosition) {
+        // إذا position = "other" أو "" اعرض customPosition بدلاً منها
+        if (
+          (ret.position === "other" || ret.position === "") &&
+          ret.customPosition
+        ) {
           ret.position = ret.customPosition;
         }
 
-        // إذا game = "other" اعرض customSport بدلاً منها
-        if (ret.game === "other" && ret.customSport) {
+        // إذا game = "other" أو "" اعرض customSport بدلاً منها
+        if ((ret.game === "other" || ret.game === "") && ret.customSport) {
           ret.game = ret.customSport;
         }
 

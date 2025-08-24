@@ -9,6 +9,7 @@ import { buildSortQuery, paginate } from "../utils/helpers.js";
 import {
   deleteAllPlayerMedia,
   deleteMediaFromCloudinary,
+  handleMediaUpload,
   processPlayerMedia,
   replaceMediaItem,
 } from "../utils/mediaUtils.js";
@@ -833,7 +834,7 @@ export const deletePlayerDocument = async (req, res) => {
 
     if (player.media?.document?.publicId) {
       try {
-        await deleteMediaFromCloudinary(player.media.document.publicId, "raw");
+        await deleteMediaFromCloudinary(player.media.document.publicId, "auto");
         console.log(
           `🗑️ Deleted document from player ${playerId}: ${player.media.document.publicId}`
         );
@@ -1082,7 +1083,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       if (player.media.document && player.media.document.publicId) {
         await deleteMediaFromCloudinary(
           player.media.document.publicId,
-          "raw"
+          "auto"
         ).catch((err) =>
           console.warn("Failed to delete document:", err.message)
         );
@@ -1217,7 +1218,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
 
   // Delete the existing file if it exists
   if (player.media[mediaType]?.publicId) {
-    const resourceType = mediaType === "video" ? "video" : "raw";
+    const resourceType = mediaType === "video" ? "video" : "auto";
     await deleteMediaFromCloudinary(
       player.media[mediaType].publicId,
       resourceType
@@ -1226,12 +1227,16 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     );
   }
 
+  // Use mediaUtils to handle the file properly
+  const resourceType = mediaType === "video" ? "video" : "auto";
+  const mediaData = await handleMediaUpload(file, resourceType);
+
   // Create the new media item
   const mediaItem = {
-    url: file.path,
-    publicId: file.filename,
+    url: mediaData.url,
+    publicId: mediaData.publicId,
     title: file.originalname,
-    uploadedAt: new Date(),
+    uploadedAt: mediaData.uploadedAt,
   };
 
   if (mediaType === "video") {
@@ -1241,6 +1246,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   if (mediaType === "document") {
     mediaItem.size = file.size;
     mediaItem.type = file.mimetype;
+    mediaItem.extension = mediaData.extension;
   }
 
   // Replace the existing media item
@@ -1279,7 +1285,7 @@ export const deleteMedia = asyncHandler(async (req, res) => {
   }
 
   // Delete from Cloudinary
-  const resourceType = mediaType === "video" ? "video" : "raw";
+  const resourceType = mediaType === "video" ? "video" : "auto";
   if (player.media[mediaType].publicId) {
     await deleteMediaFromCloudinary(
       player.media[mediaType].publicId,

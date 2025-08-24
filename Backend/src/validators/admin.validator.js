@@ -283,33 +283,65 @@ export const createPlayerSchema = Joi.object({
 });
 
 export const updatePlayerSchema = Joi.object({
+  // Basic Information
   name: Joi.string().trim().min(2).max(100).messages({
     "string.min": "Name must be at least 2 characters",
     "string.max": "Name cannot exceed 100 characters",
   }),
 
-  age: Joi.number().integer().min(16).max(50).messages({
-    "number.base": "Age must be a number",
-    "number.integer": "Age must be a whole number",
-    "number.min": "Age must be at least 16",
-    "number.max": "Age cannot exceed 50",
-  }),
+  age: Joi.alternatives()
+    .try(
+      Joi.number().integer().min(15).max(50),
+      Joi.string()
+        .pattern(/^\d+$/)
+        .custom((value) => parseInt(value))
+    )
+    .messages({
+      "number.base": "Age must be a number",
+      "number.integer": "Age must be a whole number",
+      "number.min": "Age must be at least 15",
+      "number.max": "Age cannot exceed 50",
+    }),
 
   gender: Joi.string().valid("male", "female").messages({
     "any.only": "Gender must be either male or female",
   }),
 
-  nationality: Joi.string().trim().min(2).max(100).messages({
-    "string.min": "Nationality must be at least 2 characters",
+  nationality: Joi.string().trim().max(100).allow("").messages({
     "string.max": "Nationality cannot exceed 100 characters",
   }),
 
+  customNationality: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Custom nationality cannot exceed 100 characters",
+  }),
+
+  birthCountry: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Birth country cannot exceed 100 characters",
+  }),
+
+  customBirthCountry: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Custom birth country cannot exceed 100 characters",
+  }),
+
+  // Professional Information
   jop: Joi.string().valid("player", "coach").messages({
     "any.only": "Job must be either player or coach",
   }),
 
-  position: Joi.string().trim().max(100).messages({
+  roleType: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Role type cannot exceed 100 characters",
+  }),
+
+  customRoleType: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Custom role type cannot exceed 100 characters",
+  }),
+
+  position: Joi.string().trim().max(100).allow("").messages({
     "string.max": "Position cannot exceed 100 characters",
+  }),
+
+  customPosition: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Custom position cannot exceed 100 characters",
   }),
 
   status: Joi.string()
@@ -319,63 +351,169 @@ export const updatePlayerSchema = Joi.object({
         "Status must be one of: available, contracted, transferred, recently transferred",
     }),
 
-  expreiance: Joi.number().integer().min(0).max(30).messages({
-    "number.base": "Experience must be a number",
-    "number.integer": "Experience must be a whole number",
-    "number.min": "Experience cannot be negative",
-    "number.max": "Experience cannot exceed 30 years",
+  experience: Joi.alternatives()
+    .try(
+      Joi.number().integer().min(0).max(30),
+      Joi.string()
+        .pattern(/^\d+$/)
+        .custom((value) => parseInt(value))
+    )
+    .messages({
+      "number.base": "Experience must be a number",
+      "number.integer": "Experience must be a whole number",
+      "number.min": "Experience cannot be negative",
+      "number.max": "Experience cannot exceed 30 years",
+    }),
+
+  expreiance: Joi.alternatives()
+    .try(
+      Joi.number().integer().min(0).max(30),
+      Joi.string()
+        .pattern(/^\d+$/)
+        .custom((value) => parseInt(value))
+    )
+    .messages({
+      "number.base": "Experience must be a number",
+      "number.integer": "Experience must be a whole number",
+      "number.min": "Experience cannot be negative",
+      "number.max": "Experience cannot exceed 30 years",
+    }),
+
+  game: Joi.string().max(100).allow(""),
+
+  customSport: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Custom sport cannot exceed 100 characters",
   }),
 
+  // Financial Information
   monthlySalary: Joi.object({
-    amount: Joi.number().min(0),
-    currency: Joi.string().valid("SAR", "USD", "EUR"),
+    amount: Joi.alternatives().try(
+      Joi.number().min(0),
+      Joi.string()
+        .pattern(/^\d+$/)
+        .custom((value) => parseInt(value))
+    ),
+    currency: Joi.string().valid("SAR", "USD", "EUR").allow(""),
   }),
 
   yearSalary: Joi.object({
-    amount: Joi.number().min(0),
-    currency: Joi.string().valid("SAR", "USD", "EUR"),
+    amount: Joi.alternatives().try(
+      Joi.number().min(0),
+      Joi.string()
+        .pattern(/^\d+$/)
+        .custom((value) => parseInt(value))
+    ),
+    currency: Joi.string().valid("SAR", "USD", "EUR").allow(""),
   }),
 
-  contractEndDate: Joi.date().greater("now").allow(null),
+  contractEndDate: Joi.alternatives().try(
+    Joi.date().allow(null),
+    Joi.string().allow("")
+  ),
 
   transferredTo: Joi.object({
     club: Joi.string().max(200).allow(""),
-    date: Joi.date().allow(null),
-    amount: Joi.number().min(0).allow(""),
+    startDate: Joi.alternatives().try(
+      Joi.date().allow(null),
+      Joi.string().allow("")
+    ),
+    endDate: Joi.alternatives().try(
+      Joi.date().allow(null),
+      Joi.string().allow("")
+    ),
+    amount: Joi.alternatives().try(
+      Joi.number().min(0),
+      Joi.string()
+        .pattern(/^\d+$/)
+        .custom((value) => parseInt(value)),
+      Joi.string().allow("")
+    ),
   }),
 
+  // Social Links
   socialLinks: Joi.object({
-    instagram: Joi.string().uri().allow(""),
-    twitter: Joi.string().uri().allow(""),
+    instagram: Joi.string().allow(""),
+    twitter: Joi.string().allow(""),
     whatsapp: Joi.string().allow(""),
-    youtube: Joi.string().uri().allow(""),
+    youtube: Joi.string().allow(""),
   }),
 
-  isPromoted: Joi.object({
-    status: Joi.boolean(),
-    startDate: Joi.date().allow(""),
-    endDate: Joi.date().allow(""),
-    type: Joi.string().allow(""),
-  }),
-
+  // Contact Information
   contactInfo: Joi.object({
     isHidden: Joi.boolean(),
     email: Joi.string().email().allow(""),
-    phone: Joi.string()
-      .pattern(/^[0-9+\-\s()]+$/)
-      .allow(""),
+    phone: Joi.string().allow(""),
     agent: Joi.object({
       name: Joi.string().max(100).allow(""),
-      phone: Joi.string()
-        .pattern(/^[0-9+\-\s()]+$/)
-        .allow(""),
+      phone: Joi.string().allow(""),
       email: Joi.string().email().allow(""),
     }),
   }),
 
-  game: Joi.string().max(100).allow(""),
-  isActive: Joi.boolean(),
-  views: Joi.number().integer().min(0),
+  // Promotion Information
+  isPromoted: Joi.object({
+    status: Joi.alternatives().try(
+      Joi.boolean(),
+      Joi.string()
+        .valid("true", "false")
+        .custom((value) => value === "true")
+    ),
+    startDate: Joi.alternatives().try(
+      Joi.date().allow(null),
+      Joi.string().allow("")
+    ),
+    endDate: Joi.alternatives().try(
+      Joi.date().allow(null),
+      Joi.string().allow("")
+    ),
+    type: Joi.string().allow(""),
+  }),
+
+  // System Settings
+  isListed: Joi.alternatives().try(
+    Joi.boolean(),
+    Joi.string()
+      .valid("true", "false")
+      .custom((value) => value === "true")
+  ),
+
+  isActive: Joi.alternatives().try(
+    Joi.boolean(),
+    Joi.string()
+      .valid("true", "false")
+      .custom((value) => value === "true")
+  ),
+
+  isConfirmed: Joi.alternatives().try(
+    Joi.boolean(),
+    Joi.string()
+      .valid("true", "false")
+      .custom((value) => value === "true")
+  ),
+
+  views: Joi.alternatives().try(
+    Joi.number().integer().min(0),
+    Joi.string()
+      .pattern(/^\d+$/)
+      .custom((value) => parseInt(value))
+  ),
+
+  // Media handling
+  existingMedia: Joi.alternatives().try(
+    Joi.object().unknown(true),
+    Joi.string().custom((value) => {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        throw new Error("Invalid JSON for existingMedia");
+      }
+    })
+  ),
+
+  // Additional fields
+  media: Joi.object().unknown(true),
+  stats: Joi.object().unknown(true),
+  bio: Joi.string().max(1000).allow(""),
 
   seo: Joi.object({
     metaTitle: Joi.object({
@@ -448,6 +586,7 @@ export const getPlayersQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   search: Joi.string().trim().max(200),
+  jop: Joi.string().valid("player", "coach").optional(), // ✅ إضافة jop field
   position: Joi.string().max(100),
   status: Joi.string().valid(
     "available",
