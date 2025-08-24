@@ -80,10 +80,10 @@ async function applyPaidEffects(invoice, verify, session) {
       { upsert: true, session }
     );
   } else if (invoice.product === "promotion") {
-    const end = new Date(
-      Date.now() +
-        Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS) * ONE_DAY_MS
+    const promoDays = Number(
+      invoice.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
     );
+    const end = new Date(Date.now() + promoDays * ONE_DAY_MS);
     if (invoice.playerProfileId) {
       await PlayerProfile.updateOne(
         { _id: invoice.playerProfileId, user: invoice.userId },
@@ -296,14 +296,14 @@ export const createDraftInvoice = async (req, res) => {
         dur = PRICING.ONE_YEAR_DAYS;
       } else if (prod === "promotion") {
         featureType = "toplist";
-        // سنوي ثابت
-        if (PRICING.promotion_year[targetType] > 0 && !durationDays) {
+        // افتراضي: 15 يوم أو من env
+        const perDay = PRICING.promotion_per_day[targetType] || 15;
+        const d = Number(durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15);
+        // إن وُضع سعر سنوي واختيرت سنة كاملة صراحةً، نستخدمه
+        if (!durationDays && PRICING.promotion_year[targetType] > 0 && d >= PRICING.ONE_YEAR_DAYS) {
           amount = PRICING.promotion_year[targetType];
           dur = PRICING.ONE_YEAR_DAYS;
         } else {
-          // أو باليوم
-          const perDay = PRICING.promotion_per_day[targetType] || 0;
-          const d = Number(durationDays || PRICING.ONE_YEAR_DAYS);
           amount = perDay * d;
           dur = d;
         }
@@ -393,18 +393,21 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
     }
 
     const user = req.user;
-    const title =
-      inv.product === "contacts_access"
-        ? "Contacts access (1 year)"
-        : inv.product === "listing"
-        ? inv.targetType === "coach"
+    const title = (() => {
+      if (inv.product === "contacts_access") return "Contacts access (1 year)";
+      if (inv.product === "listing")
+        return inv.targetType === "coach"
           ? "Coach listing (1 year)"
-          : "Player listing (1 year)"
-        : inv.product === "promotion"
-        ? inv.targetType === "coach"
-          ? "Top list (Coach) (1 year)"
-          : "Top list (Player) (1 year)"
-        : inv.product;
+          : "Player listing (1 year)";
+      if (inv.product === "promotion") {
+        const days = Number(
+          inv.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
+        );
+        const label = inv.targetType === "coach" ? "Coach" : "Player";
+        return `Top list (${label}) (${days} day${days === 1 ? "" : "s"})`;
+      }
+      return inv.product;
+    })();
 
     // Build callback URLs using FRONTEND_URL if provided
     const originFallback =
@@ -571,14 +574,10 @@ export const paymentWebhook = async (req, res) => {
       }
 
       if (inv.product === "promotion") {
-        const end = new Date(
-          Date.now() +
-            Number(inv.durationDays || PRICING.ONE_YEAR_DAYS) *
-              24 *
-              60 *
-              60 *
-              1000
+        const promoDays = Number(
+          inv.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
         );
+        const end = new Date(Date.now() + promoDays * 24 * 60 * 60 * 1000);
         if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
             { _id: inv.playerProfileId, user: inv.userId },
@@ -904,14 +903,10 @@ export const simulateSuccess = async (req, res) => {
       }
 
       if (inv.product === "promotion") {
-        const end = new Date(
-          Date.now() +
-            Number(inv.durationDays || PRICING.ONE_YEAR_DAYS) *
-              24 *
-              60 *
-              60 *
-              1000
+        const promoDays = Number(
+          inv.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
         );
+        const end = new Date(Date.now() + promoDays * 24 * 60 * 60 * 1000);
         if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
             { _id: inv.playerProfileId, user: inv.userId },
