@@ -44,6 +44,21 @@ const sports = [
     icon: "./assets/volleyball.svg",
   },
   {
+    id: "football",
+    name: "كرة قدم",
+    icon: "./assets/football-ball.svg",
+  },
+  {
+    id: "futsal",
+    name: "كرة قدم الصالات",
+    icon: GiGoalKeeper,
+  },
+  {
+    id: "esports",
+    name: "الألعاب الإلكترونية",
+    icon: IoGameControllerOutline,
+  },
+  {
     id: "badminton",
     name: "الريشة الطائرة",
     icon: "./assets/badminton.svg",
@@ -78,11 +93,7 @@ const sports = [
     name: "الرماية",
     icon: GiArcheryTarget,
   },
-  {
-    id: "esports",
-    name: "الألعاب الإلكترونية",
-    icon: IoGameControllerOutline,
-  },
+
   {
     id: "judo",
     name: "الجودو",
@@ -108,16 +119,7 @@ const sports = [
     name: "رفع الأثقال",
     icon: FaDumbbell,
   },
-  {
-    id: "futsal",
-    name: "كرة قدم الصالات",
-    icon: GiGoalKeeper,
-  },
-  {
-    id: "football",
-    name: "كرة قدم",
-    icon: "./assets/football-ball.svg",
-  },
+
   {
     id: "boxing",
     name: "الملاكمة",

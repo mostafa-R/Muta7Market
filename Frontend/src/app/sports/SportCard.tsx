@@ -54,6 +54,11 @@ function SportCard({ searchTerm }: SportCardProps) {
       icon: "./assets/football-ball.svg",
     },
     {
+      id: "futsal",
+      name: t("sports.futsal"),
+      icon: GiGoalKeeper,
+    },
+    {
       id: "badminton",
       name: t("sports.badminton"),
       icon: "./assets/badminton.svg",
@@ -118,11 +123,7 @@ function SportCard({ searchTerm }: SportCardProps) {
       name: t("sports.weightlifting"),
       icon: FaDumbbell,
     },
-    {
-      id: "futsal",
-      name: t("sports.futsal"),
-      icon: GiGoalKeeper,
-    },
+
     {
       id: "boxing",
       name: t("sports.boxing"),
