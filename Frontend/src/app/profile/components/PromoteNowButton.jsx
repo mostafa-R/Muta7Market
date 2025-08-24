@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Pin } from "lucide-react";
 
 const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:5000/api/v1";
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 function authHeaders() {
     if (typeof window === "undefined") return {};

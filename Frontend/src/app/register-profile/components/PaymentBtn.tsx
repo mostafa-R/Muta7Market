@@ -22,7 +22,7 @@ export default function PaymentBtn({
   const { t } = useTranslation();
   // Ensure API base points to backend API root
   const API_BASE =
-    (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000") +
+    (process.env.NEXT_PUBLIC_API_BASE_URL) +
     (process.env.NEXT_PUBLIC_API_BASE_URL?.endsWith("/api/v1")
       ? ""
       : "/api/v1");

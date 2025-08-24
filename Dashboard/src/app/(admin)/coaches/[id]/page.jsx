@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 /** ===== API BASES ===== */
-const API_ROOT   = (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
+const API_ROOT   = (process.env.NEXT_PUBLIC_BASE_URL).replace(/\/$/, '');
 const ADMIN_BASE = `${API_ROOT}/admin`;
 
 /** ===== Endpoints ===== */
