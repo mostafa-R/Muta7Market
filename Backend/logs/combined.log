@@ -948,3 +948,12 @@
 {"address":"::1","code":"ESOCKET","command":"CONN","errno":-4078,"level":"error","message":"Email transporter error: connect ECONNREFUSED ::1:587","port":587,"service":"sports-platform-api","stack":"Error: connect ECONNREFUSED ::1:587\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)","syscall":"connect","timestamp":"2025-08-25 02:46:03"}
 {"level":"info","message":"MongoDB Connected: ac-tcgaivq-shard-00-02.gcrpdcs.mongodb.net","service":"sports-platform-api","timestamp":"2025-08-25 02:46:03"}
 {"level":"info","message":"Server running in development mode on port 5000","service":"sports-platform-api","timestamp":"2025-08-25 02:46:03"}
+{"address":"::1","code":"ESOCKET","command":"CONN","errno":-4078,"level":"error","message":"Email transporter error: connect ECONNREFUSED ::1:587","port":587,"service":"sports-platform-api","stack":"Error: connect ECONNREFUSED ::1:587\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)","syscall":"connect","timestamp":"2025-08-25 13:23:36"}
+{"level":"info","message":"MongoDB Connected: 156.67.25.79","service":"sports-platform-api","timestamp":"2025-08-25 13:23:36"}
+{"level":"info","message":"Server running in development mode on port 5000","service":"sports-platform-api","timestamp":"2025-08-25 13:23:36"}
+{"level":"warn","message":"MongoDB disconnected","service":"sports-platform-api","timestamp":"2025-08-25 13:24:47"}
+{"level":"warn","message":"MongoDB disconnected","service":"sports-platform-api","timestamp":"2025-08-25 13:26:07"}
+{"level":"warn","message":"MongoDB disconnected","service":"sports-platform-api","timestamp":"2025-08-25 13:27:28"}
+{"address":"::1","code":"ESOCKET","command":"CONN","errno":-4078,"level":"error","message":"Email transporter error: connect ECONNREFUSED ::1:587","port":587,"service":"sports-platform-api","stack":"Error: connect ECONNREFUSED ::1:587\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)","syscall":"connect","timestamp":"2025-08-25 13:28:04"}
+{"level":"info","message":"MongoDB Connected: 156.67.25.79","service":"sports-platform-api","timestamp":"2025-08-25 13:28:04"}
+{"level":"info","message":"Server running in development mode on port 5000","service":"sports-platform-api","timestamp":"2025-08-25 13:28:04"}
