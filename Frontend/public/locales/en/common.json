@@ -1348,7 +1348,9 @@
       "striker": "Striker",
       "winger": "Winger",
       "fullback": "Fullback",
-      "sweeper": "Sweeper"
+      "sweeper": "Sweeper",
+      "assistantcoach" : "Assistant Coach",
+      "assistant_coach" : "Assistant Coach"
     },
     "swimming": {
       "freestyle50m": "Freestyle 50m",

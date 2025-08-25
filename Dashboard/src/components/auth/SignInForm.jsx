@@ -114,10 +114,19 @@ export default function SignInForm() {
   const [serverError, setServerError] = useState("");
 
   return (
+
+
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+          <h1>NEXT_PUBLIC_APP_NAME: {process.env.NEXT_PUBLIC_APP_NAME}</h1>
+          <h1>NEXT_PUBLIC_BASE_URL: {process.env.NEXT_PUBLIC_BASE_URL}</h1>
+          <h1>NEXT_PUBLIC_API_URL: {process.env.NEXT_PUBLIC_API_URL}</h1>
+          <h1>NEXT_PUBLIC_API_BASE_URL: {process.env.NEXT_PUBLIC_API_BASE_URL}</h1>
+            <h1>NODE_ENV: {process.env.NODE_ENV}</h1>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
+      
+            
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
               Sign In
             </h1>

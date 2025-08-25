@@ -47,7 +47,7 @@ const navItems = [
     name: "المدفوعات",
     icon: <PageIcon />,
     subItems: [
-      { name: "إحصائيات", path: "/blank", pro: false },
+      // { name: "إحصائيات", path: "/blank", pro: false },
       { name: "جدول المدفوعات", path: "/payment", pro: false },
     ],
   },

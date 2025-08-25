@@ -910,13 +910,14 @@ const PlayerProfile = () => {
                           {t("playerDetail.roleType")}
                         </div>
                         <div className="font-medium">
-                          {player.jop === "player"
-                            ? t(`playerRoles.${player.roleType}`, {
-                                defaultValue: player.roleType,
-                              })
-                            : t(`coachRoles.${player.roleType}`, {
-                                defaultValue: player.roleType,
-                              })}
+                        {player.jop === "player"
+  ? t(`playerRoles.${player.roleType}`, {
+      defaultValue: player.roleType,
+    })
+  : t(`coachRoles.${player.roleType}`, {
+      defaultValue: player.roleType,
+    })
+}
                         </div>
                       </div>
                     </div>
