@@ -47,4 +47,3 @@ export const verifiedOnly = asyncHandler(async (req, res, next) => {
 
   next();
 });
-

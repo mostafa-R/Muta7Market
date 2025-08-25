@@ -300,7 +300,11 @@ export const createDraftInvoice = async (req, res) => {
         const perDay = PRICING.promotion_per_day[targetType] || 15;
         const d = Number(durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15);
         // إن وُضع سعر سنوي واختيرت سنة كاملة صراحةً، نستخدمه
-        if (!durationDays && PRICING.promotion_year[targetType] > 0 && d >= PRICING.ONE_YEAR_DAYS) {
+        if (
+          !durationDays &&
+          PRICING.promotion_year[targetType] > 0 &&
+          d >= PRICING.ONE_YEAR_DAYS
+        ) {
           amount = PRICING.promotion_year[targetType];
           dur = PRICING.ONE_YEAR_DAYS;
         } else {
