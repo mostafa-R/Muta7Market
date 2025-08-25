@@ -1,14 +1,14 @@
 // controllers/notification.controller.js
-import OneSignal from 'onesignal-node';
-import NotificationLog from '../models/notificationLog.model.js';
-import NotificationTemplate from '../models/notificationTemplate.model.js';
-import User from '../models/user.model.js';
-import { initializeEmailService } from '../services/email.service.js';
-import smsService from '../services/sms.service.js';
-import ApiError from '../utils/ApiError.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import logger from '../utils/logger.js';
+import OneSignal from "onesignal-node";
+import NotificationLog from "../models/notificationLog.model.js";
+import NotificationTemplate from "../models/notificationTemplate.model.js";
+import User from "../models/user.model.js";
+import { initializeEmailService } from "../services/email.service.js";
+import smsService from "../services/sms.service.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import logger from "../utils/logger.js";
 
 // Initialize OneSignal client
 const oneSignalClient = new OneSignal.Client(
@@ -20,14 +20,14 @@ const oneSignalClient = new OneSignal.Client(
 const prepareRecipients = async (recipients, segment) => {
   let users = [];
 
-  if (recipients === 'all') {
+  if (recipients === "all") {
     users = await User.find({ isActive: true }).lean();
   } else if (Array.isArray(recipients)) {
     users = await User.find({
       _id: { $in: recipients },
-      isActive: true
+      isActive: true,
     }).lean();
-  } else if (typeof recipients === 'string') {
+  } else if (typeof recipients === "string") {
     const user = await User.findById(recipients).lean();
     if (user && user.isActive) {
       users = [user];
@@ -76,20 +76,20 @@ const renderTemplate = async (template, channel, context) => {
     throw new ApiError(400, `Template doesn't support ${channel} channel`);
   }
 
-  const language = context.user.preferences?.language || 'en';
+  const language = context.user.preferences?.language || "en";
   const rendered = {
     subject: content.subject?.[language] || content.subject?.en,
-    body: content.body[language] || content.body.en
+    body: content.body[language] || content.body.en,
   };
 
   const variables = {
     user_name: context.user.name,
     user_email: context.user.email,
-    ...context.data
+    ...context.data,
   };
 
   Object.keys(variables).forEach((key) => {
-    const regex = new RegExp(`{{${key}}}`, 'g');
+    const regex = new RegExp(`{{${key}}}`, "g");
     if (rendered.subject) {
       rendered.subject = rendered.subject.replace(regex, variables[key]);
     }
@@ -104,7 +104,7 @@ const logNotification = async (logData) => {
   try {
     await NotificationLog.create(logData);
   } catch (error) {
-    logger.error('Failed to log notification:', error);
+    logger.error("Failed to log notification:", error);
   }
 };
 
@@ -119,24 +119,24 @@ const sendPushNotification = async (
   const notification = {
     headings: {
       en: title,
-      ar: options.titleAr || title
+      ar: options.titleAr || title,
     },
     contents: {
       en: message,
-      ar: options.messageAr || message
+      ar: options.messageAr || message,
     },
     data: {
       ...data,
-      userId: user._id.toString()
+      userId: user._id.toString(),
     },
     filters: [
       {
-        field: 'tag',
-        key: 'userId',
-        relation: '=',
-        value: user._id.toString()
-      }
-    ]
+        field: "tag",
+        key: "userId",
+        relation: "=",
+        value: user._id.toString(),
+      },
+    ],
   };
 
   if (options.imageUrl) {
@@ -151,7 +151,7 @@ const sendPushNotification = async (
     notification.send_after = options.scheduleAt;
   }
 
-  if (options.priority === 'high') {
+  if (options.priority === "high") {
     notification.priority = 10;
   }
 
@@ -159,7 +159,7 @@ const sendPushNotification = async (
     const response = await oneSignalClient.createNotification(notification);
     return response;
   } catch (error) {
-    logger.error('OneSignal push error:', error);
+    logger.error("OneSignal push error:", error);
     throw new ApiError(500, `Push notification failed: ${error.message}`);
   }
 };
@@ -169,17 +169,17 @@ export const sendNotification = asyncHandler(async (req, res) => {
   const { recipients, title, message, data = {}, options = {} } = req.body;
 
   if (!recipients || !title || !message) {
-    throw new ApiError(400, 'Recipients, title, and message are required');
+    throw new ApiError(400, "Recipients, title, and message are required");
   }
 
-  const { channels = ['push', 'email'], templateId, segment } = options;
+  const { channels = ["push", "email"], templateId, segment } = options;
 
   // Get notification template if provided
   let template;
   if (templateId) {
     template = await NotificationTemplate.findById(templateId);
     if (!template || !template.isActive) {
-      throw new ApiError(404, 'Notification template not found');
+      throw new ApiError(404, "Notification template not found");
     }
   }
 
@@ -190,7 +190,7 @@ export const sendNotification = asyncHandler(async (req, res) => {
   const results = {
     push: { success: 0, failed: 0, errors: [] },
     email: { success: 0, failed: 0, errors: [] },
-    sms: { success: 0, failed: 0, errors: [] }
+    sms: { success: 0, failed: 0, errors: [] },
   };
 
   for (const user of recipientUsers) {
@@ -202,33 +202,33 @@ export const sendNotification = asyncHandler(async (req, res) => {
     for (const channel of userChannels) {
       try {
         switch (channel) {
-        case 'push':
-          await sendPushNotification(user, title, message, data, options);
-          results.push.success++;
-          break;
+          case "push":
+            await sendPushNotification(user, title, message, data, options);
+            results.push.success++;
+            break;
 
-        case 'email': {
-          const emailContent = template
-            ? await renderTemplate(template, 'email', { user, data })
-            : { subject: title, body: message };
-          await initializeEmailService.sendNotificationEmail(
-            user.email,
-            emailContent.subject,
-            emailContent.body,
-            data
-          );
-          results.email.success++;
-          break;
-        }
+          case "email": {
+            const emailContent = template
+              ? await renderTemplate(template, "email", { user, data })
+              : { subject: title, body: message };
+            await initializeEmailService.sendNotificationEmail(
+              user.email,
+              emailContent.subject,
+              emailContent.body,
+              data
+            );
+            results.email.success++;
+            break;
+          }
 
-        case 'sms': {
-          const smsContent = template
-            ? await renderTemplate(template, 'sms', { user, data })
-            : message;
-          await smsService.sendSMS(user.phone, smsContent);
-          results.sms.success++;
-          break;
-        }
+          case "sms": {
+            const smsContent = template
+              ? await renderTemplate(template, "sms", { user, data })
+              : message;
+            await smsService.sendSMS(user.phone, smsContent);
+            results.sms.success++;
+            break;
+          }
         }
 
         // Log notification
@@ -239,13 +239,13 @@ export const sendNotification = asyncHandler(async (req, res) => {
           message,
           templateId,
           data,
-          status: 'sent'
+          status: "sent",
         });
       } catch (error) {
         results[channel].failed++;
         results[channel].errors.push({
           userId: user._id,
-          error: error.message
+          error: error.message,
         });
 
         // Log failed notification
@@ -256,8 +256,8 @@ export const sendNotification = asyncHandler(async (req, res) => {
           message,
           templateId,
           data,
-          status: 'failed',
-          error: error.message
+          status: "failed",
+          error: error.message,
         });
       }
     }
@@ -268,9 +268,9 @@ export const sendNotification = asyncHandler(async (req, res) => {
       200,
       {
         totalRecipients: recipientUsers.length,
-        results
+        results,
       },
-      'Notifications sent successfully'
+      "Notifications sent successfully"
     )
   );
 });
@@ -307,7 +307,7 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
       .limit(parseInt(limit))
       .skip(skip)
       .lean(),
-    NotificationLog.countDocuments(query)
+    NotificationLog.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -319,10 +319,10 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
           total,
           pages: Math.ceil(total / limit),
           page: parseInt(page),
-          limit: parseInt(limit)
-        }
+          limit: parseInt(limit),
+        },
       },
-      'Notifications fetched successfully'
+      "Notifications fetched successfully"
     )
   );
 });
@@ -333,14 +333,14 @@ export const markAsRead = asyncHandler(async (req, res) => {
   const { notificationIds } = req.body;
 
   if (!notificationIds || !Array.isArray(notificationIds)) {
-    throw new ApiError(400, 'Notification IDs array is required');
+    throw new ApiError(400, "Notification IDs array is required");
   }
 
   const result = await NotificationLog.updateMany(
     {
       user: userId,
       _id: { $in: notificationIds },
-      readAt: null
+      readAt: null,
     },
     { readAt: new Date() }
   );
@@ -351,7 +351,7 @@ export const markAsRead = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { modified: result.modifiedCount },
-        'Notifications marked as read'
+        "Notifications marked as read"
       )
     );
 });
@@ -363,12 +363,12 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
   const count = await NotificationLog.countDocuments({
     user: userId,
     readAt: null,
-    channel: 'push'
+    channel: "push",
   });
 
   res
     .status(200)
-    .json(new ApiResponse(200, { unreadCount: count }, 'Unread count fetched'));
+    .json(new ApiResponse(200, { unreadCount: count }, "Unread count fetched"));
 });
 
 // Send Bulk Notifications
@@ -377,7 +377,7 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
   const { batchSize = 100 } = options;
 
   if (!notifications || !Array.isArray(notifications)) {
-    throw new ApiError(400, 'Notifications array is required');
+    throw new ApiError(400, "Notifications array is required");
   }
 
   const results = [];
@@ -399,7 +399,7 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
         return {
           error: true,
           message: error.message,
-          notification
+          notification,
         };
       }
     });
@@ -420,9 +420,9 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
         total: notifications.length,
         successful: results.filter((r) => !r.error).length,
         failed: results.filter((r) => r.error).length,
-        results
+        results,
       },
-      'Bulk notifications processed'
+      "Bulk notifications processed"
     )
   );
 });
@@ -435,7 +435,7 @@ export const createTemplate = asyncHandler(async (req, res) => {
 
   res
     .status(201)
-    .json(new ApiResponse(201, template, 'Template created successfully'));
+    .json(new ApiResponse(201, template, "Template created successfully"));
 });
 
 // Get All Templates
@@ -447,7 +447,7 @@ export const getAllTemplates = asyncHandler(async (req, res) => {
     query.category = category;
   }
   if (isActive !== undefined) {
-    query.isActive = isActive === 'true';
+    query.isActive = isActive === "true";
   }
 
   const skip = (page - 1) * limit;
@@ -457,7 +457,7 @@ export const getAllTemplates = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip),
-    NotificationTemplate.countDocuments(query)
+    NotificationTemplate.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -469,10 +469,10 @@ export const getAllTemplates = asyncHandler(async (req, res) => {
           total,
           pages: Math.ceil(total / limit),
           page: parseInt(page),
-          limit: parseInt(limit)
-        }
+          limit: parseInt(limit),
+        },
       },
-      'Templates fetched successfully'
+      "Templates fetched successfully"
     )
   );
 });
@@ -482,12 +482,12 @@ export const getTemplateById = asyncHandler(async (req, res) => {
   const template = await NotificationTemplate.findById(req.params.id);
 
   if (!template) {
-    throw new ApiError(404, 'Template not found');
+    throw new ApiError(404, "Template not found");
   }
 
   res
     .status(200)
-    .json(new ApiResponse(200, template, 'Template fetched successfully'));
+    .json(new ApiResponse(200, template, "Template fetched successfully"));
 });
 
 // Update Template
@@ -499,12 +499,12 @@ export const updateTemplate = asyncHandler(async (req, res) => {
   );
 
   if (!template) {
-    throw new ApiError(404, 'Template not found');
+    throw new ApiError(404, "Template not found");
   }
 
   res
     .status(200)
-    .json(new ApiResponse(200, template, 'Template updated successfully'));
+    .json(new ApiResponse(200, template, "Template updated successfully"));
 });
 
 // Delete Template
@@ -512,12 +512,12 @@ export const deleteTemplate = asyncHandler(async (req, res) => {
   const template = await NotificationTemplate.findByIdAndDelete(req.params.id);
 
   if (!template) {
-    throw new ApiError(404, 'Template not found');
+    throw new ApiError(404, "Template not found");
   }
 
   res
     .status(200)
-    .json(new ApiResponse(200, null, 'Template deleted successfully'));
+    .json(new ApiResponse(200, null, "Template deleted successfully"));
 });
 
 // Get Notification Analytics
@@ -548,31 +548,31 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: {
-          channel: '$channel',
-          status: '$status',
+          channel: "$channel",
+          status: "$status",
           date: {
             $dateToString: {
-              format: '%Y-%m-%d',
-              date: '$createdAt'
-            }
-          }
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
         },
-        count: { $sum: 1 }
-      }
+        count: { $sum: 1 },
+      },
     },
     {
       $group: {
-        _id: '$_id.date',
+        _id: "$_id.date",
         channels: {
           $push: {
-            channel: '$_id.channel',
-            status: '$_id.status',
-            count: '$count'
-          }
-        }
-      }
+            channel: "$_id.channel",
+            status: "$_id.status",
+            count: "$count",
+          },
+        },
+      },
     },
-    { $sort: { _id: -1 } }
+    { $sort: { _id: -1 } },
   ]);
 
   // Aggregate summary stats
@@ -583,23 +583,23 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
         _id: null,
         totalSent: { $sum: 1 },
         totalDelivered: {
-          $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
         },
         totalRead: {
-          $sum: { $cond: [{ $eq: ['$status', 'read'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ["$status", "read"] }, 1, 0] },
         },
         totalFailed: {
-          $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] }
-        }
-      }
-    }
+          $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] },
+        },
+      },
+    },
   ]);
 
   const stats = summaryStats[0] || {
     totalSent: 0,
     totalDelivered: 0,
     totalRead: 0,
-    totalFailed: 0
+    totalFailed: 0,
   };
 
   // Calculate rates (delivery, read, failure)
@@ -623,10 +623,10 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
           ...stats,
           deliveryRate,
           readRate,
-          failureRate
-        }
+          failureRate,
+        },
       },
-      'Analytics fetched successfully'
+      "Analytics fetched successfully"
     )
   );
 });
@@ -640,7 +640,7 @@ export const sendInternalNotification = async (
   options = {}
 ) => {
   try {
-    const { channels = ['push'], templateId } = options;
+    const { channels = ["push"], templateId } = options;
 
     // Get notification template if provided
     let template;
@@ -660,30 +660,30 @@ export const sendInternalNotification = async (
       for (const channel of userChannels) {
         try {
           switch (channel) {
-          case 'push':
-            await sendPushNotification(user, title, message, data, options);
-            break;
+            case "push":
+              await sendPushNotification(user, title, message, data, options);
+              break;
 
-          case 'email': {
-            const emailContent = template
-              ? await renderTemplate(template, 'email', { user, data })
-              : { subject: title, body: message };
-            await initializeEmailService.sendNotificationEmail(
-              user.email,
-              emailContent.subject,
-              emailContent.body,
-              data
-            );
-            break;
-          }
+            case "email": {
+              const emailContent = template
+                ? await renderTemplate(template, "email", { user, data })
+                : { subject: title, body: message };
+              await initializeEmailService.sendNotificationEmail(
+                user.email,
+                emailContent.subject,
+                emailContent.body,
+                data
+              );
+              break;
+            }
 
-          case 'sms': {
-            const smsContent = template
-              ? await renderTemplate(template, 'sms', { user, data })
-              : message;
-            await smsService.sendSMS(user.phone, smsContent);
-            break;
-          }
+            case "sms": {
+              const smsContent = template
+                ? await renderTemplate(template, "sms", { user, data })
+                : message;
+              await smsService.sendSMS(user.phone, smsContent);
+              break;
+            }
           }
 
           // Log notification
@@ -694,7 +694,7 @@ export const sendInternalNotification = async (
             message,
             templateId,
             data,
-            status: 'sent'
+            status: "sent",
           });
         } catch (error) {
           // Log failed notification
@@ -705,8 +705,8 @@ export const sendInternalNotification = async (
             message,
             templateId,
             data,
-            status: 'failed',
-            error: error.message
+            status: "failed",
+            error: error.message,
           });
         }
       }
@@ -714,7 +714,7 @@ export const sendInternalNotification = async (
 
     return { success: true };
   } catch (error) {
-    logger.error('Internal notification error:', error);
+    logger.error("Internal notification error:", error);
     throw error;
   }
 };
