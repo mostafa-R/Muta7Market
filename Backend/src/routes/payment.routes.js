@@ -13,7 +13,7 @@ import {
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const r = Router();
-r.post("/reconcile", authMiddleware, reconcileMyInvoices); // <-- NEW
+r.post("/reconcile", authMiddleware, reconcileMyInvoices);  // <-- NEW
 
 // Draft داخلي (لا يتصل بـ Paylink)
 r.post("/drafts", authMiddleware, createDraftInvoice);
@@ -30,6 +30,7 @@ r.get("/status/:id", authMiddleware, getPaymentStatus);
 r.get("/invoices", authMiddleware, listMyInvoices);
 
 r.get("/admin/invoices", authMiddleware, listAllInvoices);
+
 
 r.post("/invoices/recheck/:orderNumber", authMiddleware, recheckByOrderNumber);
 

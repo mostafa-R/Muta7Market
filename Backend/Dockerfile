@@ -4,9 +4,9 @@
 ARG NODE_VERSION=22.17.0
 FROM node:${NODE_VERSION}-slim AS base
 
-LABEL fly_launch_runtime="Next.js"
+LABEL fly_launch_runtime="Node.js"
 
-# Next.js app lives here
+# Node.js app lives here
 WORKDIR /app
 
 # Set production environment
@@ -22,16 +22,10 @@ RUN apt-get update -qq && \
 
 # Install node modules
 COPY package-lock.json package.json ./
-RUN npm ci --include=dev
+RUN npm ci
 
 # Copy application code
 COPY . .
-
-# Build application
-RUN npx next build --experimental-build-mode compile
-
-# Remove development dependencies
-RUN npm prune --omit=dev
 
 
 # Final stage for app image
@@ -39,9 +33,6 @@ FROM base
 
 # Copy built application
 COPY --from=build /app /app
-
-# Entrypoint sets up the container.
-ENTRYPOINT [ "/app/docker-entrypoint.js" ]
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
