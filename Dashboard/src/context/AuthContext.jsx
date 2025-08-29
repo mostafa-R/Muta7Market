@@ -28,12 +28,12 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
       const userData = localStorage.getItem('userData');
 
-      console.log('Checking auth status:', { token: !!token, userData: !!userData });
+      
 
       if (token && userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        console.log('User authenticated:', parsedUser);
+        
         
         // إضافة الـ token للكوكيز إذا لم يكن موجود
         if (!document.cookie.includes('accessToken=')) {
@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
   };
 
   const login = (userData, token, remember = false) => {
-    console.log('Login called:', { userData, token: !!token, remember });
+   
     
     try {
       // حفظ البيانات

@@ -71,14 +71,11 @@ export async function ensurePendingInvoice({
     playerProfileId: playerProfileId ?? null,
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
-  console.log(
-    "[invoice.service][ensurePendingInvoice] created new pending invoice",
-    {
-      id: String(invoice._id),
-      orderNumber: invoice.orderNumber,
-      amount: invoice.amount,
-    }
-  );
+  console.log("[invoice.service][ensurePendingInvoice] created new pending invoice", {
+    id: String(invoice._id),
+    orderNumber: invoice.orderNumber,
+    amount: invoice.amount,
+  });
 
   return invoice;
 }

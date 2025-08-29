@@ -179,7 +179,7 @@ export const createPlayerSchema = Joi.object({
         "Status must be one of: available, contracted, transferred, recently transferred",
     }),
 
-  expreiance: Joi.number().integer().min(0).max(30).default(0).messages({
+  experience: Joi.number().integer().min(0).max(30).default(0).messages({
     "number.base": "Experience must be a number",
     "number.integer": "Experience must be a whole number",
     "number.min": "Experience cannot be negative",
@@ -266,6 +266,8 @@ export const createPlayerSchema = Joi.object({
   game: Joi.string().max(100).allow(""),
 
   isActive: Joi.boolean().default(true),
+
+  isConfirmed: Joi.boolean().default(false),
 
   views: Joi.number().integer().min(0).default(0),
 
@@ -365,7 +367,7 @@ export const updatePlayerSchema = Joi.object({
       "number.max": "Experience cannot exceed 30 years",
     }),
 
-  expreiance: Joi.alternatives()
+  experience: Joi.alternatives()
     .try(
       Joi.number().integer().min(0).max(30),
       Joi.string()

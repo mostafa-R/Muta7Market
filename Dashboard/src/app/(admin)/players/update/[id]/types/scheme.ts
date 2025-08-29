@@ -7,10 +7,10 @@ export const playerFormSchema = Joi.object({
     "string.min": "الاسم يجب أن يكون على الأقل حرفين",
     "string.max": "الاسم طويل جدًا",
   }),
-  age: Joi.number().integer().min(16).max(80).required().messages({
+  age: Joi.number().integer().min(10).max(80).required().messages({
     "number.base": "العمر يجب أن يكون رقم",
     "number.empty": "العمر مطلوب",
-    "number.min": "العمر يجب أن لا يقل عن 16",
+    "number.min": "العمر يجب أن لا يقل عن 10",
     "number.max": "العمر يجب أن لا يزيد عن 80",
   }),
   gender: Joi.string().valid("Male", "Female").required().messages({

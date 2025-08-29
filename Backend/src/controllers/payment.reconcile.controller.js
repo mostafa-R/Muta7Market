@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
 import Invoice from "../models/invoice.model.js";
+import Entitlement from "../models/entitlement.model.js";
+import PlayerProfile from "../models/player.model.js";
+import User from "../models/user.model.js";
 import {
   paylinkGetInvoice,
-  paylinkGetOrderByNumber,
+  paylinkGetOrderByNumber, // ⬅️ add
+  paylinkGetTransactionsOfOrder, // ⬅️ optional
 } from "../services/paylink.client.js";
+import { PRICING } from "../config/constants.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
 
 // ... existing helpers (SAR, resolvePrice, toDto, applyInvoicePaid, etc.)
 

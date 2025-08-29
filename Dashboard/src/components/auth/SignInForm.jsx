@@ -117,11 +117,6 @@ export default function SignInForm() {
 
 
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-          <h1>NEXT_PUBLIC_APP_NAME: {process.env.NEXT_PUBLIC_APP_NAME}</h1>
-          <h1>NEXT_PUBLIC_BASE_URL: {process.env.NEXT_PUBLIC_BASE_URL}</h1>
-          <h1>NEXT_PUBLIC_API_URL: {process.env.NEXT_PUBLIC_API_URL}</h1>
-          <h1>NEXT_PUBLIC_API_BASE_URL: {process.env.NEXT_PUBLIC_API_BASE_URL}</h1>
-            <h1>NODE_ENV: {process.env.NODE_ENV}</h1>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -152,7 +147,7 @@ export default function SignInForm() {
                 setServerError("");
                 try {
                   const apiUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`;
-                  console.log("API URL:", apiUrl);
+                
 
                   const response = await axios.post(
                     apiUrl,

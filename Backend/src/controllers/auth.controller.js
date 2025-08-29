@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import { isEmailEnabled } from "../config/email.js";
 import userModel from "../models/user.model.js";
 import { sendEmail } from "../services/sendgridEmail.service.js";
+import { isEmailEnabled } from "../config/email.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -10,8 +10,8 @@ import { generateOTP, generateRandomString } from "../utils/helpers.js";
 import { generateAccessToken } from "../utils/jwt.js";
 
 // NEW: create draft invoice on signup (DB only)
-import { PRICING } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
+import { PRICING } from "../config/constants.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
 export const register = asyncHandler(async (req, res) => {
