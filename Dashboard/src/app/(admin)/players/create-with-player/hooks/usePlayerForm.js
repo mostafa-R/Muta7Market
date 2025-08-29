@@ -269,8 +269,8 @@ export const usePlayerForm = () => {
         return false;
       }
       
-      if (formData.age < 15 || formData.age > 50) {
-        toast.error("العمر يجب أن يكون بين 15 و 50", {
+      if (formData.age < 10 || formData.age > 80) {
+        toast.error("العمر يجب أن يكون بين 10 و 80", {
           description: "العمر المطلوب للانضمام للنظام",
           duration: 4000
         });

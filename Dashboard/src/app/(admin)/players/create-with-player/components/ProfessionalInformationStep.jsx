@@ -78,7 +78,7 @@ const ProfessionalInformationStep = ({
       "green_arrow": "سهم أخضر",
       
       // Handball positions
-      "pivot": "محور",
+      "pivot":"دائرة",
       "right_wing": "جناح أيمن",
       "right_back": "ظهير أيمن",
       "playmaker": "صانع ألعاب",
@@ -286,7 +286,7 @@ const ProfessionalInformationStep = ({
                 </option>
                 {availableRoleTypes.map((option) => (
                   <option key={option.id} value={option.value}>
-                    {option.value === "youth_player" ? "لاعب ناشئ" :
+                    {option.value === "youth_player" ? "لاعب شباب" :
                      option.value === "junior_player" ? "لاعب صغار" :
                      option.value === "first_team_player" ? "لاعب فريق أول" :
                      option.value === "reserve_player" ? "لاعب احتياطي" :

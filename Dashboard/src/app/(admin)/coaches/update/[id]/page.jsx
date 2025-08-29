@@ -171,7 +171,7 @@ export default function UpdatePlayerPage() {
       "green_arrow": "سهم أخضر",
       
       // Handball positions
-      "pivot": "محور",
+      "pivot": "دائرة",
       "right_wing": "جناح أيمن",
       "right_back": "ظهير أيمن",
       "playmaker": "صانع ألعاب",
@@ -679,7 +679,7 @@ export default function UpdatePlayerPage() {
       return false;
     }
 
-    if (formData.age && (formData.age < 15 || formData.age > 50)) {
+    if (formData.age && (formData.age < 10 || formData.age > 80)) {
       toast.error("العمر يجب أن يكون بين 15 و 50", toastStyle);
       return false;
     }

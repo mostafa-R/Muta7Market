@@ -29,7 +29,7 @@ export const useDashboardStats = () => {
       setLoading(true);
       setError(null);
 
-      const token = getAuthToken();
+      const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
       if (!token) throw new Error('Authentication token not found.');
 
       const API_BASE_URL =
