@@ -10,13 +10,11 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import logger from '../utils/logger.js';
 
-// Initialize OneSignal client
 const oneSignalClient = new OneSignal.Client(
   process.env.ONESIGNAL_APP_ID,
   process.env.ONESIGNAL_API_KEY
 );
 
-// Helper function to prepare recipients
 const prepareRecipients = async (recipients, segment) => {
   let users = [];
 
@@ -41,7 +39,6 @@ const prepareRecipients = async (recipients, segment) => {
   return users;
 };
 
-// Helper function to apply segment filtering
 const applySegmentFilter = async (users, segment) => {
   const { criteria } = segment;
 
@@ -69,7 +66,6 @@ const applySegmentFilter = async (users, segment) => {
   });
 };
 
-// Helper function to render template
 const renderTemplate = async (template, channel, context) => {
   const content = template.content[channel];
   if (!content) {
@@ -99,7 +95,6 @@ const renderTemplate = async (template, channel, context) => {
   return rendered;
 };
 
-// Helper function to log notifications
 const logNotification = async (logData) => {
   try {
     await NotificationLog.create(logData);
@@ -108,7 +103,6 @@ const logNotification = async (logData) => {
   }
 };
 
-// Helper function to send push notification
 const sendPushNotification = async (
   user,
   title,
@@ -164,7 +158,6 @@ const sendPushNotification = async (
   }
 };
 
-// Send Notification
 export const sendNotification = asyncHandler(async (req, res) => {
   const { recipients, title, message, data = {}, options = {} } = req.body;
 
@@ -174,7 +167,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
 
   const { channels = ['push', 'email'], templateId, segment } = options;
 
-  // Get notification template if provided
   let template;
   if (templateId) {
     template = await NotificationTemplate.findById(templateId);
@@ -183,10 +175,8 @@ export const sendNotification = asyncHandler(async (req, res) => {
     }
   }
 
-  // Prepare recipients
   const recipientUsers = await prepareRecipients(recipients, segment);
 
-  // Send notifications through requested channels
   const results = {
     push: { success: 0, failed: 0, errors: [] },
     email: { success: 0, failed: 0, errors: [] },
@@ -194,7 +184,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
   };
 
   for (const user of recipientUsers) {
-    // Check user preferences
     const userChannels = channels.filter(
       (channel) => user.preferences?.notifications?.[channel] !== false
     );
@@ -231,7 +220,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
         }
         }
 
-        // Log notification
         await logNotification({
           user: user._id,
           channel,
@@ -248,7 +236,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
           error: error.message
         });
 
-        // Log failed notification
         await logNotification({
           user: user._id,
           channel,
@@ -275,7 +262,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
   );
 });
 
-// Get User Notifications
 export const getUserNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { channel, status, from, to, limit = 50, page = 1 } = req.query;
@@ -327,7 +313,6 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
   );
 });
 
-// Mark Notifications as Read
 export const markAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { notificationIds } = req.body;
@@ -356,7 +341,6 @@ export const markAsRead = asyncHandler(async (req, res) => {
     );
 });
 
-// Get Unread Count
 export const getUnreadCount = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
@@ -371,7 +355,6 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { unreadCount: count }, 'Unread count fetched'));
 });
 
-// Send Bulk Notifications
 export const sendBulkNotifications = asyncHandler(async (req, res) => {
   const { notifications, options = {} } = req.body;
   const { batchSize = 100 } = options;
@@ -382,7 +365,6 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
 
   const results = [];
 
-  // Process in batches
   for (let i = 0; i < notifications.length; i += batchSize) {
     const batch = notifications.slice(i, i + batchSize);
 
@@ -393,7 +375,6 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
           notification.options?.segment
         );
 
-        // Send notification logic here (simplified)
         return { success: true, recipients: recipientUsers.length };
       } catch (error) {
         return {
@@ -407,7 +388,6 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
 
-    // Add delay between batches
     if (i + batchSize < notifications.length) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -427,9 +407,7 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
   );
 });
 
-// Notification Templates CRUD
 
-// Create Template
 export const createTemplate = asyncHandler(async (req, res) => {
   const template = await NotificationTemplate.create(req.body);
 
@@ -438,7 +416,6 @@ export const createTemplate = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, template, 'Template created successfully'));
 });
 
-// Get All Templates
 export const getAllTemplates = asyncHandler(async (req, res) => {
   const { category, isActive, page = 1, limit = 10 } = req.query;
 
@@ -477,7 +454,6 @@ export const getAllTemplates = asyncHandler(async (req, res) => {
   );
 });
 
-// Get Template by ID
 export const getTemplateById = asyncHandler(async (req, res) => {
   const template = await NotificationTemplate.findById(req.params.id);
 
@@ -490,7 +466,6 @@ export const getTemplateById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, template, 'Template fetched successfully'));
 });
 
-// Update Template
 export const updateTemplate = asyncHandler(async (req, res) => {
   const template = await NotificationTemplate.findByIdAndUpdate(
     req.params.id,
@@ -507,7 +482,6 @@ export const updateTemplate = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, template, 'Template updated successfully'));
 });
 
-// Delete Template
 export const deleteTemplate = asyncHandler(async (req, res) => {
   const template = await NotificationTemplate.findByIdAndDelete(req.params.id);
 
@@ -520,11 +494,9 @@ export const deleteTemplate = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, 'Template deleted successfully'));
 });
 
-// Get Notification Analytics
 export const getNotificationAnalytics = asyncHandler(async (req, res) => {
   const { from, to, channel, status } = req.query;
 
-  // Build dynamic match query based on filters
   const matchQuery = {};
   if (from || to) {
     matchQuery.createdAt = {};
@@ -542,7 +514,6 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
     matchQuery.status = status;
   }
 
-  // Aggregate analytics by date, channel, and status
   const analytics = await NotificationLog.aggregate([
     { $match: matchQuery },
     {
@@ -575,7 +546,6 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
     { $sort: { _id: -1 } }
   ]);
 
-  // Aggregate summary stats
   const summaryStats = await NotificationLog.aggregate([
     { $match: matchQuery },
     {
@@ -602,7 +572,6 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
     totalFailed: 0
   };
 
-  // Calculate rates (delivery, read, failure)
   const deliveryRate = stats.totalSent
     ? ((stats.totalDelivered / stats.totalSent) * 100).toFixed(2)
     : 0;
@@ -613,7 +582,6 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
     ? ((stats.totalFailed / stats.totalSent) * 100).toFixed(2)
     : 0;
 
-  // Return response
   res.status(200).json(
     new ApiResponse(
       200,
@@ -631,7 +599,6 @@ export const getNotificationAnalytics = asyncHandler(async (req, res) => {
   );
 });
 
-// Internal function to send notification (for use by other services)
 export const sendInternalNotification = async (
   recipients,
   title,
@@ -642,16 +609,13 @@ export const sendInternalNotification = async (
   try {
     const { channels = ['push'], templateId } = options;
 
-    // Get notification template if provided
     let template;
     if (templateId) {
       template = await NotificationTemplate.findById(templateId);
     }
 
-    // Prepare recipients
     const recipientUsers = await prepareRecipients(recipients);
 
-    // Send notifications
     for (const user of recipientUsers) {
       const userChannels = channels.filter(
         (channel) => user.preferences?.notifications?.[channel] !== false
@@ -686,7 +650,6 @@ export const sendInternalNotification = async (
           }
           }
 
-          // Log notification
           await logNotification({
             user: user._id,
             channel,
@@ -697,7 +660,6 @@ export const sendInternalNotification = async (
             status: 'sent'
           });
         } catch (error) {
-          // Log failed notification
           await logNotification({
             user: user._id,
             channel,

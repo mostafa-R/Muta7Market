@@ -12,8 +12,8 @@ const PaymentErrorSchema = new mongoose.Schema(
 
 const InvoiceSchema = new mongoose.Schema(
   {
-    orderNumber: { type: String, unique: true, index: true }, // المعرّف الأساسي لفاتورتنا
-    invoiceNumber: { type: String, index: true }, // عرض فقط (مش unique)
+    orderNumber: { type: String, unique: true, index: true },
+    invoiceNumber: { type: String, index: true }, 
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,7 +22,6 @@ const InvoiceSchema = new mongoose.Schema(
       index: true,
     },
 
-    // المنتجات: 4 حالات (contact + listing player/coach + promotion player/coach)
     product: {
       type: String,
       enum: ["contacts_access", "listing", "promotion"],
@@ -34,15 +33,15 @@ const InvoiceSchema = new mongoose.Schema(
       enum: ["player", "coach", null],
       default: null,
       index: true,
-    }, // ل listing/promotion
+    }, 
     playerProfileId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
       index: true,
-    }, // بروفايل نفس الجدول
+    }, 
 
-    durationDays: { type: Number, default: 365 }, // سنة افتراضيًا
-    featureType: { type: String, default: null }, // "toplist" للترقية
+    durationDays: { type: Number, default: 365 },
+    featureType: { type: String, default: null }, 
 
     amount: { type: Number, required: true },
     currency: { type: String, default: "SAR" },
@@ -53,9 +52,8 @@ const InvoiceSchema = new mongoose.Schema(
       index: true,
     },
 
-    // دمج Paylink بعد الضغط Pay فقط
     provider: { type: String, default: "paylink" },
-    providerInvoiceId: { type: String, default: undefined, index: true }, // مش unique
+    providerInvoiceId: { type: String, default: undefined, index: true }, 
     providerTransactionNo: { type: String, unique: true, sparse: true },
 
     paymentUrl: { type: String, default: null },
@@ -69,7 +67,6 @@ const InvoiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// draft pending واحدة لكل غرض
 InvoiceSchema.index(
   { userId: 1, product: 1, targetType: 1, playerProfileId: 1, status: 1 },
   { unique: true, partialFilterExpression: { status: "pending" } }

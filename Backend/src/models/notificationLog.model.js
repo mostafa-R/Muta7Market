@@ -77,7 +77,7 @@ const notificationLogSchema = new mongoose.Schema(
       email: String,
       phone: String,
       deviceId: String,
-      playerId: String, // OneSignal player ID
+      playerId: String,
     },
     metadata: {
       deviceId: String,
@@ -106,15 +106,15 @@ const notificationLogSchema = new mongoose.Schema(
       },
     },
     tracking: {
-      messageId: String, // External service message ID
-      batchId: String, // For bulk notifications
-      correlationId: String, // For tracking related notifications
+      messageId: String, 
+      batchId: String, 
+      correlationId: String,
       tags: [String],
     },
     content: {
-      subject: String, // For email
+      subject: String,
       body: String,
-      htmlBody: String, // For email HTML content
+      htmlBody: String, 
       attachments: [
         {
           filename: String,
@@ -147,8 +147,8 @@ const notificationLogSchema = new mongoose.Schema(
       },
       lastOpenedAt: Date,
       lastClickedAt: Date,
-      timeToOpen: Number, // Milliseconds from sent to first open
-      timeToClick: Number, // Milliseconds from sent to first click
+      timeToOpen: Number, 
+      timeToClick: Number, 
     },
     preferences: {
       language: {
@@ -174,7 +174,7 @@ const notificationLogSchema = new mongoose.Schema(
           type: String,
           enum: ["daily", "weekly", "monthly", "yearly"],
         },
-        interval: Number, // Every N days/weeks/months
+        interval: Number, 
         endDate: Date,
         nextRun: Date,
       },
@@ -203,7 +203,7 @@ const notificationLogSchema = new mongoose.Schema(
         type: String,
         default: "USD",
       },
-      provider: String, // SMS/Email provider
+      provider: String, 
     },
   },
   {
@@ -211,7 +211,6 @@ const notificationLogSchema = new mongoose.Schema(
   }
 );
 
-// Compound indexes for better query performance
 notificationLogSchema.index({ user: 1, createdAt: -1 });
 notificationLogSchema.index({ user: 1, status: 1 });
 notificationLogSchema.index({ user: 1, channel: 1, createdAt: -1 });
@@ -220,9 +219,8 @@ notificationLogSchema.index({ templateId: 1, createdAt: -1 });
 notificationLogSchema.index({ "delivery.nextRetryAt": 1, status: 1 });
 notificationLogSchema.index({ "tracking.batchId": 1 });
 notificationLogSchema.index({ "tracking.correlationId": 1 });
-notificationLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // Auto-delete after 90 days
+notificationLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 });
 
-// Virtual for calculating delivery time
 notificationLogSchema.virtual("deliveryTime").get(function () {
   if (this.delivery.sentAt && this.delivery.deliveredAt) {
     return this.delivery.deliveredAt - this.delivery.sentAt;
@@ -230,7 +228,6 @@ notificationLogSchema.virtual("deliveryTime").get(function () {
   return null;
 });
 
-// Virtual for calculating read time
 notificationLogSchema.virtual("readTime").get(function () {
   if (this.delivery.sentAt && this.delivery.readAt) {
     return this.delivery.readAt - this.delivery.sentAt;
@@ -238,7 +235,6 @@ notificationLogSchema.virtual("readTime").get(function () {
   return null;
 });
 
-// Virtual for engagement status
 notificationLogSchema.virtual("isEngaged").get(function () {
   return (
     this.status === "read" ||
@@ -247,7 +243,6 @@ notificationLogSchema.virtual("isEngaged").get(function () {
   );
 });
 
-// Instance methods
 notificationLogSchema.methods.markAsSent = function () {
   this.status = "sent";
   this.delivery.sentAt = new Date();
@@ -287,7 +282,6 @@ notificationLogSchema.methods.markAsClicked = function (buttonId = null) {
     this.analytics.timeToClick = Date.now() - this.delivery.sentAt.getTime();
   }
 
-  // Mark specific button as clicked
   if (buttonId && this.content.actionButtons) {
     const button = this.content.actionButtons.find(
       (btn) => btn.id === buttonId
@@ -314,7 +308,6 @@ notificationLogSchema.methods.markAsFailed = function (error) {
     };
   }
 
-  // Schedule retry if attempts < maxAttempts
   if (this.delivery.attempts < this.delivery.maxAttempts) {
     const retryDelay = Math.pow(2, this.delivery.attempts) * 60 * 1000; // Exponential backoff
     this.delivery.nextRetryAt = new Date(Date.now() + retryDelay);
@@ -333,7 +326,6 @@ notificationLogSchema.methods.shouldRetry = function () {
   );
 };
 
-// Static methods
 notificationLogSchema.statics.getUnreadCount = function (userId) {
   return this.countDocuments({
     user: userId,
@@ -423,16 +415,13 @@ notificationLogSchema.statics.getEngagementStats = function (
   ]);
 };
 
-// Pre-save middleware
 notificationLogSchema.pre("save", function (next) {
-  // Generate unsubscribe token if not exists
   if (this.channel === "email" && !this.compliance.unsubscribeToken) {
     this.compliance.unsubscribeToken = require("crypto")
       .randomBytes(32)
       .toString("hex");
   }
 
-  // Set timezone if not provided
   if (!this.preferences.timezone) {
     this.preferences.timezone = "UTC";
   }
@@ -440,9 +429,7 @@ notificationLogSchema.pre("save", function (next) {
   next();
 });
 
-// Post-save middleware for analytics
 notificationLogSchema.post("save", async function (doc) {
-  // Update template analytics if templateId exists
   if (doc.templateId && doc.isModified("status")) {
     const Template = mongoose.model("NotificationTemplate");
     const updateField = {};

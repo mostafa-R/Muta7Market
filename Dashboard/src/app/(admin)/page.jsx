@@ -1,7 +1,6 @@
-import ProtectedLayout from "@/layout/ProtectedLayout";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics.jsx";
-import StatisticsChart from "@/components/ecommerce/StatisticsChart.jsx";
 import RecentOrders from "@/components/ecommerce/RecentOrders.jsx";
+import StatisticsChart from "@/components/ecommerce/StatisticsChart.jsx";
 
 export const metadata = {
   title: "Muta7Market",
@@ -9,7 +8,7 @@ export const metadata = {
 
 export default function Ecommerce() {
   return (
-       <ProtectedLayout requiredRole="admin">
+       <>
       <div className="space-y-6">
         {/* EcommerceMetrics تاخد العرض كامل */}
         <div className="w-full">
@@ -27,6 +26,8 @@ export default function Ecommerce() {
           </div>
         </div>
       </div>
-       </ProtectedLayout>
+       </>
   );
 }
+
+

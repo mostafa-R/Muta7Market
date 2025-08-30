@@ -1,4 +1,3 @@
-// middlewares/parseJsonFields.js
 export const parseJsonFields = (fields = []) => (req, res, next) => {
     for (const f of fields) {
       const val = req.body?.[f];

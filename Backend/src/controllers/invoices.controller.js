@@ -8,7 +8,7 @@ async function listMyInvoices(req, res) {
     page: req.query.page || 1,
     pageSize: req.query.pageSize || 20,
   });
-  const status = req.query.status;                      // optional: pending | paid | ...
+  const status = req.query.status; 
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.max(1, Number(req.query.pageSize || 20));
   const skip = (page - 1) * pageSize;

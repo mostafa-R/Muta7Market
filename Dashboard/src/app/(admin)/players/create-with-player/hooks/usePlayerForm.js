@@ -594,7 +594,7 @@ export const usePlayerForm = () => {
 
   // Navigation functions
   const navigateToPlayersList = () => {
-    router.push("/admin/players");
+    router.push("/players/table");
     setShowSuccessDialog(false);
     toast.success("تم الانتقال لقائمة اللاعبين", {
       description: "يمكنك عرض جميع اللاعبين في النظام",
@@ -604,7 +604,7 @@ export const usePlayerForm = () => {
 
   const navigateToPlayerView = () => {
     if (createdPlayerId) {
-      router.push(`/admin/players/view/${createdPlayerId}`);
+      router.push(`/players/${createdPlayerId}`);
       setShowSuccessDialog(false);
       toast.success("تم الانتقال لصفحة اللاعب", {
         description: "يمكنك عرض وتعديل بيانات اللاعب",

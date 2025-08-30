@@ -9,7 +9,6 @@ import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
 import { generateAccessToken } from "../utils/jwt.js";
 
-// NEW: create draft invoice on signup (DB only)
 import Invoice from "../models/invoice.model.js";
 import { PRICING } from "../config/constants.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
@@ -17,12 +16,11 @@ import { makeOrderNumber } from "../utils/orderNumber.js";
 export const register = asyncHandler(async (req, res) => {
   const { name, phone, password, confirmPassword, email } = req.body;
 
-  // Check if passwords match
+
   if (password !== confirmPassword) {
     return res.status(400).json({ error: "Passwords do not match." });
   }
 
-  // Check if user already exists by email or phone
   const existEmail = await userModel.findOne({ email });
   if (existEmail) {
     return res.status(400).json({ error: "Email already exists." });
@@ -33,7 +31,7 @@ export const register = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Phone number already exists." });
   }
 
-  // Generate Verification Tokens
+ 
   const emailToken = generateRandomString();
   const phoneOTP = generateOTP();
 
@@ -47,7 +45,7 @@ export const register = asyncHandler(async (req, res) => {
     .update(phoneOTP)
     .digest("hex");
 
-  // Create new user instance
+
   const user = new userModel({
     name,
     profileImage: "",
@@ -55,16 +53,14 @@ export const register = asyncHandler(async (req, res) => {
     email,
     password,
     emailVerificationToken,
-    emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000, 
     phoneVerificationOTP: phoneVerificationHashedOTP,
-    phoneVerificationExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
+    phoneVerificationExpires: Date.now() + 10 * 60 * 1000, 
   });
 
-  // Save user
   await user.save();
 
-  // Create a draft invoice (pending) for contacts_access (1 year)
-  // This does NOT call Paylink; Paylink is only called on /payments/invoices/:id/initiate
+
   try {
     const exists = await Invoice.findOne({
       userId: user._id,
@@ -86,16 +82,15 @@ export const register = asyncHandler(async (req, res) => {
         amount: PRICING.contacts_access_year,
         currency: "SAR",
         status: "pending",
-        // how long your checkout link should be valid once initiated
+        
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       });
     }
   } catch (e) {
-    // Do not block signup if invoice creation fails
+   
     console.error("seed contacts_access draft failed", e);
   }
 
-  // Send Verification Email (non-blocking)
   const emailResult = await sendEmail(
     user.email,
     "Verify Your Email",
@@ -103,13 +98,10 @@ export const register = asyncHandler(async (req, res) => {
     generateVerificationEmail(emailToken)
   );
 
-  // Generate JWT Access Token
   const accessToken = generateAccessToken(user);
 
-  // Persist any last updates on user (e.g., lastLogin if you add it later)
   await user.save();
 
-  // Set Access Token Cookie (15 minutes)
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -117,7 +109,6 @@ export const register = asyncHandler(async (req, res) => {
     maxAge: 1000 * 60 * 15,
   });
 
-  // Prepare Response (Do not return sensitive fields)
   const userData = {
     id: user._id,
     name: user.name,
@@ -126,7 +117,6 @@ export const register = asyncHandler(async (req, res) => {
     role: user.role,
   };
 
-  // In dev or when email disabled, expose verification codes for testing
   const exposeCodes =
     String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
     (!isEmailEnabled && process.env.NODE_ENV !== "production");
@@ -138,7 +128,6 @@ export const register = asyncHandler(async (req, res) => {
       }
     : { emailSent: !!emailResult?.success };
 
-  // Send Response
   res.status(201).json(
     new ApiResponse(
       201,
@@ -155,24 +144,18 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Find user by email
   const user = await userModel.findOne({ email }).select("+password");
 
-  // Validate credentials
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, "Username or password is incorrect");
   }
 
-  // Update last login (optional)
   user.lastLogin = new Date();
 
-  // Generate Access Token
   const accessToken = generateAccessToken(user);
 
-  // Save user
   await user.save();
 
-  // Set Access Token Cookie (7 days)
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -180,7 +163,6 @@ export const login = asyncHandler(async (req, res) => {
     maxAge: 1000 * 60 * 60 * 24 * 7,
   });
 
-  // Prepare sanitized user data
   const sanitizedUser = {
     id: user._id,
     name: user.name,
@@ -193,7 +175,7 @@ export const login = asyncHandler(async (req, res) => {
     isActive: user.isActive,
   };
 
-  // Send response (also return token in body for your frontend localStorage)
+ 
   res
     .status(200)
     .json(
@@ -262,7 +244,7 @@ export const verifyPhone = asyncHandler(async (req, res) => {
   const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
 
   const user = await userModel.findOne({
-    _id: req.user.id, // Authenticated user
+    _id: req.user.id,
     phoneVerificationOTP: hashedOTP,
     phoneVerificationExpires: { $gt: Date.now() },
   });
@@ -343,7 +325,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No user found with this email");
   }
 
-  // Generate reset token
   const resetToken = generateRandomString();
 
   user.passwordResetToken = crypto
@@ -354,7 +335,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  // Send Reset Email (non-blocking)
   const fpEmailResult = await sendEmail(
     user.email,
     "Password Reset",
@@ -402,7 +382,6 @@ export const resetPassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid or expired verification code");
   }
 
-  // Update password
   user.password = password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;

@@ -3,7 +3,7 @@ import ApiError from "../utils/ApiError.js";
 
 export const createRateLimiter = (options) => {
   return rateLimit({
-    windowMs: options.windowMs || 15 * 60 * 1000, // 15 minutes
+    windowMs: options.windowMs || 15 * 60 * 1000, 
     max: options.max || 100,
     message: options.message || "Too many requests from this IP",
     standardHeaders: true,
@@ -14,30 +14,28 @@ export const createRateLimiter = (options) => {
   });
 };
 
-// Different rate limiters for different endpoints
 export const authLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Reduced from 1005 (that was likely a typo)
+  windowMs: 15 * 60 * 1000, 
+  max: 50,
   message: "Too many authentication attempts. Please try again later.",
 });
 
 export const generalLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased from 100 to 1000 for development
+  windowMs: 15 * 60 * 1000, 
+  max: 1000, 
   message: "Too many requests from this IP. Please try again later.",
 });
 
 export const paymentLimiter = createRateLimiter({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 20, // 20 payment attempts per 5 minutes
+  windowMs: 5 * 60 * 1000, 
+  max: 20, 
   message: "Too many payment attempts. Please try again in a few minutes.",
 });
 
 export const uploadLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 50, // Increased from 10 to 50
+  max: 50, 
   message: "Too many upload requests. Please try again later.",
 });
 
-// Default export for general use
 export default generalLimiter;

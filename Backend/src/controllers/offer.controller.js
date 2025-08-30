@@ -7,7 +7,6 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { buildSortQuery, paginate } from '../utils/helpers.js';
 import { sendInternalNotification } from './notification.controller.js';
 
-// Helper function to update expired offers
 const updateExpiredOffers = async () => {
   await Offer.updateMany(
     {
@@ -18,13 +17,11 @@ const updateExpiredOffers = async () => {
   );
 };
 
-// Create Offer
 export const createOffer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const requirePayment = req.user.role !== 'admin'; // Admin can create free offers
 
   if (requirePayment) {
-    // Create payment for adding offer
     const payment = await paymentService.createPayment({
       user: userId,
       type: 'add_offer',
@@ -32,7 +29,6 @@ export const createOffer = asyncHandler(async (req, res) => {
       description: 'Payment for adding new offer'
     });
 
-    // Create offer with pending payment status
     const offer = await Offer.create({
       user: userId,
       ...req.body,
@@ -43,7 +39,6 @@ export const createOffer = asyncHandler(async (req, res) => {
       status: OFFER_STATUS.PENDING
     });
 
-    // Send notification about payment requirement
     await sendInternalNotification(
       userId,
       'Payment Required',
@@ -51,7 +46,6 @@ export const createOffer = asyncHandler(async (req, res) => {
       { offerId: offer._id, paymentId: payment._id }
     );
 
-    // Return payment URL for user to complete payment
     const paymentUrl = await paymentService.initiatePayment(payment._id);
 
     res
@@ -64,7 +58,6 @@ export const createOffer = asyncHandler(async (req, res) => {
         )
       );
   } else {
-    // Direct creation without payment (for admin or free offers)
     const offer = await Offer.create({
       user: userId,
       ...req.body,
@@ -75,7 +68,6 @@ export const createOffer = asyncHandler(async (req, res) => {
       status: OFFER_STATUS.ACTIVE
     });
 
-    // Send notification about successful creation
     await sendInternalNotification(
       userId,
       'Offer Created Successfully',
@@ -91,7 +83,6 @@ export const createOffer = asyncHandler(async (req, res) => {
   }
 });
 
-// Get All Offers (with advanced filtering)
 export const getAllOffers = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -107,13 +98,11 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     location
   } = req.query;
 
-  // Build query
   const query = {
     isActive: true,
-    'payment.isPaid': true // Only show paid offers
+    'payment.isPaid': true 
   };
 
-  // Search functionality
   if (search) {
     query.$or = [
       { 'title.en': { $regex: search, $options: 'i' } },
@@ -123,7 +112,6 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     ];
   }
 
-  // Category and status filters
   if (category) {
     query.category = category;
   }
@@ -137,7 +125,6 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     query['offerDetails.location'] = { $regex: location, $options: 'i' };
   }
 
-  // Salary range filter
   if (minSalary || maxSalary) {
     if (minSalary) {
       query['targetProfile.salaryRange.min'] = { $gte: minSalary };
@@ -147,7 +134,6 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Promotion filter
   if (isPromoted !== undefined) {
     if (isPromoted === 'true') {
       query['promotion.isPromoted'] = true;
@@ -160,14 +146,11 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Update expired offers
   await updateExpiredOffers();
 
-  // Pagination
   const { skip } = paginate(page, limit);
   let sort = buildSortQuery(sortBy);
 
-  // Default sort: Promoted offers come first
   if (!sortBy) {
     sort = {
       'promotion.position': 1,
@@ -176,14 +159,13 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     };
   }
 
-  // Execute query
   const [offers, total] = await Promise.all([
     Offer.find(query)
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip)
       .populate('user', 'name email')
-      .select('-unlockedBy') // Don't send unlocked users list in public view
+      .select('-unlockedBy') 
       .lean(),
     Offer.countDocuments(query)
   ]);
@@ -205,7 +187,6 @@ export const getAllOffers = asyncHandler(async (req, res) => {
   );
 });
 
-// Get Single Offer by ID
 export const getOfferById = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user?._id;
@@ -219,19 +200,16 @@ export const getOfferById = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Offer not found');
   }
 
-  // Increment views (only for public access)
   if (!userId || userId.toString() !== offer.user.toString()) {
     offer.statistics.views += 1;
     await offer.save();
   }
 
-  // Check if user has unlocked contact
   const hasUnlockedContact =
     userId && offer.hasUserUnlockedContact
       ? offer.hasUserUnlockedContact(userId)
       : false;
 
-  // Hide contact info if not unlocked
   const offerData = offer.toObject();
   if (
     !hasUnlockedContact &&
@@ -255,7 +233,6 @@ export const getOfferById = asyncHandler(async (req, res) => {
     );
 });
 
-// Update Offer
 export const updateOffer = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
@@ -267,22 +244,18 @@ export const updateOffer = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Offer not found');
   }
 
-  // Check permissions
   if (userRole !== 'admin' && offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, 'You can only update your own offers');
   }
 
-  // Don't allow updating if not paid (unless admin)
   if (!offer.payment.isPaid && userRole !== 'admin') {
     throw new ApiError(400, 'Please complete payment before updating offer');
   }
 
-  // Update offer
   Object.assign(offer, req.body);
   offer.updatedAt = new Date();
   await offer.save();
 
-  // Send notification about update
   await sendInternalNotification(
     offer.user,
     'Offer Updated',
@@ -297,7 +270,6 @@ export const updateOffer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, offer, 'Offer updated successfully'));
 });
 
-// Delete Offer
 export const deleteOffer = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
@@ -309,12 +281,10 @@ export const deleteOffer = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Offer not found');
   }
 
-  // Check permissions
   if (userRole !== 'admin' && offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, 'You can only delete your own offers');
   }
 
-  // Delete media files
   if (offer.media?.images) {
     for (const image of offer.media.images) {
       if (image.publicId) {
@@ -331,12 +301,10 @@ export const deleteOffer = asyncHandler(async (req, res) => {
     }
   }
 
-  // Soft delete
   offer.isActive = false;
   offer.status = OFFER_STATUS.INACTIVE;
   await offer.save();
 
-  // Send notification about deletion
   await sendInternalNotification(
     offer.user,
     'Offer Deleted',
@@ -349,7 +317,6 @@ export const deleteOffer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, 'Offer deleted successfully'));
 });
 
-// Get My Offers
 export const getMyOffers = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { includeInactive = false, page = 1, limit = 10 } = req.query;
@@ -387,7 +354,6 @@ export const getMyOffers = asyncHandler(async (req, res) => {
   );
 });
 
-// Promote Offer
 export const promoteOffer = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
@@ -406,7 +372,6 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Offer not found');
   }
 
-  // Check ownership
   if (offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, 'You can only promote your own offers');
   }
@@ -419,12 +384,10 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Offer is already promoted');
   }
 
-  // Calculate promotion cost
   const promotionCost =
     days *
     (offer.pricing?.promotionCost?.perDay || PRICING.PROMOTE_OFFER_PER_DAY);
 
-  // Create payment for promotion
   const payment = await paymentService.createPayment({
     user: userId,
     type: 'promote_offer',
@@ -434,10 +397,8 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     metadata: { promotionType: type, days }
   });
 
-  // Return payment URL
   const paymentUrl = await paymentService.initiatePayment(payment._id);
 
-  // Send notification about promotion payment
   await sendInternalNotification(
     userId,
     'Promotion Payment Required',
@@ -456,7 +417,6 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     );
 });
 
-// Unlock Contact Information
 export const unlockContact = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
@@ -467,7 +427,6 @@ export const unlockContact = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Offer not found');
   }
 
-  // Check if user is the owner
   if (offer.user.toString() === userId.toString()) {
     res
       .status(200)
@@ -481,7 +440,6 @@ export const unlockContact = asyncHandler(async (req, res) => {
     return;
   }
 
-  // Check if already unlocked
   if (offer.hasUserUnlockedContact && offer.hasUserUnlockedContact(userId)) {
     res
       .status(200)
@@ -495,7 +453,6 @@ export const unlockContact = asyncHandler(async (req, res) => {
     return;
   }
 
-  // Create payment for unlocking contact
   const unlockCost = offer.pricing?.unlockContactCost || PRICING.UNLOCK_CONTACT;
   const payment = await paymentService.createPayment({
     user: userId,
@@ -505,10 +462,8 @@ export const unlockContact = asyncHandler(async (req, res) => {
     description: `Unlock contact for offer: ${offer.title?.en || offer.title}`
   });
 
-  // Return payment URL
   const paymentUrl = await paymentService.initiatePayment(payment._id);
 
-  // Send notification about unlock payment
   await sendInternalNotification(
     userId,
     'Contact Unlock Payment',
@@ -527,7 +482,6 @@ export const unlockContact = asyncHandler(async (req, res) => {
     );
 });
 
-// Get Offer Statistics (for offer owners)
 export const getOfferStatistics = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
@@ -541,7 +495,6 @@ export const getOfferStatistics = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Offer not found');
   }
 
-  // Check ownership
   if (offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, 'You can only view statistics for your own offers');
   }
@@ -561,7 +514,6 @@ export const getOfferStatistics = asyncHandler(async (req, res) => {
   );
 });
 
-// Handle Payment Success (Webhook handler)
 export const handlePaymentSuccess = asyncHandler(async (req, res) => {
   const { paymentId } = req.body;
 
@@ -585,7 +537,6 @@ export const handlePaymentSuccess = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, 'Payment processed successfully'));
 });
 
-// Search Offers (Advanced search with filters)
 export const searchOffers = asyncHandler(async (req, res) => {
   const {
     q: search,
@@ -603,7 +554,6 @@ export const searchOffers = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Search query is required');
   }
 
-  // Build search query
   const query = {
     isActive: true,
     'payment.isPaid': true,
@@ -617,7 +567,6 @@ export const searchOffers = asyncHandler(async (req, res) => {
     ]
   };
 
-  // Apply additional filters
   if (category) {
     query.category = category;
   }
@@ -637,10 +586,8 @@ export const searchOffers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Pagination
   const { skip } = paginate(page, limit);
 
-  // Sort options
   let sort = { score: { $meta: 'textScore' } };
   if (sortBy === 'date') {
     sort = { createdAt: -1 };
@@ -652,7 +599,6 @@ export const searchOffers = asyncHandler(async (req, res) => {
     sort = { 'statistics.views': -1 };
   }
 
-  // Execute search
   const [offers, total] = await Promise.all([
     Offer.find(query)
       .sort(sort)
@@ -682,7 +628,6 @@ export const searchOffers = asyncHandler(async (req, res) => {
   );
 });
 
-// Get Featured/Promoted Offers
 export const getFeaturedOffers = asyncHandler(async (req, res) => {
   const { limit = 6 } = req.query;
 
@@ -705,7 +650,6 @@ export const getFeaturedOffers = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, offers, 'Featured offers fetched successfully'));
 });
 
-// Get Similar Offers
 export const getSimilarOffers = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const { limit = 5 } = req.query;

@@ -13,11 +13,7 @@ function escapeRegex(s = "") {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// ================================
-// USER MANAGEMENT
-// ================================
 
-// ✅ Get All Users
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, search, role, isActive } = req.query;
 
@@ -34,7 +30,6 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     filter.role = role;
   }
 
-  // Filter by active status
   if (isActive !== undefined) {
     filter.isActive = isActive === "true";
   }
@@ -64,7 +59,6 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, response, "Users retrieved successfully"));
 });
 
-// ✅ Get User By ID
 export const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -81,7 +75,6 @@ export const getUserById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User retrieved successfully"));
 });
 
-// ✅ Create User (Admin)
 export const createUser = asyncHandler(async (req, res) => {
   const {
     email,
@@ -93,7 +86,6 @@ export const createUser = asyncHandler(async (req, res) => {
     isEmailVerified = true,
   } = req.body;
 
-  // Check if user already exists
   const existingUser = await User.findOne({
     $or: [{ email }, { phone }],
   });
@@ -141,12 +133,10 @@ export const verifyUserEmail = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedUser, "Email verification toggled"));
 });
 
-// ✅ Update User (Admin Privileges)
 export const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 
-  // Remove sensitive fields that shouldn't be updated directly
   delete updates.password;
   delete updates.refreshTokens;
 
@@ -166,13 +156,11 @@ export const updateUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedUser, "User updated successfully"));
 });
 
-// ✅ Delete User (Soft Delete Option Optional)
 export const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { soft = false } = req.query;
 
   if (soft === "true") {
-    // Soft delete - just deactivate
     const user = await User.findByIdAndUpdate(
       id,
       { isActive: false, deletedAt: new Date() },
@@ -187,7 +175,6 @@ export const deleteUser = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, user, "User deactivated successfully"));
   } else {
-    // Hard delete
     const deletedUser = await User.findByIdAndDelete(id);
 
     if (!deletedUser) {
@@ -200,11 +187,7 @@ export const deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
-// ================================
-// PLAYER MANAGEMENT
-// ================================
 
-// ✅ Get All Players
 export const getAllPlayers = asyncHandler(async (req, res) => {
   let {
     page = 1,
@@ -219,7 +202,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     jop,
   } = req.query;
 
-  // تأكد أنها أرقام
   page = parseInt(page) || 10;
   limit = parseInt(limit) || 10;
 
@@ -227,43 +209,33 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 
   filter.jop = jop || "player";
 
-  // Search by name
   if (search) {
     filter.name = { $regex: search, $options: "i" };
   }
 
-  // Filter by position
   if (position) {
     filter.position = position;
   }
 
-  // Filter by status
   if (status) {
     filter.status = status;
   }
 
-  // Filter by nationality
   if (nationality) {
     filter.nationality = nationality;
   }
 
-  // Filter by age range
   if (minAge || maxAge) {
     filter.age = {};
     if (minAge) filter.age.$gte = parseInt(minAge, 10);
     if (maxAge) filter.age.$lte = parseInt(maxAge, 10);
   }
 
-  // Filter by active status (لو أُرسلت)
   if (typeof isActive !== "undefined") {
     filter.isActive = isActive === "true";
   }
 
-  // ✅ الترتيب المطلوب:
-  // 1) المروّجون أولًا (isPromoted.status: true)
-  // 2) ثم isActive: true
-  // 3) ثم isActive: false
-  // 4) الأحدث إنشاءً داخل كل مجموعة
+
   const sort = {
     "isPromoted.status": -1,
     isActive: -1,
@@ -295,7 +267,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, response, "Players retrieved successfully"));
 });
 
-// ✅ Get Player By ID
 export const getPlayerById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -313,7 +284,6 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, player, "Player retrieved successfully"));
 });
 
-// ✅ Update Player isConfirmed (Admin)
 export const updateConfirmation = asyncHandler(async (req, res, next) => {
   const p = await Player.findByIdAndUpdate(
     req.params.id,
@@ -327,7 +297,6 @@ export const updateConfirmation = asyncHandler(async (req, res, next) => {
   res.json({ success: true, message: "Confirmation updated", data: p });
 });
 
-// ✅ Update Player isActive (Admin)
 export const updateActivation = asyncHandler(async (req, res, next) => {
   const p = await Player.findByIdAndUpdate(
     req.params.id,
@@ -341,7 +310,6 @@ export const updateActivation = asyncHandler(async (req, res, next) => {
   res.json({ success: true, message: "Active updated", data: p });
 });
 
-// ✅ Update Player isPromoted (Admin)
 export const updatePromotion = asyncHandler(async (req, res, next) => {
   const { status, startDate, endDate, type } = req.body;
   const p = await Player.findByIdAndUpdate(
@@ -363,7 +331,6 @@ export const updatePromotion = asyncHandler(async (req, res, next) => {
   res.json({ success: true, message: "Promotion updated", data: p });
 });
 
-// controllers/player.controller.js
 export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   let {
     page = 1,
@@ -386,35 +353,28 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
 
   const baseFilter = [];
 
-  // فقط غير المؤكّدين
   baseFilter.push({
     $or: [{ isConfirmed: { $ne: true } }, { isConfirmed: { $exists: false } }],
   });
 
-  // jop
   if (jop === "player" || jop === "coach") {
     baseFilter.push({ jop });
   } else {
-    // all
     baseFilter.push({ jop: { $in: ["player", "coach"] } });
   }
 
-  // search بالاسم
   if (search) {
     baseFilter.push({ name: { $regex: search, $options: "i" } });
   }
 
-  // الجنسية
   if (nationality) {
     baseFilter.push({ nationality });
   }
 
-  // اللعبة
   if (game) {
     baseFilter.push({ game });
   }
 
-  // العمر
   if (minAge || maxAge) {
     const ageCond = {};
     if (minAge) ageCond.$gte = parseInt(minAge, 10);
@@ -422,16 +382,13 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
     baseFilter.push({ age: ageCond });
   }
 
-  // isActive
   if (typeof isActive !== "undefined") {
     baseFilter.push({ isActive: isActive === "true" });
   }
 
-  // isPromoted
   if (isPromoted === "true") {
     baseFilter.push({ "isPromoted.status": true });
   } else if (isPromoted === "false") {
-    // يشمل غير الموجود أيضًا
     baseFilter.push({
       $or: [
         { "isPromoted.status": false },
@@ -441,7 +398,6 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
     });
   }
 
-  // النافذة الزمنية للأحدث
   if (from || to) {
     const createdAt = {};
     if (from) createdAt.$gte = new Date(from);
@@ -454,7 +410,6 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
 
   const query = baseFilter.length ? { $and: baseFilter } : {};
 
-  // الترتيب: الأحدث أولاً
   const sort = { createdAt: -1 };
 
   const [players, total] = await Promise.all([
@@ -471,7 +426,7 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   ]);
 
   const response = {
-    players, // تحتوي على كلٍ من اللاعبين والمدربين حسب jop
+    players, 
     pagination: {
       currentPage: page,
       totalPages: Math.ceil(total / limit) || 1,
@@ -492,11 +447,9 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
     );
 });
 
-// ✅ Create Player (Admin)
-// Create User and Player Profile in a single operation
+
 export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
   const {
-    // User data
     email,
     name,
     password,
@@ -505,7 +458,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     isActive = true,
     isEmailVerified = true,
 
-    // Player data
     age,
     gender,
     nationality,
@@ -532,13 +484,11 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     ...otherPlayerData
   } = req.body;
 
-  // Validate required fields for user creation
   if (!email || !name || !password) {
     throw new ApiError(400, "Email, name, and password are required");
   }
 
   try {
-    // Step 1: Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }],
     });
@@ -547,7 +497,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       throw new ApiError(400, "User with this email or phone already exists");
     }
 
-    // Step 2: Create the user account
     const user = await User.create({
       email,
       name,
@@ -559,14 +508,12 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       isPhoneVerified: true,
     });
 
-    // Step 3: Process media files
     let media = {};
     if (req.files && Object.keys(req.files).length > 0) {
       try {
         media = await processPlayerMedia(req.files, {});
       } catch (error) {
         console.error("Error processing media files:", error);
-        // Delete the user we just created since player creation will fail
         await User.findByIdAndDelete(user._id);
         throw new ApiError(
           500,
@@ -575,7 +522,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       }
     }
 
-    // Step 4: Create player profile
     const player = await Player.create({
       user: user._id,
       name,
@@ -606,7 +552,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       ...otherPlayerData,
     });
 
-    // Step 5: Create invoice entry
     try {
       const raw = String(jop || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
@@ -645,10 +590,9 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
         "[createUserWithPlayerProfile] seed listing draft failed",
         e
       );
-      // Non-blocking error, continue
+      
     }
 
-    // Step 6: Return the populated player with user info
     const populatedPlayer = await Player.findById(player._id)
       .populate("user", "name email phone role")
       .lean();
@@ -680,9 +624,8 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
 });
 
 export const createPlayer = asyncHandler(async (req, res) => {
-  const { email, ...playerData } = req.body; // استخراج الـ email والبيانات الأخرى
+  const { email, ...playerData } = req.body; 
 
-  // الخطوة 1: التحقق من وجود الـ email في الطلب
   if (!email) {
     throw new ApiError(
       400,
@@ -690,17 +633,15 @@ export const createPlayer = asyncHandler(async (req, res) => {
     );
   }
 
-  // الخطوة 2: البحث عن المستخدم بواسطة الـ email
-  const user = await User.findOne({ email }).select("_id name email phone"); // حدد الحقول الضرورية للأداء
+  const user = await User.findOne({ email }).select("_id name email phone");  
   if (!user) {
     throw new ApiError(404, "User not found with the provided email");
   }
 
-  // الخطوة 3: التعامل مع الملفات إذا وجدت
-  let media = {}; // افتراضيًا، media فارغ إذا لم يكن هناك ملفات
+  let media = {}; 
   if (req.files && Object.keys(req.files).length > 0) {
     try {
-      media = await processPlayerMedia(req.files, {}); // لا يوجد media سابق لأنه إنشاء جديد
+      media = await processPlayerMedia(req.files, {}); 
     } catch (error) {
       console.error("Error processing media files:", error);
       throw new ApiError(
@@ -710,39 +651,32 @@ export const createPlayer = asyncHandler(async (req, res) => {
     }
   }
 
-  // الخطوة 4: إنشاء اللاعب الجديد
   const newPlayer = new Player({
-    ...playerData, // البيانات الأخرى من req.body (مثل name, age, إلخ)
-    user: user._id, // ربط اللاعب بالمستخدم
-    media, // إضافة الميديا المعالجة
+    ...playerData, 
+    user: user._id, 
+    media, 
   });
 
-  const savedPlayer = await newPlayer.save(); // حفظ في قاعدة البيانات
+  const savedPlayer = await newPlayer.save(); 
 
-  // الخطوة 5: populate المستخدم للإرجاع
   const populatedPlayer = await Player.findById(savedPlayer._id)
     .populate("user", "name email phone")
     .lean();
 
-  // الخطوة 6: إرجاع الرد
   res
     .status(201)
     .json(new ApiResponse(201, populatedPlayer, "Player created successfully"));
 });
 
-// ✅ Update Player (Admin Only)
 export const updatePlayer = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  // Get existing player
   const existingPlayer = await Player.findById(id);
   if (!existingPlayer) {
     throw new ApiError(404, "Player not found");
   }
 
-  // ✅ All allowed fields for comprehensive player update
   const allowedFields = [
-    // Basic Information
     "name",
     "age",
     "gender",
@@ -751,7 +685,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "birthCountry",
     "customBirthCountry",
 
-    // Professional Information
     "jop",
     "roleType",
     "customRoleType",
@@ -762,7 +695,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "game",
     "customSport",
 
-    // Nested Objects (will be handled separately)
     "monthlySalary",
     "yearSalary",
     "contractEndDate",
@@ -770,13 +702,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "socialLinks",
     "contactInfo",
 
-    // System Settings
     "isListed",
     "isActive",
     "isConfirmed",
     "views",
 
-    // Media and other fields
     "media",
     "stats",
     "bio",
@@ -785,14 +715,12 @@ export const updatePlayer = asyncHandler(async (req, res) => {
 
   const updates = {};
 
-  // Handle regular fields
   Object.keys(req.body).forEach((key) => {
     if (allowedFields.includes(key)) {
       updates[key] = req.body[key];
     }
   });
 
-  // ✅ Handle media update with existing media consideration
   let existingMediaFromBody = {};
   try {
     existingMediaFromBody = req.body.existingMedia
@@ -803,19 +731,15 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
 
   if (req.files && Object.keys(req.files).length > 0) {
-    // Process new media files while preserving existing media state
     updates.media = await processPlayerMedia(req.files, existingMediaFromBody);
   } else if (req.body.existingMedia) {
-    // If only existingMedia is provided (no new files), update media with current state
     updates.media = existingMediaFromBody;
   }
 
-  // ✅ Handle special field name mapping (expreiance -> experience)
   if (req.body.expreiance !== undefined) {
     updates.experience = req.body.expreiance;
   }
 
-  // ✅ Handle boolean conversions (FormData sends strings)
   if (typeof updates.isListed === "string") {
     updates.isListed = updates.isListed === "true";
   }
@@ -826,12 +750,10 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     updates.isConfirmed = updates.isConfirmed === "true";
   }
 
-  // ✅ Handle numeric conversions
   if (updates.age) updates.age = parseInt(updates.age);
   if (updates.experience) updates.experience = parseInt(updates.experience);
   if (updates.views) updates.views = parseInt(updates.views);
 
-  // ✅ Apply updates
   Object.assign(existingPlayer, updates);
   const updatedPlayer = await existingPlayer
     .save()
@@ -842,13 +764,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedPlayer, "Player updated successfully"));
 });
 
-// ✅ Delete Player
 export const deletePlayer = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { soft = false } = req.query;
 
   if (soft === "true") {
-    // Soft delete - just deactivate
     const player = await Player.findByIdAndUpdate(
       id,
       { isActive: false, deletedAt: new Date() },
@@ -863,7 +783,6 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, player, "Player deactivated successfully"));
   } else {
-    // Hard delete
     const deletedPlayer = await Player.findByIdAndDelete(id);
 
     if (!deletedPlayer) {
@@ -876,11 +795,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   }
 });
 
-// ================================
-// ANALYTICS & STATS
-// ================================
 
-// ✅ Get Dashboard Stats
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const [
     totalUsers,
@@ -953,7 +868,6 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     );
 });
 
-// ✅ Bulk Actions
 export const bulkUpdateUsers = asyncHandler(async (req, res) => {
   const { userIds, updates } = req.body;
 
@@ -961,7 +875,6 @@ export const bulkUpdateUsers = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User IDs array is required");
   }
 
-  // Remove sensitive fields
   delete updates.password;
   delete updates.refreshTokens;
 

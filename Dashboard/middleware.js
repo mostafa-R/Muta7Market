@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { NextResponse } from 'next/server';
 
 export function middleware(request) {
+  console.log('here')
   const protectedPaths = ['/dashboard', '/admin'];
   const currentPath = request.nextUrl.pathname;
 

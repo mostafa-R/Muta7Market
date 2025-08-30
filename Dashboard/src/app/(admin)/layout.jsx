@@ -4,7 +4,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar.jsx";
 import Backdrop from "@/layout/Backdrop";
-import React from "react";
+import ProtectedLayout from "@/layout/ProtectedLayout";
 
 export default function AdminLayout({ children }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -17,6 +17,7 @@ export default function AdminLayout({ children }) {
     : "lg:ml-[90px]";
 
   return (
+    <ProtectedLayout requiredRole="admin">
     <div className="min-h-screen xl:flex">
       {/* Sidebar and Backdrop */}
       < AppSidebar />
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }) {
         {/* Page Content */}
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
       </div>
-    </div>
+      </div>
+      </ProtectedLayout>
   );
 }

@@ -11,7 +11,6 @@ import {
 } from "../services/paylink.client.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
-// helper: تطبيق آثار الدفع المدفوع (نفس منطق الويبهوك)
 async function applyPaidEffects(invoice, verify, session) {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
   const ONE_YEAR_MS = (PRICING.ONE_YEAR_DAYS || 365) * ONE_DAY_MS;
@@ -117,13 +116,11 @@ async function applyPaidEffects(invoice, verify, session) {
   }
 }
 
-// NEW: مصالحة فواتير المستخدم الـ pending مع Paylink وتحديث الحالة إن اتغيّرت هناك
 export const reconcileMyInvoices = async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
     return res.status(401).json({ success: false, message: "unauthorized" });
 
-  // نجلب الفواتير التي لها providerInvoiceId واتعمل لها initiate قبل كده
   const candidates = await Invoice.find({
     $or: [{ userId }, { user: userId }],
     providerInvoiceId: { $exists: true, $ne: null },
@@ -147,26 +144,21 @@ export const reconcileMyInvoices = async (req, res) => {
           const inv = await Invoice.findById(p._id).session(session);
           if (!inv) return;
 
-          // سجّل آخر نتيجة تحقق من المزود
           inv.lastProviderStatus = providerStatus;
           inv.lastVerifiedAt = new Date();
 
           if (isPaid) {
-            // لو المزود قال Paid وDB مش Paid → نفّذ آثار الدفع
             if (inv.status !== "paid") {
-              await inv.save({ session }); // احفظ آخر حالة تحقق الأول
+              await inv.save({ session }); 
               await applyPaidEffects(inv, verify, session);
               updated += 1;
               return;
             }
-            // لو بالفعل paid، بس حدّثنا حقول التحقق فقط
             await inv.save({ session });
             return;
           }
 
-          // المزود يقول Not Paid الآن
           if (inv.status === "paid") {
-            // نرجعها pending فقط لو مفيش دليل دفع عندنا (حدث webhook أو transactionNo سابق)
             const hasPaidEvent = await PaymentEvent.exists({
               orderNumber: inv.orderNumber,
               type: "invoice.paid",
@@ -182,14 +174,14 @@ export const reconcileMyInvoices = async (req, res) => {
             }
           }
 
-          // في باقي الحالات (pending && not paid) فقط سجلنا آخر تحقق
+        
           await inv.save({ session });
         });
       } finally {
         session.endSession();
       }
     } catch (e) {
-      // لو فشل التحقق من Paylink، خزّن الخطأ وخليك مكمل
+    
       try {
         await Invoice.updateOne(
           { _id: p._id },
@@ -213,8 +205,6 @@ export const reconcileMyInvoices = async (req, res) => {
     }
   }
 
-  // كمان حالة: أي فاتورة DB=paid لكنها أصلاً ما اتعملها initiate (مفيش providerInvoiceId)
-  // نرجّعها pending لأنها manual فقط.
   const manualPaid = await Invoice.updateMany(
     {
       $or: [{ userId }, { user: userId }],
@@ -253,7 +243,6 @@ function mapPaymentErrors(inv, verify) {
   }
 }
 
-/* ========== 1) إنشاء فاتورة داخلية (Draft) فقط ========== */
 export const createDraftInvoice = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -271,7 +260,7 @@ export const createDraftInvoice = async (req, res) => {
 
     let targetType = null;
     let amount = 0;
-    let dur = Number(durationDays) || PRICING.ONE_YEAR_DAYS; // سنة افتراضيًا
+    let dur = Number(durationDays) || PRICING.ONE_YEAR_DAYS; 
     let featureType = null;
 
     if (prod === "contacts_access") {
@@ -296,10 +285,8 @@ export const createDraftInvoice = async (req, res) => {
         dur = PRICING.ONE_YEAR_DAYS;
       } else if (prod === "promotion") {
         featureType = "toplist";
-        // افتراضي: 15 يوم أو من env
         const perDay = PRICING.promotion_per_day[targetType] || 15;
         const d = Number(durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15);
-        // إن وُضع سعر سنوي واختيرت سنة كاملة صراحةً، نستخدمه
         if (!durationDays && PRICING.promotion_year[targetType] > 0 && d >= PRICING.ONE_YEAR_DAYS) {
           amount = PRICING.promotion_year[targetType];
           dur = PRICING.ONE_YEAR_DAYS;
@@ -360,7 +347,6 @@ export const createDraftInvoice = async (req, res) => {
   }
 };
 
-/* ========== 2) بدء الدفع لفاتورة داخلية (إنشاء فاتورة Paylink) ========== */
 export const initiatePaymentByInvoiceId = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -376,7 +362,6 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
         .status(404)
         .json({ success: false, message: "invoice_not_found_or_not_pending" });
 
-    // لو سبق واتعمل paymentUrl رجّعه
     if (inv.paymentUrl) {
       if (!inv.invoiceNumber) {
         inv.invoiceNumber = inv.orderNumber;
@@ -409,7 +394,6 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
       return inv.product;
     })();
 
-    // Build callback URLs using FRONTEND_URL if provided
     const originFallback =
       req.get && req.get("origin") ? req.get("origin") : null;
     const frontUrl =
@@ -462,7 +446,6 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
   }
 };
 
-/* ========== 3) Webhook من Paylink ========== */
 export const paymentWebhook = async (req, res) => {
   if (req.headers.authorization !== process.env.PAYLINK_WEBHOOK_AUTH) {
     return res.status(401).send("unauthorized");
@@ -474,7 +457,6 @@ export const paymentWebhook = async (req, res) => {
     payload.merchantOrderNumber || payload.orderNumber || ""
   );
 
-  // تحقق من Paylink
   let verify;
   try {
     verify = await paylinkGetInvoice(transactionNo);
@@ -485,7 +467,6 @@ export const paymentWebhook = async (req, res) => {
 
   const isPaid = String(verify.orderStatus || "").toLowerCase() === "paid";
 
-  // Idempotency
   try {
     await PaymentEvent.create({
       provider: "paylink",
@@ -619,7 +600,6 @@ export const paymentWebhook = async (req, res) => {
   return res.status(200).json({ ok: true, verified: isPaid });
 };
 
-/* ========== 4) Helpers للـ UI ========== */
 export const getPaymentStatus = async (req, res) => {
   const { id } = req.params;
   const inv = await Invoice.findById(id);
@@ -640,7 +620,6 @@ const normalizeProductParam = (p) => {
   const v = String(p || "")
     .toLowerCase()
     .trim();
-  // accept both "contact_access" and "contacts_access"
   if (/^contacts?_access$/.test(v)) return "contact_access";
   return v;
 };
@@ -665,7 +644,6 @@ export const listMyInvoices = async (req, res) => {
     : null;
   const orderQ = req.query.orderNumber ? String(req.query.orderNumber) : null;
 
-  // build query with $and to allow multiple conditions together
   const and = [{ $or: [{ userId }, { user: userId }] }];
 
   if (statusQ) and.push({ status: new RegExp(`^${statusQ}$`, "i") });
@@ -695,7 +673,7 @@ export const listMyInvoices = async (req, res) => {
     id: String(inv._id),
     createdAt: inv.createdAt,
     product: inv.product,
-    targetType: inv.targetType || "user", // fallback to 'user' if null
+    targetType: inv.targetType || "user", 
     profileId: inv.playerProfileId || null,
     amount: inv.amount,
     currency: inv.currency || "SAR",
@@ -722,7 +700,6 @@ export const listMyInvoices = async (req, res) => {
   });
 };
 
-// Admin: list all invoices with optional filters
 export const listAllInvoices = async (req, res) => {
   const statusQRaw = req.query.status ? String(req.query.status) : null;
   const statusQ = statusQRaw ? normalizeStatus(statusQRaw) : null;
@@ -734,7 +711,6 @@ export const listAllInvoices = async (req, res) => {
 
   const orderQ = req.query.orderNumber ? String(req.query.orderNumber) : null;
 
-  // use $and to safely combine conditions (and keep separate $ors inside)
   const and = [];
 
   if (statusQ) and.push({ status: new RegExp(`^${statusQ}$`, "i") });
@@ -768,7 +744,7 @@ export const listAllInvoices = async (req, res) => {
     id: String(inv._id),
     createdAt: inv.createdAt,
     product: inv.product,
-    targetType: inv.targetType || "user", // fallback to 'user' if null
+    targetType: inv.targetType || "user", 
     profileId: inv.playerProfileId || null,
     userId: inv.userId || inv.user || null,
     amount: inv.amount,
@@ -836,7 +812,6 @@ export const recheckByOrderNumber = async (req, res) => {
   }
 };
 
-/* ========== 5) (DEV) محاكاة نجاح الدفع ========== */
 export const simulateSuccess = async (req, res) => {
   try {
     const { id } = req.params;

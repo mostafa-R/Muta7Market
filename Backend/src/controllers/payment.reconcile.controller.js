@@ -5,15 +5,13 @@ import PlayerProfile from "../models/player.model.js";
 import User from "../models/user.model.js";
 import {
   paylinkGetInvoice,
-  paylinkGetOrderByNumber, // ⬅️ add
-  paylinkGetTransactionsOfOrder, // ⬅️ optional
+  paylinkGetOrderByNumber, 
+  paylinkGetTransactionsOfOrder, 
 } from "../services/paylink.client.js";
 import { PRICING } from "../config/constants.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
-// ... existing helpers (SAR, resolvePrice, toDto, applyInvoicePaid, etc.)
 
-/** ---------- NEW: get status by orderNumber (checks Paylink & applies effects) ---------- */
 export const getPaymentStatusByOrderNumber = async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
@@ -21,7 +19,6 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
 
   const { orderNumber } = req.params;
 
-  // find the local invoice that matches this orderNumber & belongs to the caller
   const inv = await Invoice.findOne({
     orderNumber,
     $or: [{ userId }, { user: userId }],
@@ -32,7 +29,6 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
       .json({ success: false, message: "invoice_not_found" });
   }
 
-  // query Paylink by orderNumber
   let verify;
   try {
     verify = await paylinkGetOrderByNumber(orderNumber);
@@ -51,21 +47,19 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
     verify?.orderStatus || verify?.status || ""
   ).toLowerCase();
 
-  // if Paylink says paid but our DB isn't updated yet → apply it now (idempotent)
   if (paylinkStatus === "paid" && inv.status !== "paid") {
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
         const doc = await Invoice.findById(inv._id).session(session);
         if (!doc) return;
-        await applyInvoicePaid(doc, verify, session); // same function used by webhook/simulate
+        await applyInvoicePaid(doc, verify, session); 
       });
     } finally {
       session.endSession();
     }
   }
 
-  // respond with the (possibly-updated) local status
   const fresh = await Invoice.findById(inv._id).lean();
   return res.status(200).json({
     success: true,
@@ -76,7 +70,6 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
   });
 };
 
-/** ---------- UPDATED: reconcile accepts invoiceIds OR orderNumbers ---------- */
 export const reconcileInvoices = async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
@@ -87,7 +80,6 @@ export const reconcileInvoices = async (req, res) => {
     ? req.body.orderNumbers
     : null;
 
-  // base filter: my pending Paylink invoices
   const base = {
     status: "pending",
     provider: "paylink",
@@ -100,7 +92,6 @@ export const reconcileInvoices = async (req, res) => {
   } else if (orderNumbers?.length) {
     list = await Invoice.find({ ...base, orderNumber: { $in: orderNumbers } });
   } else {
-    // fallback to all my pending Paylink invoices that have a provider ref
     list = await Invoice.find({ ...base, providerInvoiceId: { $ne: null } });
   }
 
@@ -114,7 +105,6 @@ export const reconcileInvoices = async (req, res) => {
 
   for (const inv of list) {
     try {
-      // Prefer reconcile by orderNumber if present; otherwise by transactionNo
       let verify = null;
       if (inv.orderNumber) {
         verify = await paylinkGetOrderByNumber(inv.orderNumber);

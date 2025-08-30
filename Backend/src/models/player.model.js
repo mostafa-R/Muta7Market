@@ -231,9 +231,7 @@ const playerSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
-        // اختفاء سحري للـ "other" - استبدال القيم في نفس الـ fields
-
-        // إذا nationality = "other" اعرض customNationality بدلاً منها
+     
         if (
           (ret.nationality === "other" || ret.nationality === "") &&
           ret.customNationality
@@ -241,7 +239,7 @@ const playerSchema = new mongoose.Schema(
           ret.nationality = ret.customNationality;
         }
 
-        // إذا birthCountry = "other" أو "" اعرض customBirthCountry بدلاً منها
+      
         if (
           (ret.birthCountry === "other" || ret.birthCountry === "") &&
           ret.customBirthCountry
@@ -249,7 +247,7 @@ const playerSchema = new mongoose.Schema(
           ret.birthCountry = ret.customBirthCountry;
         }
 
-        // إذا roleType = "other" أو "" اعرض customRoleType بدلاً منها
+       
         if (
           (ret.roleType === "other" || ret.roleType === "") &&
           ret.customRoleType
@@ -257,7 +255,7 @@ const playerSchema = new mongoose.Schema(
           ret.roleType = ret.customRoleType;
         }
 
-        // إذا position = "other" أو "" اعرض customPosition بدلاً منها
+       
         if (
           (ret.position === "other" || ret.position === "") &&
           ret.customPosition
@@ -265,7 +263,7 @@ const playerSchema = new mongoose.Schema(
           ret.position = ret.customPosition;
         }
 
-        // إذا game = "other" أو "" اعرض customSport بدلاً منها
+      
         if ((ret.game === "other" || ret.game === "") && ret.customSport) {
           ret.game = ret.customSport;
         }
@@ -276,11 +274,10 @@ const playerSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for optimized queries
-playerSchema.index({ name: "text", position: "text" }); // Text search for name and position
-playerSchema.index({ nationality: 1, jop: 1, status: 1 }); // Compound index for filtering
-playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 }); // Index for promoted players
-playerSchema.index({ game: 1 }); // Index for game-based queries
+playerSchema.index({ name: "text", position: "text" }); 
+playerSchema.index({ nationality: 1, jop: 1, status: 1 }); 
+playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 }); 
+playerSchema.index({ game: 1 }); 
 
 // Virtual for checking if promoted
 playerSchema.virtual("isCurrentlyPromoted").get(function () {

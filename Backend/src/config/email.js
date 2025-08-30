@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Allow disabling email in dev or when credentials are missing
 const emailEnabled = Boolean(
   process.env.SENDGRID_API_KEY &&
   process.env.EMAIL_FROM &&
@@ -17,7 +16,7 @@ export const transporter = emailEnabled
         pass: process.env.SENDGRID_API_KEY,
       },
     })
-  : // Fallback transport that does not send but succeeds (useful for local/dev)
+  : 
     nodemailer.createTransport({ jsonTransport: true });
 
 export const isEmailEnabled = emailEnabled;

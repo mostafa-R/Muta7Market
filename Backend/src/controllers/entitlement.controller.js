@@ -1,10 +1,6 @@
-// src/controllers/entitlement.controller.js
 import Entitlement from "../models/entitlement.model.js";
 
-/**
- * GET /api/v1/entitlements/check?type=contacts_access
- * GET /api/v1/entitlements/check?type=player_listed&playerProfileId=<id>
- */
+
 export const checkEntitlement = async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
@@ -31,10 +27,7 @@ export const checkEntitlement = async (req, res) => {
   return res.status(200).json({ success: true, data: { active: !!ent } });
 };
 
-/**
- * GET /api/v1/entitlements/me
- * (Your routes file calls this getMyEntitlements)
- */
+
 export const getMyEntitlements = async (req, res) => {
   const userId = req.user?._id;
   if (!userId)

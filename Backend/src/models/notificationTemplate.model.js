@@ -81,8 +81,8 @@ const notificationTemplateSchema = new mongoose.Schema(
           },
           ar: String
         },
-        icon: String, // URL to notification icon
-        image: String, // URL to big picture
+        icon: String, 
+        image: String, 
         actionButtons: [
           {
             id: String,
@@ -116,11 +116,11 @@ const notificationTemplateSchema = new mongoose.Schema(
         },
         defaultValue: mongoose.Schema.Types.Mixed,
         validation: {
-          pattern: String, // Regex pattern for validation
-          min: Number, // For numbers
-          max: Number, // For numbers
-          minLength: Number, // For strings
-          maxLength: Number // For strings
+          pattern: String,
+          min: Number, 
+          max: Number, 
+          minLength: Number, 
+          maxLength: Number 
         }
       }
     ],
@@ -188,7 +188,7 @@ const notificationTemplateSchema = new mongoose.Schema(
       frequency: {
         maxPerDay: {
           type: Number,
-          default: null // null means no limit
+          default: null 
         },
         maxPerWeek: {
           type: Number,
@@ -261,13 +261,11 @@ const notificationTemplateSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for better performance
 notificationTemplateSchema.index({ name: 1 });
 notificationTemplateSchema.index({ category: 1, isActive: 1 });
 notificationTemplateSchema.index({ 'triggers.event': 1 });
 notificationTemplateSchema.index({ createdBy: 1 });
 
-// Virtual for calculating engagement rate
 notificationTemplateSchema.virtual('engagementRate').get(function () {
   if (this.analytics.totalSent === 0) {return 0;}
   return (
@@ -277,7 +275,6 @@ notificationTemplateSchema.virtual('engagementRate').get(function () {
   );
 });
 
-// Method to validate template variables
 notificationTemplateSchema.methods.validateVariables = function (providedData) {
   const errors = [];
 
@@ -289,12 +286,10 @@ notificationTemplateSchema.methods.validateVariables = function (providedData) {
 
     const value = providedData[variable.name];
     if (value !== undefined && value !== null) {
-      // Type validation
       if (variable.type === 'number' && isNaN(value)) {
         errors.push(`Variable '${variable.name}' must be a number`);
       }
 
-      // String length validation
       if (variable.type === 'string' && typeof value === 'string') {
         if (
           variable.validation?.minLength &&
@@ -322,7 +317,6 @@ notificationTemplateSchema.methods.validateVariables = function (providedData) {
         }
       }
 
-      // Number range validation
       if (variable.type === 'number' && typeof value === 'number') {
         if (variable.validation?.min && value < variable.validation.min) {
           errors.push(
@@ -341,7 +335,6 @@ notificationTemplateSchema.methods.validateVariables = function (providedData) {
   return errors;
 };
 
-// Method to render template with variables
 notificationTemplateSchema.methods.render = function (
   channel,
   language = 'en',
@@ -352,7 +345,6 @@ notificationTemplateSchema.methods.render = function (
     throw new Error(`Template doesn't support ${channel} channel`);
   }
 
-  // Validate variables first
   const validationErrors = this.validateVariables(variables);
   if (validationErrors.length > 0) {
     throw new Error(
@@ -366,7 +358,6 @@ notificationTemplateSchema.methods.render = function (
     body: content.body?.[language] || content.body?.en || ''
   };
 
-  // Add default values for missing variables
   const allVariables = { ...variables };
   this.variables.forEach((variable) => {
     if (
@@ -377,7 +368,6 @@ notificationTemplateSchema.methods.render = function (
     }
   });
 
-  // Replace variables in all text fields
   Object.keys(result).forEach((key) => {
     if (result[key]) {
       Object.keys(allVariables).forEach((varName) => {
@@ -390,7 +380,6 @@ notificationTemplateSchema.methods.render = function (
   return result;
 };
 
-// Method to create a test notification
 notificationTemplateSchema.methods.createTestNotification = function (
   channel,
   language = 'en'
@@ -398,7 +387,6 @@ notificationTemplateSchema.methods.createTestNotification = function (
   return this.render(channel, language, this.testData);
 };
 
-// Static method to find templates by event
 notificationTemplateSchema.statics.findByEvent = function (
   event,
   conditions = {}
@@ -410,11 +398,10 @@ notificationTemplateSchema.statics.findByEvent = function (
   });
 };
 
-// Pre-save middleware to update version and analytics
 notificationTemplateSchema.pre('save', function (next) {
   if (this.isModified() && !this.isNew) {
     this.version += 1;
-    this.updatedBy = this.constructor.currentUser; // Set by middleware
+    this.updatedBy = this.constructor.currentUser; 
   }
   next();
 });

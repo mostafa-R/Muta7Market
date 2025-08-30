@@ -3,13 +3,11 @@ import User from '../models/user.model.js'; // Assuming you have a User model
 import { PROFILE_STATUS, PAGINATION } from '../config/constants.js';
 import mongoose from 'mongoose';
 
-// Create a new coach
 export const createCoach = async (req, res) => {
   try {
     const { id } = req.user;
     const coachData = req.body;
 
-    // Check if user exists
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({
@@ -18,7 +16,7 @@ export const createCoach = async (req, res) => {
       });
     }
 
-    // Check if coach already exists for this user
+  
     const existingCoach = await Coach.findOne({ user: id });
     if (existingCoach) {
       return res.status(400).json({
@@ -46,7 +44,6 @@ export const createCoach = async (req, res) => {
   }
 };
 
-// Get all coaches with filtering, sorting, and pagination
 export const getAllCoaches = async (req, res) => {
   try {
     const {
@@ -64,7 +61,6 @@ export const getAllCoaches = async (req, res) => {
       isPromoted
     } = req.query;
 
-    // Build filter object
     const filter = { isActive: true };
 
     if (category) {filter.category = category;}
@@ -77,7 +73,6 @@ export const getAllCoaches = async (req, res) => {
       if (maxAge) {filter.age.$lte = parseInt(maxAge);}
     }
 
-    // Search functionality
     if (search) {
       filter.$or = [
         { 'name.en': { $regex: search, $options: 'i' } },
@@ -86,22 +81,18 @@ export const getAllCoaches = async (req, res) => {
       ];
     }
 
-    // Promoted filter
     if (isPromoted === 'true') {
       filter['isPromoted.status'] = true;
       filter['isPromoted.endDate'] = { $gt: new Date() };
     }
 
-    // Pagination
     const pageNum = parseInt(page);
     const limitNum = Math.min(parseInt(limit), PAGINATION.MAX_LIMIT);
     const skip = (pageNum - 1) * limitNum;
 
-    // Sort object
     const sort = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Execute query
     const coaches = await Coach.find(filter)
       .populate('user', 'email username')
       .sort(sort)
@@ -133,7 +124,6 @@ export const getAllCoaches = async (req, res) => {
   }
 };
 
-// Get coach by ID
 export const getCoachById = async (req, res) => {
   try {
     const { id } = req.user;
@@ -154,7 +144,6 @@ export const getCoachById = async (req, res) => {
       });
     }
 
-    // Increment views
     coach.views += 1;
     await coach.save();
 
@@ -171,7 +160,6 @@ export const getCoachById = async (req, res) => {
   }
 };
 
-// Update coach
 export const updateCoach = async (req, res) => {
   try {
     const { id } = req.params;
@@ -210,10 +198,8 @@ export const updateCoach = async (req, res) => {
   }
 };
 
-// Delete coach (soft delete)
 export const deleteCoach = async (req, res) => {
   try {
-    // const { id } = req.params;
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -245,10 +231,8 @@ export const deleteCoach = async (req, res) => {
   }
 };
 
-// Promote coach
 export const promoteCoach = async (req, res) => {
   try {
-    // const { id } = req.params;
     const { id } = req.user;
     const { days, type = 'featured' } = req.body;
 
@@ -290,11 +274,9 @@ export const promoteCoach = async (req, res) => {
   }
 };
 
-// Transfer coach
 export const transferCoach = async (req, res) => {
   try {
     const { id } = req.params;
-    // const { id } = req.user;
     const { clubName, amount } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -335,7 +317,6 @@ export const transferCoach = async (req, res) => {
   }
 };
 
-// Get coaches by category
 export const getCoachesByCategory = async (req, res) => {
   try {
     const { category } = req.params;
@@ -381,7 +362,6 @@ export const getCoachesByCategory = async (req, res) => {
   }
 };
 
-// Get promoted coaches
 export const getPromotedCoaches = async (req, res) => {
   try {
     const {
@@ -431,7 +411,6 @@ export const getPromotedCoaches = async (req, res) => {
   }
 };
 
-// Get coach statistics
 export const getCoachStats = async (req, res) => {
   try {
     const stats = await Coach.aggregate([

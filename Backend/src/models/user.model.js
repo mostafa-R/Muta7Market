@@ -1,56 +1,56 @@
-import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
-import { USER_ROLES } from '../config/constants.js';
+import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
+import { USER_ROLES } from "../config/constants.js";
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Name is required'],
+      required: [true, "Name is required"],
       trim: true,
-      maxlength: [50, 'Name cannot exceed 50 characters'],
-      minlength: [2, 'Name must be at least 2 characters']
+      maxlength: [50, "Name cannot exceed 50 characters"],
+      minlength: [2, "Name must be at least 2 characters"],
     },
     profileImage: {
       url: String,
-      public_id: String
+      public_id: String,
     },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email'
+        "Please provide a valid email",
       ],
-      index: true // Add index for performance
+      index: true,
     },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
-      unique: true
+      required: [true, "Phone number is required"],
+      unique: true,
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [8, 'Password must be at least 8 characters'],
-      select: false
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters"],
+      select: false,
     },
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
       default: USER_ROLES.USER,
-      index: true // Add index for performance
+      index: true,
     },
     isEmailVerified: {
       type: Boolean,
-      default: false
+      default: false,
     },
     isPhoneVerified: {
       type: Boolean,
-      default: false
+      default: false,
     },
     emailVerificationToken: String,
     emailVerificationExpires: Date,
@@ -64,41 +64,29 @@ const userSchema = new mongoose.Schema(
         createdAt: {
           type: Date,
           default: Date.now,
-          expires: 604800 // 7 days
-        }
-      }
+          expires: 604800, // 7 days
+        },
+      },
     ],
     lastLogin: Date,
     isActive: {
       type: Boolean,
-      default: false
+      default: false,
     },
     bio: {
       type: String,
-      default: ""
-    }
-    
-    // preferences: {
-    //   language: {
-    //     type: String,
-    //     enum: ["en", "ar"],
-    //     default: "en",
-    //   },
-    //   notifications: {
-    //     email: { type: Boolean, default: true },
-    //     sms: { type: Boolean, default: true },
-    //     push: { type: Boolean, default: true },
-    //   },
-    // },
+      default: "",
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {return next();}
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -109,7 +97,6 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-// Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
@@ -118,8 +105,8 @@ userSchema.methods.cleanExpiredTokens = function () {
   const now = new Date();
   this.refreshTokens = this.refreshTokens.filter((tokenObj) => {
     const tokenAge = now - tokenObj.createdAt;
-    return tokenAge < 7 * 24 * 60 * 60 * 1000; // 7 days
+    return tokenAge < 7 * 24 * 60 * 60 * 1000;
   });
 };
 
-export default mongoose.model('User', userSchema);
+export default mongoose.model("User", userSchema);

@@ -16,22 +16,14 @@ import {
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
-// Create Player Profile
 
-/* -------------------------------------------------------
- * Create Player Profile
- * ----------------------------------------------------- */
-// Create Player Profile
-// Create Player Profile (guaranteed invoice)
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   try {
-    // لو كل يوزر مسموح له بروفايل واحد
     const exists = await Player.findOne({ user: userId });
     if (exists) throw new ApiError(400, "Player profile already exists");
 
-    // ارفع الميديا (لو عندك نفس الهيلبرز)
     let media;
     try {
       media = await processPlayerMedia(req.files);
@@ -48,10 +40,9 @@ export const createPlayer = asyncHandler(async (req, res) => {
         );
     }
 
-    // أنشئ البروفايل — بيظهر في الليست بعد الدفع
     const player = await Player.create({
       isListed: false,
-      isActive: false, // هتتفعّل بعد الدفع
+      isActive: false, 
       user: userId,
 
       name: req.body.name,
@@ -122,26 +113,22 @@ export const createPlayer = asyncHandler(async (req, res) => {
         new ApiResponse(201, player, "Player profile created successfully")
       );
 
-    // ---------- بعد الرد: أنشئ Draft Invoice للـ LISTING حسب jop ----------
     try {
-      // حدّد النوع من "jop" (لو كتب أي حاجة غير coach، هنعتبره player)
       const raw = String(req.body.jop || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
 
-      // سعر سنوي حسب النوع ومتخزّن في PRICING
       const amount =
         targetType === "coach"
           ? PRICING.listing_year.coach
           : PRICING.listing_year.player;
 
-      // فواتيرنا الداخلية المفروض تبقى pending ومش بنكلم Paylink هنا
       const orderNo = makeOrderNumber("listing", String(userId));
 
       await Invoice.findOneAndUpdate(
         {
           userId,
           product: "listing",
-          targetType, // "player" أو "coach"
+          targetType, 
           playerProfileId: player._id,
           status: "pending",
         },
@@ -151,17 +138,16 @@ export const createPlayer = asyncHandler(async (req, res) => {
             invoiceNumber: orderNo,
             amount,
             currency: "SAR",
-            durationDays: PRICING.ONE_YEAR_DAYS || 365, // سنة
+            durationDays: PRICING.ONE_YEAR_DAYS || 365, 
             featureType: null,
             status: "pending",
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // صلاحية صفحة الدفع لما نبدأها
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },
         },
         { upsert: true }
       );
 
-      // ✅ مفيش أي اتصال بـ Paylink هنا. ده مجرد Draft داخلي يظهر في تبويب المدفوعات.
-      // ✅ لما يضغط "Pay" في الفرونت → بننادي /payments/invoices/:id/initiate → ساعتها بس بنكلم Paylink.
+     
     } catch (e) {
       console.error("[createPlayer] seed listing draft failed", e);
     }
@@ -174,7 +160,6 @@ export const createPlayer = asyncHandler(async (req, res) => {
   }
 });
 
-// Get All Players (with advanced filtering)
 export const getAllPlayers = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -193,10 +178,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     game,
   } = req.query;
 
-  // Build query
+  
   const query = { isActive: true };
 
-  // Handle search across name (English and Arabic), position, and skills
+ 
   if (search) {
     query.$or = [
       { "name.en": { $regex: search, $options: "i" } },
@@ -206,10 +191,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     ];
   }
 
-  // Add filters for nationality, jop, status, gender, and game
+  
   if (nationality) {
     query.nationality = { $regex: nationality, $options: "i" };
-  } // Case-insensitive
+  } 
   if (jop) {
     query.jop = jop;
   }
@@ -221,9 +206,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   }
   if (game) {
     query.game = { $regex: game, $options: "i" };
-  } // Case-insensitive for game
+  } 
 
-  // Handle age range filter
+ 
   if (ageMin || ageMax) {
     query.age = {};
     if (ageMin) {
@@ -234,7 +219,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Handle salary range filter
   if (salaryMin || salaryMax) {
     query["monthlySalary.amount"] = {};
     if (salaryMin) {
@@ -245,7 +229,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Handle promotion status filter
   if (isPromoted !== undefined) {
     if (isPromoted === "true") {
       query["isPromoted.status"] = true;
@@ -259,11 +242,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Pagination
   const { skip, limit: limitNum } = paginate(page, limit);
   let sort = buildSortQuery(sortBy);
 
-  // Default sort: Promoted players first, then by creation date
   if (!sortBy) {
     sort = {
       "isPromoted.status": -1,
@@ -273,7 +254,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Execute query
     const [players, total] = await Promise.all([
       Player.find(query)
         .sort(sort)
@@ -283,7 +263,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
       Player.countDocuments(query),
     ]);
 
-    // Check if no players are found
     if (!players.length && page === 1) {
       return res.status(200).json(
         new ApiResponse(
@@ -331,7 +310,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   }
 });
 
-// Get Single Player by ID
 export const getPlayerById = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
 
@@ -340,17 +318,11 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     "name email phone"
   );
 
-  // if (!player || !player.isActive) {
-  //   throw new ApiError(404, 'Player not found');
-  // }
-
-  // Increment views (only if not the owner)
   if (!req.user || player.user._id.toString() !== req.user._id.toString()) {
     player.views += 1;
     await player.save();
   }
 
-  // Gate contact methods: only owner or active users can see contact info
   let canSeeContacts = false;
   try {
     const isOwner =
@@ -363,7 +335,7 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     canSeeContacts = Boolean(isOwner || requesterIsActive);
   } catch {}
 
-  const playerData = player.toJSON(); // ✅ استخدم toJSON عشان السحر يشتغل
+  const playerData = player.toJSON(); 
   if (!canSeeContacts && playerData?.user) {
     delete playerData.user.email;
     delete playerData.user.phone;
@@ -374,7 +346,6 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, playerData, "Player fetched successfully"));
 });
 
-// Update Player Profile
 export const updatePlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
@@ -383,12 +354,10 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   const player = await Player.findById(playerId);
   if (!player) throw new ApiError(404, "Player not found");
 
-  // صلاحيات
   if (userRole !== "admin" && String(player.user) !== String(userId)) {
     throw new ApiError(403, "You can only update your own profile");
   }
 
-  // 1) تحديث الحقول النصية (نفس شكل create)
   if (req.body.name !== undefined) player.name = req.body.name;
   if (req.body.age !== undefined) player.age = req.body.age;
   if (req.body.gender !== undefined) player.gender = req.body.gender;
@@ -416,13 +385,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (req.body.views !== undefined) player.views = req.body.views;
   if (req.body.isActive !== undefined) player.isActive = req.body.isActive;
 
-  // تواريخ
   if (req.body.contractEndDate !== undefined) {
     player.contractEndDate =
       req.body.contractEndDate === "" ? null : req.body.contractEndDate;
   }
 
-  // كائنات متداخلة
   if (req.body.monthlySalary) {
     if (!player.monthlySalary) player.monthlySalary = {};
     if (req.body.monthlySalary.amount !== undefined)
@@ -505,7 +472,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     }
   }
 
-  // Process media files if any are provided
   let mediaUpdateResults = {
     updated: [],
     deleted: [],
@@ -521,13 +487,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         Object.keys(req.files)
       );
 
-      // Track what old media will be replaced
       const oldMedia = player.media
         ? JSON.parse(JSON.stringify(player.media))
         : null;
 
-      // Use the processPlayerMedia utility to handle media updates
-      // This will delete old files when needed and upload new ones
+   
       let updatedMedia;
       try {
         updatedMedia = await processPlayerMedia(req.files, player.media);
@@ -550,16 +514,13 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         );
       }
 
-      // Ensure player.media exists
       if (!player.media) player.media = {};
 
-      // Update profile image if provided
       if (
         req.files.profileImage &&
         updatedMedia.profileImage &&
         updatedMedia.profileImage.url
       ) {
-        // Log old image deletion
         if (oldMedia?.profileImage?.publicId) {
           mediaUpdateResults.deleted.push({
             type: "profile image",
@@ -578,13 +539,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         );
       }
 
-      // Update video if provided
       if (
         req.files.playerVideo &&
         updatedMedia.video &&
         updatedMedia.video.url
       ) {
-        // Log old video deletion
         if (oldMedia?.video?.publicId) {
           mediaUpdateResults.deleted.push({
             type: "video",
@@ -600,13 +559,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         console.log("Video updated:", updatedMedia.video.publicId);
       }
 
-      // Update document if provided
       if (
         req.files.document &&
         updatedMedia.document &&
         updatedMedia.document.url
       ) {
-        // Log old document deletion
         if (oldMedia?.document?.publicId) {
           mediaUpdateResults.deleted.push({
             type: "document",
@@ -622,14 +579,13 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         console.log("Document updated:", updatedMedia.document.publicId);
       }
 
-      // Update images array if provided
+    
       if (
         req.files.images &&
         updatedMedia.images &&
         Array.isArray(updatedMedia.images) &&
         updatedMedia.images.length > 0
       ) {
-        // Log old images deletion
         if (oldMedia?.images && Array.isArray(oldMedia.images)) {
           oldMedia.images.forEach((img, index) => {
             if (img?.publicId) {
@@ -668,11 +624,9 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to process media files: " + error.message);
   }
 
-  // حفظ
   player.updatedAt = new Date();
   await player.save();
 
-  // إشعار (اختياري)
   await sendInternalNotification(
     player.user,
     "Profile Updated",
@@ -680,14 +634,12 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     { playerId: player._id }
   );
 
-  // Prepare response with media update information
   let responseMessage = "Player profile updated successfully";
   let responseData = {
     player,
     mediaUpdates: null,
   };
 
-  // Add media update information to response if any media was processed
   if (
     mediaUpdateResults.updated.length > 0 ||
     mediaUpdateResults.deleted.length > 0 ||
@@ -723,7 +675,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
 export const deleteSpecicImage = async (req, res) => {
   try {
     const { id: playerId } = req.params;
-    const { publicIds } = req.body; // Array of image publicIds to delete
+    const { publicIds } = req.body; 
 
     if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
       return res.status(400).json({
@@ -740,7 +692,6 @@ export const deleteSpecicImage = async (req, res) => {
       });
     }
 
-    // Check if user owns this profile
     if (player.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -751,7 +702,6 @@ export const deleteSpecicImage = async (req, res) => {
     const deleteResults = [];
 
     if (player.media?.images && Array.isArray(player.media.images)) {
-      // Filter out images that should be deleted
       const imagesToKeep = player.media.images.filter((image) => {
         const shouldDelete = publicIds.includes(image.publicId);
         if (shouldDelete) {
@@ -764,7 +714,6 @@ export const deleteSpecicImage = async (req, res) => {
         return !shouldDelete;
       });
 
-      // Delete from Cloudinary
       for (const publicId of publicIds) {
         try {
           await deleteMediaFromCloudinary(publicId, "image");
@@ -779,7 +728,6 @@ export const deleteSpecicImage = async (req, res) => {
         }
       }
 
-      // Update player with remaining images
       player.media.images = imagesToKeep;
       await player.save();
 
@@ -824,7 +772,6 @@ export const deletePlayerDocument = async (req, res) => {
       });
     }
 
-    // Check if user owns this profile
     if (player.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -845,7 +792,6 @@ export const deletePlayerDocument = async (req, res) => {
         );
       }
 
-      // Remove document from player
       player.media.document = {
         url: null,
         publicId: null,
@@ -889,7 +835,6 @@ export const deletePlayerVideo = async (req, res) => {
       });
     }
 
-    // Check if user owns this profile
     if (player.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -907,7 +852,6 @@ export const deletePlayerVideo = async (req, res) => {
         console.warn("Failed to delete video from Cloudinary:", error.message);
       }
 
-      // Remove video from player
       player.media.video = {
         url: null,
         publicId: null,
@@ -941,7 +885,7 @@ export const deletePlayerVideo = async (req, res) => {
 export const deletePlayerImages = async (req, res) => {
   try {
     const { id: playerId } = req.params;
-    const { publicIds } = req.body; // Array of image publicIds to delete
+    const { publicIds } = req.body;
 
     if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
       return res.status(400).json({
@@ -958,7 +902,6 @@ export const deletePlayerImages = async (req, res) => {
       });
     }
 
-    // Check if user owns this profile
     if (player.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -969,7 +912,6 @@ export const deletePlayerImages = async (req, res) => {
     const deleteResults = [];
 
     if (player.media?.images && Array.isArray(player.media.images)) {
-      // Filter out images that should be deleted
       const imagesToKeep = player.media.images.filter((image) => {
         const shouldDelete = publicIds.includes(image.publicId);
         if (shouldDelete) {
@@ -982,7 +924,6 @@ export const deletePlayerImages = async (req, res) => {
         return !shouldDelete;
       });
 
-      // Delete from Cloudinary
       for (const publicId of publicIds) {
         try {
           await deleteMediaFromCloudinary(publicId, "image");
@@ -997,7 +938,6 @@ export const deletePlayerImages = async (req, res) => {
         }
       }
 
-      // Update player with remaining images
       player.media.images = imagesToKeep;
       await player.save();
 
@@ -1030,7 +970,6 @@ export const deletePlayerImages = async (req, res) => {
   }
 };
 
-// Delete Player Profile
 export const deletePlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
@@ -1043,14 +982,11 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Player not found");
     }
 
-    // Check permissions
     if (userRole !== "admin" && player.user.toString() !== userId.toString()) {
       throw new ApiError(403, "You can only delete your own profile");
     }
 
-    // Delete all media files from Cloudinary using our centralized utility
     if (player.media) {
-      // Delete profile image
       if (player.media.profileImage?.publicId) {
         await deleteMediaFromCloudinary(
           player.media.profileImage.publicId,
@@ -1060,7 +996,6 @@ export const deletePlayer = asyncHandler(async (req, res) => {
         );
       }
 
-      // Delete all images
       if (player.media.images && player.media.images.length > 0) {
         for (const image of player.media.images) {
           if (image.publicId) {
@@ -1071,7 +1006,6 @@ export const deletePlayer = asyncHandler(async (req, res) => {
         }
       }
 
-      // Delete video
       if (player.media.video && player.media.video.publicId) {
         await deleteMediaFromCloudinary(
           player.media.video.publicId,
@@ -1079,7 +1013,6 @@ export const deletePlayer = asyncHandler(async (req, res) => {
         ).catch((err) => console.warn("Failed to delete video:", err.message));
       }
 
-      // Delete document
       if (player.media.document && player.media.document.publicId) {
         await deleteMediaFromCloudinary(
           player.media.document.publicId,
@@ -1090,11 +1023,9 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       }
     }
 
-    // Soft delete
     player.isActive = false;
     await player.save();
 
-    // Send notification about profile deletion
     await sendInternalNotification(
       player.user,
       "Profile Deleted",
@@ -1114,7 +1045,6 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   }
 });
 
-// Get My Player Profile
 export const getMyProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
@@ -1131,7 +1061,6 @@ export const getMyProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, player, "Your profile fetched successfully"));
 });
 
-// Upload Profile Image
 export const uploadProfileImage = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
@@ -1147,12 +1076,10 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Player not found");
     }
 
-    // Check permissions
     if (player.user.toString() !== userId.toString()) {
       throw new ApiError(403, "You can only update your own profile");
     }
 
-    // Use our centralized media utility to handle image update
     if (!player.media) {
       player.media = {
         profileImage: { url: null, publicId: null },
@@ -1161,7 +1088,6 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
       };
     }
 
-    // Replace existing profile image
     player.media.profileImage = await replaceMediaItem(
       req.file,
       player.media.profileImage,
@@ -1188,11 +1114,10 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
   }
 });
 
-// Upload Media (Video or Document)
 export const uploadMedia = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
-  const { mediaType } = req.params; // video or document
+  const { mediaType } = req.params; 
 
   if (!req.files || req.files.length === 0) {
     throw new ApiError(400, "Media file is required");
@@ -1208,15 +1133,12 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  // Check permissions
   if (player.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only update your own profile");
   }
 
-  // We'll only use the first file even if multiple files are uploaded
   const file = req.files[0];
 
-  // Delete the existing file if it exists
   if (player.media[mediaType]?.publicId) {
     const resourceType = mediaType === "video" ? "video" : "auto";
     await deleteMediaFromCloudinary(
@@ -1227,11 +1149,9 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     );
   }
 
-  // Use mediaUtils to handle the file properly
   const resourceType = mediaType === "video" ? "video" : "auto";
   const mediaData = await handleMediaUpload(file, resourceType);
 
-  // Create the new media item
   const mediaItem = {
     url: mediaData.url,
     publicId: mediaData.publicId,
@@ -1240,7 +1160,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   };
 
   if (mediaType === "video") {
-    mediaItem.duration = 0; // Placeholder
+    mediaItem.duration = 0; 
   }
 
   if (mediaType === "document") {
@@ -1249,7 +1169,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     mediaItem.extension = mediaData.extension;
   }
 
-  // Replace the existing media item
   player.media[mediaType] = mediaItem;
   await player.save();
 
@@ -1260,7 +1179,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     );
 });
 
-// Delete Media
 export const deleteMedia = asyncHandler(async (req, res) => {
   const { playerId, mediaType } = req.params;
   const userId = req.user._id;
@@ -1275,7 +1193,6 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  // Check permissions
   if (player.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only update your own profile");
   }
@@ -1284,7 +1201,6 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     throw new ApiError(404, `No ${mediaType} found to delete`);
   }
 
-  // Delete from Cloudinary
   const resourceType = mediaType === "video" ? "video" : "auto";
   if (player.media[mediaType].publicId) {
     await deleteMediaFromCloudinary(
@@ -1295,7 +1211,6 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     );
   }
 
-  // Reset the media item
   player.media[mediaType] = {
     url: null,
     publicId: null,
@@ -1311,7 +1226,6 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, `${mediaType} deleted successfully`));
 });
 
-// Promote Player
 export const promotePlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
@@ -1330,7 +1244,6 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  // Check permissions
   if (player.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only promote your own profile");
   }
@@ -1339,11 +1252,11 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Player is already promoted");
   }
 
-  // Promote player (assuming this method exists in the model)
+ 
   if (player.promote) {
     await player.promote(days, type);
   } else {
-    // Manual promotion logic
+   
     player.isPromoted = {
       status: true,
       type,
@@ -1353,7 +1266,6 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     await player.save();
   }
 
-  // Send notification about promotion
   await sendInternalNotification(
     userId,
     "Profile Promoted",
@@ -1366,7 +1278,6 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, player, "Player promoted successfully"));
 });
 
-// Transfer Player
 export const transferPlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const { clubName, amount, transferDate } = req.body;
@@ -1385,11 +1296,9 @@ export const transferPlayer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Player is already transferred");
   }
 
-  // Transfer player (assuming this method exists in the model)
   if (player.transfer) {
     await player.transfer(clubName, amount);
   } else {
-    // Manual transfer logic
     player.status = "transferred";
     player.transferHistory.push({
       clubName,
@@ -1400,7 +1309,6 @@ export const transferPlayer = asyncHandler(async (req, res) => {
     await player.save();
   }
 
-  // Send notification about transfer
   await sendInternalNotification(
     player.user,
     "Player Transferred",
@@ -1413,7 +1321,6 @@ export const transferPlayer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, player, "Player transferred successfully"));
 });
 
-// Update Player Statistics
 export const updateStatistics = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
@@ -1425,7 +1332,6 @@ export const updateStatistics = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  // Check permissions
   if (
     player.user.toString() !== userId.toString() &&
     req.user.role !== "admin"
@@ -1433,7 +1339,6 @@ export const updateStatistics = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only update your own statistics");
   }
 
-  // Update statistics
   if (player.statistics) {
     Object.assign(player.statistics, statistics);
   } else {
@@ -1453,7 +1358,6 @@ export const updateStatistics = asyncHandler(async (req, res) => {
     );
 });
 
-// Get Promoted Players
 export const getPromotedPlayers = asyncHandler(async (req, res) => {
   const { type, limit = 20 } = req.query;
 
@@ -1479,7 +1383,6 @@ export const getPromotedPlayers = asyncHandler(async (req, res) => {
     );
 });
 
-// Search Players (Advanced search)
 export const searchPlayers = asyncHandler(async (req, res) => {
   const {
     q: search,
@@ -1499,7 +1402,6 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Search query is required");
   }
 
-  // Build search query
   const query = {
     isActive: true,
     $or: [
@@ -1511,7 +1413,6 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     ],
   };
 
-  // Apply additional filters
   if (position) {
     query.position = position;
   }
@@ -1544,10 +1445,8 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     query.skills = { $in: skillsArray };
   }
 
-  // Pagination
   const { skip } = paginate(page, limit);
 
-  // Sort options
   let sort = { score: { $meta: "textScore" } };
   if (sortBy === "date") {
     sort = { createdAt: -1 };
@@ -1562,7 +1461,6 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     sort = { views: -1 };
   }
 
-  // Execute search
   const [players, total] = await Promise.all([
     Player.find(query)
       .sort(sort)
@@ -1590,7 +1488,6 @@ export const searchPlayers = asyncHandler(async (req, res) => {
   );
 });
 
-// Get Player Analytics (for player owner or admin)
 export const getPlayerAnalytics = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
@@ -1601,7 +1498,6 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  // Check permissions
   if (
     player.user.toString() !== userId.toString() &&
     req.user.role !== "admin"
@@ -1609,7 +1505,6 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only view analytics for your own profile");
   }
 
-  // Calculate analytics
   const analytics = {
     totalViews: player.views || 0,
     profileCompleteness: calculateProfileCompleteness(player),
@@ -1632,7 +1527,6 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
     );
 });
 
-// Get Similar Players
 export const getSimilarPlayers = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const { limit = 5 } = req.query;
@@ -1653,7 +1547,6 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
     ],
   };
 
-  // Add salary range filter
   if (currentPlayer.monthlySalary?.amount) {
     const salaryRange = currentPlayer.monthlySalary.amount * 0.3; // 30% range
     query["monthlySalary.amount"] = {
@@ -1677,7 +1570,6 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
     );
 });
 
-// Get Players by Position
 export const getPlayersByPosition = asyncHandler(async (req, res) => {
   const { position } = req.params;
   const { limit = 10, page = 1 } = req.query;
@@ -1716,7 +1608,6 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
   );
 });
 
-// Get Featured Players
 export const getFeaturedPlayers = asyncHandler(async (req, res) => {
   const { limit = 6 } = req.query;
 
@@ -1737,12 +1628,10 @@ export const getFeaturedPlayers = asyncHandler(async (req, res) => {
     );
 });
 
-// Helper function to calculate profile completeness
 const calculateProfileCompleteness = (player) => {
   let completedFields = 0;
-  const totalFields = 20; // Adjust based on your player model
+  const totalFields = 20; 
 
-  // Check required fields
   if (player.name?.en) {
     completedFields++;
   }
@@ -1820,10 +1709,8 @@ export const deletePlayerProfile = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Delete all media files from Cloudinary first
     const mediaDeleteResults = await deleteAllPlayerMedia(player.media);
 
-    // Log deletion results for debugging
     if (mediaDeleteResults.successful.length > 0) {
       console.log(
         `Successfully deleted ${mediaDeleteResults.successful.length} media files:`,
@@ -1842,10 +1729,8 @@ export const deletePlayerProfile = asyncHandler(async (req, res) => {
       );
     }
 
-    // Finally, remove player from the database completely
     await Player.findByIdAndDelete(player._id);
 
-    // Prepare response message
     const totalMediaAttempted =
       mediaDeleteResults.successful.length + mediaDeleteResults.failed.length;
     let message = "Player profile permanently deleted";

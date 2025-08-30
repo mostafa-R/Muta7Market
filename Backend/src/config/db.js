@@ -7,7 +7,6 @@ const connectDB = async () => {
 
     logger.info("MongoDB Connected");
 
-    // Handle connection events
     mongoose.connection.on("error", (err) => {
       logger.error("MongoDB connection error:", err);
     });
@@ -16,7 +15,6 @@ const connectDB = async () => {
       logger.warn("MongoDB disconnected");
     });
 
-    // Graceful shutdown
     process.on("SIGINT", async () => {
       await mongoose.connection.close();
       logger.info("MongoDB connection closed through app termination");

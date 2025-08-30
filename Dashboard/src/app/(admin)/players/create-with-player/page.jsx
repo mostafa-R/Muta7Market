@@ -29,9 +29,9 @@ function SuccessDialog({ open, onOpenChange, playerName, playerId, onViewPlayer,
         </DialogHeader>
 
         <div className="flex flex-col gap-3 mt-6">
-          <button onClick={onViewPlayer} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+          {/* <button onClick={onViewPlayer} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
             عرض بيانات اللاعب
-          </button>
+          </button> */}
           <button onClick={onCreateNewPlayer} className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors">
             إنشاء لاعب جديد
           </button>

@@ -3,7 +3,6 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { cloudinary } from "../config/cloudinary.js";
 import ApiError from "../utils/ApiError.js";
 
-// Helper functions to determine file types
 const isImage = (mimetype) => mimetype.startsWith("image/");
 const isVideo = (mimetype) => mimetype.startsWith("video/");
 const isDocument = (mimetype) =>
@@ -14,7 +13,6 @@ const isDocument = (mimetype) =>
     "text/plain",
   ].includes(mimetype);
 
-// Determine folder and resource type based on file
 const getFileParams = (file) => {
   let folder = "sports-platform/";
   let resource_type = "auto";
@@ -28,14 +26,14 @@ const getFileParams = (file) => {
     resource_type = "video";
   } else if (isDocument(file.mimetype)) {
     folder += "documents";
-    // استخدام "auto" بدلاً من "raw" للحفاظ على امتداد الملف
+   
     resource_type = "auto";
-    // Preserve original file extension for documents
+   
     format = file.originalname.split(".").pop().toLowerCase();
     
-    // التأكد من أن الامتداد صحيح
+    
     if (!format || format.length > 4) {
-      // إذا لم يكن هناك امتداد، استخدم mimetype لتحديد الامتداد
+     
       if (file.mimetype === "application/pdf") format = "pdf";
       else if (file.mimetype === "application/msword") format = "doc";
       else if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") format = "docx";
@@ -49,7 +47,7 @@ const getFileParams = (file) => {
   return { folder, resource_type, format };
 };
 
-// Cloudinary storage configuration
+
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
@@ -82,14 +80,11 @@ const storage = new CloudinaryStorage({
     // Add format for documents to preserve extension
     if (format && resource_type === "auto") {
       params.format = format;
-      // إضافة معاملات إضافية لضمان الحفاظ على الامتداد
       params.overwrite = false;
       params.invalidate = true;
-      // إضافة fetch_format لضمان الحفاظ على الامتداد عند التحميل
       params.fetch_format = format;
     }
 
-    // Add transformation for images
     if (isImage(file.mimetype)) {
       params.transformation = [{ width: 1000, height: 1000, crop: "limit" }];
     }
@@ -98,22 +93,19 @@ const storage = new CloudinaryStorage({
   },
 });
 
-// File filter
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
-    // Images
+    
     "image/jpeg",
     "image/jpg",
     "image/png",
     "image/gif",
     "image/webp",
-    // Videos
     "video/mp4",
     "video/quicktime",
     "video/x-msvideo",
     "video/x-ms-wmv",
     "video/x-matroska",
-    // Documents
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -133,22 +125,19 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Create multer instance with mixed upload support
 export const uploadMixed = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit
+    fileSize: 100 * 1024 * 1024, 
   },
 });
 
-// Export individual upload middlewares
 export const uploadSingle = (fieldName) => uploadMixed.single(fieldName);
 export const uploadMultiple = (fieldName, maxCount) =>
   uploadMixed.array(fieldName, maxCount);
 export const uploadFields = (fields) => uploadMixed.fields(fields);
 
-// Helper function to delete files from Cloudinary
 export const deleteFromCloudinary = async (
   publicId,
   resource_type = "image"
