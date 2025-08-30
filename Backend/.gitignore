@@ -10,7 +10,7 @@ fly.toml
 
 # production
 /build
-
+backend.zip
 # misc
 .env
 .DS_Store
