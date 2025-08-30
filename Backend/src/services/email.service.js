@@ -19,12 +19,12 @@ async function initializeEmailService() {
 
 function createTransporter() {
   const config = {
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT),
-    secure: process.env.SMTP_PORT === "465",
+    host: process.env.SMTP_HOST || "mail.muta7markt.com",
+    port: parseInt(process.env.SMTP_PORT || "465"),
+    secure: (process.env.SMTP_PORT || "465") === "465",
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.SMTP_USER || "otp@muta7markt.com",
+      pass: process.env.SMTP_PASS || "0080FaHb#",
     },
   };
 
@@ -115,7 +115,9 @@ async function sendEmail(options) {
     }
 
     const mailOptions = {
-      from: `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_FROM_EMAIL}>`,
+      from: `${process.env.SMTP_FROM_NAME || "Muta7Market"} <${
+        process.env.SMTP_FROM_EMAIL || "otp@muta7markt.com"
+      }>`,
       to,
       subject,
       html: htmlContent,
@@ -123,7 +125,7 @@ async function sendEmail(options) {
       attachments,
       cc,
       bcc,
-      replyTo: replyTo || process.env.SMTP_REPLY_TO,
+      replyTo: replyTo || process.env.SMTP_REPLY_TO || "support@muta7markt.com",
     };
 
     const info = await transporter.sendMail(mailOptions);

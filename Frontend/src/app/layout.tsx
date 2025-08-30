@@ -40,13 +40,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Lang and direction are set client-side via JavaScript in LanguageProvider
+  // Default to Arabic language and RTL direction
   return (
-    <html lang="en" dir="ltr" className={`${notoSansArabic.variable}`}>
+    <html lang="ar" dir="rtl" className={`${notoSansArabic.variable}`}>
       <head>
         {/* Default metadata, will be overridden by client-side language selection */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

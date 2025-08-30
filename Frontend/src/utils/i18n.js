@@ -10,11 +10,11 @@ if (isServer) {
   // requests and ensure useTranslation has an instance during prerender.
   if (!i18n.isInitialized) {
     i18n.use(initReactI18next).init({
-      lng: "en",
-      fallbackLng: "en",
+      lng: "ar",
+      fallbackLng: "ar",
       resources: { en: { common: {} }, ar: { common: {} } },
       interpolation: { escapeValue: false },
-      supportedLngs: ["en", "ar"],
+      supportedLngs: ["ar", "en"],
       initImmediate: false,
     });
   }
@@ -26,8 +26,8 @@ if (isServer) {
       .use(LanguageDetector)
       .use(initReactI18next)
       .init({
-        fallbackLng: "en",
-        supportedLngs: ["en", "ar"],
+        fallbackLng: "ar",
+        supportedLngs: ["ar", "en"],
         debug: false,
         detection: {
           order: ["localStorage", "navigator"],

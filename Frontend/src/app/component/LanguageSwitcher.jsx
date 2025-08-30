@@ -3,6 +3,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Menu, Transition } from "@headlessui/react";
 import { Globe } from "lucide-react";
+import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,8 +18,18 @@ export default function LanguageSwitcher({ isMobile = false }) {
   }, []);
 
   const languages = [
-    { code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
-    { code: "ar", name: "العربية", nativeName: "العربية", flag: "🇦🇪" },
+    {
+      code: "en",
+      name: "English",
+      nativeName: "English",
+      flagSrc: "/flags/us.svg",
+    },
+    {
+      code: "ar",
+      name: "العربية",
+      nativeName: "العربية",
+      flagSrc: "/flags/sa.svg",
+    },
   ];
 
   const handleLanguageChange = (lng) => {
@@ -56,7 +67,14 @@ export default function LanguageSwitcher({ isMobile = false }) {
                 transition-all
               `}
             >
-              <span className="mr-1">{lng.flag}</span>
+              <div className="relative w-6 h-4 mr-2">
+                <Image
+                  src={lng.flagSrc}
+                  alt={`${lng.name} flag`}
+                  fill
+                  className="object-cover rounded-sm"
+                />
+              </div>
               {lng.nativeName}
             </button>
           ))}
@@ -90,11 +108,53 @@ export default function LanguageSwitcher({ isMobile = false }) {
           aria-label={t("language.select")}
         >
           <Globe className="w-4 h-4" />
-          <span className="hidden sm:inline">
-            {language === "ar" ? "العربية 🇦🇪" : "English 🇺🇸"}
+          <span className="hidden sm:flex items-center">
+            {language === "ar" ? (
+              <>
+                العربية{" "}
+                <div className="relative w-5 h-3.5 mr-1.5 inline-block align-middle">
+                  <Image
+                    src="/flags/sa.svg"
+                    alt="Saudi Arabia flag"
+                    fill
+                    className="object-cover rounded-sm"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                English{" "}
+                <div className="relative w-5 h-3.5 ml-1.5 inline-block align-middle">
+                  <Image
+                    src="/flags/us.svg"
+                    alt="USA flag"
+                    fill
+                    className="object-cover rounded-sm"
+                  />
+                </div>
+              </>
+            )}
           </span>
           <span className="inline sm:hidden">
-            {language === "ar" ? "🇦🇪" : "🇺🇸"}
+            {language === "ar" ? (
+              <div className="relative w-5 h-3.5">
+                <Image
+                  src="/flags/sa.svg"
+                  alt="Saudi Arabia flag"
+                  fill
+                  className="object-cover rounded-sm"
+                />
+              </div>
+            ) : (
+              <div className="relative w-5 h-3.5">
+                <Image
+                  src="/flags/us.svg"
+                  alt="USA flag"
+                  fill
+                  className="object-cover rounded-sm"
+                />
+              </div>
+            )}
           </span>
         </Menu.Button>
       </div>
@@ -133,7 +193,14 @@ export default function LanguageSwitcher({ isMobile = false }) {
                     `}
                   >
                     <div className="flex items-center gap-2">
-                      <span>{lng.flag}</span>
+                      <div className="relative w-5 h-3.5">
+                        <Image
+                          src={lng.flagSrc}
+                          alt={`${lng.name} flag`}
+                          fill
+                          className="object-cover rounded-sm"
+                        />
+                      </div>
                       <span>{lng.nativeName}</span>
                     </div>
                     {language === lng.code && (

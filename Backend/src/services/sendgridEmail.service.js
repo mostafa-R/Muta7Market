@@ -7,8 +7,8 @@ export const sendEmail = async (to, subject, text, html = null) => {
     }
     const info = await transporter.sendMail({
       from: {
-        name: "Muta7Market",
-        address: process.env.EMAIL_FROM,
+        name: process.env.SMTP_FROM_NAME || "Muta7Market",
+        address: process.env.SMTP_FROM_EMAIL || "otp@muta7markt.com",
       },
       to,
       subject,

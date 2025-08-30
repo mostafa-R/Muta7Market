@@ -5,10 +5,10 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const LanguageContext = createContext({
-  language: "en",
+  language: "ar",
   changeLanguage: (lng) => {},
-  isRTL: false,
-  dir: "ltr",
+  isRTL: true,
+  dir: "rtl",
 });
 
 export const LanguageProvider = ({ children }) => {
@@ -48,9 +48,9 @@ export const LanguageProvider = ({ children }) => {
       );
     };
 
-    // Get language from localStorage or use default
+    // Get language from localStorage or use default (Arabic)
     try {
-      const savedLanguage = localStorage.getItem("language") || "en";
+      const savedLanguage = localStorage.getItem("language") || "ar";
       setCurrentLanguage(savedLanguage);
       const isRtl = savedLanguage === "ar";
       setIsRTL(isRtl);
@@ -62,15 +62,15 @@ export const LanguageProvider = ({ children }) => {
 
       applyRTLStyles(isRtl);
     } catch (error) {
-      // Fallback to English if localStorage fails
+      // Fallback to Arabic if localStorage fails
       console.error("Error loading language:", error);
-      setCurrentLanguage("en");
-      setIsRTL(false);
+      setCurrentLanguage("ar");
+      setIsRTL(true);
       if (typeof i18n?.changeLanguage === "function") {
-        i18n.changeLanguage("en");
+        i18n.changeLanguage("ar");
       }
-      document.documentElement.lang = "en";
-      applyRTLStyles(false);
+      document.documentElement.lang = "ar";
+      applyRTLStyles(true);
     }
   }, [i18n]);
 
@@ -115,10 +115,10 @@ export const LanguageProvider = ({ children }) => {
 
   // Default values for SSR and initial render (prevent hydration mismatch)
   const contextValue = {
-    language: currentLanguage === null ? "en" : currentLanguage,
+    language: currentLanguage === null ? "ar" : currentLanguage,
     changeLanguage,
-    isRTL: isRTL === null ? false : isRTL,
-    dir: isRTL === null ? "ltr" : isRTL ? "rtl" : "ltr",
+    isRTL: isRTL === null ? true : isRTL,
+    dir: isRTL === null ? "rtl" : isRTL ? "rtl" : "ltr",
   };
 
   return (
