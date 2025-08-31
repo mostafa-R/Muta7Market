@@ -45,6 +45,13 @@ const corsOptions = {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:5173",
+      "https://muta7markt.com",
+      "https://www.muta7markt.com",
+      "https://dash.muta7markt.com",
+      "https://muta7markt.com",
+      "http://muta7markt.com",
+      "https://dashboard.muta7markt.com",
     ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
