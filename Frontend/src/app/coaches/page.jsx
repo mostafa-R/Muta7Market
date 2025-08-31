@@ -35,6 +35,7 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   annualContractValue: apiPlayer.yearSalary?.amount,
   jop: apiPlayer.jop,
+  roleType: apiPlayer.roleType,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 

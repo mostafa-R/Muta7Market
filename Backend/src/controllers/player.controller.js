@@ -163,7 +163,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
 export const getAllPlayers = asyncHandler(async (req, res) => {
   const {
     page = 1,
-    limit = 10,
+    limit = 20,
     sortBy,
     search,
     nationality,

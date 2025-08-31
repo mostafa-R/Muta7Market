@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
+import Pagination from "../component/Pagination";
 import PlayerCard from "../component/PlayerCard";
 
 // Function to transform API data to Player object
@@ -25,6 +26,7 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
+  roleType: apiPlayer.roleType,
   jop: apiPlayer.jop,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
@@ -39,18 +41,34 @@ const PlayerSection = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalPlayers, setTotalPlayers] = useState(0);
+  const playersPerPage = 10;
 
-  // جلب البيانات باستخدام Axios
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(API_URL);
-        // تحويل بيانات الـ API إلى واجهة Player
-        const fetchedPlayers = response.data.data.players
-          .slice(0, 10)
-          .map(transformApiDataToPlayer);
+        const response = await axios.get(
+          `${API_URL}?limit=${playersPerPage}&page=${currentPage}`
+        );
+
+        const responseData = response.data.data;
+
+        const fetchedPlayers = responseData.players.map(
+          transformApiDataToPlayer
+        );
+
         setPlayers(fetchedPlayers);
+
+        // API returns pagination info in responseData.pagination
+        const total = responseData.pagination?.total || 0;
+        const pages =
+          responseData.pagination?.pages || Math.ceil(total / playersPerPage);
+
+        setTotalPlayers(total);
+        setTotalPages(pages);
         setLoading(false);
       } catch (err) {
         setError(t("errors.fetchPlayersFailed"));
@@ -59,9 +77,13 @@ const PlayerSection = () => {
     };
 
     fetchPlayers();
-  }, []);
+  }, [currentPage, playersPerPage, t]);
 
-  // عرض حالة التحميل
+  // Pagination handler
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   if (loading) {
     return (
       <section className="py-8 bg-[hsl(var(--muted))]">
@@ -79,7 +101,6 @@ const PlayerSection = () => {
     );
   }
 
-  // عرض حالة الخطأ
   if (error) {
     return (
       <section className="py-10 bg-[hsl(var(--muted))]">
@@ -113,6 +134,21 @@ const PlayerSection = () => {
             <PlayerCard key={player.id} player={player} />
           ))}
         </div>
+
+        {/* Pagination */}
+        <div className="mt-8 mb-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            showPages={5}
+            showInfo={true}
+            totalItems={totalPlayers}
+            itemsPerPage={playersPerPage}
+            loading={loading}
+          />
+        </div>
+
         <div className="text-center mt-8">
           <Link href="/players">
             <button

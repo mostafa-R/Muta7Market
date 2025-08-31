@@ -215,7 +215,7 @@ const ProfileView = ({ user, t, language }) => {
             isStatus
           />
 
-          <InfoItem
+          {/* <InfoItem
             icon={FaCheckCircle}
             label={t("profile.phoneStatus")}
             value={
@@ -224,7 +224,7 @@ const ProfileView = ({ user, t, language }) => {
                 : t("profile.notActivated")
             }
             isStatus
-          />
+          /> */}
 
           <InfoItem
             icon={FaCheckCircle}

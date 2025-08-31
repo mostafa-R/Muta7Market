@@ -748,11 +748,11 @@ const PlayerProfile = () => {
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <div
+                    {/* <div
                       className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-2 border-white ${
                         player.isActive ? "bg-green-500" : "bg-red-500"
                       }`}
-                    ></div>
+                    ></div> */}
                   </div>
                   <div className="flex-1 space-y-6">
                     <div>
@@ -855,7 +855,7 @@ const PlayerProfile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Award className="w-5 h-5 text-primary" />
-                  <span>{t("playerDetail.playerInformation")}</span>
+                  <span>{ player.jop === "coach" ? t("playerDetail.coachInformation") : t("playerDetail.playerInformation")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -938,7 +938,7 @@ const PlayerProfile = () => {
                 {!isUserActive && (
                   <>
                     <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                      {t("playerDetail.activateToViewGallery")}
+                      { player.jop === "coach" ? t("playerDetail.activateToViewGalleryForCoaches") : t("playerDetail.activateToViewGallery")}
                     </div>
                     <div className="pt-2">
                       <PaymentBtn type="unlock_contacts" />

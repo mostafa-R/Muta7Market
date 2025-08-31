@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import userModel from "../models/user.model.js";
-import { sendEmail } from "../services/sendgridEmail.service.js";
+import { sendEmail } from "../config/email.js";
 import { isEmailEnabled } from "../config/email.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";

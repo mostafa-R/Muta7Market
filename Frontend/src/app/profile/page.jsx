@@ -7,25 +7,23 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { IoMdMenu } from "react-icons/io";
 import { toast } from "react-toastify";
-// Import Components
 import LoadingSpinner from "../component/LoadingSpinner";
 import ConfirmModal from "./components/ConfirmModal";
 import EditProfile from "./components/EditProfile";
 import ErrorMessage from "./components/ErrorMessage";
 import PaymentsSection from "./components/PaymentsSection.jsx";
+import PlayerProfile from "./components/PlayerProfile";
 import ProfileView from "./components/ProfileView";
 import Sidebar from "./components/Sidebar";
-// Import Schemas
-import { IoMdMenu } from "react-icons/io";
-import PlayerProfile from "./components/PlayerProfile";
 import { createProfileFormSchema } from "./components/validation.js";
-import PromoteNowButton from "./components/PromoteNowButton";
 
-// Ensure API base includes /api/v1
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`.replace(/\/$/, "").endsWith("/api/v1")
-  ? `${process.env.NEXT_PUBLIC_API_BASE_URL }`.replace(/\/$/, "")
-  : `${(process.env.NEXT_PUBLIC_API_BASE_URL).replace(/\/$/, "")}/api/v1`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}`
+  .replace(/\/$/, "")
+  .endsWith("/api/v1")
+  ? `${process.env.NEXT_PUBLIC_API_BASE_URL}`.replace(/\/$/, "")
+  : `${process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "")}/api/v1`;
 
 const UserProfile = () => {
   const { t } = useTranslation();
@@ -45,7 +43,7 @@ const UserProfile = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [player, setPlayer] = useState(null);
-  const [paymentBanner, setPaymentBanner] = useState(null); // { type: 'success'|'info'|'error', message: string }
+  const [paymentBanner, setPaymentBanner] = useState(null);
 
   const router = useRouter();
 
@@ -79,7 +77,6 @@ const UserProfile = () => {
       const userData = response.data.user;
       setUser(userData);
 
-      // Set values in the form
       reset({
         name: userData.name || "",
         email: userData.email || "",
@@ -113,29 +110,27 @@ const UserProfile = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
 
-      // PENDING invoices → feed the “payments” list (cards with Pay buttons)
       const pendingRes = await axios.get(
         `${API_URL}/payments/invoices?status=pending`,
         { headers }
       );
       const pendingItems = (pendingRes.data?.data?.items || []).map((inv) => ({
-        _id: inv.id, // use invoice id
+        _id: inv.id,
         type:
           inv.product === "player_listing"
             ? "publish_profile"
             : "unlock_contacts",
-        status: inv.status, // 'pending'
+        status: inv.status,
         amount: inv.amount,
         currency: inv.currency || "SAR",
         createdAt: inv.createdAt,
-        relatedPlayer: inv.playerProfileId, // needed for listing payments
+        relatedPlayer: inv.playerProfileId,
         invoice: { orderNumber: inv.orderNumber },
         gateway: "paylink",
-        paymentUrl: inv.paymentUrl || null, // handy if you want a direct Pay link
+        paymentUrl: inv.paymentUrl || null,
       }));
       setPendingPayments(pendingItems);
 
-      // PAID invoices → feed “invoices” list in the tab
       const paidRes = await axios.get(
         `${API_URL}/payments/invoices?status=paid`,
         { headers }
@@ -174,7 +169,6 @@ const UserProfile = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Check if data exists in the response
       if (response.data && response.data.data) {
         const playerData = response.data.data;
         setPlayer(playerData);
@@ -182,11 +176,10 @@ const UserProfile = () => {
         throw new Error(t("profile.noPlayerDataFound"));
       }
 
-      setError(""); // Clear any previous errors
+      setError("");
     } catch (err) {
       console.error("Error fetching player data:", err);
 
-      // Better error handling
       if (err.response) {
         if (err.response.status === 401) {
           setError(t("profile.unauthorizedAccess"));
@@ -205,7 +198,7 @@ const UserProfile = () => {
         setError(err.message || t("profile.unexpectedError"));
       }
     } finally {
-      setIsLoading(false); // Stop loading in all cases
+      setIsLoading(false);
     }
   }, [router, t]);
 
@@ -216,16 +209,17 @@ const UserProfile = () => {
     fetchPricing();
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, fetchPricing]);
 
-  // Handle Paylink return (/?pid=...&paid=1)
   useEffect(() => {
-    // Respect tab query param on initial load
     try {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab && ["profile", "edit", "payments", "playerProfile"].includes(tab)) {
+      if (
+        tab &&
+        ["profile", "edit", "payments", "playerProfile"].includes(tab)
+      ) {
         setActiveSection(tab);
       }
-    } catch { }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -234,22 +228,26 @@ const UserProfile = () => {
       const paid = params.get("paid");
       if (paid === "1") {
         setSuccess(t("profile.paymentSuccess"));
-        setPaymentBanner({ type: "success", message: t("formErrors.paymentSuccess") });
+        setPaymentBanner({
+          type: "success",
+          message: t("formErrors.paymentSuccess"),
+        });
         toast.success(t("formErrors.paymentSuccess"));
-        // Refresh user, invoices, and player data after webhook processes
         fetchUserData();
         fetchPendingPayments();
         fetchPlayerData();
       } else if (paid === "0") {
         setError(t("profile.paymentFailed"));
-        setPaymentBanner({ type: "error", message: t("profile.paymentFailed") });
+        setPaymentBanner({
+          type: "error",
+          message: t("profile.paymentFailed"),
+        });
         toast.error(t("formErrors.paymentFailed"));
         fetchPendingPayments();
       }
-    } catch { }
+    } catch {}
   }, [fetchUserData, fetchPendingPayments, fetchPlayerData, t]);
 
-  // Handle Paylink callback with invoiceId/orderNumber/transactionNo → one-time reconcile + recheck
   useEffect(() => {
     const run = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -258,13 +256,10 @@ const UserProfile = () => {
       const transactionNo = params.get("transactionNo");
       if (!invoiceId && !orderNumber && !transactionNo) return;
 
-      // Ensure payments tab is visible for user
       setActiveSection("payments");
 
-      // Let user know we are processing callback
       toast.info(t("formErrors.paymentPending"));
 
-      // Clean URL params ASAP to avoid duplicate triggers in StrictMode
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.delete("invoiceId");
       currentUrl.searchParams.delete("orderNumber");
@@ -272,8 +267,9 @@ const UserProfile = () => {
       currentUrl.searchParams.delete("paid");
       window.history.replaceState({}, "", currentUrl.toString());
 
-      // Session guard to ensure one-time handling
-      const guardKey = `paylink_cb_${orderNumber || invoiceId || transactionNo}`;
+      const guardKey = `paylink_cb_${
+        orderNumber || invoiceId || transactionNo
+      }`;
       if (sessionStorage.getItem(guardKey)) return;
       sessionStorage.setItem(guardKey, "1");
 
@@ -281,12 +277,13 @@ const UserProfile = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Prefer Paylink-backed recheck first; only fall back to DB status if no orderNumber
       let decided = false;
       if (orderNumber) {
         try {
           const res = await axios.post(
-            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(orderNumber)}`,
+            `${API_URL}/payments/invoices/recheck/${encodeURIComponent(
+              orderNumber
+            )}`,
             {},
             { headers }
           );
@@ -294,13 +291,17 @@ const UserProfile = () => {
           const paid = Boolean(res.data?.data?.paid);
           const verified = Boolean(res.data?.data?.verified);
           if (paid || (status === "paid" && verified)) {
-            toast.success(`${t("formErrors.paymentSuccess")} — verified with Paylink`);
+            toast.success(
+              `${t("formErrors.paymentSuccess")} — verified with Paylink`
+            );
           } else {
             const backendMsg = res.data?.data?.error || "";
             if (backendMsg) {
               toast.error(String(backendMsg));
             } else {
-              const statusText = status ? `Payment status: ${status}` : t("formErrors.paymentPending");
+              const statusText = status
+                ? `Payment status: ${status}`
+                : t("formErrors.paymentPending");
               toast.info(statusText);
             }
           }
@@ -312,18 +313,25 @@ const UserProfile = () => {
 
       if (!decided && invoiceId) {
         try {
-          const res = await axios.get(`${API_URL}/payments/status/${invoiceId}`, { headers });
+          const res = await axios.get(
+            `${API_URL}/payments/status/${invoiceId}`,
+            { headers }
+          );
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
-            // Avoid showing success without Paylink recheck; show pending until recheck confirms
             toast.info(t("formErrors.paymentPending"));
           } else {
             const errs = res.data?.data?.paymentErrors || [];
-            const firstErr = Array.isArray(errs) && errs.length ? (errs[0]?.message || errs[0]?.title || "") : "";
+            const firstErr =
+              Array.isArray(errs) && errs.length
+                ? errs[0]?.message || errs[0]?.title || ""
+                : "";
             if (firstErr) {
               toast.error(String(firstErr));
             } else {
-              const statusText = status ? `Payment status: ${status}` : t("formErrors.paymentPending");
+              const statusText = status
+                ? `Payment status: ${status}`
+                : t("formErrors.paymentPending");
               toast.info(statusText);
             }
           }
@@ -337,19 +345,17 @@ const UserProfile = () => {
         toast.info(t("formErrors.paymentPending"));
       }
 
-      // Refresh UI regardless
       fetchUserData();
       fetchPendingPayments();
       fetchPlayerData();
 
-      // Best-effort reconcile in the background to sync any other invoices
       try {
-        axios.post(`${API_URL}/payments/reconcile`, {}, { headers }).catch(() => { });
-      } catch { }
+        axios
+          .post(`${API_URL}/payments/reconcile`, {}, { headers })
+          .catch(() => {});
+      } catch {}
     };
     run();
-    // Intentionally run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSubmit = useCallback(
@@ -481,7 +487,6 @@ const UserProfile = () => {
   if (!user) return <ErrorMessage message={t("profile.errorLoadingData")} />;
 
   return (
-
     <div
       className="min-h-screen bg-[#ffffff]"
       dir={language === "ar" ? "rtl" : "ltr"}
@@ -533,7 +538,6 @@ const UserProfile = () => {
 
             {activeSection === "payments" && (
               <div className="mt-6">
-
                 <PaymentsSection />
               </div>
             )}
@@ -568,13 +572,7 @@ const UserProfile = () => {
           t={t}
         />
       )}
-
-
-
-
-
     </div>
-
   );
 };
 

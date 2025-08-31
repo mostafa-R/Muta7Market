@@ -1,10 +1,11 @@
 "use client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, Eye, MapPin, Pin, Star, Trophy } from "lucide-react";
+import { Calendar, Eye, MapPin, Pin, Trophy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import PlayerRoleBadge from "./PlayerRoleBadge";
 
 const getStatusColor = (status) => {
   const colors = {
@@ -270,24 +271,7 @@ const PlayerCard = ({ player }) => {
           </div>
         </div>
 
-        {/* Position / Coach Type */}
-        {positionText && (
-          <div className="flex items-center justify-center gap-1.5 p-2 bg-[hsl(var(--muted)/0.2)] rounded-lg mb-2">
-            <Star className="w-3.5 h-3.5 text-[hsl(var(--primary))] flex-shrink-0" />
-            <span className="text-xs text-[hsl(var(--muted-foreground))] font-medium">
-              {player.jop === "coach"
-                ? t("player.roleType")
-                : t("player.position")}
-              :
-            </span>
-            <span
-              className="text-sm font-bold text-[hsl(var(--card-foreground))] truncate"
-              title={positionText}
-            >
-              {positionText}
-            </span>
-          </div>
-        )}
+        <PlayerRoleBadge player={player} t={t} positionText={positionText} />
       </div>
 
       {/* Action Button */}
