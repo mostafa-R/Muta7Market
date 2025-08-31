@@ -205,15 +205,7 @@ import React, { useEffect, useState } from "react";
                 </div>
 
 
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                      {/* {Confirmed.toLocaleString()} */}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Confirmed</span>
-                </div>
+              
               </div>
 
               {/* Enhanced Progress Bar */}
@@ -288,6 +280,16 @@ import React, { useEffect, useState } from "react";
               ))
             ) : (
               <>
+              {/* Users Metric */}
+              <MetricCard 
+                  icon={<BoxIconLine />}
+                  title="Total Users"
+                  total={stats.users.total}
+                  active={stats.users.active}
+                  inactive={stats.users.inactive}
+                  index={1}
+                />
+
                 {/* Players Metric */}
                 <MetricCard 
                   icon={<GroupIcon />}
@@ -297,16 +299,6 @@ import React, { useEffect, useState } from "react";
                   inactive={stats.players.inactive}
                   Confirmed={stats.players.Confirmed}
                   index={0}
-                />
-
-                {/* Users Metric */}
-                <MetricCard 
-                  icon={<BoxIconLine />}
-                  title="Total Users"
-                  total={stats.users.total}
-                  active={stats.users.active}
-                  inactive={stats.users.inactive}
-                  index={1}
                 />
 
                 {/* Coaches Metric */}

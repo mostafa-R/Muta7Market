@@ -47,8 +47,8 @@ const schema = Joi.object({
     'string.empty': 'رقم الهاتف مطلوب',
     'string.pattern.base': 'رقم الهاتف غير صحيح (استخدم أرقام فقط وقد يبدأ بـ +)',
   }),
-  role: Joi.string().valid('user', 'admin', 'editor').required().messages({
-    'any.only': 'نوع المستخدم يجب أن يكون مستخدم/مدير/محرر',
+  role: Joi.string().valid('user', 'admin').required().messages({
+    'any.only': 'نوع المستخدم يجب أن يكون مستخدم/مدير',
   }),
   isActive: Joi.boolean().required(),
   isEmailVerified: Joi.boolean().required(),
@@ -265,7 +265,6 @@ if (typeof window !== 'undefined') {
                     >
                       <option value="user">مستخدم</option>
                       <option value="admin">مدير</option>
-                      <option value="editor">محرر</option>
                     </Field>
                   </div>
                 </div>

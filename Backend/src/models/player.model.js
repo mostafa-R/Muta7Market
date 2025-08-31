@@ -201,7 +201,6 @@ const playerSchema = new mongoose.Schema(
         ],
       },
     },
-
     game: {
       type: String,
       required: true,

@@ -56,7 +56,7 @@ export default function UsersDashboardTable() {
     return String(input).replace(/[0-9]/g, (d) => map[d] || d);
   };
 
-  const rolesLabel = (r) => (r === 'admin' ? 'مدير' : r === 'editor' ? 'محرر' : 'مستخدم');
+  const rolesLabel = (r) => (r === 'admin' ? 'مدير'  : 'مستخدم');
 
   const formatDateAr = (iso) => {
     if (!iso) return '-';

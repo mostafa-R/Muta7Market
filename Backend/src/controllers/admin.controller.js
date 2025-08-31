@@ -13,7 +13,6 @@ function escapeRegex(s = "") {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, search, role, isActive } = req.query;
 
@@ -187,7 +186,6 @@ export const deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
-
 export const getAllPlayers = asyncHandler(async (req, res) => {
   let {
     page = 1,
@@ -234,7 +232,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   if (typeof isActive !== "undefined") {
     filter.isActive = isActive === "true";
   }
-
 
   const sort = {
     "isPromoted.status": -1,
@@ -426,7 +423,7 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   ]);
 
   const response = {
-    players, 
+    players,
     pagination: {
       currentPage: page,
       totalPages: Math.ceil(total / limit) || 1,
@@ -446,7 +443,6 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
       )
     );
 });
-
 
 export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
   const {
@@ -590,7 +586,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
         "[createUserWithPlayerProfile] seed listing draft failed",
         e
       );
-      
     }
 
     const populatedPlayer = await Player.findById(player._id)
@@ -624,7 +619,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
 });
 
 export const createPlayer = asyncHandler(async (req, res) => {
-  const { email, ...playerData } = req.body; 
+  const { email, ...playerData } = req.body;
 
   if (!email) {
     throw new ApiError(
@@ -633,15 +628,15 @@ export const createPlayer = asyncHandler(async (req, res) => {
     );
   }
 
-  const user = await User.findOne({ email }).select("_id name email phone");  
+  const user = await User.findOne({ email }).select("_id name email phone");
   if (!user) {
     throw new ApiError(404, "User not found with the provided email");
   }
 
-  let media = {}; 
+  let media = {};
   if (req.files && Object.keys(req.files).length > 0) {
     try {
-      media = await processPlayerMedia(req.files, {}); 
+      media = await processPlayerMedia(req.files, {});
     } catch (error) {
       console.error("Error processing media files:", error);
       throw new ApiError(
@@ -652,12 +647,12 @@ export const createPlayer = asyncHandler(async (req, res) => {
   }
 
   const newPlayer = new Player({
-    ...playerData, 
-    user: user._id, 
-    media, 
+    ...playerData,
+    user: user._id,
+    media,
   });
 
-  const savedPlayer = await newPlayer.save(); 
+  const savedPlayer = await newPlayer.save();
 
   const populatedPlayer = await Player.findById(savedPlayer._id)
     .populate("user", "name email phone")
@@ -795,45 +790,48 @@ export const deletePlayer = asyncHandler(async (req, res) => {
   }
 });
 
-
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const [
     totalUsers,
     activeUsers,
+    // recentUsers,
+
     totalPlayers,
     activePlayers,
-    recentUsers,
-    recentPlayers,
+    // confirmedPlayers,
+    // recentPlayers,
+
     totalCoaches,
     activeCoaches,
-    recentCoaches,
-    confirmedPlayers,
-    confirmedCoaches,
+    // confirmedCoaches,
+    // recentCoaches,
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ isActive: true }),
-    Player.countDocuments(),
-    Player.countDocuments({ isActive: true }),
-    User.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select("name email createdAt")
-      .lean(),
-    Player.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("user", "name email")
-      .lean(),
-    coachModel.countDocuments(),
-    coachModel.countDocuments({ isActive: true }),
-    coachModel
-      .find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("user", "name email")
-      .lean(),
-    Player.countDocuments({ isConfirmed: true }),
-    coachModel.countDocuments({ isConfirmed: true }),
+    // User.find()
+    //   .sort({ createdAt: -1 })
+    //   .limit(5)
+    //   .select("name email createdAt")
+    //   .lean(),
+
+    Player.countDocuments({ jop: "player" }),
+    Player.countDocuments({ isActive: true, jop: "player" }),
+    // Player.countDocuments({ isActive: true, isConfirmed: true, jop: "player" }),
+    // Player.find({ jop: "player" })
+    //   .sort({ createdAt: -1 })
+    //   .limit(5)
+    //   .populate("user", "name email")
+    //   .lean(),
+
+    Player.countDocuments({ jop: "coach" }),
+    Player.countDocuments({ isActive: true ,  jop: "coach" }),
+    // Player.countDocuments({ isActive: true, isConfirmed: true, jop: "coach" }),
+    // Player
+    //   .find({ jop: "coach" })
+    //   .sort({ createdAt: -1 })
+    //   .limit(5)
+    //   .populate("user", "name email")
+    //   .lean(),
   ]);
 
   const stats = {
@@ -846,19 +844,19 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       total: totalPlayers,
       active: activePlayers,
       inactive: totalPlayers - activePlayers,
-      confirmed: confirmedPlayers,
+      // confirmed: confirmedPlayers,
     },
     coaches: {
       total: totalCoaches,
       active: activeCoaches,
       inactive: totalCoaches - activeCoaches,
-      confirmed: confirmedCoaches,
+      // confirmed: confirmedCoaches,
     },
-    recent: {
-      users: recentUsers,
-      players: recentPlayers,
-      coaches: recentCoaches,
-    },
+    // recent: {
+    //   users: recentUsers,
+    //   players: recentPlayers,
+    //   coaches: recentCoaches,
+    // },
   };
 
   res

@@ -259,7 +259,7 @@ if (typeof window !== 'undefined') {
               <div className="text-xs text-gray-500 mb-1">الدور</div>
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-purple-600" />
-                <span className="font-semibold">{user.role === 'admin' ? 'مدير' : user.role === 'editor' ? 'محرر' : 'مستخدم'}</span>
+                <span className="font-semibold">{user.role === 'admin' ? 'مدير' : 'مستخدم'}</span>
               </div>
             </div>
             <div className="bg-white rounded-xl p-3 border border-gray-100">
