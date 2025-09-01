@@ -220,6 +220,10 @@ const playerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    activeExpireAt: {
+      type: Date,
+      default: null,
+    },
     isConfirmed: {
       type: Boolean,
       default: false,

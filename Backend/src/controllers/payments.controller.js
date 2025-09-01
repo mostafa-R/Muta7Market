@@ -13,7 +13,6 @@ import { makeOrderNumber } from "../utils/orderNumber.js";
 
 async function applyPaidEffects(invoice, verify, session) {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-  const ONE_YEAR_MS = (PRICING.ONE_YEAR_DAYS || 365) * ONE_DAY_MS;
 
   const transactionNo =
     String(verify?.transactionNo || "") ||
@@ -31,7 +30,8 @@ async function applyPaidEffects(invoice, verify, session) {
   }
 
   if (invoice.product === "contacts_access") {
-    const end = new Date(Date.now() + ONE_YEAR_MS);
+    const durDays = Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+    const end = new Date(Date.now() + durDays * ONE_DAY_MS);
     await Entitlement.updateOne(
       {
         userId: invoice.userId,
@@ -50,15 +50,16 @@ async function applyPaidEffects(invoice, verify, session) {
     );
     await User.updateOne(
       { _id: invoice.userId },
-      { $set: { isActive: true } },
+      { $set: { isActive: true ,activeExpireAt: end } },
       { session }
     );
   } else if (invoice.product === "listing") {
-    const end = new Date(Date.now() + ONE_YEAR_MS);
+    const durDays = Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+    const end = new Date(Date.now() + durDays * ONE_DAY_MS);
     if (invoice.playerProfileId) {
       await PlayerProfile.updateOne(
         { _id: invoice.playerProfileId, user: invoice.userId },
-        { $set: { isListed: true, isActive: true, listingExpiresAt: end } },
+        { $set: { isListed: true, isActive: true, listingExpiresAt: end,activeExpireAt: end } },
         { session }
       );
     }
@@ -500,10 +501,11 @@ export const paymentWebhook = async (req, res) => {
         await inv.save({ session });
       }
 
-      const ONE_YEAR_MS = (PRICING.ONE_YEAR_DAYS || 365) * 24 * 60 * 60 * 1000;
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
       if (inv.product === "contacts_access") {
-        const end = new Date(Date.now() + ONE_YEAR_MS);
+        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         await Entitlement.updateOne(
           {
             userId: inv.userId,
@@ -522,17 +524,18 @@ export const paymentWebhook = async (req, res) => {
         );
         await User.updateOne(
           { _id: inv.userId },
-          { $set: { isActive: true } },
+          { $set: { isActive: true, activeExpireAt: end } },
           { session }
         );
       }
 
       if (inv.product === "listing") {
-        const end = new Date(Date.now() + ONE_YEAR_MS);
+        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
             { _id: inv.playerProfileId, user: inv.userId },
-            { $set: { isListed: true, isActive: true, listingExpiresAt: end } },
+            { $set: { isListed: true, isActive: true, listingExpiresAt: end, activeExpireAt: end } },
             { session }
           );
         }
@@ -828,10 +831,11 @@ export const simulateSuccess = async (req, res) => {
         inv.providerTransactionNo || `SIM-${Date.now()}`;
       await inv.save();
 
-      const ONE_YEAR_MS = (PRICING.ONE_YEAR_DAYS || 365) * 24 * 60 * 60 * 1000;
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
       if (inv.product === "contacts_access") {
-        const end = new Date(Date.now() + ONE_YEAR_MS);
+        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         await Entitlement.updateOne(
           {
             userId: inv.userId,
@@ -848,15 +852,16 @@ export const simulateSuccess = async (req, res) => {
           },
           { upsert: true }
         );
-        await User.updateOne({ _id: inv.userId }, { $set: { isActive: true } });
+        await User.updateOne({ _id: inv.userId }, { $set: { isActive: true, activeExpireAt: end } });
       }
 
       if (inv.product === "listing") {
-        const end = new Date(Date.now() + ONE_YEAR_MS);
+        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
             { _id: inv.playerProfileId, user: inv.userId },
-            { $set: { isListed: true, isActive: true, listingExpiresAt: end } }
+            { $set: { isListed: true, isActive: true, listingExpiresAt: end, activeExpireAt: end } }
           );
         }
         await Entitlement.updateOne(
