@@ -43,16 +43,13 @@ import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
-// Translation helper functions
 const getSportText = (sport, t) => {
-  // Convert sport name to lowercase and try to get translation
   const sportKey = sport?.toLowerCase();
   const translatedSport = t(`sports.${sportKey}`, { defaultValue: sport });
   return translatedSport;
 };
 
 const getNationalityText = (nationality, t) => {
-  // Convert nationality to lowercase and try to get translation
   const nationalityKey = nationality?.toLowerCase();
   const translatedNationality = t(`nationalities.${nationalityKey}`, {
     defaultValue: nationality,
@@ -63,14 +60,12 @@ const getNationalityText = (nationality, t) => {
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
 
-  // Try sport-specific position first
   const sportKey = sport?.toLowerCase();
   let translatedPosition = t(
     `positions.${sportKey}.${position.toLowerCase().replace(/\s+/g, "")}`,
     { defaultValue: null }
   );
 
-  // If no sport-specific position found, try general position
   if (!translatedPosition) {
     translatedPosition = t(
       `positions.${position.toLowerCase().replace(/\s+/g, "")}`,
@@ -99,7 +94,6 @@ const PlayerProfile = () => {
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Memoized translations
   const sportText = useMemo(
     () => player && getSportText(player.game, t),
     [player?.game, t]
@@ -114,13 +108,10 @@ const PlayerProfile = () => {
   );
 
   const getFirstVideoUrl = () => {
-    // Based on player model structure, videos are stored in player.media.video
     const video = player?.media?.video;
 
-    // Handle video object directly
     if (video && video.url) return video.url;
 
-    // Fallback to legacy structure if needed
     const vids = player?.media?.videos;
     if (Array.isArray(vids) && vids.length > 0) return vids[0]?.url || null;
     if (vids && typeof vids === "object" && !Array.isArray(vids))
@@ -130,13 +121,10 @@ const PlayerProfile = () => {
   };
 
   const getFirstDocument = () => {
-    // Based on player model structure, documents are stored in player.media.document
     const doc = player?.media?.document;
 
-    // Handle document object directly
     if (doc && doc.url) return doc;
 
-    // Fallback to legacy structure if needed
     const docs = player?.media?.documents;
     if (Array.isArray(docs) && docs.length > 0) return docs[0] || null;
     if (docs && typeof docs === "object" && !Array.isArray(docs)) return docs;
@@ -145,14 +133,11 @@ const PlayerProfile = () => {
   };
 
   const getPlayerImages = () => {
-    // Get sports images from player media
     const images = player?.media?.images || [];
     const profileImage = player?.media?.profileImage;
 
-    // Create images array
     let allImages = [];
 
-    // Add profile image if exists
     if (profileImage && profileImage.url) {
       allImages.push({
         url: profileImage.url,
@@ -161,7 +146,6 @@ const PlayerProfile = () => {
       });
     }
 
-    // Add sports images if they exist
     if (Array.isArray(images)) {
       images.forEach((img, index) => {
         if (img && img.url) {
@@ -253,9 +237,7 @@ const PlayerProfile = () => {
           text: shareText,
           url: shareUrl,
         });
-      } catch {
-        // Ignore cancellation
-      }
+      } catch {}
     } else {
       navigator.clipboard.writeText(shareUrl).then(() => {
         toast.success(t("playerDetail.profileLinkCopied"));
@@ -285,15 +267,13 @@ const PlayerProfile = () => {
   }, [playerId, t]);
 
   useEffect(() => {
-    // Always verify from backend profile instead of relying on localStorage
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         setIsUserActive(false);
         return;
       }
-      const base =
-        process.env.NEXT_PUBLIC_API_BASE_URL;
+      const base = process.env.NEXT_PUBLIC_API_BASE_URL;
       fetch(`${base}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -577,8 +557,6 @@ const PlayerProfile = () => {
     }
 
     const url = getFirstVideoUrl();
-    console.log("Video URL:", url);
-    console.log("Player media:", player?.media);
 
     if (!url) {
       toast.error(t("playerDetail.noVideoAvailable"));
@@ -595,20 +573,16 @@ const PlayerProfile = () => {
     }
 
     const doc = getFirstDocument();
-    console.log("Document:", doc);
 
     const fileUrl = doc?.url;
-    console.log("Document URL:", fileUrl);
 
     if (fileUrl) {
       const link = document.createElement("a");
       link.href = fileUrl;
 
-      // Extract original filename and extension
       let filename = doc?.title || "";
       let extension = "";
 
-      // Try to get extension from title if available
       if (filename) {
         const lastDotIndex = filename.lastIndexOf(".");
         if (lastDotIndex !== -1) {
@@ -616,7 +590,6 @@ const PlayerProfile = () => {
         }
       }
 
-      // If no extension found, try to determine from file type or URL
       if (!extension) {
         if (doc?.type === "application/pdf") {
           extension = ".pdf";
@@ -636,7 +609,6 @@ const PlayerProfile = () => {
         }
       }
 
-      // Set final filename with extension
       const defaultName =
         filename && !filename.includes(".")
           ? `${filename}${extension}`
@@ -748,11 +720,6 @@ const PlayerProfile = () => {
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    {/* <div
-                      className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-2 border-white ${
-                        player.isActive ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    ></div> */}
                   </div>
                   <div className="flex-1 space-y-6">
                     <div>
@@ -855,7 +822,11 @@ const PlayerProfile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Award className="w-5 h-5 text-primary" />
-                  <span>{ player.jop === "coach" ? t("playerDetail.coachInformation") : t("playerDetail.playerInformation")}</span>
+                  <span>
+                    {player.jop === "coach"
+                      ? t("playerDetail.coachInformation")
+                      : t("playerDetail.playerInformation")}
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -910,14 +881,13 @@ const PlayerProfile = () => {
                           {t("playerDetail.roleType")}
                         </div>
                         <div className="font-medium">
-                        {player.jop === "player"
-  ? t(`playerRoles.${player.roleType}`, {
-      defaultValue: player.roleType,
-    })
-  : t(`coachRoles.${player.roleType}`, {
-      defaultValue: player.roleType,
-    })
-}
+                          {player.jop === "player"
+                            ? t(`playerRoles.${player.roleType}`, {
+                                defaultValue: player.roleType,
+                              })
+                            : t(`coachRoles.${player.roleType}`, {
+                                defaultValue: player.roleType,
+                              })}
                         </div>
                       </div>
                     </div>
@@ -938,7 +908,9 @@ const PlayerProfile = () => {
                 {!isUserActive && (
                   <>
                     <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                      { player.jop === "coach" ? t("playerDetail.activateToViewGalleryForCoaches") : t("playerDetail.activateToViewGallery")}
+                      {player.jop === "coach"
+                        ? t("playerDetail.activateToViewGalleryForCoaches")
+                        : t("playerDetail.activateToViewGallery")}
                     </div>
                     <div className="pt-2">
                       <PaymentBtn type="unlock_contacts" />
@@ -1006,34 +978,6 @@ const PlayerProfile = () => {
                   })()}
               </CardContent>
             </Card>
-
-            {/* Contract Information */}
-            {/* {player.contractEndDate && (
-              <Card className="border-0 shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Clock className="w-5 h-5 text-primary" />
-                    <span>{t("playerDetail.contractDetails")}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-3 rounded-lg">
-                    <Clock className="w-4 h-4" />
-                    <span className="font-medium">
-                      {t("player.transferDeadline")}:{" "}
-                      {new Date(player.contractEndDate).toLocaleDateString(
-                        language === "ar" ? "ar-EG" : "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            )} */}
           </div>
 
           {/* Sidebar */}

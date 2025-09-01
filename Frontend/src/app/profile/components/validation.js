@@ -1,6 +1,5 @@
 import Joi from "joi";
 
-// Create a function that returns the schema with translated messages
 export const createUserSchema = (t) =>
   Joi.object({
     _id: Joi.string().required(),
@@ -45,7 +44,7 @@ export const createPendingPaymentSchema = (t) =>
 export const createPlayerSchema = (t) =>
   Joi.object({
     _id: Joi.string().required(),
-    user: Joi.string().allow(null).optional(), // جعل الحقل اختياريًا لتجنب الأخطاء
+    user: Joi.string().allow(null).optional(),
     name: Joi.alternatives()
       .try(
         Joi.object({
@@ -64,7 +63,7 @@ export const createPlayerSchema = (t) =>
               "string.min": t("validation.nameArMinLength"),
             }),
         }),
-        Joi.string().allow("").optional() // دعم name كسلسلة نصية للتعامل مع البيانات القديمة
+        Joi.string().allow("").optional()
       )
       .optional(),
     age: Joi.number()
@@ -115,7 +114,7 @@ export const createPlayerSchema = (t) =>
               "string.max": t("validation.positionArMaxLength"),
             }),
         }),
-        Joi.string().allow("").optional() // دعم position كسلسلة نصية للتعامل مع البيانات القديمة
+        Joi.string().allow("").optional()
       )
       .optional(),
     status: Joi.string()
@@ -361,7 +360,6 @@ export const createProfileFormSchema = (t) =>
     }),
   });
 
-// Legacy exports for backward compatibility
 export const UserSchema = createUserSchema(() => "Error");
 export const PendingPaymentSchema = createPendingPaymentSchema(() => "Error");
 export const PlayerSchema = createPlayerSchema(() => "Error");

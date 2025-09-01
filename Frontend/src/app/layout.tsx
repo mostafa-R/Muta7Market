@@ -9,7 +9,6 @@ import Navbar from "./component/header";
 import WhatsAppButton from "./component/WhatsAppButton";
 import { Providers } from "./providers";
 
-// Language support needs to be server-side only imports
 export const metadata: Metadata = {
   title: "Muta7market",
   description: "Muta7market - Sports Marketplace",
@@ -19,9 +18,9 @@ export const metadata: Metadata = {
 };
 
 const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic"], // Ensure Arabic subset is loaded
-  weight: ["300", "400", "500", "600", "700", "800", "900"], // Desired font weights
-  display: "swap", // Fallback strategy
+  subsets: ["arabic"], 
+  weight: ["300", "400", "500", "600", "700", "800", "900"], 
+  display: "swap", 
   variable: "--font-arabic",
 });
 
@@ -40,17 +39,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Default to Arabic language and RTL direction
   return (
     <html lang="ar" dir="rtl" className={`${notoSansArabic.variable}`}>
       <head>
-        {/* Default metadata, will be overridden by client-side language selection */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* OneSignal SDK */}
         <Script
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
           strategy="afterInteractive"

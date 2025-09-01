@@ -1,4 +1,3 @@
-// File type constants
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -20,19 +19,17 @@ export const ALLOWED_DOCUMENT_TYPES = [
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-// Form section required fields
 export const sectionRequiredFields = {
   personal: ["name", "age", "gender", "nationality", "birthCountry"],
-  sports: ["game", "jop", "status", "roleType", "position"], // position is conditionally required only for players
-  financial: [], // Optional fields
-  transfer: [], // Optional fields
-  contact: [], // Optional fields
-  social: [], // Optional fields
-  media: [], // Optional fields
+  sports: ["game", "jop", "status", "roleType", "position"], 
+  financial: [], 
+  transfer: [], 
+  contact: [], 
+  social: [],
+  media: [], 
   terms: ["agreeToTerms"],
 };
 
-// Form initial values
 export const initialFormValues = {
   name: "",
   age: "",
@@ -44,9 +41,9 @@ export const initialFormValues = {
   jop: "",
   jopSelected: false,
   roleType: "",
-  customRoleType: "", // Added custom role type field
+  customRoleType: "", 
   position: "",
-  customPosition: "", // Added custom position field
+  customPosition: "", 
   status: "",
   statusSelected: false,
   experience: "0",
@@ -103,13 +100,13 @@ export const initialFormValues = {
       size: 0,
       uploadedAt: null,
     },
-    images: [], // Array for up to 4 images
+    images: [], 
   },
   profilePicturePreview: "",
   profilePictureFile: null,
   documentFile: null,
   game: "",
-  customSport: "", // Added custom sport field
+  customSport: "", 
   isActive: true,
   agreeToTerms: false,
 };

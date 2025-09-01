@@ -12,7 +12,6 @@ export default function LanguageSwitcher({ isMobile = false }) {
   const { language, changeLanguage, isRTL, dir } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
-  // Prevent hydration mismatch by mounting only on client-side
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -37,7 +36,6 @@ export default function LanguageSwitcher({ isMobile = false }) {
   };
 
   if (!mounted) {
-    // Return a placeholder with the same dimensions to prevent layout shift
     return isMobile ? (
       <div className="w-full h-[100px]" aria-hidden="true" />
     ) : (

@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CTA from "./CTA";
 
-// دالة لتحويل بيانات الـ API إلى واجهة Player
 const transformApiDataToPlayer = (apiPlayer) => ({
   id: apiPlayer._id,
   name: apiPlayer.name,
@@ -31,7 +30,6 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
-// عنوان الـ API الأساسي
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const SportDetailPage = () => {
@@ -61,11 +59,9 @@ const SportDetailPage = () => {
     { value: "coach", label: t("sports.categoryOptions.coach") },
   ];
 
-  // Get sport name from translations
   const sportName = sportId ? t(`sports.${sportId.toLowerCase()}`) : "";
   const apiSportName = sportId?.toLowerCase() || "";
 
-  // جلب البيانات باستخدام Axios
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
@@ -73,21 +69,17 @@ const SportDetailPage = () => {
         const response = await axios.get(
           `${API_BASE_URL}/players?game=${apiSportName}`
         );
-        console.log("API Response"); // تسجيل استجابة الـ API الكاملة
 
-        // التحقق من هيكلية الاستجابة
         if (!response.data?.data?.players) {
           console.error("Unexpected API response structure");
           throw new Error("هيكلية استجابة الـ API غير متوقعة");
         }
 
-        // تحويل بيانات اللاعبين إلى تنسيق Player
         const fetchedPlayers = response.data.data.players.map(
           transformApiDataToPlayer
         );
 
         setPlayers(fetchedPlayers);
-        console.log("Fetched Players:", fetchedPlayers); // تسجيل اللاعبين بعد التحويل
 
         setLoading(false);
       } catch (err) {
@@ -108,7 +100,6 @@ const SportDetailPage = () => {
     }
   }, [apiSportName]);
 
-  // تصفية اللاعبين
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.trim().toLowerCase();
     const matchesSearch =
@@ -121,7 +112,6 @@ const SportDetailPage = () => {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  // عرض حالة التحميل
   if (loading) {
     return (
       <div className="min-h-screen ">
@@ -141,7 +131,6 @@ const SportDetailPage = () => {
     );
   }
 
-  // عرض حالة الخطأ أو الرياضة غير موجودة
   if (error || !sportName) {
     return (
       <div className="min-h-screen  flex items-center justify-center">

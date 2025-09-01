@@ -3,7 +3,8 @@
 import axios from "axios";
 
 export const API_BASE = (() => {
-  const v = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.muta7markt.com";
+  const v =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.muta7markt.com";
   return v.endsWith("/api/v1") ? v : `${v}/api/v1`;
 })();
 
@@ -13,16 +14,14 @@ export function authHeaders(): Record<string, string> {
   return t ? { Authorization: `Bearer ${t}` } : ({} as Record<string, string>);
 }
 
-// Create a configured axios instance
 export const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 30000, // 30 seconds
+  timeout: 30000, 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add auth token to all requests
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
@@ -39,7 +38,6 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

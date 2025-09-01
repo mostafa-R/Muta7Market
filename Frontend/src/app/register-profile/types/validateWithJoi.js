@@ -1,4 +1,3 @@
-// utils/validateWithJoi.js
 
 export const validateWithJoi = (schema) => (values) => {
   const { error } = schema.validate(values, {

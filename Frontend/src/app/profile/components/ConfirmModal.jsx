@@ -20,23 +20,21 @@ const ConfirmModal = ({
   isLoading = false,
   error = null,
   success = null,
-  type = "confirm", // confirm, warning, error, success, info
+  type = "confirm",
   confirmText,
   cancelText,
   showCloseButton = true,
   autoClose = false,
   autoCloseDelay = 3000,
-  validationErrors = null, // للأخطاء من API
+  validationErrors = null,
 }) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const [isClosing, setIsClosing] = useState(false);
 
-  // Use translation keys for default text
   const defaultConfirmText = confirmText || t("common.confirm");
   const defaultCancelText = cancelText || t("common.cancel");
 
-  // Auto close functionality
   useEffect(() => {
     if (autoClose && success) {
       const timer = setTimeout(() => {
@@ -59,7 +57,6 @@ const ConfirmModal = ({
     }
   };
 
-  // Get icon based on type
   const getIcon = () => {
     const iconClass = "w-6 h-6";
     switch (type) {
@@ -76,7 +73,6 @@ const ConfirmModal = ({
     }
   };
 
-  // Get colors based on type
   const getColors = () => {
     switch (type) {
       case "warning":

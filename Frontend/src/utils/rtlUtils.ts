@@ -1,8 +1,6 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 
 /**
- * Utility function to conditionally apply RTL-specific classes
- * Can be used outside React components where hooks can't be used
  *
  * @param language Current language code (e.g., "en" or "ar")
  * @param ltrClass Class to apply in LTR mode
@@ -18,11 +16,10 @@ export function dirClass(
 }
 
 /**
- * React hook version for use within components
  *
- * @param ltrClass Class to apply in LTR mode
- * @param rtlClass Class to apply in RTL mode
- * @returns The appropriate class based on current language direction
+ * @param ltrClass
+ * @param rtlClass
+ * @returns
  */
 export function useDirectionalClass(
   ltrClass: string,
@@ -33,13 +30,12 @@ export function useDirectionalClass(
 }
 
 /**
- * Utility function to merge direction-specific classes with base classes
  *
- * @param baseClasses Base classes that apply regardless of direction
- * @param language Current language code (e.g., "en" or "ar")
- * @param ltrClass Class to apply in LTR mode
- * @param rtlClass Class to apply in RTL mode
- * @returns Combined classes string
+ * @param baseClasses
+ * @param language
+ * @param ltrClass
+ * @param rtlClass
+ * @returns
  */
 export function mergeDirectionalClasses(
   baseClasses: string,
@@ -52,12 +48,12 @@ export function mergeDirectionalClasses(
 }
 
 /**
- * React hook version for merging directional classes
+
  *
- * @param baseClasses Base classes that apply regardless of direction
- * @param ltrClass Class to apply in LTR mode
- * @param rtlClass Class to apply in RTL mode
- * @returns Combined classes string
+ * @param baseClasses 
+ * @param ltrClass 
+ * @param rtlClass 
+ * @returns 
  */
 export function useMergeDirectionalClasses(
   baseClasses: string,

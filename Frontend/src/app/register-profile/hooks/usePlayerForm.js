@@ -8,7 +8,6 @@ import { useFormik } from "formik";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-// Updated imports to use new organized schema structure
 import { playerFormSchema } from "../schemas/playerFormSchema";
 import { validateWithJoi } from "../types/validateWithJoi";
 import { initialFormValues } from "../utils/constants";
@@ -28,38 +27,23 @@ export const usePlayerForm = (idParam, router) => {
     validateOnBlur: true,
     validate: (values) => {
       try {
-        // Transform null values to empty strings before validation
         const transformedValues = { ...values };
         if (transformedValues.isPromoted) {
-          console.log(
-            "Original isPromoted before validation:",
-            transformedValues.isPromoted
-          );
           if (transformedValues.isPromoted.startDate === null) {
             transformedValues.isPromoted.startDate = "";
-            console.log("Transformed startDate from null to empty string");
           }
           if (transformedValues.isPromoted.endDate === null) {
             transformedValues.isPromoted.endDate = "";
-            console.log("Transformed endDate from null to empty string");
           }
           if (transformedValues.isPromoted.type === null) {
             transformedValues.isPromoted.type = "featured";
-            console.log("Transformed type from null to 'featured'");
           }
-          console.log(
-            "Transformed isPromoted after validation:",
-            transformedValues.isPromoted
-          );
         }
 
-        // First use Joi for schema validation
         const joiErrors = validateWithJoi(playerFormSchema)(transformedValues);
 
-        // Additional manual validation for all required fields
         const errors = { ...joiErrors };
 
-        // Personal section validation
         if (!transformedValues.name || transformedValues.name.trim() === "") {
           errors.name = t("formValidation.nameRequired");
         }
@@ -80,7 +64,6 @@ export const usePlayerForm = (idParam, router) => {
         if (!values.nationality || values.nationality.trim() === "") {
           errors.nationality = t("formValidation.nationalityRequired");
         } else {
-          // Validate against allowed nationality values
           const validNationalities = [
             "saudi",
             "uae",
@@ -106,11 +89,9 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        // Birth Country validation
         if (!values.birthCountry || values.birthCountry.trim() === "") {
           errors.birthCountry = t("formValidation.birthCountryRequired");
         } else {
-          // Validate against allowed birth country values
           const validCountries = [
             "saudi",
             "uae",
@@ -136,9 +117,7 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        // Custom nationality validation when "other" is selected
         if (values.nationality === "other") {
-          // Always validate when nationality is "other" - this is a required field
           if (
             !values.customNationality ||
             values.customNationality.trim() === ""
@@ -157,9 +136,7 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        // Custom birth country validation when "other" is selected
         if (values.birthCountry === "other") {
-          // Always validate when birthCountry is "other" - this is a required field
           if (
             !values.customBirthCountry ||
             values.customBirthCountry.trim() === ""
@@ -178,12 +155,10 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        // Sports section validation
         if (!values.game || values.game.trim() === "") {
           errors.game = t("sportsValidation.sportRequired");
         }
 
-        // Custom sport validation when "other" is selected
         if (values.game === "other") {
           if (!values.customSport || values.customSport.trim() === "") {
             errors.customSport = t("sportsValidation.customSportRequired");
@@ -198,12 +173,10 @@ export const usePlayerForm = (idParam, router) => {
           errors.jop = t("sportsValidation.categoryRequired");
         }
 
-        // Role type validation when category (jop) is selected
         if (values.jop && (!values.roleType || values.roleType.trim() === "")) {
           errors.roleType = t("sportsValidation.roleTypeRequired");
         }
 
-        // Custom role type validation when "other" is selected
         if (values.roleType === "other") {
           if (!values.customRoleType || values.customRoleType.trim() === "") {
             errors.customRoleType = t(
@@ -218,7 +191,6 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        // Position validation - only required for players, not coaches
         if (values.jop === "player") {
           if (!values.position || values.position.trim() === "") {
             errors.position = t("sportsValidation.positionRequired");
@@ -227,7 +199,6 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        // Custom position validation when "other" is selected (only for players)
         if (values.jop === "player" && values.position === "other") {
           if (!values.customPosition || values.customPosition.trim() === "") {
             errors.customPosition = t(
@@ -246,7 +217,6 @@ export const usePlayerForm = (idParam, router) => {
           errors.status = t("sportsValidation.statusRequired");
         }
 
-        // Terms validation
         if (!values.agreeToTerms) {
           errors.agreeToTerms = t("sportsValidation.termsAcceptanceRequired");
         }
@@ -257,25 +227,18 @@ export const usePlayerForm = (idParam, router) => {
       }
     },
     onSubmit: async (values) => {
-      // console.log("Form submission started with values:", values);
-      // console.log("ID Parameter:", idParam);
-
       const token = localStorage.getItem("token");
       if (!token) {
-        console.error("No token found");
         toast.error(t("formErrors.loginRequired"));
         return;
       }
 
       if (!API_URL) {
-        console.error("No API URL configured");
         toast.error(t("formErrors.serverConfigError"));
         return;
       }
 
-      // Double-check terms agreement even within the submit handler
       if (!values.agreeToTerms) {
-        console.error("Terms not agreed");
         toast.error(t("formErrors.termsAcceptanceRequired"));
         return;
       }
@@ -289,13 +252,7 @@ export const usePlayerForm = (idParam, router) => {
           : `${API_URL}/players/createPlayer`;
         const method = isUpdate ? "patch" : "post";
 
-        // console.log(`Making ${method.toUpperCase()} request to:`, url);
-
-        // Prepare payload
         const payload = preparePayload(values);
-        // console.log("Prepared payload:", payload);
-
-        // Handle file uploads if present
         const hasFiles =
           values.profilePictureFile ||
           values.documentFile ||
@@ -304,19 +261,6 @@ export const usePlayerForm = (idParam, router) => {
           (values.media?.images &&
             Array.isArray(values.media.images) &&
             values.media.images.some((img) => img.file));
-
-        console.log("File detection:", {
-          profilePictureFile: !!values.profilePictureFile,
-          documentFile: !!values.documentFile,
-          videoFile: !!values.media?.video?.file,
-          documentFileMedia: !!values.media?.document?.file,
-          imagesWithFiles: values.media?.images
-            ? values.media.images.filter((img) => img.file).length
-            : 0,
-          totalHasFiles: hasFiles,
-        });
-
-        // console.log("Has files:", hasFiles);
 
         let response;
         if (!hasFiles) {
@@ -333,15 +277,8 @@ export const usePlayerForm = (idParam, router) => {
           );
         }
 
-        console.log("Submission successful:", response);
         handleSubmissionSuccess(response);
       } catch (error) {
-        console.error("Form submission error:", error);
-        console.error("Error details:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-        });
         handleSubmissionError(error);
       } finally {
         setIsLoading(false);
@@ -349,7 +286,6 @@ export const usePlayerForm = (idParam, router) => {
     },
   });
 
-  // Load existing player data if editing - fixed infinite loop
   useEffect(() => {
     if (idParam && API_URL && !dataLoadedRef.current) {
       dataLoadedRef.current = true;
@@ -365,18 +301,12 @@ export const usePlayerForm = (idParam, router) => {
           }
 
           try {
-            console.log(
-              `Fetching player data from: ${API_URL}/players/${idParam}`
-            );
             const response = await apiClient.get(`/players/${idParam}`, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
             });
-
             const playerData = response.data.data;
-
-            // Map backend data to frontend form fields
             const mergedValues = {
               ...initialFormValues,
               name: playerData.name || "",
@@ -387,13 +317,13 @@ export const usePlayerForm = (idParam, router) => {
               birthCountry: playerData.birthCountry || "",
               customBirthCountry: playerData.customBirthCountry || "",
               jop: playerData.jop || "",
-              jopSelected: true, // Mark as selected for existing players
+              jopSelected: true,
               roleType: playerData.roleType || "",
-              customRoleType: playerData.customRoleType || "", // Fix: Add missing customRoleType mapping
+              customRoleType: playerData.customRoleType || "",
               position: playerData.position || "",
-              customPosition: playerData.customPosition || "", // Fix: Add missing customPosition mapping
+              customPosition: playerData.customPosition || "",
               status: playerData.status || "",
-              statusSelected: true, // Mark as selected for existing players
+              statusSelected: true,
               experience: (playerData.experience || 0).toString(),
               contractEndDate: playerData.contractEndDate
                 ? new Date(playerData.contractEndDate)
@@ -437,7 +367,7 @@ export const usePlayerForm = (idParam, router) => {
               },
               contactInfo: playerData.contactInfo
                 ? {
-                    isHidden: playerData.contactInfo.isHidden || false, // Fix: Add missing isHidden mapping
+                    isHidden: playerData.contactInfo.isHidden || false,
                     email: playerData.contactInfo.email || "",
                     phone: playerData.contactInfo.phone || "",
                     agent: playerData.contactInfo.agent || {
@@ -508,7 +438,7 @@ export const usePlayerForm = (idParam, router) => {
                       size: 0,
                       uploadedAt: null,
                     },
-                    images: playerData.media.images || [], // Fix: Add missing images array mapping
+                    images: playerData.media.images || [],
                   }
                 : {
                     video: {
@@ -526,10 +456,10 @@ export const usePlayerForm = (idParam, router) => {
                       size: 0,
                       uploadedAt: null,
                     },
-                    images: [], // Fix: Initialize empty images array
+                    images: [],
                   },
               game: playerData.game || "",
-              customSport: playerData.customSport || "", // Fix: Add missing customSport mapping
+              customSport: playerData.customSport || "",
               isActive:
                 playerData.isActive !== undefined ? playerData.isActive : false,
               views: playerData.views || 0,
@@ -544,16 +474,9 @@ export const usePlayerForm = (idParam, router) => {
             };
 
             setPlayer(playerData);
-            console.log(
-              "Original playerData.isPromoted:",
-              playerData.isPromoted
-            );
-            console.log("Merged isPromoted values:", mergedValues.isPromoted);
+
             formik.setValues(mergedValues);
-            console.log(
-              "Player data loaded and form values set:",
-              mergedValues
-            );
+
             toast.success(
               getSuccessMessage(response, t("formErrors.profileUpdated"))
             );
@@ -565,7 +488,6 @@ export const usePlayerForm = (idParam, router) => {
             setIsLoading(false);
           }
         } catch (error) {
-          console.error("Error in fetchPlayer:", error);
           toast.error(
             getErrorMessage(error, t("formErrors.playerDataFetchFailed"))
           );
@@ -576,9 +498,8 @@ export const usePlayerForm = (idParam, router) => {
       fetchPlayer();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idParam, API_URL, router, t]); // formik excluded to prevent infinite re-renders
+  }, [idParam, API_URL, router, t]);
 
-  // Clean up null values in form after data is loaded
   useEffect(() => {
     const currentValues = formik.values;
     if (
@@ -587,7 +508,6 @@ export const usePlayerForm = (idParam, router) => {
         currentValues.isPromoted.endDate === null ||
         currentValues.isPromoted.type === null)
     ) {
-      console.log("Cleaning up null values in isPromoted");
       const cleanedIsPromoted = {
         ...currentValues.isPromoted,
         startDate:
@@ -607,17 +527,15 @@ export const usePlayerForm = (idParam, router) => {
       formik.setFieldValue("isPromoted", cleanedIsPromoted);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formik.values.isPromoted]); // formik excluded intentionally to prevent infinite re-renders
+  }, [formik.values.isPromoted]);
 
   const preparePayload = (values) => {
     const payload = { ...values };
 
-    // Backend uses 'experience' field name (not 'expreiance')
     if (payload.experience !== undefined) {
       payload.experience = Number(payload.experience) || 0;
     }
 
-    // Convert numeric fields
     if (payload.age !== undefined && payload.age !== "") {
       payload.age = Number(payload.age);
     }
@@ -640,7 +558,6 @@ export const usePlayerForm = (idParam, router) => {
       payload.transferredTo.amount = Number(payload.transferredTo.amount);
     }
 
-    // Convert date fields to proper format
     if (payload.contractEndDate) {
       payload.contractEndDate = new Date(payload.contractEndDate).toISOString();
     }
@@ -655,16 +572,13 @@ export const usePlayerForm = (idParam, router) => {
       ).toISOString();
     }
 
-    // Ensure proper object structure
     if (!payload.contactInfo) payload.contactInfo = {};
     if (!payload.contactInfo.agent) payload.contactInfo.agent = {};
 
-    // Convert boolean fields
     payload.isActive = Boolean(payload.isActive);
 
     if (payload.isPromoted) {
       payload.isPromoted.status = Boolean(payload.isPromoted.status);
-      // Convert date fields to proper format if they exist, otherwise send null to API
       if (payload.isPromoted.startDate && payload.isPromoted.startDate !== "") {
         payload.isPromoted.startDate = new Date(
           payload.isPromoted.startDate
@@ -679,9 +593,7 @@ export const usePlayerForm = (idParam, router) => {
       } else {
         payload.isPromoted.endDate = null;
       }
-      // Ensure type has a valid value, send null to API if not promoted
       if (payload.isPromoted.status === false) {
-        // If not promoted, send null values to API
         payload.isPromoted.type = null;
         payload.isPromoted.startDate = null;
         payload.isPromoted.endDate = null;
@@ -697,7 +609,6 @@ export const usePlayerForm = (idParam, router) => {
       payload.contactInfo.isHidden = Boolean(payload.contactInfo.isHidden);
     }
 
-    // Remove form-only fields but keep custom fields for conditional validation
     delete payload.agreeToTerms;
     delete payload.profilePicturePreview;
     delete payload.profilePictureFile;
@@ -710,17 +621,15 @@ export const usePlayerForm = (idParam, router) => {
 
   const handleJsonSubmission = async (url, method, payload, token) => {
     try {
-      console.log(`Making ${method.toUpperCase()} JSON request to: ${url}`);
       const response = await apiClient({
         method,
-        url: url.replace(API_URL, ""), // Remove base URL if it's included
+        url: url.replace(API_URL, ""),
         data: payload,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      console.log("JSON submission successful", response.status);
       return response;
     } catch (error) {
       console.error("JSON submission error:", error.message);
@@ -746,7 +655,6 @@ export const usePlayerForm = (idParam, router) => {
   ) => {
     const fd = new FormData();
 
-    // Add critical fields - ensuring all required fields are included
     fd.append("name", payload.name || "");
     fd.append("age", payload.age || "");
     fd.append("gender", payload.gender || "");
@@ -764,42 +672,18 @@ export const usePlayerForm = (idParam, router) => {
     fd.append("status", payload.status || "");
     fd.append("experience", payload.experience || "0");
 
-    // Handle media files
-    console.log("Preparing media form data with values:", {
-      profilePictureFile: values.profilePictureFile,
-      documentFile: values.documentFile,
-      mediaVideo: values.media?.video,
-      mediaDocument: values.media?.document,
-      mediaImages: values.media?.images?.map((img) => ({
-        hasFile: !!img.file,
-        title: img.title,
-        url: img.url?.substring(0, 50) + "...",
-      })),
-    });
-
     try {
       prepareMediaFormData(values, player?.media, fd);
     } catch (validationError) {
-      // Handle file size validation errors
-      console.error("File validation error:", validationError.message);
       throw new Error(validationError.message);
     }
 
-    // Log what was actually appended to FormData
-    console.log("FormData entries after media preparation:");
     for (let pair of fd.entries()) {
       if (pair[1] instanceof File) {
-        console.log(`${pair[0]}: File(${pair[1].name}, ${pair[1].size} bytes)`);
       } else {
-        console.log(
-          `${pair[0]}: ${
-            typeof pair[1] === "string" ? pair[1].substring(0, 100) : pair[1]
-          }`
-        );
       }
     }
 
-    // Add remaining fields
     Object.entries(payload).forEach(([k, v]) => {
       if (
         ![
@@ -828,7 +712,6 @@ export const usePlayerForm = (idParam, router) => {
       }
     });
 
-    // Append nested objects as JSON
     [
       "monthlySalary",
       "yearSalary",
@@ -843,10 +726,6 @@ export const usePlayerForm = (idParam, router) => {
     });
 
     try {
-      console.log(
-        `Making ${method.toUpperCase()} multipart request to: ${url}`
-      );
-      // Use axios directly for multipart/form-data to ensure proper handling
       const response = await axios({
         method,
         url,
@@ -855,16 +734,13 @@ export const usePlayerForm = (idParam, router) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        // Add additional configuration to debug network issues
-        timeout: 120000, // 2 minutes timeout for file uploads
+        timeout: 120000,
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );
-          console.log(`Upload progress: ${percentCompleted}%`);
         },
       });
-      console.log("Multipart submission successful", response.status);
       return response;
     } catch (error) {
       console.error("Multipart submission error:", error.message);
@@ -891,56 +767,34 @@ export const usePlayerForm = (idParam, router) => {
     toast.success(successMessage);
 
     try {
-      // Backend response structure: { success: true, data: playerObject, message: "..." }
       const responseData = response?.data?.data;
       let playerData = responseData;
 
-      // For create operations, player might be directly in data
-      // For update operations, player might be in data.player
       if (responseData?.player) {
         playerData = responseData.player;
       }
 
-      console.log("🎉 Success response structure:", {
-        responseData,
-        playerData,
-        hasMediaUpdates: !!responseData?.mediaUpdates,
-        hasMediaInData: !!responseData?.media,
-        playerHasMedia: !!playerData?.media,
-      });
-
       if (playerData?._id) {
         setPlayer(playerData);
 
-        // Process media data if present in the response
         if (responseData?.mediaUpdates) {
-          console.log("📊 Processing mediaUpdates:", responseData.mediaUpdates);
-          // This is update response with media update info
-          // The actual media data should already be in playerData.media
         }
 
         if (responseData?.media) {
-          console.log("📊 Processing media from response:", responseData.media);
           const processedMedia = processMediaResponse(responseData.media);
           setPlayer((prevPlayer) => ({
             ...prevPlayer,
             media: processedMedia,
           }));
         } else if (playerData?.media) {
-          console.log("📊 Using media from playerData:", playerData.media);
-          // Media is already in the player data, no need to process separately
         }
 
-        // Set successful form state
         setCanPay(true);
 
-        // Clear file fields after successful submission to prevent stale data
         if (isUpdate) {
-          console.log("🧹 Clearing file fields after successful update");
           formik.setFieldValue("profilePictureFile", null);
           formik.setFieldValue("documentFile", null);
 
-          // Clear file references in media objects but keep the URLs from server
           if (formik.values.media?.video?.file) {
             formik.setFieldValue("media.video.file", null);
           }
@@ -953,32 +807,17 @@ export const usePlayerForm = (idParam, router) => {
           ) {
             const cleanedImages = formik.values.media.images.map((img) => ({
               ...img,
-              file: null, // Clear the file but keep the URL
+              file: null,
             }));
             formik.setFieldValue("media.images", cleanedImages);
           }
         }
-
-        console.log(
-          `✅ ${isUpdate ? "Update" : "Create"} operation successful:`,
-          playerData
-        );
       } else {
         console.warn("No player data found in response:", response?.data);
       }
     } catch (error) {
       console.warn("Error processing submission response:", error);
-      // Still set canPay if the operation was successful
       setCanPay(true);
-    }
-
-    // For updates, you might want to show a different UI or redirect
-    if (isUpdate) {
-      setTimeout(() => {
-        console.log(
-          "Profile updated successfully - you can add navigation here"
-        );
-      }, 1000);
     }
   };
 

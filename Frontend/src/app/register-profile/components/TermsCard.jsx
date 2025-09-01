@@ -1,4 +1,3 @@
-// components/TermsCard.jsx
 import { Card, CardContent } from "@/app/component/ui/card";
 import { Checkbox } from "@/app/component/ui/checkbox";
 import { Label } from "@/app/component/ui/label";
@@ -9,7 +8,6 @@ import { useTranslation } from "react-i18next";
 export const TermsCard = ({ formik }) => {
   const { t } = useTranslation();
 
-  // Force field touched when component renders to show validation immediately
   React.useEffect(() => {
     formik.setFieldTouched("agreeToTerms", true, false);
   }, []);

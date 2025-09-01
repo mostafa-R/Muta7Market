@@ -20,7 +20,6 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { Button } from "../component/ui/button";
 import { Input } from "../component/ui/input";
 
-// Backend-aligned Joi schema (simplified and corrected)
 const getRegisterSchema = (t) =>
   Joi.object({
     name: Joi.string()
@@ -64,7 +63,6 @@ const getRegisterSchema = (t) =>
       }),
   });
 
-// Convert Joi validation to Formik-compatible function
 const getValidate = (t) => (values) => {
   const registerSchema = getRegisterSchema(t);
   const { error } = registerSchema.validate(values, { abortEarly: false });

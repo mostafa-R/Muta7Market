@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipLoader } from "react-spinners";
 
-/** -------- CONFIG -------- */
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 function authHeaders() {
   if (typeof window === "undefined") return {};
@@ -36,13 +34,11 @@ async function apiPost(path, body) {
   return json;
 }
 
-// Toaster (react-hot-toast) — dynamic to avoid SSR issues
 const HotToaster = dynamic(
   async () => (await import("react-hot-toast")).Toaster,
   { ssr: false }
 );
 
-/** -------- UI -------- */
 export default function PaymentsSection() {
   const searchParams = useSearchParams();
 
@@ -50,14 +46,13 @@ export default function PaymentsSection() {
   const [paid, setPaid] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-  const [busy, setBusy] = useState({}); // map invoiceId -> boolean
+  const [busy, setBusy] = useState({});
 
   const counts = useMemo(
     () => ({ pending: pending?.length || 0, paid: paid?.length || 0 }),
     [pending, paid]
   );
 
-  /** Load invoices (both buckets) */
   const refresh = useCallback(async () => {
     setLoading(true);
     setErr("");
@@ -75,13 +70,13 @@ export default function PaymentsSection() {
     }
   }, []);
 
-  /** Poll helper */
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const checkStatusBy = async ({ invoiceId, transactionNo, orderNumber }) => {
-    // Prefer orderNumber (merchantOrderNumber) → backend calls Paylink getOrder/{orderNumber}
     if (orderNumber) {
-      return apiGet(`/payments/status/order/${encodeURIComponent(orderNumber)}`);
+      return apiGet(
+        `/payments/status/order/${encodeURIComponent(orderNumber)}`
+      );
     }
     if (invoiceId) {
       return apiGet(`/payments/status/${invoiceId}`);
@@ -91,7 +86,6 @@ export default function PaymentsSection() {
     }
     throw new Error("No orderNumber/invoiceId/transactionNo to check");
   };
-  /** Toast helpers (lazy import) */
   const toastApi = async () => {
     try {
       const mod = await import("react-hot-toast");
@@ -101,38 +95,38 @@ export default function PaymentsSection() {
     }
   };
 
-  /** Confirm payment after callback params */
   const confirmFromCallback = useCallback(
     async ({ invoiceId, transactionNo }) => {
       const toast = await toastApi();
       const loadingId = toast?.loading("Confirming your payment…");
 
       try {
-        // quick check
         let status = "pending";
         try {
-          const j = await checkStatusBy({ invoiceId, transactionNo, orderNumber });
+          const j = await checkStatusBy({
+            invoiceId,
+            transactionNo,
+            orderNumber,
+          });
           status = String(j?.data?.status || "pending").toLowerCase();
-        } catch { }
+        } catch {}
 
         if (status !== "paid") {
-          // force reconcile (server asks Paylink)
           try {
             if (invoiceId) {
               await apiPost("/payments/reconcile", { invoiceIds: [invoiceId] });
             } else {
               await apiPost("/payments/reconcile", {});
             }
-          } catch { }
+          } catch {}
 
-          // poll a few times
           for (let i = 0; i < 6; i++) {
             await sleep(1500);
             try {
               const j2 = await checkStatusBy({ invoiceId, transactionNo });
               status = String(j2?.data?.status || "pending").toLowerCase();
               if (status === "paid") break;
-            } catch { }
+            } catch {}
           }
         }
 
@@ -145,10 +139,8 @@ export default function PaymentsSection() {
           );
         }
 
-        // refresh UI lists
         await refresh();
 
-        // clean the URL (remove query params)
         if (typeof window !== "undefined") {
           const url = new URL(window.location.href);
           url.searchParams.delete("invoiceId");
@@ -164,7 +156,6 @@ export default function PaymentsSection() {
     [refresh]
   );
 
-  /** On first open: if callback params exist → confirm; else reconcile & load */
   useEffect(() => {
     (async () => {
       const invoiceId = searchParams?.get("invoiceId") || null;
@@ -176,19 +167,20 @@ export default function PaymentsSection() {
       } else {
         try {
           if (orderNumber) {
-            await apiPost("/payments/reconcile", { orderNumbers: [orderNumber] });
+            await apiPost("/payments/reconcile", {
+              orderNumbers: [orderNumber],
+            });
           } else if (invoiceId) {
             await apiPost("/payments/reconcile", { invoiceIds: [invoiceId] });
           } else {
             await apiPost("/payments/reconcile", {});
           }
-        } catch { }
+        } catch {}
         await refresh();
       }
     })();
   }, [confirmFromCallback, refresh, searchParams]);
 
-  /** Pay an existing pending invoice (prefer its paymentUrl; fallback to initiate) */
   const payExisting = async (inv) => {
     const id = inv?.id;
     setBusy((m) => ({ ...m, [id]: true }));
@@ -197,7 +189,6 @@ export default function PaymentsSection() {
         window.location.href = inv.paymentUrl;
         return;
       }
-      // fallback: re-initiate by id
       const { data } = await apiPost(`/payments/invoices/${id}/initiate`);
       if (data?.paymentUrl) {
         window.location.href = data.paymentUrl;
@@ -261,8 +252,8 @@ export default function PaymentsSection() {
                     inv?.product === "player_listing"
                       ? "Player/Coach listing"
                       : inv?.product === "promotion"
-                        ? "Promotion"
-                        : "Contacts access";
+                      ? "Promotion"
+                      : "Contacts access";
                   return (
                     <div
                       key={id}
@@ -348,8 +339,8 @@ export default function PaymentsSection() {
                     inv?.product === "player_listing"
                       ? "Player/Coach listing"
                       : inv?.product === "promotion"
-                        ? "Promotion"
-                        : "Contacts access";
+                      ? "Promotion"
+                      : "Contacts access";
                   return (
                     <div
                       key={inv.id}
@@ -362,7 +353,9 @@ export default function PaymentsSection() {
                         <div className="font-bold p-1">
                           Paid at:{" "}
                           <span className="font-normal">
-                            {new Date(inv.paidAt || inv.createdAt).toLocaleString()}
+                            {new Date(
+                              inv.paidAt || inv.createdAt
+                            ).toLocaleString()}
                           </span>
                         </div>
                         <div className="font-bold p-1">

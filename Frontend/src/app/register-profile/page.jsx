@@ -85,7 +85,7 @@ function RegisterProfileContent() {
             ALLOWED_DOCUMENT_TYPES={ALLOWED_DOCUMENT_TYPES}
             ALLOWED_IMAGE_TYPES={ALLOWED_IMAGE_TYPES}
             MAX_FILE_SIZE={MAX_FILE_SIZE}
-            playerId={player?._id || idParam} // Pass the player ID for delete functionality
+            playerId={player?._id || idParam}
           />
         );
       case "terms":
@@ -158,8 +158,7 @@ function RegisterProfileContent() {
         {!isLoading && (
           <form
             onSubmit={(e) => {
-              e.preventDefault(); // منع الـ auto-submit
-              // السماح بالـ submit فقط عند الضغط على الـ Save button بشكل صريح
+              e.preventDefault();
             }}
             className="w-full"
           >
@@ -218,9 +217,7 @@ function RegisterProfileContent() {
                       className="flex-1 sm:flex-initial flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200"
                       onClick={(e) => {
                         e.preventDefault();
-                        console.log(
-                          "Save button clicked - manually triggering submission"
-                        );
+
                         formik.handleSubmit();
                       }}
                     >
@@ -265,9 +262,6 @@ function RegisterProfileContent() {
         onPrevStep={prevStep}
         onNextStep={nextStep}
         onSubmit={(e) => {
-          console.log(
-            "Mobile submit button clicked - manually triggering submission"
-          );
           formik.handleSubmit();
         }}
         isSubmitting={formik.isSubmitting}

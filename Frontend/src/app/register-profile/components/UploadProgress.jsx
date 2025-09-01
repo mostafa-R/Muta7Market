@@ -27,7 +27,6 @@ export const UploadProgress = ({ progress }) => {
   );
 };
 
-// Add PropTypes for type checking
 UploadProgress.propTypes = {
   progress: PropTypes.number.isRequired,
 };

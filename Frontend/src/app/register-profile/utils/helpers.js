@@ -1,4 +1,3 @@
-// Helper functions for API response handling
 export const getSuccessMessage = (response, fallback) => {
   return (
     response?.data?.message ||
@@ -9,7 +8,6 @@ export const getSuccessMessage = (response, fallback) => {
 };
 
 export const getErrorMessage = (error, fallback) => {
-  // Handle nested error object structure
   const errorData = error?.response?.data;
 
   if (errorData?.error?.message) {
@@ -27,7 +25,6 @@ export const getErrorMessage = (error, fallback) => {
   return error?.message || fallback;
 };
 
-// File validation helper
 export const handleFileValidation = (file, allowedTypes, maxSize, t) => {
   if (!file) return t("fileValidation.noFileSelected");
   if (!allowedTypes.includes(file.type))
@@ -36,11 +33,9 @@ export const handleFileValidation = (file, allowedTypes, maxSize, t) => {
   return null;
 };
 
-// Form validation helpers
 export const validateFields = (fields, values, t) => {
   const errors = {};
 
-  // Personal section validations
   if (fields.includes("name") && (!values.name || values.name.trim() === "")) {
     errors.name = t("fieldValidation.nameRequired");
   }
@@ -66,7 +61,6 @@ export const validateFields = (fields, values, t) => {
     errors.nationality = t("fieldValidation.nationalityRequired");
   }
 
-  // Conditional validation for custom nationality when "other" is selected
   if (
     fields.includes("nationality") &&
     values.nationality === "other" &&
@@ -82,7 +76,6 @@ export const validateFields = (fields, values, t) => {
     errors.birthCountry = t("fieldValidation.birthCountryRequired");
   }
 
-  // Conditional validation for custom birth country when "other" is selected
   if (
     fields.includes("birthCountry") &&
     values.birthCountry === "other" &&
@@ -91,12 +84,10 @@ export const validateFields = (fields, values, t) => {
     errors.customBirthCountry = t("fieldValidation.customBirthCountryRequired");
   }
 
-  // Sports section validations
   if (fields.includes("game") && (!values.game || values.game.trim() === "")) {
     errors.game = t("sportsValidation.sportRequired");
   }
 
-  // Custom sport validation when "other" is selected
   if (
     fields.includes("game") &&
     values.game === "other" &&
@@ -105,7 +96,6 @@ export const validateFields = (fields, values, t) => {
     errors.customSport = t("sportsValidation.customSportRequired");
   }
 
-  // Role type validation when category (jop) is selected
   if (
     fields.includes("roleType") &&
     values.jop &&
@@ -114,7 +104,6 @@ export const validateFields = (fields, values, t) => {
     errors.roleType = t("sportsValidation.roleTypeRequired");
   }
 
-  // Custom role type validation when "other" is selected
   if (
     fields.includes("roleType") &&
     values.roleType === "other" &&
@@ -123,7 +112,6 @@ export const validateFields = (fields, values, t) => {
     errors.customRoleType = t("sportsValidation.customRoleTypeRequired");
   }
 
-  // Position validation - only required for players, not coaches
   if (
     fields.includes("position") &&
     values.jop === "player" &&
@@ -132,7 +120,6 @@ export const validateFields = (fields, values, t) => {
     errors.position = t("sportsValidation.positionRequired");
   }
 
-  // Custom position validation - required when position is "other" (only for players)
   if (
     fields.includes("position") &&
     values.jop === "player" &&
@@ -142,7 +129,6 @@ export const validateFields = (fields, values, t) => {
     errors.customPosition = t("sportsValidation.customPositionRequired");
   }
 
-  // Strengthen jop validation - must be explicitly selected by user
   if (fields.includes("jop")) {
     if (!values.jopSelected) {
       errors.jop = t("sportsValidation.categoryRequired");
@@ -151,7 +137,6 @@ export const validateFields = (fields, values, t) => {
     }
   }
 
-  // Strengthen status validation - must be explicitly selected by user
   if (fields.includes("status")) {
     if (!values.statusSelected) {
       errors.status = t("sportsValidation.statusRequired");
@@ -162,11 +147,8 @@ export const validateFields = (fields, values, t) => {
       errors.status = t("sportsValidation.statusInvalid");
     }
   }
-
-  // Terms section validation
   if (fields.includes("agreeToTerms") && !values.agreeToTerms) {
     errors.agreeToTerms = t("sportsValidation.termsAcceptanceRequired");
   }
-
   return errors;
 };

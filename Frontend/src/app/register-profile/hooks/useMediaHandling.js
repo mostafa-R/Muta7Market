@@ -8,24 +8,20 @@ export const useMediaHandling = (formik) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null);
 
-  // Store current values for cleanup
   const cleanupRef = useRef();
   cleanupRef.current = {
     profilePicturePreview: formik.values.profilePicturePreview,
     media: formik.values.media,
   };
 
-  // Cleanup function for media previews when component unmounts
   useEffect(() => {
     return () => {
-      // Cleanup any object URLs when component unmounts
       if (cleanupRef.current.profilePicturePreview?.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(cleanupRef.current.profilePicturePreview);
         } catch {}
       }
 
-      // Use our utility to clean up all media previews
       cleanupMediaPreviews(cleanupRef.current.media);
     };
   }, []);
@@ -41,7 +37,6 @@ export const useMediaHandling = (formik) => {
     setUploadProgress(10);
     setUploadStatus(null);
 
-    // Simulate progress for better UX since the API might not report progress correctly
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 90) {

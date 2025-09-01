@@ -1,4 +1,3 @@
-// components/TransferInfoCard.jsx
 import {
   Card,
   CardContent,

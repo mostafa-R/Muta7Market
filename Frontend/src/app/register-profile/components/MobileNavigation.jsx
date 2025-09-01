@@ -73,7 +73,6 @@ export const MobileNavigation = ({
   );
 };
 
-// Add PropTypes for type checking
 MobileNavigation.propTypes = {
   currentStep: PropTypes.number.isRequired,
   totalSteps: PropTypes.number.isRequired,

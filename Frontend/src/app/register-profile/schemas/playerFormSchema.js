@@ -1,14 +1,5 @@
 import Joi from "joi";
 
-/**
- * Player Form Validation Schema
- * Refactored from types/schema.js for better organization
- *
- * This schema provides comprehensive validation for the player registration form,
- * supporting both translated and default error messages for better user experience.
- */
-
-// Function to create schema with translated messages
 export const createPlayerFormSchema = (t) =>
   Joi.object({
     name: Joi.string()
@@ -144,7 +135,6 @@ export const createPlayerFormSchema = (t) =>
       otherwise: Joi.optional(),
     }),
 
-    // Custom role type validation when "other" is selected
     customRoleType: Joi.when("roleType", {
       is: "other",
       then: Joi.string()
@@ -158,9 +148,6 @@ export const createPlayerFormSchema = (t) =>
         }),
       otherwise: Joi.optional(),
     }),
-
-    // Updated position validation to handle "other" option with custom input
-    // Position is only required for players, not coaches
     position: Joi.when("jop", {
       is: "player",
       then: Joi.string()
@@ -175,7 +162,6 @@ export const createPlayerFormSchema = (t) =>
       otherwise: Joi.string().allow("").optional(),
     }),
 
-    // New field for custom position when "other" is selected (required only for players)
     customPosition: Joi.when(Joi.ref("jop"), {
       is: "player",
       then: Joi.when("position", {
@@ -213,7 +199,6 @@ export const createPlayerFormSchema = (t) =>
         "number.max": t("fieldValidation.experienceRange"),
       }),
 
-    // Financial information
     monthlySalary: Joi.object({
       amount: Joi.alternatives()
         .try(Joi.number().min(0), Joi.string().allow("").optional())
@@ -232,7 +217,6 @@ export const createPlayerFormSchema = (t) =>
       .try(Joi.date(), Joi.string().allow("").optional())
       .optional(),
 
-    // Transfer information
     transferredTo: Joi.object({
       club: Joi.string().allow("").optional(),
       startDate: Joi.alternatives()
@@ -246,7 +230,6 @@ export const createPlayerFormSchema = (t) =>
         .optional(),
     }).optional(),
 
-    // Social links
     socialLinks: Joi.object({
       instagram: Joi.string().uri().allow("").optional(),
       twitter: Joi.string().uri().allow("").optional(),
@@ -254,7 +237,6 @@ export const createPlayerFormSchema = (t) =>
       youtube: Joi.string().uri().allow("").optional(),
     }).optional(),
 
-    // Promotion settings
     isPromoted: Joi.object({
       status: Joi.boolean().default(false),
       startDate: Joi.string().allow("", null).optional(),
@@ -265,7 +247,6 @@ export const createPlayerFormSchema = (t) =>
         .default("featured"),
     }).optional(),
 
-    // Contact information
     contactInfo: Joi.object({
       isHidden: Joi.boolean().default(false),
       email: Joi.string().email().allow("").optional(),
@@ -285,7 +266,6 @@ export const createPlayerFormSchema = (t) =>
         "string.min": t("sportsValidation.sportRequired"),
       }),
 
-    // Custom sport validation when "other" is selected
     customSport: Joi.when("game", {
       is: "other",
       then: Joi.string()
@@ -300,7 +280,6 @@ export const createPlayerFormSchema = (t) =>
       otherwise: Joi.optional(),
     }),
 
-    // Media and documents
     media: Joi.object({
       video: Joi.object({
         url: Joi.string().allow(null).optional(),
@@ -332,7 +311,6 @@ export const createPlayerFormSchema = (t) =>
         .optional(),
     }).optional(),
 
-    // Terms and conditions
     agreeToTerms: Joi.boolean()
       .valid(true)
       .required()
@@ -341,19 +319,17 @@ export const createPlayerFormSchema = (t) =>
         "any.required": t("sportsValidation.termsAcceptanceRequired"),
       }),
 
-    // Form-only fields for UI state management
     profilePicturePreview: Joi.string().allow("").optional(),
     profilePictureFile: Joi.any().optional(),
     documentFile: Joi.any().optional(),
     jopSelected: Joi.boolean().optional(),
     statusSelected: Joi.boolean().optional(),
-    gameSelected: Joi.boolean().optional(), // Added for sport selection state
+    gameSelected: Joi.boolean().optional(), 
     isActive: Joi.boolean().default(false),
     views: Joi.number().default(0),
     seo: Joi.object().optional(),
   });
 
-// Backward compatibility schema with default messages (will be deprecated)
 export const playerFormSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   age: Joi.number().integer().min(15).max(50).required(),

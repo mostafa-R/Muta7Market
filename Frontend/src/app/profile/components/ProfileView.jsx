@@ -11,16 +11,12 @@ import {
 } from "react-icons/fa";
 
 const ProfileView = ({ user, t, language }) => {
-  // Helper function to get profile image URL
   const getProfileImageUrl = () => {
     if (!user?.profileImage) return null;
-
-    // إذا كان profileImage كائن مع url
     if (typeof user.profileImage === "object" && user.profileImage.url) {
       return user.profileImage.url;
     }
 
-    // إذا كان profileImage نص مباشر
     if (
       typeof user.profileImage === "string" &&
       user.profileImage.trim() !== ""
@@ -101,7 +97,6 @@ const ProfileView = ({ user, t, language }) => {
                   priority
                   unoptimized
                   onError={(e) => {
-                    // في حالة فشل تحميل الصورة، أخفيها
                     e.currentTarget.style.display = "none";
                     e.currentTarget.parentElement.innerHTML = `
                       <div class="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
@@ -214,18 +209,6 @@ const ProfileView = ({ user, t, language }) => {
             }
             isStatus
           />
-
-          {/* <InfoItem
-            icon={FaCheckCircle}
-            label={t("profile.phoneStatus")}
-            value={
-              user?.isPhoneVerified
-                ? t("profile.activated")
-                : t("profile.notActivated")
-            }
-            isStatus
-          /> */}
-
           <InfoItem
             icon={FaCheckCircle}
             label={t("profile.accountStatus")}

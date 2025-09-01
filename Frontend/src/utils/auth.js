@@ -1,8 +1,3 @@
-// utils/auth.js
-
-/**
- * التحقق من صلاحية الجلسة
- */
 export const isSessionValid = () => {
   if (typeof window === "undefined") return false;
 
@@ -11,13 +6,11 @@ export const isSessionValid = () => {
 
   if (!token) return false;
 
-  // التحقق من انتهاء صلاحية التوكن
   if (tokenExpiration) {
     const expirationDate = new Date(tokenExpiration);
     const now = new Date();
 
     if (now > expirationDate) {
-      // الجلسة منتهية، امسح البيانات
       clearAuthData();
       return false;
     }
@@ -27,7 +20,6 @@ export const isSessionValid = () => {
 };
 
 /**
- * الحصول على بيانات المستخدم الحالي
  */
 export const getCurrentUser = () => {
   if (typeof window === "undefined") return null;
@@ -43,17 +35,11 @@ export const getCurrentUser = () => {
   }
 };
 
-/**
- * الحصول على التوكن
- */
 export const getToken = () => {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");
 };
 
-/**
- * تحديث بيانات المستخدم في localStorage
- */
 export const updateStoredUser = (userData) => {
   if (typeof window === "undefined") return;
 
@@ -62,20 +48,15 @@ export const updateStoredUser = (userData) => {
     const updatedUser = {
       ...currentUser,
       ...userData,
-      // التأكد من أن profileImage محفوظ بشكل صحيح
       profileImage: userData.profileImage || currentUser?.profileImage || null,
     };
 
     localStorage.setItem("user", JSON.stringify(updatedUser));
-    console.log("User data updated in localStorage:", updatedUser);
   } catch (error) {
     console.error("Error updating user data:", error);
   }
 };
 
-/**
- * مسح بيانات المصادقة
- */
 export const clearAuthData = () => {
   if (typeof window === "undefined") return;
 
@@ -85,21 +66,10 @@ export const clearAuthData = () => {
   localStorage.setItem("isLoggedIn", "false");
 };
 
-/**
- * تجديد الجلسة (يمكن استخدامها مع refresh token)
- */
 export const refreshSession = async () => {
   try {
     const token = getToken();
     if (!token) return false;
-
-    // هنا يمكنك إضافة طلب API لتجديد التوكن
-    // const response = await axios.post('/api/auth/refresh', {}, {
-    //   headers: { Authorization: `Bearer ${token}` }
-    // });
-
-    // إذا نجح التجديد، حدث البيانات
-    // handleLoginSuccess(response.data);
 
     return true;
   } catch (error) {

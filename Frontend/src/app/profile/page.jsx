@@ -87,7 +87,6 @@ const UserProfile = () => {
         oldPassword: "",
       });
 
-      // Set current image preview
       if (userData.profileImage?.url) {
         setImagePreview(userData.profileImage.url);
       }
@@ -491,10 +490,6 @@ const UserProfile = () => {
       className="min-h-screen bg-[#ffffff]"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
-      {/* {!player?.isPromoted?.status && (
-  <PromoteNowButton profileId={player?._id} />
-)} */}
-
       <div className="flex relative">
         <Sidebar
           activeSection={activeSection}

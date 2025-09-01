@@ -36,20 +36,16 @@ const PlayerProfile = ({
     setCurrentImageUrl(null);
   };
 
-  // Helper function to get translated value with fallback
   const getTranslatedValue = (key, value, translationNamespace = null) => {
     if (!value) return "";
 
-    // Try to get translation from the specified namespace
     let translatedValue = null;
 
     if (translationNamespace) {
-      // Try with the namespace
       translatedValue = t(`${translationNamespace}.${value.toLowerCase()}`, {
         defaultValue: null,
       });
 
-      // If not found and it's a sport, try sport-specific positions
       if (
         !translatedValue &&
         translationNamespace === "positions" &&
@@ -62,12 +58,10 @@ const PlayerProfile = ({
       }
     }
 
-    // If still not found, try without namespace
     if (!translatedValue) {
       translatedValue = t(value.toLowerCase(), { defaultValue: null });
     }
 
-    // If translation found, return it, otherwise return original value
     return translatedValue || value;
   };
 
@@ -111,7 +105,6 @@ const PlayerProfile = ({
     </div>
   );
 
-  // تحقق مما إذا كانت بيانات اللاعب موجودة
   if (!player) {
     return (
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -140,7 +133,6 @@ const PlayerProfile = ({
     );
   }
 
-  // إعداد البيانات الأولية للحقول
   useEffect(() => {
     if (player) {
       setFormData({
@@ -158,7 +150,7 @@ const PlayerProfile = ({
         yearSalary: player.yearSalary?.amount || "",
         yearSalaryCurrency: player.yearSalary?.currency || "SAR",
         contractEndDate: player.contractEndDate || "",
-        password: "", // لا نعرض كلمة المرور
+        password: "",
       });
     }
   }, [player]);
@@ -185,7 +177,6 @@ const PlayerProfile = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeletePlayerProfile = async () => {
-    // Show confirmation dialog
     const isConfirmed = window.confirm(t("confirmDeletePlayerProfile"));
 
     if (!isConfirmed) {
@@ -202,7 +193,6 @@ const PlayerProfile = ({
         return;
       }
 
-      // Show notification that deletion is in progress
       toast.info(t("deletingPlayerProfile"));
 
       const response = await axios.delete(
@@ -218,10 +208,8 @@ const PlayerProfile = ({
       if (response.status === 200) {
         toast.success(t("playerProfileDeletedSuccessfully"));
 
-        // Remove player data from local storage if stored there
         localStorage.removeItem("playerProfile");
 
-        // Redirect to homepage after successful deletion
         setTimeout(() => {
           window.location.href = "/profile";
         }, 1500);
@@ -766,22 +754,6 @@ const PlayerProfile = ({
               </div>
             )}
 
-            {/* Security Section
-          <div className="bg-gray-50 p-6 rounded-xl">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <i className="fas fa-lock text-purple-600"></i>
-              الأمان
-            </h3>
-            <FormField
-              label="كلمة المرور"
-              value={formData.password}
-              isPassword={true}
-              isDisabled={!isEditing}
-              onChange={handleChange}
-              name="password"
-            />
-          </div> */}
-
             {/* Messages */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
@@ -825,25 +797,6 @@ const PlayerProfile = ({
                   </>
                 )}
               </button>
-              {/* {isEditing && (
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#00183D] text-white rounded-xl hover:bg-[#001a3d] transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    جاري الحفظ...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-save"></i>
-                    حفظ التغييرات
-                  </>
-                )}
-              </button>
-            )} */}
             </div>
           </form>
         </div>

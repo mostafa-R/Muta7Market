@@ -11,9 +11,6 @@ import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useLanguage } from "../../contexts/LanguageContext";
 
-// -----------------------------------
-// Joi Validation Schema
-// -----------------------------------
 const getLoginSchema = (t) =>
   Joi.object({
     email: Joi.string()
@@ -34,9 +31,6 @@ const getLoginSchema = (t) =>
       }),
   });
 
-// -----------------------------------
-// Validate Function
-// -----------------------------------
 const getValidate = (t) => (values) => {
   const loginSchema = getLoginSchema(t);
   const { error } = loginSchema.validate(values, { abortEarly: false });
@@ -50,12 +44,8 @@ const getValidate = (t) => (values) => {
   return errors;
 };
 
-// -----------------------------------
-// Helper Function to Handle Login Success
-// -----------------------------------
 const handleLoginSuccess = (responseData, t) => {
   try {
-    // استخراج البيانات من الاستجابة
     const userData = responseData.data?.user || responseData.user;
     const token = responseData.data?.token || responseData.token;
 
@@ -64,7 +54,6 @@ const handleLoginSuccess = (responseData, t) => {
       throw new Error(t("auth.invalidServerData"));
     }
 
-    // تحضير بيانات المستخدم للحفظ
     const userToStore = {
       _id: userData._id,
       name: userData.name,
@@ -78,20 +67,16 @@ const handleLoginSuccess = (responseData, t) => {
       createdAt: userData.createdAt,
       updatedAt: userData.updatedAt,
       lastLogin: userData.lastLogin || new Date().toISOString(),
-      // معالجة profileImage بشكل صحيح
       profileImage: userData.profileImage || null,
     };
 
-    // حفظ البيانات في localStorage
     localStorage.setItem("user", JSON.stringify(userToStore));
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("token", token);
 
-    // حفظ وقت انتهاء الجلسة (اختياري - 7 أيام مثلاً)
     const expirationTime = new Date();
     expirationTime.setDate(expirationTime.getDate() + 7);
     localStorage.setItem("tokenExpiration", expirationTime.toISOString());
-
 
     return true;
   } catch (error) {
@@ -100,9 +85,6 @@ const handleLoginSuccess = (responseData, t) => {
   }
 };
 
-// -----------------------------------
-// Main Component
-// -----------------------------------
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,17 +119,13 @@ export default function Login() {
         },
       });
 
-      // التحقق من نجاح الاستجابة
       if (res.data && (res.data.success || res.data.data)) {
-        // معالجة البيانات وحفظها
         const loginSuccessful = handleLoginSuccess(res.data, t);
 
         if (loginSuccessful) {
           toast.success(t("auth.loginSuccess"));
 
-          // تأخير قليل قبل التوجيه للسماح بظهور رسالة النجاح
           setTimeout(() => {
-            // استخدام window.location للتأكد من إعادة تحميل الصفحة بالكامل
             window.location.href = "/";
           }, 500);
         } else {
@@ -159,14 +137,11 @@ export default function Login() {
     } catch (error) {
       console.error("Login Error:", error);
 
-      // معالجة الأخطاء المختلفة
       if (error.response) {
         const { status, data } = error.response;
 
-        // معالجة حالات الخطأ المختلفة
         switch (status) {
           case 400:
-            // خطأ في البيانات المدخلة
             if (data.errors) {
               Object.entries(data.errors).forEach(([field, errorMessage]) => {
                 setFieldError(field, errorMessage);
@@ -178,25 +153,21 @@ export default function Login() {
             break;
 
           case 401:
-            // بيانات الدخول غير صحيحة
             setStatus(t("auth.invalidCredentials"));
             toast.error(t("auth.invalidCredentials"));
             break;
 
           case 403:
-            // الحساب محظور أو غير مفعل
             setStatus(data.message || t("auth.accountBlocked"));
             toast.error(data.message || t("auth.accountBlocked"));
             break;
 
           case 404:
-            // المستخدم غير موجود
             setStatus(t("auth.userNotFound"));
             toast.error(t("auth.userNotFound"));
             break;
 
           case 429:
-            // محاولات كثيرة
             setStatus(t("auth.tooManyAttempts"));
             toast.error(t("auth.tooManyAttempts"));
             break;
@@ -204,7 +175,6 @@ export default function Login() {
           case 500:
           case 502:
           case 503:
-            // خطأ في السيرفر
             setStatus(t("auth.serverError"));
             toast.error(t("auth.serverError"));
             break;
@@ -214,11 +184,9 @@ export default function Login() {
             toast.error(data.message || t("auth.unexpectedError"));
         }
       } else if (error.request) {
-        // لم يتم الحصول على استجابة من السيرفر
         setStatus(t("auth.connectionFailed"));
         toast.error(t("auth.connectionFailed"));
       } else {
-        // خطأ آخر
         setStatus(error.message || t("auth.unexpectedError"));
         toast.error(error.message || t("auth.unexpectedError"));
       }

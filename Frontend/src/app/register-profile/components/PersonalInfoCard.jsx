@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../../component/ui/button";
 import { Label } from "../../component/ui/label";
 import { RadioGroup, RadioGroupItem } from "../../component/ui/radio-group";
-// Updated import to use new organized constants structure
 import { nationalities } from "../constants/sportsPositions";
 import { ConditionalSelect } from "./ConditionalSelect";
 import { FormField } from "./FormField";
@@ -21,7 +20,6 @@ export const PersonalInfoCard = ({
 
   return (
     <div className="space-y-6">
-      {/* Card title */}
       <div className="flex items-center space-x-2 space-x-reverse">
         <div className="bg-blue-50 p-2 rounded-full">
           <User className="w-5 h-5 text-blue-600" />
@@ -143,16 +141,13 @@ export const PersonalInfoCard = ({
             onValueChange={(value) => {
               formik.setFieldValue("nationality", value);
               formik.setFieldTouched("nationality", true);
-              // Clear custom nationality if not "other"
               if (value !== "other") {
                 formik.setFieldValue("customNationality", "");
                 formik.setFieldTouched("customNationality", false);
-                // Also clear any existing errors for customNationality
                 if (formik.errors.customNationality) {
                   formik.setFieldError("customNationality", "");
                 }
               } else {
-                // If switching to "other", reset custom nationality field
                 formik.setFieldValue("customNationality", "");
                 formik.setFieldTouched("customNationality", false);
                 formik.setFieldError("customNationality", "");
@@ -184,16 +179,13 @@ export const PersonalInfoCard = ({
             onValueChange={(value) => {
               formik.setFieldValue("birthCountry", value);
               formik.setFieldTouched("birthCountry", true);
-              // Clear custom birth country if not "other"
               if (value !== "other") {
                 formik.setFieldValue("customBirthCountry", "");
                 formik.setFieldTouched("customBirthCountry", false);
-                // Also clear any existing errors for customBirthCountry
                 if (formik.errors.customBirthCountry) {
                   formik.setFieldError("customBirthCountry", "");
                 }
               } else {
-                // If switching to "other", reset custom birth country field
                 formik.setFieldValue("customBirthCountry", "");
                 formik.setFieldTouched("customBirthCountry", false);
                 formik.setFieldError("customBirthCountry", "");

@@ -31,13 +31,11 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
-// عنوان الـ API
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const PlayerSection = () => {
   const { t } = useTranslation();
 
-  // Setup states
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,7 +60,6 @@ const PlayerSection = () => {
 
         setPlayers(fetchedPlayers);
 
-        // API returns pagination info in responseData.pagination
         const total = responseData.pagination?.total || 0;
         const pages =
           responseData.pagination?.pages || Math.ceil(total / playersPerPage);
@@ -79,7 +76,6 @@ const PlayerSection = () => {
     fetchPlayers();
   }, [currentPage, playersPerPage, t]);
 
-  // Pagination handler
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
@@ -120,15 +116,6 @@ const PlayerSection = () => {
     <section className="py-1  bg-[hsl(var(--muted))] mt-4">
       <div className="onesignal-customlink-container"></div>
       <div className="max-w-full mx-auto px-1 sm:px-1 lg:px-1">
-        {/* <div className="text-center mb-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--foreground))] mb-4">
-            {t("home.featuredPlayers")}
-          </h2>
-          <p className="text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-            {t("home.featuredPlayersDescription")}
-          </p>
-        </div> */}
-
         <div className="flex flex-wrap justify-center gap-2">
           {players.map((player) => (
             <PlayerCard key={player.id} player={player} />

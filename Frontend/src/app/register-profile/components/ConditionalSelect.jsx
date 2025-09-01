@@ -20,18 +20,17 @@ export const ConditionalSelect = ({
   options,
   required = false,
   formik,
-  triggerValue = "other", // value that triggers conditional input
-  conditionalInputName = null, // name for conditional input field
-  conditionalInputLabel = null, // label for conditional input field
+  triggerValue = "other",
+  conditionalInputName = null,
+  conditionalInputLabel = null,
   conditionalInputPlaceholder = "",
-  showConditionalInput = false, // whether to show conditional input (can override auto-detection)
-  autoDetectConditional = true, // automatically detect when to show conditional input
-  children, // for custom conditional content
+  showConditionalInput = false,
+  autoDetectConditional = true,
+  children,
 }) => {
   const { t } = useTranslation();
   const { touched, errors } = formik;
 
-  // Determine if conditional input should be shown
   const shouldShowConditionalInput = autoDetectConditional
     ? value === triggerValue && conditionalInputName
     : showConditionalInput && conditionalInputName;
@@ -104,12 +103,10 @@ export const ConditionalSelect = ({
             value={formik.values[conditionalInputName] || ""}
             onChange={(e) => {
               formik.handleChange(e);
-              // Mark as touched when user starts typing
               formik.setFieldTouched(conditionalInputName, true);
             }}
             onBlur={(e) => {
               formik.handleBlur(e);
-              // Always mark as touched on blur for required conditional fields
               formik.setFieldTouched(conditionalInputName, true);
             }}
             placeholder={conditionalInputPlaceholder}

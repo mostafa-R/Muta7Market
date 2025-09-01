@@ -5,24 +5,18 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  FaBasketballBall,
   FaBiking,
-  FaChessKnight,
   FaDumbbell,
-  FaFistRaised,
   FaRunning,
   FaSwimmer,
   FaTableTennis,
-  FaVolleyballBall,
 } from "react-icons/fa";
 import {
   GiArcheryTarget,
   GiBoxingGlove,
   GiGoalKeeper,
   GiKimono,
-  GiMuscleUp,
   GiSwordman,
-  GiTennisRacket,
 } from "react-icons/gi";
 import { IoGameControllerOutline } from "react-icons/io5";
 import { MdSportsGymnastics, MdSportsTennis } from "react-icons/md";
@@ -209,7 +203,6 @@ const SportsSection = () => {
                             className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-gray-600 group-hover:text-[#00184d] transition-colors duration-300"
                           />
                         ) : (
-                          // For React Icons and custom SVG components
                           <Icon className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-gray-600 group-hover:text-[#00184d] transition-colors duration-300" />
                         )}
                       </div>
@@ -225,19 +218,6 @@ const SportsSection = () => {
             </div>
           </div>
         </div>
-
-        {/* CTA Button */}
-        {/* <div className="text-center">
-          <Link href="/sports">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-[#00184d] to-[#00184d] hover:from-[#00184d] hover:to-[#00184d] text-white font-semibold rounded-xl text-sm md:text-base px-6 py-3 md:px-8 md:py-4 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#00184d]"
-            >
-              <Trophy className="w-4 h-4 md:w-5 md:h-5 ml-2 md:ml-3" />
-              {t("home.viewAll")} {t("sports.allSports")}
-            </button>
-          </Link>
-        </div> */}
       </div>
     </section>
   );

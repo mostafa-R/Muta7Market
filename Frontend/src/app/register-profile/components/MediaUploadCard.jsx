@@ -22,18 +22,16 @@ export const MediaUploadCard = ({
   ALLOWED_DOCUMENT_TYPES,
   ALLOWED_IMAGE_TYPES,
   MAX_FILE_SIZE,
-  playerId, // Add playerId prop to identify the player
+  playerId,
 }) => {
   const { t } = useTranslation();
 
-  // Delete images from server
   const deleteImagesFromServer = async (publicIds) => {
     if (!playerId || !publicIds || publicIds.length === 0) return;
 
     try {
       const token = localStorage.getItem("token");
-      const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL ;
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       const API_URL = API_BASE_URL.includes("/api/v1")
         ? API_BASE_URL
         : `${API_BASE_URL}/api/v1`;
@@ -50,26 +48,24 @@ export const MediaUploadCard = ({
       const result = await response.json();
 
       if (response.ok) {
-        console.log("🗑️ Successfully deleted images from server:", result);
+        toast.success("Images deleted successfully!");
         return true;
       } else {
-        console.error("❌ Failed to delete images from server:", result);
+        toast.error("Failed to delete images. Please try again.");
         return false;
       }
     } catch (error) {
-      console.error("💥 Error deleting images:", error);
+      console.error(" Error deleting images:", error);
       return false;
     }
   };
 
-  // Delete video from server
   const deleteVideoFromServer = async () => {
     if (!playerId) return false;
 
     try {
       const token = localStorage.getItem("token");
-      const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL ;
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       const API_URL = API_BASE_URL.includes("/api/v1")
         ? API_BASE_URL
         : `${API_BASE_URL}/api/v1`;
@@ -84,14 +80,14 @@ export const MediaUploadCard = ({
       const result = await response.json();
 
       if (response.ok) {
-        console.log("🗑️ Successfully deleted video from server:", result);
+        toast.success("Video deleted successfully!");
         return true;
       } else {
-        console.error("❌ Failed to delete video from server:", result);
+        toast.error("Failed to delete video. Please try again.");
         return false;
       }
     } catch (error) {
-      console.error("💥 Error deleting video:", error);
+      toast.error("Failed to delete video. Please try again.");
       return false;
     }
   };
@@ -99,38 +95,23 @@ export const MediaUploadCard = ({
   const removeVideo = async () => {
     const video = formik.values.media.video;
 
-    console.log("🗑️ Removing video:", {
-      hasPublicId: !!video?.publicId,
-      isBlob: video?.url?.startsWith("blob:"),
-    });
-
-    // Handle server-stored videos (have publicId and not blob URLs)
     if (video?.publicId && !video.url?.startsWith("blob:")) {
-      console.log("🗑️ Deleting video from server:", video.publicId);
-
       const success = await deleteVideoFromServer();
-
       if (!success) {
-        console.error("❌ Failed to delete video from server, keeping in UI");
         toast.error("Failed to delete video from server. Please try again.");
         return;
       }
-
-      console.log("✅ Video deleted from server successfully");
       toast.success("Video deleted successfully!");
     }
 
-    // Handle local blob URLs
     if (video && video.file && video.url?.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(video.url);
-        console.log("🧹 Cleaned up video blob URL");
       } catch (err) {
         console.error("Error revoking video blob URL:", err);
       }
     }
 
-    // Remove from form state
     formik.setFieldValue("media.video", {
       url: null,
       publicId: null,
@@ -138,18 +119,14 @@ export const MediaUploadCard = ({
       duration: 0,
       uploadedAt: null,
     });
-
-    console.log("✅ Video removed from form");
   };
 
-  // Delete document from server
   const deleteDocumentFromServer = async () => {
     if (!playerId) return false;
 
     try {
       const token = localStorage.getItem("token");
-      const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL ;
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       const API_URL = API_BASE_URL.includes("/api/v1")
         ? API_BASE_URL
         : `${API_BASE_URL}/api/v1`;
@@ -164,10 +141,10 @@ export const MediaUploadCard = ({
       const result = await response.json();
 
       if (response.ok) {
-        console.log("🗑️ Successfully deleted document from server:", result);
+        toast.success("Document deleted successfully!");
         return true;
       } else {
-        console.error("❌ Failed to delete document from server:", result);
+        toast.error("Failed to delete document. Please try again.");
         return false;
       }
     } catch (error) {
@@ -178,41 +155,24 @@ export const MediaUploadCard = ({
 
   const removeDocument = async () => {
     const document = formik.values.media.document;
-
-    console.log("🗑️ Removing document:", {
-      hasPublicId: !!document?.publicId,
-      isBlob: document?.url?.startsWith("blob:"),
-    });
-
-    // Handle server-stored documents (have publicId and not blob URLs)
     if (document?.publicId && !document.url?.startsWith("blob:")) {
-      console.log("🗑️ Deleting document from server:", document.publicId);
-
       const success = await deleteDocumentFromServer();
 
       if (!success) {
-        console.error(
-          "❌ Failed to delete document from server, keeping in UI"
-        );
         toast.error("Failed to delete document from server. Please try again.");
         return;
       }
-
-      console.log("✅ Document deleted from server successfully");
       toast.success("Document deleted successfully!");
     }
 
-    // Handle local blob URLs
     if (document && document.file && document.url?.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(document.url);
-        console.log("🧹 Cleaned up document blob URL");
       } catch (err) {
         console.error("Error revoking document blob URL:", err);
       }
     }
 
-    // Remove from form state
     formik.setFieldValue("media.document", {
       url: null,
       publicId: null,
@@ -221,52 +181,32 @@ export const MediaUploadCard = ({
       size: 0,
       uploadedAt: null,
     });
-
-    console.log("✅ Document removed from form");
   };
 
   const removeImage = async (index) => {
     const images = formik.values.media.images || [];
     const imageToRemove = images[index];
 
-    console.log("🗑️ Removing image:", {
-      index,
-      title: imageToRemove?.title,
-      hasPublicId: !!imageToRemove?.publicId,
-      isBlob: imageToRemove?.url?.startsWith("blob:"),
-    });
-
-    // Handle server-stored images (have publicId and not blob URLs)
     if (imageToRemove?.publicId && !imageToRemove.url?.startsWith("blob:")) {
-      console.log("🗑️ Deleting image from server:", imageToRemove.publicId);
-
       const success = await deleteImagesFromServer([imageToRemove.publicId]);
 
       if (!success) {
-        console.error("❌ Failed to delete image from server, keeping in UI");
         toast.error("Failed to delete image from server. Please try again.");
         return;
       }
-
-      console.log("✅ Image deleted from server successfully");
       toast.success("Image deleted successfully!");
     }
 
-    // Handle local blob URLs
     if (imageToRemove && imageToRemove.url?.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(imageToRemove.url);
-        console.log("🧹 Cleaned up blob URL");
       } catch (err) {
         console.error("Error revoking blob URL:", err);
       }
     }
 
-    // Remove from form state
     const newImages = images.filter((_, i) => i !== index);
     formik.setFieldValue("media.images", newImages);
-
-    console.log(`✅ Image removed. Remaining: ${newImages.length}`);
   };
 
   const addImages = (files) => {
@@ -280,16 +220,13 @@ export const MediaUploadCard = ({
     ) {
       const file = files[i];
 
-      // Simple validation
       if (!file.type.startsWith("image/")) {
         toast.error("File is not an image:", file.name, file.type);
         continue;
       }
 
-      // Create simple object URL
       try {
         const objectUrl = URL.createObjectURL(file);
-
         const imageData = {
           url: objectUrl,
           publicId: uuidv4(),
@@ -366,14 +303,11 @@ export const MediaUploadCard = ({
                   return;
                 }
 
-                // If we already have a video with a local URL, revoke it
                 if (formik.values.media.video?.url?.startsWith("blob:")) {
                   try {
                     URL.revokeObjectURL(formik.values.media.video.url);
                   } catch {}
                 }
-
-                // Set the new video
                 const videoData = {
                   url: URL.createObjectURL(file),
                   publicId: uuidv4(),
@@ -516,11 +450,9 @@ export const MediaUploadCard = ({
                 const files = Array.from(e.target.files || []);
 
                 if (files.length > 0) {
-                  // Clear any previous errors
                   formik.setFieldError("media.images", "");
                   addImages(files);
                 }
-                // Reset the input
                 e.target.value = "";
               }}
             />
@@ -604,7 +536,7 @@ export const MediaUploadCard = ({
                         style={
                           process.env.NODE_ENV === "development"
                             ? {
-                                backgroundColor: "yellow", // To see if image loads
+                                backgroundColor: "yellow",
                                 border: "2px solid green",
                               }
                             : {}
@@ -704,14 +636,12 @@ export const MediaUploadCard = ({
                   return;
                 }
 
-                // If we already have a document with a local URL, revoke it
                 if (formik.values.media.document?.url?.startsWith("blob:")) {
                   try {
                     URL.revokeObjectURL(formik.values.media.document.url);
                   } catch {}
                 }
 
-                // Set the new document
                 const documentData = {
                   url: URL.createObjectURL(file),
                   publicId: uuidv4(),

@@ -71,7 +71,6 @@ const ProgressBar = () => {
   );
 };
 
-// User Profile Dropdown - محسن للموبايل
 const UserProfileDropdown = ({
   handleLogout,
   fullWidth = false,
@@ -127,7 +126,6 @@ const UserProfileDropdown = ({
 
   const profileImageUrl = getProfileImageUrl();
 
-  // للموبايل - عرض مختلف
   if (isMobile) {
     return (
       <div className="w-full space-y-3">
@@ -184,7 +182,6 @@ const UserProfileDropdown = ({
     );
   }
 
-  // للديسكتوب - القائمة المنسدلة
   return (
     <Menu as="div" className="relative">
       <Menu.Button
@@ -341,7 +338,6 @@ const NavLink = ({ item, isActive, onClick, isMobile = false }) => {
   );
 };
 
-// Mobile Nav Menu - محسن بالكامل
 const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
   const { t } = useTranslation();
   const { isLoggedIn, setIsLoggedIn, user } = useAuthStore();
@@ -376,14 +372,13 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
 
   const handleNavigation = useCallback(
     (path) => {
-      if (path === currentPath) return; // Don't navigate if already on the same page
+      if (path === currentPath) return;
 
       setLoading(true);
       setCurrentPath(path);
-      setHeaderVisible(false); // Hide header on mobile/tablet
+      setHeaderVisible(false);
       onClose();
 
-      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) {
@@ -394,7 +389,6 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
         });
       }, 100);
 
-      // Complete navigation after delay
       setTimeout(() => {
         clearInterval(progressInterval);
         setProgress(100);
@@ -422,7 +416,6 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
   };
 
   useEffect(() => {
-    // منع السكرول عند فتح القائمة
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "unset";
@@ -521,7 +514,6 @@ const Navbar = () => {
     checkAuth();
   }, [checkAuth]);
 
-  // Reset header visibility on screen size change and add touch gestures
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -529,7 +521,6 @@ const Navbar = () => {
       }
     };
 
-    // Touch gesture to show header on mobile
     let startY = 0;
     let currentY = 0;
 
@@ -538,12 +529,11 @@ const Navbar = () => {
     };
 
     const handleTouchMove = (e) => {
-      if (window.innerWidth >= 1024) return; // Only on mobile/tablet
+      if (window.innerWidth >= 1024) return;
 
       currentY = e.touches[0].clientY;
       const deltaY = startY - currentY;
 
-      // Show header when swiping down from top
       if (deltaY < -50 && window.scrollY < 100) {
         setHeaderVisible(true);
       }
@@ -560,12 +550,10 @@ const Navbar = () => {
     };
   }, [setHeaderVisible]);
 
-  // تأثير السكرول
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
 
-      // Show header when scrolling up on mobile/tablet
       if (window.innerWidth < 1024) {
         if (window.scrollY < 50) {
           setHeaderVisible(true);
@@ -621,18 +609,15 @@ const Navbar = () => {
 
   const handleNavigation = useCallback(
     (path) => {
-      if (path === pathname) return; // Don't navigate if already on the same page
+      if (path === pathname) return;
 
       setLoading(true);
       setCurrentPath(path);
 
-      // Hide header on mobile/tablet screens
       if (window.innerWidth < 1024) {
-        // lg breakpoint
         setHeaderVisible(false);
       }
 
-      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) {
@@ -643,7 +628,6 @@ const Navbar = () => {
         });
       }, 100);
 
-      // Complete navigation after delay
       setTimeout(() => {
         clearInterval(progressInterval);
         setProgress(100);
@@ -681,7 +665,6 @@ const Navbar = () => {
               </span>
             </Link>
 
-            {/* Desktop Navigation - مخفي على الموبايل */}
             <div className="hidden lg:flex items-center gap-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.path;
@@ -697,13 +680,11 @@ const Navbar = () => {
               })}
             </div>
 
-            {/* Desktop User Controls - مخفي على الموبايل */}
             <div className="hidden lg:flex items-center gap-4">
               <LanguageSwitcher />
               <UserProfileDropdown handleLogout={handleLogout} />
             </div>
 
-            {/* Mobile Menu Button - يظهر فقط على الموبايل */}
             <button
               type="button"
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -716,7 +697,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       {isOpen && (
         <MobileNavMenu
           navItems={navItems}
@@ -725,7 +705,6 @@ const Navbar = () => {
         />
       )}
 
-      {/* Global Loading Overlay */}
       <LoadingOverlay />
       <ProgressBar />
     </>

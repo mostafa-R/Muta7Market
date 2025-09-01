@@ -3,7 +3,6 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import { ErrorMessage, Field, Form, Formik } from "formik";
-// import { motion } from "framer-motion"; // removed to simplify
 import Joi from "joi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { FiLock } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-// Joi schema - updated to use language context
 const getOtpSchema = (t) =>
   Joi.object({
     otp: Joi.string()
@@ -24,7 +22,6 @@ const getOtpSchema = (t) =>
       }),
   });
 
-// Joi to Formik validator - updated to use language context
 const getValidate = (t) => (values) => {
   const schema = getOtpSchema(t);
   const { error } = schema.validate(values, { abortEarly: false });
@@ -38,7 +35,6 @@ const getValidate = (t) => (values) => {
   return errors;
 };
 
-// Component
 export default function OTP() {
   const { t } = useTranslation();
   const { language } = useLanguage();
@@ -76,7 +72,6 @@ export default function OTP() {
         toast.success(successMessage);
         resetForm();
 
-        // Redirect after successful verification
         setTimeout(() => {
           router.push("/signin");
         }, 1000);
@@ -120,8 +115,6 @@ export default function OTP() {
     }
   };
 
-  // const formVariants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
-
   const messageText = typeof submitMessage === "string" ? submitMessage : "";
   const isSuccess =
     messageText.includes("بنجاح") || messageText.includes("successfully");
@@ -131,12 +124,7 @@ export default function OTP() {
       className="flex items-center justify-center p-12 min-h-screen bg-gray-50"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
-      <div
-        className="mx-auto w-full max-w-[550px] bg-white rounded-lg shadow-lg p-8"
-        // variants={formVariants}
-        // initial="initial"
-        // animate="animate"
-      >
+      <div className="mx-auto w-full max-w-[550px] bg-white rounded-lg shadow-lg p-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#07074D] mb-2">

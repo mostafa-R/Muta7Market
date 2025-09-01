@@ -43,7 +43,7 @@ export const NOTIFICATION_TYPES = {
 
 export const PRICING = {
   
-  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR || 200),
+  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR || 190),
 
   
   listing_year: {

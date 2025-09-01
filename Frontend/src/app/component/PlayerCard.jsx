@@ -42,14 +42,12 @@ const getCategoryText = (jop, t) => {
 };
 
 const getSportText = (sport, t) => {
-  // Convert sport name to lowercase and try to get translation
   const sportKey = sport?.toLowerCase();
   const translatedSport = t(`sports.${sportKey}`, { defaultValue: sport });
   return translatedSport;
 };
 
 const getNationalityText = (nationality, t) => {
-  // Convert nationality to lowercase and try to get translation
   const nationalityKey = nationality?.toLowerCase();
   const translatedNationality = t(`nationalities.${nationalityKey}`, {
     defaultValue: nationality,
@@ -60,9 +58,7 @@ const getNationalityText = (nationality, t) => {
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
 
-  // Check if position is already a nested key like "positions.gymnastics.parallel_bars"
   if (position.includes(".")) {
-    // Direct translation of the nested key
     let translatedPosition = t(position, { defaultValue: null });
     if (
       translatedPosition &&
@@ -72,10 +68,8 @@ const getPositionText = (position, sport, t) => {
       return translatedPosition;
     }
 
-    // If nested key translation failed, extract the last part (original DB value)
     const positionKey = position.split(".").pop();
 
-    // Try to translate the cleaned key, fallback to original DB value
     const finalTranslation = t(`positions.${positionKey}`, {
       defaultValue: null,
     });
@@ -83,18 +77,15 @@ const getPositionText = (position, sport, t) => {
       return finalTranslation;
     }
 
-    // Final fallback: return original DB value
     return positionKey;
   }
 
-  // Try sport-specific position first
   const sportKey = sport?.toLowerCase();
   let translatedPosition = t(
     `positions.${sportKey}.${position.toLowerCase().replace(/\s+/g, "")}`,
     { defaultValue: null }
   );
 
-  // If no sport-specific position found, try general position
   if (!translatedPosition) {
     translatedPosition = t(
       `positions.${position.toLowerCase().replace(/\s+/g, "")}`,

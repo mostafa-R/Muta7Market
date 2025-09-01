@@ -1,5 +1,6 @@
 "use client";
 import PlayerCard from "@/app/component/PlayerCard";
+import PromoteNowButton from "@/app/profile/components/PromoteNowButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import {
@@ -15,19 +16,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
 import CTA from "./CTA";
-import PromoteNowButton from "@/app/profile/components/PromoteNowButton";
 
-// Player object structure used in PlayerCard
-// Expected properties: id, name, age, status, gender, nationality, category,
-// monthlySalary, annualContractValue, contractConditions, transferDeadline,
-// sport, position, profilePicture, rating, experience, profileImage, yearSalary, jop
-
-// API response structure
-// Expected properties: _id, user, name, age, gender, nationality, category,
-// position, status, expreiance, monthlySalary, game, views, isActive,
-// contractEndDate, media, yearSalary, jop
-
-// دالة لتحويل بيانات الـ API إلى واجهة Player
 const transformApiDataToPlayer = (apiPlayer) => ({
   id: apiPlayer._id,
   name: apiPlayer.name,
@@ -50,7 +39,6 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
-// عنوان الـ API
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?jop=player`;
 
 export default function PlayersPage() {
@@ -66,7 +54,6 @@ export default function PlayersPage() {
   const [error, setError] = useState(null);
   const [myProfile, setMyProfile] = useState(null);
 
-  // جلب البيانات باستخدام Axios
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
@@ -86,14 +73,12 @@ export default function PlayersPage() {
     fetchPlayers();
   }, []);
 
-  // Check if user has active player/coach profile (to show Promote button)
   useEffect(() => {
     try {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) return;
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
       fetch(`${API_BASE}/players/playerprofile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -105,13 +90,11 @@ export default function PlayersPage() {
     } catch {}
   }, []);
 
-  // Get unique values for filters
   const uniqueSports = [...new Set(players.map((player) => player.sport))];
   const uniqueNationalities = [
     ...new Set(players.map((player) => player.nationality)),
   ];
 
-  // Filter players
   const filteredPlayers = players.filter((player) => {
     const matchesSearch =
       player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,7 +125,6 @@ export default function PlayersPage() {
     setNationalityFilter("all");
   };
 
-  // عرض حالة التحميل
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -151,7 +133,6 @@ export default function PlayersPage() {
     );
   }
 
-  // عرض حالة الخطأ
   if (error) {
     return (
       <div
@@ -192,10 +173,9 @@ export default function PlayersPage() {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
             {t("players.discoverTalents")}
           </p>
-        
+
           <div className="flex items-center justify-center space-x-4 space-x-reverse">
             <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
-              
               <Users className="w-4 h-4" />
               <span>
                 {players.length} {t("players.registeredPlayers")}
@@ -210,7 +190,6 @@ export default function PlayersPage() {
           </div>
         </div>
 
-        {/* Promote button for my active profile (not promoted) */}
         {myProfile?.isActive && !myProfile?.isPromoted?.status && (
           <div className="mt-4 flex justify-center w-full m-5">
             <PromoteNowButton profileId={myProfile?._id} />
@@ -330,7 +309,7 @@ export default function PlayersPage() {
             </Link>
           </div>
         </div>
-        
+
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">

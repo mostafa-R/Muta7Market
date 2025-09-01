@@ -33,7 +33,6 @@ export const StepIndicators = ({ sections, currentStep, onStepClick }) => {
   );
 };
 
-// Add PropTypes for type checking
 StepIndicators.propTypes = {
   sections: PropTypes.arrayOf(
     PropTypes.shape({

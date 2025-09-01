@@ -1,5 +1,4 @@
 "use client";
-// components/profile/Sidebar.jsx
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCallback, useState } from "react";
 import { FaCalendar, FaFileAlt, FaLock, FaUser } from "react-icons/fa";
@@ -32,7 +31,6 @@ const Sidebar = ({
 
   const handleItemClick = useCallback(
     async (sectionId) => {
-      // Don't navigate if already on the same section
       if (activeSection === sectionId) {
         setIsSidebarOpen(false);
         return;
@@ -42,11 +40,9 @@ const Sidebar = ({
       setActiveSection(sectionId);
       setIsSidebarOpen(false);
 
-      // Add a small delay to show loading state and ensure smooth transition
       setTimeout(() => {
         setIsNavigating(false);
 
-        // Smooth scroll to top of main content area
         const mainContent = document.querySelector("#main-content");
         if (mainContent) {
           mainContent.scrollIntoView({

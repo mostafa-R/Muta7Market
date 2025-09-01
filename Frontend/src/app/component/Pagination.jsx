@@ -1,17 +1,16 @@
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /**
- * مكوّن Pagination قابل للاستخدام مع دعم للوصولية والتحميل
- * @param {number} currentPage - الصفحة الحالية
- * @param {number} totalPages - العدد الإجمالي للصفحات
- * @param {function} onPageChange - دالة تُستدعى عند تغيير الصفحة
- * @param {number} showPages - عدد الصفحات المرئية (افتراضي: 5)
- * @param {boolean} showInfo - عرض معلومات الصفحة (افتراضي: false)
- * @param {number} totalItems - العدد الإجمالي للعناصر (للمعلومات)
- * @param {number} itemsPerPage - عدد العناصر في كل صفحة (للمعلومات)
- * @param {boolean} loading - حالة التحميل (افتراضي: false)
- * @param {string} className - CSS classes إضافية
+ * @param {number} currentPage
+ * @param {number} totalPages
+ * @param {function} onPageChange
+ * @param {number} showPages
+ * @param {boolean} showInfo
+ * @param {number} totalItems
+ * @param {number} itemsPerPage
+ * @param {boolean} loading
+ * @param {string} className
  */
 const Pagination = ({
   currentPage,
@@ -26,7 +25,6 @@ const Pagination = ({
 }) => {
   const { t } = useTranslation();
 
-  // إذا لم يكن هناك أكثر من صفحة واحدة، لا نعرض شيئاً
   if (totalPages <= 1) return null;
 
   const handlePreviousPage = () => {
@@ -47,18 +45,15 @@ const Pagination = ({
     }
   };
 
-  // حساب الصفحات المرئية
   const getVisiblePages = () => {
     const pages = [];
     let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
     let endPage = Math.min(totalPages, startPage + showPages - 1);
 
-    // تعديل startPage إذا كان endPage في النهاية
     if (endPage === totalPages) {
       startPage = Math.max(1, endPage - showPages + 1);
     }
 
-    // صفحة أولى
     if (startPage > 1) {
       pages.push(
         <button
@@ -81,7 +76,6 @@ const Pagination = ({
       }
     }
 
-    // الصفحات المرئية
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
@@ -103,7 +97,6 @@ const Pagination = ({
       );
     }
 
-    // صفحة أخيرة
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         pages.push(

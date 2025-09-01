@@ -15,7 +15,6 @@ import {
 import { get } from "lodash";
 import { Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-// Updated imports to use new constants structure for better organization
 import {
   coachRoleTypes,
   playerRoleTypes,
@@ -37,7 +36,6 @@ export const SportsInfoCard = ({ formik }) => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* الفئة - moved to first position for better UX flow */}
           <ConditionalSelect
             label={t("registerProfile.form.sportsInfo.category")}
             name="jop"
@@ -46,7 +44,6 @@ export const SportsInfoCard = ({ formik }) => {
               formik.setFieldValue("jop", value);
               formik.setFieldValue("jopSelected", true);
               formik.setFieldTouched("jop", true);
-              // Clear role type and position when changing category
               formik.setFieldValue("roleType", "");
               formik.setFieldValue("customRoleType", "");
               formik.setFieldValue("position", "");
@@ -85,7 +82,6 @@ export const SportsInfoCard = ({ formik }) => {
                   onValueChange={(value) => {
                     formik.setFieldValue("roleType", value);
                     formik.setFieldTouched("roleType", true);
-                    // Clear custom role type when changing from "other" to a predefined option
                     if (value !== "other") {
                       formik.setFieldValue("customRoleType", "");
                       formik.setFieldTouched("customRoleType", false);
@@ -192,7 +188,6 @@ export const SportsInfoCard = ({ formik }) => {
             )}
           </ConditionalSelect>
 
-          {/* الرياضة - moved to second position */}
           <div className="space-y-2 relative">
             <Label
               htmlFor="game"
@@ -209,10 +204,8 @@ export const SportsInfoCard = ({ formik }) => {
                 formik.setFieldValue("game", value);
                 formik.setFieldValue("gameSelected", true);
                 formik.setFieldTouched("game", true);
-                // Clear position when sport changes
                 formik.setFieldValue("position", "");
                 formik.setFieldTouched("position", false);
-                // Clear custom sport when changing from "other" to a predefined option
                 if (value !== "other") {
                   formik.setFieldValue("customSport", "");
                   formik.setFieldTouched("customSport", false);
@@ -246,7 +239,6 @@ export const SportsInfoCard = ({ formik }) => {
               </SelectContent>
             </Select>
 
-            {/* Custom sport input field when "other" is selected */}
             {formik.values.game === "other" && (
               <div className="mt-4 space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
@@ -298,8 +290,6 @@ export const SportsInfoCard = ({ formik }) => {
             )}
           </div>
 
-          {/* المركز/التخصص - للاعبين فقط */}
-          {/* Enhanced position selection with "Other" option support */}
           {formik.values.jop === "player" && (
             <div className="space-y-2 relative">
               <Label
@@ -318,7 +308,6 @@ export const SportsInfoCard = ({ formik }) => {
                     onValueChange={(value) => {
                       formik.setFieldValue("position", value);
                       formik.setFieldTouched("position", true);
-                      // Clear custom position when changing from "other" to a predefined option
                       if (value !== "other") {
                         formik.setFieldValue("customPosition", "");
                         formik.setFieldTouched("customPosition", false);
@@ -415,7 +404,6 @@ export const SportsInfoCard = ({ formik }) => {
             </div>
           )}
 
-          {/* الحالة الحالية - moved to better position for UX flow */}
           <div className="space-y-2 relative">
             <Label
               htmlFor="status"
@@ -480,7 +468,6 @@ export const SportsInfoCard = ({ formik }) => {
             )}
           </div>
 
-          {/* سنوات الخبرة */}
           <div className="space-y-2 relative">
             <Label
               htmlFor="experience"

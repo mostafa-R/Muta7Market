@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 import { FiMail } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-// Joi validation schema - We'll update this with i18n in the component
 const getForgotPasswordSchema = (language) =>
   Joi.object({
     email: Joi.string()
@@ -25,7 +24,6 @@ const getForgotPasswordSchema = (language) =>
       }),
   });
 
-// Validate function - We'll use language inside the component
 const getValidate = (language) => (values) => {
   const schema = getForgotPasswordSchema(language);
   const { error } = schema.validate(values, {
@@ -58,9 +56,9 @@ export default function ForgotPassword() {
     values,
     { setSubmitting, setFieldError, setStatus }
   ) => {
-    setIsSubmitting(true); // حالة محلية إذا كانت موجودة
-    setSubmitting(true); // لحالة Formik
-    setSubmitMessage(""); // مسح الرسائل السابقة
+    setIsSubmitting(true);
+    setSubmitting(true);
+    setSubmitMessage("");
     setStatus(null);
 
     try {
@@ -71,7 +69,6 @@ export default function ForgotPassword() {
         },
       });
 
-      // التحقق من النجاح الحقيقي: status 200 و success true
       if (response.status === 200 && response.data.success) {
         const successMsg =
           language === "ar"
@@ -80,40 +77,33 @@ export default function ForgotPassword() {
         setSubmitMessage(successMsg);
         toast.success(successMsg);
 
-        // توجيه بعد تأخير للسماح للمستخدم بقراءة الرسالة
         setTimeout(() => {
           router.push("/otp-for-restpassword");
         }, 2000);
       } else {
-        // إذا status 200 لكن !success، عامل كخطأ وارمِ للـ catch
         throw new Error(response.data.error?.message || "حدث خطأ غير متوقع");
       }
     } catch (error) {
       console.error(
         "Forgot Password Error:",
         error.toJSON ? error.toJSON() : error
-      ); // تسجيل دقيق باستخدام toJSON من Axios
+      );
 
       if (error.response && error.response.data) {
         const data = error.response.data;
 
-        // التعامل مع أخطاء الحقول (مثل validation errors)
         if (data.errors) {
           Object.entries(data.errors).forEach(([field, errorMessage]) => {
             setFieldError(field, errorMessage);
           });
           toast.error(t("formErrors.pleaseCheckFields"));
-        }
-        // التعامل مع رسائل الخطأ المحددة من الخلفية
-        else if (
+        } else if (
           data.error?.message === "No user found with this email" ||
           data.message?.includes("not found")
         ) {
           setFieldError("email", t("formErrors.emailNotRegistered"));
           toast.error(t("formErrors.emailNotRegistered"));
-        }
-        // أخطاء عامة أخرى
-        else {
+        } else {
           const errorMsg =
             data.error?.message ||
             data.message ||
@@ -123,13 +113,11 @@ export default function ForgotPassword() {
           toast.error(errorMsg);
         }
       } else if (error.request) {
-        // مشكلة شبكة: لا استجابة من الخادم
         const networkMsg = "فشل في الاتصال بالخادم، يرجى التحقق من الإنترنت";
         setSubmitMessage(networkMsg);
         setStatus(networkMsg);
         toast.error(networkMsg);
       } else {
-        // خطأ في الإعداد أو غير متوقع
         const generalMsg = error.message || "حدث خطأ غير متوقع";
         setSubmitMessage(generalMsg);
         setStatus(generalMsg);

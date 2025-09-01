@@ -24,7 +24,6 @@ export const ProgressIndicator = ({ currentStep, totalSteps, title }) => {
   );
 };
 
-// Add PropTypes for type checking
 ProgressIndicator.propTypes = {
   currentStep: PropTypes.number.isRequired,
   totalSteps: PropTypes.number.isRequired,

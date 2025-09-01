@@ -19,8 +19,6 @@ export const FormField = ({
   const [isFocused, setIsFocused] = useState(false);
   const hasError = get(touched, name) && get(errors, name);
   const fieldValue = get(values, name) || "";
-
-  // Handle translation for label and placeholder
   const translatedLabel = typeof label === "string" ? t(label) : label;
   const translatedPlaceholder =
     typeof placeholder === "string" ? t(placeholder) : placeholder;

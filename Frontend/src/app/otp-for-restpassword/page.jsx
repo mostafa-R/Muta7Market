@@ -12,9 +12,6 @@ import { FiLock } from "react-icons/fi";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../component/LoadingSpinner";
 
-// ------------------------------
-// Joi schema with language support
-// ------------------------------
 const getOtpSchema = (t) =>
   Joi.object({
     otp: Joi.string()
@@ -50,7 +47,6 @@ const getValidate = (t) => (values) => {
   return errors;
 };
 
-// Extract API message safely
 const pickMsg = (x) => {
   if (!x) return "";
   if (typeof x === "string") return x;
@@ -79,12 +75,9 @@ function OTPForResetPasswordContent() {
 
   const initialValues = { otp: "", password: "", confirmPassword: "" };
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const VERIFY_URL = `${API_BASE}/auth/reset-password`; // changed to reset-password API
+  const VERIFY_URL = `${API_BASE}/auth/reset-password`;
   const RESEND_URL = `${API_BASE}/auth/resend-otp`;
 
-  // ------------------------------
-  // Resend OTP
-  // ------------------------------
   const handleResendOTP = async () => {
     try {
       setResendDisabled(true);
@@ -142,9 +135,6 @@ function OTPForResetPasswordContent() {
     []
   );
 
-  // ------------------------------
-  // Submit Form (OTP + Passwords)
-  // ------------------------------
   const handleSubmit = async (
     values,
     { setSubmitting, resetForm, setFieldError, setStatus }
@@ -392,7 +382,6 @@ function OTPForResetPasswordContent() {
 }
 
 export default function OTPForResetPassword() {
-  // Using Suspense with a language-aware component
   return (
     <Suspense
       fallback={

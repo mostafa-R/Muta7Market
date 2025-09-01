@@ -1,4 +1,3 @@
-// components/FinancialInfoCard.jsx
 import {
   Card,
   CardContent,

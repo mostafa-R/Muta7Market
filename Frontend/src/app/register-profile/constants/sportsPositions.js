@@ -29,7 +29,6 @@ export const sportsOptions = [
 
 // Sport-specific positions mapping with updated comprehensive lists
 export const sportPositions = {
-  // 🏐 Volleyball - Updated positions as per requirements
   volleyball: [
     {
       id: "outside_hitter",
@@ -73,7 +72,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🏀 Basketball - Updated positions as per requirements
   basketball: [
     {
       id: "point_guard",
@@ -107,7 +105,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🤼 Wrestling - Updated positions as per requirements
   wrestling: [
     {
       id: "freestyle",
@@ -126,7 +123,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🏹 Archery - Updated with arrow colors as per requirements
   archery: [
     {
       id: "white_arrow",
@@ -165,7 +161,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🤾 Handball - Updated positions as per requirements
   handball: [
     {
       id: "pivot",
@@ -209,7 +204,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🏃 Athletics - Comprehensive list as per requirements
   athletics: [
     {
       id: "100m",
@@ -318,7 +312,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🥋 Karate - Belt system as per requirements
   karate: [
     {
       id: "white_belt",
@@ -362,7 +355,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🥋 Taekwondo - Belt system as per requirements
   taekwondo: [
     {
       id: "white_belt",
@@ -401,7 +393,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🎮 Esports - Comprehensive game categories as per requirements
   esports: [
     {
       id: "moba",
@@ -460,7 +451,6 @@ export const sportPositions = {
     },
   ],
 
-  // ⚽ Football - Comprehensive positions as per requirements
   football: [
     {
       id: "goalkeeper",
@@ -519,7 +509,6 @@ export const sportPositions = {
     },
   ],
 
-  // ⚽ Futsal - Futsal-specific positions as per requirements
   futsal: [
     {
       id: "goalkeeper",
@@ -553,7 +542,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🤺 Fencing - Experience levels and weapons as per requirements
   fencing: [
     {
       id: "e_under",
@@ -602,7 +590,6 @@ export const sportPositions = {
     },
   ],
 
-  // 🏊 Swimming - Comprehensive swimming events as per requirements
   swimming: [
     {
       id: "freestyle_50m",
@@ -691,7 +678,6 @@ export const sportPositions = {
     },
   ],
 
-  // Existing sports that weren't updated but should keep their current positions + "other" option
   tennis: [
     { id: "singles", name: "positions.tennis.singles", value: "singles" },
     { id: "doubles", name: "positions.tennis.doubles", value: "doubles" },
@@ -886,7 +872,6 @@ export const sportPositions = {
   ],
 };
 
-// Status options
 export const statusOptions = [
   { id: "available", name: "player.status.freeAgent", value: "available" },
   { id: "contracted", name: "player.status.contracted", value: "contracted" },
@@ -897,7 +882,6 @@ export const statusOptions = [
   },
 ];
 
-// Category options
 export const categoryOptions = [
   { id: "elite", name: "players.category.elite", value: "elite" },
   {
@@ -908,7 +892,6 @@ export const categoryOptions = [
   { id: "amateur", name: "players.category.amateur", value: "amateur" },
 ];
 
-// Gender options
 export const genderOptions = [
   { id: "Male", name: "registerProfile.form.personalInfo.male", value: "male" },
   {
@@ -918,7 +901,6 @@ export const genderOptions = [
   },
 ];
 
-// Currency options
 export const currencyOptions = [
   { id: "SAR", name: "SAR", value: "SAR" },
   { id: "USD", name: "USD", value: "USD" },
@@ -926,7 +908,6 @@ export const currencyOptions = [
   { id: "GBP", name: "GBP", value: "GBP" },
 ];
 
-// Player role types
 export const playerRoleTypes = [
   {
     id: "youth_player",
@@ -970,7 +951,6 @@ export const playerRoleTypes = [
   },
 ];
 
-// Coach role types
 export const coachRoleTypes = [
   { id: "head_coach", name: "coachRoles.headCoach", value: "head_coach" },
   {
@@ -1012,7 +992,6 @@ export const coachRoleTypes = [
   },
 ];
 
-// Nationalities
 export const nationalities = [
   { id: "saudi", name: "nationalities.saudi", value: "saudi" },
   { id: "uae", name: "nationalities.uae", value: "uae" },
@@ -1034,7 +1013,6 @@ export const nationalities = [
   { id: "other", name: "nationalities.other", value: "other" },
 ];
 
-// Form sections configuration
 export const formSections = [
   {
     id: "personal",

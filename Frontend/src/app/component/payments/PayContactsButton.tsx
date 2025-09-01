@@ -6,14 +6,16 @@ import { useState } from "react";
 export default function PayContactsButton({
   className,
   children = "Unlock contacts (1 year)",
-}: { className?: string; children?: React.ReactNode }) {
+}: {
+  className?: string;
+  children?: React.ReactNode;
+}) {
   const [loading, setLoading] = useState(false);
 
   const start = async () => {
     try {
       setLoading(true);
 
-      // Step 1: ensure draft invoice exists (DB only)
       const draftRes = await fetch(`${API_BASE}/payments/drafts`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
@@ -26,11 +28,13 @@ export default function PayContactsButton({
       const invoiceId = draftJson?.data?.id;
       if (!invoiceId) throw new Error("No invoice id returned");
 
-      // Step 2: initiate checkout with Paylink
-      const initRes = await fetch(`${API_BASE}/payments/invoices/${invoiceId}/initiate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-      });
+      const initRes = await fetch(
+        `${API_BASE}/payments/invoices/${invoiceId}/initiate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+        }
+      );
       const initJson = await initRes.json();
       if (!initRes.ok || !initJson?.success) {
         throw new Error(initJson?.message || "Failed to start checkout");

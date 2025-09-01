@@ -5,9 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/component/ui/card";
-import { Checkbox } from "@/app/component/ui/checkbox";
 import { Label } from "@/app/component/ui/label";
-import { get } from "lodash";
 import { useTranslation } from "react-i18next";
 import { FiMail } from "react-icons/fi";
 import { FormField } from "./FormField";
@@ -24,27 +22,6 @@ export const ContactInfoCard = ({ formik }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* <div className="space-y-2">
-          <Label className="flex items-center space-x-2 space-x-reverse">
-            <Checkbox
-              className="mr-2 ml-2"
-              checked={formik.values.contactInfo.isHidden}
-              onCheckedChange={(checked) =>
-                formik.setFieldValue("contactInfo.isHidden", !!checked)
-              }
-              onBlur={() =>
-                formik.setFieldTouched("contactInfo.isHidden", true)
-              }
-            />
-            <span>{t("registerProfile.form.contactInfo.hideContactInfo")}</span>
-          </Label>
-          {get(formik.touched, "contactInfo.isHidden") &&
-            get(formik.errors, "contactInfo.isHidden") && (
-              <div className="text-red-500 text-xs mt-1">
-                {get(formik.errors, "contactInfo.isHidden")}
-              </div>
-            )}
-        </div> */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             label={t("registerProfile.form.contactInfo.email")}

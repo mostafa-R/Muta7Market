@@ -55,13 +55,11 @@ export const PublishProfilePrompt = ({ playerId, isActive }) => {
   );
 };
 
-// Add PropTypes for type checking
 PublishProfilePrompt.propTypes = {
-  playerId: PropTypes.string, // Optional prop
+  playerId: PropTypes.string,
   isActive: PropTypes.bool.isRequired,
 };
 
-// Add default props
 PublishProfilePrompt.defaultProps = {
   playerId: undefined,
 };

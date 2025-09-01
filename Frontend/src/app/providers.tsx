@@ -4,15 +4,11 @@ import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// Ensure i18n is initialized before any hooks use it
 import "@/utils/i18n";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Apply any global side effects needed for language switching
-    return () => {
-      // Cleanup if needed
-    };
+    return () => {};
   }, []);
 
   return (
@@ -23,7 +19,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Separate component to access language context
 function DynamicToastContainer() {
   const { isRTL } = useLanguage();
 

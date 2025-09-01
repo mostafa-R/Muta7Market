@@ -12,7 +12,7 @@ type PaymentBtnProps = {
     | "publish_profile"
     | "activate_user"
     | "promote_player";
-  playerId?: string; // required when type is publish_profile
+  playerId?: string;
 };
 
 export default function PaymentBtn({
@@ -20,16 +20,14 @@ export default function PaymentBtn({
   playerId,
 }: PaymentBtnProps) {
   const { t } = useTranslation();
-  // Ensure API base points to backend API root
   const API_BASE =
-    (process.env.NEXT_PUBLIC_API_BASE_URL) +
+    process.env.NEXT_PUBLIC_API_BASE_URL +
     (process.env.NEXT_PUBLIC_API_BASE_URL?.endsWith("/api/v1")
       ? ""
       : "/api/v1");
 
   const [loading, setLoading] = useState(false);
 
-  // Read token
   const { token } = useMemo(() => {
     let t = "";
     try {
@@ -44,7 +42,6 @@ export default function PaymentBtn({
     setLoading(true);
 
     const promise = (async () => {
-      // Map to backend payment schema (draft -> initiate)
       const mappedProduct =
         type === "unlock_contacts" || type === "activate_user"
           ? "contacts_access"
@@ -54,12 +51,14 @@ export default function PaymentBtn({
           ? "promotion"
           : "contacts_access";
 
-      if ((mappedProduct === "listing" || mappedProduct === "promotion") && !playerId) {
+      if (
+        (mappedProduct === "listing" || mappedProduct === "promotion") &&
+        !playerId
+      ) {
         toast.info(t("payment.completeProfileFirst"));
         window.location.href = "/profile?tab=payments";
         return "redirected_to_payments";
       }
-      // 1) Create draft invoice
       const draftRes = await fetch(`${API_BASE}/payments/drafts`, {
         method: "POST",
         headers: {
@@ -80,18 +79,21 @@ export default function PaymentBtn({
         } else if (draftRes.status === 401) {
           throw new Error(t("formErrors.loginRequiredFirst"));
         } else if (draftRes.status === 400) {
-          throw new Error(draftJson?.message || t("payments.invalidRequestData"));
+          throw new Error(
+            draftJson?.message || t("payments.invalidRequestData")
+          );
         } else if (draftRes.status >= 500) {
           throw new Error(t("payments.serverError"));
         } else {
-          throw new Error(draftJson?.message || t("payments.failedToCreateInvoice"));
+          throw new Error(
+            draftJson?.message || t("payments.failedToCreateInvoice")
+          );
         }
       }
 
       const invoiceId = draftJson?.data?.id;
       if (!invoiceId) throw new Error(t("payments.failedToCreateInvoice"));
 
-      // 2) Initiate payment for that invoice
       const initRes = await fetch(
         `${API_BASE}/payments/invoices/${invoiceId}/initiate`,
         {
@@ -109,11 +111,15 @@ export default function PaymentBtn({
         } else if (initRes.status === 401) {
           throw new Error(t("formErrors.loginRequiredFirst"));
         } else if (initRes.status === 400) {
-          throw new Error(initJson?.message || t("payments.invalidRequestData"));
+          throw new Error(
+            initJson?.message || t("payments.invalidRequestData")
+          );
         } else if (initRes.status >= 500) {
           throw new Error(t("payments.serverError"));
         } else {
-          throw new Error(initJson?.message || t("payments.failedToCreateInvoice"));
+          throw new Error(
+            initJson?.message || t("payments.failedToCreateInvoice")
+          );
         }
       }
 

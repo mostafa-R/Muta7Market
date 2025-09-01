@@ -38,7 +38,6 @@ export const useAuth = (requireAuth = false) => {
 
     checkAuth();
 
-    // التحقق من الجلسة كل دقيقة
     const interval = setInterval(checkAuth, 60000);
 
     return () => clearInterval(interval);

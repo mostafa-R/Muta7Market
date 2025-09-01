@@ -8,7 +8,7 @@ const AdBanner = () => {
   const { language } = useLanguage();
 
   return (
-    <section >
+    <section>
       <div className="w-full ">
         {/* Google Ads Container */}
         <div
@@ -51,13 +51,6 @@ const AdBanner = () => {
             <div className="absolute bottom-2 right-2 w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
           </div>
         </div>
-
-        {/* Ad Label for Compliance */}
-        {/* <div className="text-center mt-2">
-          <span className="text-[hsl(var(--muted-foreground))] text-xs opacity-70">
-            {t("ads.contactUs")}
-          </span>
-        </div> */}
       </div>
     </section>
   );

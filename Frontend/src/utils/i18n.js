@@ -6,8 +6,6 @@ import { initReactI18next } from "react-i18next";
 const isServer = typeof window === "undefined";
 
 if (isServer) {
-  // Server-side: initialize minimally with inline resources to avoid network
-  // requests and ensure useTranslation has an instance during prerender.
   if (!i18n.isInitialized) {
     i18n.use(initReactI18next).init({
       lng: "ar",
@@ -19,7 +17,6 @@ if (isServer) {
     });
   }
 } else {
-  // Client-side: full setup with backend & language detection
   if (!i18n.isInitialized) {
     i18n
       .use(HttpBackend)

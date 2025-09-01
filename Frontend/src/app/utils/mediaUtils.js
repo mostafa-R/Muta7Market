@@ -40,16 +40,6 @@ export const validateFileSize = (file, type) => {
  * @param {Object} formData - FormData instance to append files to
  */
 export const prepareMediaFormData = (values, existingMedia, formData) => {
-  console.log("🎬 prepareMediaFormData called with:", {
-    hasProfilePictureFile: !!values.profilePictureFile,
-    hasDocumentFile: !!(values.media?.document?.file || values.documentFile),
-    hasVideoFile: !!values.media?.video?.file,
-    imagesCount: values.media?.images ? values.media.images.length : 0,
-    imagesWithFiles: values.media?.images
-      ? values.media.images.filter((img) => img.file).length
-      : 0,
-  });
-
   // Validate all files before proceeding
   const invalidFiles = [];
 
@@ -141,7 +131,6 @@ export const prepareMediaFormData = (values, existingMedia, formData) => {
     throw new Error(errorMessage);
   }
 
-  console.log("🎬 prepareMediaFormData completed");
   return formData;
 };
 
@@ -176,7 +165,6 @@ export const processMediaResponse = (mediaData) => {
     video: mediaData.video
       ? {
           ...mediaData.video,
-          // Add any frontend-specific properties
           isLoading: false,
           error: null,
         }
@@ -190,10 +178,8 @@ export const processMediaResponse = (mediaData) => {
     document: mediaData.document
       ? {
           ...mediaData.document,
-          // Add any frontend-specific properties
           isLoading: false,
           error: null,
-          // Extract file extension from document title or URL
           extension:
             mediaData.document.type?.split("/")[1] ||
             mediaData.document.title?.split(".").pop() ||
@@ -212,9 +198,9 @@ export const processMediaResponse = (mediaData) => {
 };
 
 /**
- * Create preview URL for a file
- * @param {File} file - File object
- * @returns {string} - Object URL for preview
+
+ * @param {File} file 
+ * @returns {string} -
  */
 export const createFilePreview = (file) => {
   if (!file) return null;
@@ -223,7 +209,7 @@ export const createFilePreview = (file) => {
 
 /**
  * Clean up media previews
- * @param {Object} media - Media object with previews
+ * @param {Object} media
  */
 export const cleanupMediaPreviews = (media) => {
   if (!media) return;
