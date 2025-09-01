@@ -1,4 +1,3 @@
-
 import fs from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -25,8 +24,8 @@ export const handleMediaUpload = async (file, req, resourceType = null) => {
   }
 
   const MAX_SIZE = {
-    image: 10 * 1024 * 1024, 
-    video: 100 * 1024 * 1024, 
+    image: 10 * 1024 * 1024,
+    video: 100 * 1024 * 1024,
     raw: 10 * 1024 * 1024,
   };
 
@@ -43,7 +42,7 @@ export const handleMediaUpload = async (file, req, resourceType = null) => {
 
     return {
       url: publicUrl,
-      publicId: file.filename, 
+      publicId: file.filename,
       type: file.mimetype,
       extension: file.originalname ? file.originalname.split(".").pop() : null,
       uploadedAt: new Date(),

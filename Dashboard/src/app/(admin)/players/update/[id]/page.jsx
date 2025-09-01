@@ -494,16 +494,7 @@ export default function UpdatePlayerPage() {
         formDataToSend.append("contactInfo", JSON.stringify(formData.contactInfo));
       }
       
-      // // Always send isPromoted as a proper object structure
-      // const isPromotedData = {
-      //   status: Boolean(formData.isPromoted.status),
-      //   startDate: formData.isPromoted.startDate || null,
-      //   endDate: formData.isPromoted.endDate || null,
-      //   type: formData.isPromoted.type || null
-      // };
-      // formDataToSend.append("isPromoted", JSON.stringify(isPromotedData));
-
-      // Append files
+      
       if (files.profileImage) {
         formDataToSend.append("profileImage", files.profileImage);
       }
@@ -517,7 +508,6 @@ export default function UpdatePlayerPage() {
         formDataToSend.append("images", image);
       });
 
-      // Include existing media info (for backend to handle properly)
       formDataToSend.append("existingMedia", JSON.stringify(existingMedia));
 
       const token = sessionStorage.getItem("accessToken") || localStorage.getItem("token");
@@ -549,7 +539,6 @@ export default function UpdatePlayerPage() {
         }
       });
       
-      // Navigate after showing success message
       setTimeout(() => {
         router.push(`/players/table`);
       }, 1500);
