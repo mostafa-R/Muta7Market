@@ -89,7 +89,7 @@ export default function BasicInfoSection({
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white"
             required
           >
-            <option value="">اختر الجنسية</option>
+            <option value="" disabled>اختر الجنسية</option>
             {nationalities.map((option) => (
               <option key={option.id} value={option.value}>
                 {getNationalityLabel(option.value)}
@@ -126,7 +126,7 @@ export default function BasicInfoSection({
             onChange={handleInputChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white"
           >
-            <option value="">اختر بلد الولادة</option>
+            <option value="" disabled>اختر بلد الولادة</option>
             {nationalities.map((option) => (
               <option key={option.id} value={option.value}>
                 {getNationalityLabel(option.value)}
