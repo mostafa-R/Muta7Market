@@ -417,8 +417,6 @@ const UserProfile = () => {
             setImagePreview(response.data.user.profileImage.url);
           }
 
-          setShowConfirmModal(false);
-
           setTimeout(() => {
             fetchUserData();
           }, 1000);
@@ -440,6 +438,7 @@ const UserProfile = () => {
         }
       } finally {
         setIsUpdating(false);
+        setShowConfirmModal(false); 
       }
     },
     [profileImage, fetchUserData, router, t]

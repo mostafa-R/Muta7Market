@@ -17,6 +17,33 @@ const EditProfile = ({
   t,
   language,
 }) => {
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+
+  const getPasswordVisibility = (name) => {
+    switch (name) {
+      case "newPassword":
+        return {
+          show: showNewPassword,
+          toggle: () => setShowNewPassword((prev) => !prev),
+        };
+      case "confirmPassword":
+        return {
+          show: showConfirmPassword,
+          toggle: () => setShowConfirmPassword((prev) => !prev),
+        };
+      case "oldPassword":
+        return {
+          show: showOldPassword,
+          toggle: () => setShowOldPassword((prev) => !prev),
+        };
+      default:
+        return { show: false, toggle: () => {} };
+    }
+  };
+
   const FormField = ({
     icon,
     label,
@@ -27,8 +54,8 @@ const EditProfile = ({
     isTextarea = false,
     rows = 4,
   }) => {
-    const [showPassword, setShowPassword] = useState(false);
-    const togglePassword = () => setShowPassword((prev) => !prev);
+    const passwordVisibility =
+      type === "password" ? getPasswordVisibility(name) : null;
 
     return (
       <div className="mb-6">
@@ -49,18 +76,24 @@ const EditProfile = ({
           <div className="relative">
             <input
               {...register(name)}
-              type={type === "password" && showPassword ? "text" : type}
+              type={
+                type === "password" && passwordVisibility?.show ? "text" : type
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00183D] focus:border-transparent transition-all"
               placeholder={placeholder}
               disabled={disabled}
             />
-            {type === "password" && (
+            {type === "password" && passwordVisibility && (
               <button
                 type="button"
-                onClick={togglePassword}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                onClick={passwordVisibility.toggle}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {passwordVisibility.show ? (
+                  <EyeOff size={20} />
+                ) : (
+                  <Eye size={20} />
+                )}
               </button>
             )}
           </div>

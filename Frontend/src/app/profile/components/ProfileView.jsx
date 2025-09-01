@@ -209,12 +209,6 @@ const ProfileView = ({ user, t, language }) => {
             }
             isStatus
           />
-          <InfoItem
-            icon={FaCheckCircle}
-            label={t("profile.accountStatus")}
-            value={user?.isActive ? t("profile.active") : t("profile.inactive")}
-            isStatus
-          />
         </div>
       </div>
     </div>

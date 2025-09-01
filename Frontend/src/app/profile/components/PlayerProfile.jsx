@@ -257,14 +257,14 @@ const PlayerProfile = ({
                   label={t("profile.name")}
                   value={formData.name}
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="name"
                 />
                 <FormField
                   label={t("player.age")}
                   value={formData.age}
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="age"
                 />
                 <FormField
@@ -277,7 +277,7 @@ const PlayerProfile = ({
                       : formData.gender
                   }
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="gender"
                 />
                 <FormField
@@ -288,7 +288,7 @@ const PlayerProfile = ({
                     "nationalities"
                   )}
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="nationality"
                 />
                 <FormField
@@ -301,7 +301,7 @@ const PlayerProfile = ({
                       : formData.jop
                   }
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="jop"
                 />
                 <FormField
@@ -312,7 +312,7 @@ const PlayerProfile = ({
                     "positions"
                   )}
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="position"
                 />
                 <FormField
@@ -323,7 +323,7 @@ const PlayerProfile = ({
                     "player.status"
                   )}
                   onChange={handleChange}
-                  isDisabled={!isEditing}
+                  isDisabled={true}
                   name="status"
                 />
                 <FormField
@@ -777,7 +777,7 @@ const PlayerProfile = ({
                   router.push(`/register-profile?id=${player._id}`)
                 }
               >
-                {t("common.edit")}
+                {t("common.update")}
               </button>
               <button
                 type="button"
