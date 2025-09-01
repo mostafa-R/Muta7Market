@@ -44,7 +44,6 @@ export default function UserStatsLineChart() {
       }
       
       const result = await response.json();
-      console.log("Stats data response:", result);
       
       if (result.success && result.data) {
         setStats(result.data);

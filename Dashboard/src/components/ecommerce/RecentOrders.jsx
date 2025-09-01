@@ -526,10 +526,7 @@ if (typeof window !== 'undefined') {
           </div>
         </div>
 
-        {/* Debug */}
-        <div className="text-xs text-gray-400 mt-4">
-          مصدر: <code className="font-mono">{ENDPOINTS.listRecent(buildQuery())}</code>
-        </div>
+       
       </div>
     </div>
   );

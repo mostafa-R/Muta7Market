@@ -40,14 +40,12 @@ import React, { useEffect, useState } from "react";
           },
         });
         
-        console.log("Response status:", response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
-        console.log("Response data:", result);
         
         if (result.success && result.data) {
           setStats(result.data);
