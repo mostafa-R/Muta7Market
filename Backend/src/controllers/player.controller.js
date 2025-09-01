@@ -16,7 +16,6 @@ import {
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
-
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
@@ -42,7 +41,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
 
     const player = await Player.create({
       isListed: false,
-      isActive: false, 
+      isActive: false,
       user: userId,
 
       name: req.body.name,
@@ -128,7 +127,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
         {
           userId,
           product: "listing",
-          targetType, 
+          targetType,
           playerProfileId: player._id,
           status: "pending",
         },
@@ -138,7 +137,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
             invoiceNumber: orderNo,
             amount,
             currency: "SAR",
-            durationDays: PRICING.ONE_YEAR_DAYS || 365, 
+            durationDays: PRICING.ONE_YEAR_DAYS || 365,
             featureType: null,
             status: "pending",
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -146,8 +145,6 @@ export const createPlayer = asyncHandler(async (req, res) => {
         },
         { upsert: true }
       );
-
-     
     } catch (e) {
       console.error("[createPlayer] seed listing draft failed", e);
     }
@@ -164,7 +161,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 20,
-    sortBy,
+    sortBy, // optional override
     search,
     nationality,
     jop,
@@ -174,82 +171,75 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     ageMax,
     salaryMin,
     salaryMax,
-    isPromoted,
+    isPromoted, // optional filter: "true" or "false"
     game,
   } = req.query;
 
-  
-  const query = { isActive: true };
+  const now = new Date();
 
- 
+  // base: only active + confirmed
+  const and = [{ isActive: true }, { isConfirmed: true }];
+
+  // search
   if (search) {
-    query.$or = [
-      { "name.en": { $regex: search, $options: "i" } },
-      { "name.ar": { $regex: search, $options: "i" } },
-      { position: { $regex: search, $options: "i" } },
-      { skills: { $in: [new RegExp(search, "i")] } },
-    ];
+    and.push({
+      $or: [
+        { "name.en": { $regex: search, $options: "i" } },
+        { "name.ar": { $regex: search, $options: "i" } },
+        { position: { $regex: search, $options: "i" } },
+        { skills: { $in: [new RegExp(search, "i")] } },
+      ],
+    });
   }
 
-  
-  if (nationality) {
-    query.nationality = { $regex: nationality, $options: "i" };
-  } 
-  if (jop) {
-    query.jop = jop;
-  }
-  if (status) {
-    query.status = status;
-  }
-  if (gender) {
-    query.gender = gender;
-  }
-  if (game) {
-    query.game = { $regex: game, $options: "i" };
-  } 
+  // filters
+  if (nationality)
+    and.push({ nationality: { $regex: nationality, $options: "i" } });
+  if (jop) and.push({ jop });
+  if (status) and.push({ status });
+  if (gender) and.push({ gender });
+  if (game) and.push({ game: { $regex: game, $options: "i" } });
 
- 
   if (ageMin || ageMax) {
-    query.age = {};
-    if (ageMin) {
-      query.age.$gte = parseInt(ageMin);
-    }
-    if (ageMax) {
-      query.age.$lte = parseInt(ageMax);
-    }
+    const age = {};
+    if (ageMin) age.$gte = parseInt(ageMin);
+    if (ageMax) age.$lte = parseInt(ageMax);
+    and.push({ age });
   }
 
   if (salaryMin || salaryMax) {
-    query["monthlySalary.amount"] = {};
-    if (salaryMin) {
-      query["monthlySalary.amount"].$gte = parseInt(salaryMin);
-    }
-    if (salaryMax) {
-      query["monthlySalary.amount"].$lte = parseInt(salaryMax);
-    }
+    const sal = {};
+    if (salaryMin) sal.$gte = parseInt(salaryMin);
+    if (salaryMax) sal.$lte = parseInt(salaryMax);
+    and.push({ "monthlySalary.amount": sal });
   }
 
-  if (isPromoted !== undefined) {
+  // optional explicit promotion filter (kept for compatibility)
+  if (typeof isPromoted !== "undefined") {
     if (isPromoted === "true") {
-      query["isPromoted.status"] = true;
-      query["isPromoted.endDate"] = { $gt: new Date() };
-    } else {
-      query.$or = [
-        { "isPromoted.status": { $ne: true } },
-        { "isPromoted.endDate": { $lte: new Date() } },
-        { isPromoted: { $exists: false } },
-      ];
+      and.push({ "isPromoted.status": true });
+      // keep the endDate check if your "active promo" means not expired:
+      and.push({ "isPromoted.endDate": { $gt: now } });
+    } else if (isPromoted === "false") {
+      and.push({
+        $or: [
+          { "isPromoted.status": { $ne: true } },
+          { "isPromoted.endDate": { $lte: now } },
+          { isPromoted: { $exists: false } },
+        ],
+      });
     }
   }
 
+  const query = and.length ? { $and: and } : {};
+
+  // sorting: promoted first, then newest first in each group
   const { skip, limit: limitNum } = paginate(page, limit);
   let sort = buildSortQuery(sortBy);
-
   if (!sortBy) {
     sort = {
-      "isPromoted.status": -1,
-      "isPromoted.startDate": -1,
-      createdAt: -1,
+      "isPromoted.status": -1, // group 1 (true) first
+      createdAt: -1, // latest first in both groups
     };
   }
 
@@ -263,7 +253,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
       Player.countDocuments(query),
     ]);
 
-    if (!players.length && page === 1) {
+    if (!players.length && Number(page) === 1) {
       return res.status(200).json(
         new ApiResponse(
           200,
@@ -272,7 +262,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
             pagination: {
               total: 0,
               pages: 0,
-              page: parseInt(page),
+              page: Number(page),
               limit: limitNum,
             },
           },
@@ -289,7 +279,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
           pagination: {
             total,
             pages: Math.ceil(total / limitNum),
-            page: parseInt(page),
+            page: Number(page),
             limit: limitNum,
           },
         },
@@ -297,7 +287,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
       )
     );
   } catch (error) {
-    console.error("Error in getAllPlayers:", error);
+    console.error(error);
     res
       .status(500)
       .json(
@@ -335,7 +325,7 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     canSeeContacts = Boolean(isOwner || requesterIsActive);
   } catch {}
 
-  const playerData = player.toJSON(); 
+  const playerData = player.toJSON();
   if (!canSeeContacts && playerData?.user) {
     delete playerData.user.email;
     delete playerData.user.phone;
@@ -491,7 +481,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         ? JSON.parse(JSON.stringify(player.media))
         : null;
 
-   
       let updatedMedia;
       try {
         updatedMedia = await processPlayerMedia(req.files, player.media);
@@ -579,7 +568,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         console.log("Document updated:", updatedMedia.document.publicId);
       }
 
-    
       if (
         req.files.images &&
         updatedMedia.images &&
@@ -675,7 +663,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
 export const deleteSpecicImage = async (req, res) => {
   try {
     const { id: playerId } = req.params;
-    const { publicIds } = req.body; 
+    const { publicIds } = req.body;
 
     if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
       return res.status(400).json({
@@ -1117,7 +1105,7 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
 export const uploadMedia = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
-  const { mediaType } = req.params; 
+  const { mediaType } = req.params;
 
   if (!req.files || req.files.length === 0) {
     throw new ApiError(400, "Media file is required");
@@ -1160,7 +1148,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   };
 
   if (mediaType === "video") {
-    mediaItem.duration = 0; 
+    mediaItem.duration = 0;
   }
 
   if (mediaType === "document") {
@@ -1252,11 +1240,9 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Player is already promoted");
   }
 
- 
   if (player.promote) {
     await player.promote(days, type);
   } else {
-   
     player.isPromoted = {
       status: true,
       type,
@@ -1630,7 +1616,7 @@ export const getFeaturedPlayers = asyncHandler(async (req, res) => {
 
 const calculateProfileCompleteness = (player) => {
   let completedFields = 0;
-  const totalFields = 20; 
+  const totalFields = 20;
 
   if (player.name?.en) {
     completedFields++;

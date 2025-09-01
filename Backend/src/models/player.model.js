@@ -230,7 +230,6 @@ const playerSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
-     
         if (
           (ret.nationality === "other" || ret.nationality === "") &&
           ret.customNationality
@@ -238,7 +237,6 @@ const playerSchema = new mongoose.Schema(
           ret.nationality = ret.customNationality;
         }
 
-      
         if (
           (ret.birthCountry === "other" || ret.birthCountry === "") &&
           ret.customBirthCountry
@@ -246,7 +244,6 @@ const playerSchema = new mongoose.Schema(
           ret.birthCountry = ret.customBirthCountry;
         }
 
-       
         if (
           (ret.roleType === "other" || ret.roleType === "") &&
           ret.customRoleType
@@ -254,7 +251,6 @@ const playerSchema = new mongoose.Schema(
           ret.roleType = ret.customRoleType;
         }
 
-       
         if (
           (ret.position === "other" || ret.position === "") &&
           ret.customPosition
@@ -262,7 +258,6 @@ const playerSchema = new mongoose.Schema(
           ret.position = ret.customPosition;
         }
 
-      
         if ((ret.game === "other" || ret.game === "") && ret.customSport) {
           ret.game = ret.customSport;
         }
@@ -273,10 +268,10 @@ const playerSchema = new mongoose.Schema(
   }
 );
 
-playerSchema.index({ name: "text", position: "text" }); 
-playerSchema.index({ nationality: 1, jop: 1, status: 1 }); 
-playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 }); 
-playerSchema.index({ game: 1 }); 
+playerSchema.index({ name: "text", position: "text" });
+playerSchema.index({ nationality: 1, jop: 1, status: 1 });
+playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
+playerSchema.index({ game: 1 });
 
 // Virtual for checking if promoted
 playerSchema.virtual("isCurrentlyPromoted").get(function () {

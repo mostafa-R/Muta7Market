@@ -40,14 +40,12 @@ import React, { useEffect, useState } from "react";
           },
         });
         
-        console.log("Response status:", response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
-        console.log("Response data:", result);
         
         if (result.success && result.data) {
           setStats(result.data);
@@ -175,7 +173,7 @@ import React, { useEffect, useState } from "react";
                   {total.toLocaleString()}
                 </h4>
                 <span className="text-md font-medium text-gray-400 dark:text-gray-500">
-                  total
+                  مجموع
                 </span>
               </div>
             </div>
@@ -191,7 +189,7 @@ import React, { useEffect, useState } from "react";
                       {active.toLocaleString()}
                     </span>
                   </div>
-                  <span className={`text-xs ${colors.lightText}`}>Active</span>
+                  <span className={`text-xs ${colors.lightText}`}>نشط</span>
                 </div>
                 
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
@@ -201,7 +199,7 @@ import React, { useEffect, useState } from "react";
                       {inactive.toLocaleString()}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Inactive</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400"> غير نشط</span>
                 </div>
 
 
@@ -211,7 +209,7 @@ import React, { useEffect, useState } from "react";
               {/* Enhanced Progress Bar */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Activity Rate</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">معدل النشاط</span>
                   <span className={`text-sm font-bold ${colors.accentColor}`}>
                     {activePercentage}%
                   </span>
@@ -283,7 +281,7 @@ import React, { useEffect, useState } from "react";
               {/* Users Metric */}
               <MetricCard 
                   icon={<BoxIconLine />}
-                  title="Total Users"
+                  title="مجموع المستخدمين"
                   total={stats.users.total}
                   active={stats.users.active}
                   inactive={stats.users.inactive}
@@ -293,7 +291,7 @@ import React, { useEffect, useState } from "react";
                 {/* Players Metric */}
                 <MetricCard 
                   icon={<GroupIcon />}
-                  title="Total Players"
+                  title="مجموع اللاعبين"
                   total={stats.players.total}
                   active={stats.players.active}
                   inactive={stats.players.inactive}
@@ -304,7 +302,7 @@ import React, { useEffect, useState } from "react";
                 {/* Coaches Metric */}
                 <MetricCard 
                   icon={<CoachIcon />}
-                  title="Total Coaches"
+                  title="مجموع المدربين"
                   total={stats.coaches?.total || 0}
                   active={stats.coaches?.active || 0}
                   inactive={stats.coaches?.inactive || 0}

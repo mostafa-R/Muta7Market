@@ -722,7 +722,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       ? JSON.parse(req.body.existingMedia)
       : {};
   } catch (e) {
-    console.log("Error parsing existingMedia:", e);
+    
   }
 
   if (req.files && Object.keys(req.files).length > 0) {
