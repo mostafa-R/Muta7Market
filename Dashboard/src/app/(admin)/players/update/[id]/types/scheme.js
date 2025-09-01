@@ -88,7 +88,6 @@ export const playerFormSchema = Joi.object({
     instagram: Joi.string()
       .allow("")
       .uri()
-    
       .messages({
         "string.uri": "يجب أن يكون رابط Instagram صحيحًا",
         "string.pattern.base": "يجب أن يكون رابط Instagram صحيحًا",
@@ -96,21 +95,18 @@ export const playerFormSchema = Joi.object({
     twitter: Joi.string()
       .allow("")
       .uri()
-      
       .messages({
         "string.uri": "يجب أن يكون رابط Twitter صحيحًا",
         "string.pattern.base": "يجب أن يكون رابط Twitter صحيحًا",
       }),
     whatsapp: Joi.string()
       .allow("")
-     
       .messages({
         "string.pattern.base": "رقم WhatsApp غير صحيح",
       }),
     youtube: Joi.string()
       .allow("")
       .uri()
-      
       .messages({
         "string.uri": "يجب أن يكون رابط YouTube صحيحًا",
         "string.pattern.base": "يجب أن يكون رابط YouTube صحيحًا",

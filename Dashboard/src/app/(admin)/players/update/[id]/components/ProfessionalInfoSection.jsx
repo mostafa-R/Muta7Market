@@ -590,15 +590,14 @@ function translatePosition(value) {
         "fightingGames": "ألعاب القتال",
         "fighting_games": "ألعاب القتال",
         "rts": "RTS",
-        "battleRoyale": "Battle Royale",
-        "battle_royale": "Battle Royale",
+       
         "sportsSimulation": "محاكاة الرياضة",
         "sports_simulation": "محاكاة الرياضة",
         "racingSimulation": "سباقات المحاكاة",
         "racing_simulation": "سباقات المحاكاة",
         "mobileGames": "الهواتف المحمولة",
-        "fifa": "FIFA",
-        "rocketLeague": "Rocket League",
+        
+       
      
         "goalkeeper": "حارس مرمى",
         "rightBack": "ظهير أيمن",
@@ -735,12 +734,6 @@ function translatePosition(value) {
         "javelin_throw": "رمي الرمح",
         "raceWalking": "سباق مشي",
         "race_walking": "سباق مشي",
-        "eUnder": "E & Under",
-        "e_under": "E & Under",
-        "dUnder": "D & Under",
-        "d_under": "D & Under",
-        "cUnder": "C & Under",
-        "c_under": "C & Under",
         "beginner": "مبتدئ",
         "unclassified": "غير مصنف",
         "foil": "سلاح الشيش",
