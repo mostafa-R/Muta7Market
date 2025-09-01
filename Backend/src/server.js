@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import mongoSanitize from "express-mongo-sanitize";
+import fs from "fs";
 import helmet from "helmet";
 import i18n from "i18n";
 import morgan from "morgan";
@@ -33,9 +34,10 @@ app.use(
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        imgSrc: ["'self'", "data:", "https:"],
+        imgSrc: ["'self'", "data:", "https:", "http:", "*"],
       },
     },
+    crossOriginResourcePolicy: false, // Allow cross-origin requests for static files
   })
 );
 
@@ -103,8 +105,22 @@ i18n.configure({
 });
 app.use(i18n.init);
 
-// Static Files
-app.use("/uploads", express.static(join(__dirname, "../uploads")));
+// Static Files with CORS headers
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    res.header("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(join(__dirname, "../uploads"))
+);
+
 app.use("/public", express.static(join(__dirname, "../public")));
 
 await initializeEmailService();
@@ -138,11 +154,22 @@ app.get("/", (req, res) => {
 
 // Health Check Endpoint
 app.get("/health", (req, res) => {
+  // Check if uploads directory is accessible
+  const uploadsDir = join(__dirname, "../uploads");
+  let uploadsStatus = "accessible";
+  try {
+    fs.accessSync(uploadsDir, fs.constants.R_OK | fs.constants.W_OK);
+  } catch (error) {
+    uploadsStatus = "error: " + error.message;
+  }
+
   const healthcheck = {
     uptime: process.uptime(),
     status: "OK",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
+    baseUrl: process.env.BASE_URL || "not set",
+    uploadsDirectory: uploadsStatus,
     memory: process.memoryUsage(),
   };
   res.status(200).json(healthcheck);

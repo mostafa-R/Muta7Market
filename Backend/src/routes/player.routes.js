@@ -1,5 +1,4 @@
 import express from "express";
-import { uploadMixed } from "../middleware/upload.middleware.js";
 import {
   createPlayer,
   deletePlayerDocument,
@@ -13,6 +12,7 @@ import {
   updatePlayer,
 } from "../controllers/player.controller.js";
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
+import { uploadMixed } from "../middleware/localUpload.middleware.js";
 import { parseJsonFields } from "../middleware/parseJsonFields.js";
 import validate from "../middleware/validation.middleware.js";
 import {

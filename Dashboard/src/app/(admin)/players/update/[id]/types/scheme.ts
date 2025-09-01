@@ -32,10 +32,10 @@ export const playerFormSchema = Joi.object({
       "any.only": "الحالة مطلوبة",
       "string.empty": "الحالة مطلوبة",
     }),
-  experience: Joi.number().min(0).max(30).allow(null).optional().messages({
+  experience: Joi.number().min(0).max(80).allow(null).optional().messages({
     "number.base": "يجب أن تكون سنوات الخبرة رقمًا",
     "number.min": "يجب أن تكون الخبرة 0 أو أكثر",
-    "number.max": "يجب ألا تتجاوز الخبرة 30 عامًا",
+    "number.max": "يجب ألا تتجاوز الخبرة 80 عامًا",
   }),
   monthlySalary: Joi.object({
     amount: Joi.number().min(0).allow("").messages({
@@ -88,7 +88,7 @@ export const playerFormSchema = Joi.object({
     instagram: Joi.string()
       .allow("")
       .uri()
-      .pattern(/^(https?:\/\/)?(www\.)?instagram\.com\/[a-zA-Z0-9._]+\/?$/)
+    
       .messages({
         "string.uri": "يجب أن يكون رابط Instagram صحيحًا",
         "string.pattern.base": "يجب أن يكون رابط Instagram صحيحًا",
@@ -96,7 +96,7 @@ export const playerFormSchema = Joi.object({
     twitter: Joi.string()
       .allow("")
       .uri()
-      .pattern(/^(https?:\/\/)?(www\.)?(twitter|x)\.com\/[a-zA-Z0-9._]+\/?$/)
+      
       .messages({
         "string.uri": "يجب أن يكون رابط Twitter صحيحًا",
         "string.pattern.base": "يجب أن يكون رابط Twitter صحيحًا",
@@ -110,9 +110,7 @@ export const playerFormSchema = Joi.object({
     youtube: Joi.string()
       .allow("")
       .uri()
-      .pattern(
-        /^(https?:\/\/)?(www\.)?youtube\.com\/[a-zA-Z0-9_-]+\/?$/
-      )
+      
       .messages({
         "string.uri": "يجب أن يكون رابط YouTube صحيحًا",
         "string.pattern.base": "يجب أن يكون رابط YouTube صحيحًا",
@@ -131,7 +129,6 @@ export const playerFormSchema = Joi.object({
     }),
     phone: Joi.string()
       .allow("")
-     
       .messages({
         "string.pattern.base": "رقم الهاتف غير صحيح",
       }),

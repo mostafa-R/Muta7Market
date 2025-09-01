@@ -8,11 +8,10 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
 import {
   deleteAllPlayerMedia,
-  deleteMediaFromCloudinary,
   handleMediaUpload,
   processPlayerMedia,
   replaceMediaItem,
-} from "../utils/mediaUtils.js";
+} from "../utils/localMediaUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
@@ -25,7 +24,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
 
     let media;
     try {
-      media = await processPlayerMedia(req.files);
+      media = await processPlayerMedia(req.files, req);
     } catch (mediaError) {
       console.error("Media processing error:", mediaError.message);
       return res

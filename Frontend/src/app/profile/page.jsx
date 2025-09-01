@@ -401,13 +401,23 @@ const UserProfile = () => {
         });
 
         if (response.data.user) {
-          setUser(response.data.user);
-
           const updatedUser = {
             ...response.data.user,
             profileImage: response.data.user.profileImage || null,
           };
+
+          // Update localStorage
           localStorage.setItem("user", JSON.stringify(updatedUser));
+
+          // Update local state immediately
+          setUser(updatedUser);
+
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(
+            new CustomEvent("userProfileUpdated", {
+              detail: { user: updatedUser },
+            })
+          );
 
           setSuccess(t("profile.profileUpdatedSuccessfully"));
 
@@ -438,7 +448,7 @@ const UserProfile = () => {
         }
       } finally {
         setIsUpdating(false);
-        setShowConfirmModal(false); 
+        setShowConfirmModal(false);
       }
     },
     [profileImage, fetchUserData, router, t]

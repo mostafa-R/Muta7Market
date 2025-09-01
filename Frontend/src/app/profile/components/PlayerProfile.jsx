@@ -22,7 +22,6 @@ const PlayerProfile = ({
   const [formData, setFormData] = useState({});
   const togglePassword = () => setShowPassword((prev) => !prev);
 
-  // Image modal state
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
 
@@ -42,17 +41,36 @@ const PlayerProfile = ({
     let translatedValue = null;
 
     if (translationNamespace) {
-      translatedValue = t(`${translationNamespace}.${value.toLowerCase()}`, {
-        defaultValue: null,
-      });
+      if (translationNamespace === "player.status") {
+        const statusMap = {
+          available: "freeAgent",
+          free_agent: "freeAgent",
+          free: "freeAgent",
+          freeAgent: "freeAgent",
+          contracted: "contracted",
+          transferred: "transferred",
+        };
+        const statusKey = statusMap[value.toLowerCase()] || value.toLowerCase();
+        translatedValue = t(`player.status.${statusKey}`, {
+          defaultValue: null,
+        });
+      }
+      else if (translationNamespace === "positions") {
+        if (formData.game) {
+          const sportKey = formData.game.toLowerCase();
+          translatedValue = t(`positions.${sportKey}.${value.toLowerCase()}`, {
+            defaultValue: null,
+          });
+        }
 
-      if (
-        !translatedValue &&
-        translationNamespace === "positions" &&
-        formData.game
-      ) {
-        const sportKey = formData.game.toLowerCase();
-        translatedValue = t(`positions.${sportKey}.${value.toLowerCase()}`, {
+        if (!translatedValue) {
+          translatedValue = t(`positions.${value.toLowerCase()}`, {
+            defaultValue: null,
+          });
+        }
+      }
+      else {
+        translatedValue = t(`${translationNamespace}.${value.toLowerCase()}`, {
           defaultValue: null,
         });
       }

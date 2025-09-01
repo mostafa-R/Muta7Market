@@ -1,12 +1,11 @@
 import { PRICING } from "../config/constants.js";
-import coachModel from "../models/coach.model.js";
 import Invoice from "../models/invoice.model.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { processPlayerMedia } from "../utils/mediaUtils.js";
+import { processPlayerMedia } from "../utils/localMediaUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
 function escapeRegex(s = "") {
@@ -507,7 +506,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     let media = {};
     if (req.files && Object.keys(req.files).length > 0) {
       try {
-        media = await processPlayerMedia(req.files, {});
+        media = await processPlayerMedia(req.files, req, {});
       } catch (error) {
         console.error("Error processing media files:", error);
         await User.findByIdAndDelete(user._id);
@@ -636,7 +635,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
   let media = {};
   if (req.files && Object.keys(req.files).length > 0) {
     try {
-      media = await processPlayerMedia(req.files, {});
+      media = await processPlayerMedia(req.files, req, {});
     } catch (error) {
       console.error("Error processing media files:", error);
       throw new ApiError(
@@ -721,12 +720,14 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     existingMediaFromBody = req.body.existingMedia
       ? JSON.parse(req.body.existingMedia)
       : {};
-  } catch (e) {
-    
-  }
+  } catch (e) {}
 
   if (req.files && Object.keys(req.files).length > 0) {
-    updates.media = await processPlayerMedia(req.files, existingMediaFromBody);
+    updates.media = await processPlayerMedia(
+      req.files,
+      req,
+      existingMediaFromBody
+    );
   } else if (req.body.existingMedia) {
     updates.media = existingMediaFromBody;
   }
@@ -824,7 +825,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     //   .lean(),
 
     Player.countDocuments({ jop: "coach" }),
-    Player.countDocuments({ isActive: true ,  jop: "coach" }),
+    Player.countDocuments({ isActive: true, jop: "coach" }),
     // Player.countDocuments({ isActive: true, isConfirmed: true, jop: "coach" }),
     // Player
     //   .find({ jop: "coach" })

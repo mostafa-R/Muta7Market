@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
-import { deleteFromCloudinary } from "../config/cloudinary.js";
+import { generatePublicUrl } from "../config/localStorage.js";
 import Invoice from "../models/invoice.model.js";
 import User from "../models/user.model.js";
+import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
 
 export const update = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ export const update = async (req, res) => {
       "__v",
     ];
 
-    const specialFields = ["password", "profileImage"]; 
+    const specialFields = ["password", "profileImage"];
 
     const schemaFields = Object.keys(User.schema.paths);
     const allowedFields = schemaFields.filter(
@@ -89,7 +90,7 @@ export const update = async (req, res) => {
 
       if (currentUser.profileImage && currentUser.profileImage.public_id) {
         try {
-          await deleteFromCloudinary(
+          await deleteMediaFromLocal(
             currentUser.profileImage.public_id,
             "image"
           );
@@ -98,9 +99,12 @@ export const update = async (req, res) => {
         }
       }
 
+      // Generate the full public URL for the uploaded file
+      const publicUrl = generatePublicUrl(req, imageFile.path);
+
       updates.profileImage = {
-        url: imageFile.path || imageFile.secure_url || imageFile.url, // Cloudinary قد يرجع القيمة في أماكن مختلفة
-        public_id: imageFile.filename || imageFile.public_id,
+        url: publicUrl,
+        public_id: imageFile.filename,
       };
     }
 
@@ -159,7 +163,6 @@ export const update = async (req, res) => {
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({ message: "Validation errors", errors });
     }
-
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "No valid fields to update" });
@@ -237,4 +240,3 @@ export const notPaied = async (req, res) => {
     res.status(500).json({ error, message: error.message });
   }
 };
-

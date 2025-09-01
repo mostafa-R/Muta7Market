@@ -25,7 +25,7 @@ import { create } from "zustand";
 import LanguageSwitcher from "./LanguageSwitcher";
 
 // Zustand auth store
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   isLoggedIn: false,
   user: null,
   setIsLoggedIn: (value) => set({ isLoggedIn: value }),
@@ -39,6 +39,36 @@ const useAuthStore = create((set) => ({
         ? JSON.parse(localStorage.getItem("user") || "null")
         : null;
     set({ isLoggedIn, user });
+  },
+  // Add listener for profile updates
+  initListener: () => {
+    if (typeof window !== "undefined") {
+      // Listen for profile updates
+      const handleUserUpdate = (event) => {
+        if (event.detail?.user) {
+          set({ user: event.detail.user });
+        } else {
+          // Fallback: reload from localStorage
+          get().checkAuth();
+        }
+      };
+
+      // Listen for storage changes (updates from other tabs)
+      const handleStorageChange = (event) => {
+        if (event.key === "user" || event.key === "isLoggedIn") {
+          get().checkAuth();
+        }
+      };
+
+      window.addEventListener("userProfileUpdated", handleUserUpdate);
+      window.addEventListener("storage", handleStorageChange);
+
+      // Return cleanup function
+      return () => {
+        window.removeEventListener("userProfileUpdated", handleUserUpdate);
+        window.removeEventListener("storage", handleStorageChange);
+      };
+    }
   },
 }));
 
@@ -501,7 +531,8 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { checkAuth, isLoggedIn, setIsLoggedIn, setUser } = useAuthStore();
+  const { checkAuth, isLoggedIn, setIsLoggedIn, setUser, initListener } =
+    useAuthStore();
   const {
     setLoading,
     setCurrentPath,
@@ -512,7 +543,12 @@ const Navbar = () => {
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+
+    // Initialize listener for profile updates
+    const cleanup = initListener();
+
+    return cleanup; // Cleanup listeners when component unmounts
+  }, [checkAuth, initListener]);
 
   useEffect(() => {
     const handleResize = () => {
