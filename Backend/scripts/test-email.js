@@ -5,7 +5,6 @@ import nodemailer from "nodemailer";
 dotenv.config();
 
 async function main() {
-  console.log("Testing email configuration...");
 
   // Create transporter with WebMail settings
   const transporter = nodemailer.createTransport({
@@ -22,12 +21,9 @@ async function main() {
   });
 
   // Verify connection
-  console.log("Verifying connection...");
   try {
     await transporter.verify();
-    console.log("✅ Connection to email server successful!");
   } catch (error) {
-    console.error("❌ Connection failed:", error.message);
     return;
   }
 
@@ -35,7 +31,6 @@ async function main() {
   const testEmail = process.argv[2] || "your-test-email@example.com";
 
   // Send test email
-  console.log(`Sending test email to ${testEmail}...`);
   try {
     const info = await transporter.sendMail({
       from: `"Muta7Market Test" <${
@@ -61,8 +56,6 @@ async function main() {
       `,
     });
 
-    console.log("✅ Test email sent successfully!");
-    console.log("Message ID:", info.messageId);
   } catch (error) {
     console.error("❌ Failed to send test email:", error.message);
   }

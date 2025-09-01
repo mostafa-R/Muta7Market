@@ -84,7 +84,6 @@ async function main() {
     migrated += 1;
   }
 
-  console.log(`Migration done. Processed: ${migrated}`);
   await mongoose.disconnect();
 }
 

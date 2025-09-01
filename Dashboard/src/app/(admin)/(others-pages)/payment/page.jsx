@@ -54,7 +54,7 @@ const targetBadgeCls = (t) => ({
   player: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   coach:  'bg-blue-50 text-blue-700 border-blue-200',
   user:   'bg-purple-50 text-purple-700 border-purple-200',
-}[String(t || '').toLowerCase()] || 'bg-purple-50 text-purple-700 border-purple-200'); // default -> user
+}[String(t || '').toLowerCase()] || 'bg-purple-50 text-purple-700 border-purple-200');
 
 const productBadgeCls = (p) => ({
   listing:         'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -88,20 +88,20 @@ export default function InvoicesPage() {
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
 
-  // user cache { userId: {name, email, phone} }
+  // user cache { userId: {name, email, phone} | null }
   const [userMap, setUserMap] = React.useState({});
 
+  // dedupe in-flight user requests
+  const inFlightUsersRef = React.useRef(new Set());
+
   const authHeaders = React.useCallback(() => {
-let token = null;
-
-if (typeof window !== 'undefined') {
-  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
-}
-
+    let token = null;
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+    }
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
 
-  // normalize product to server param
   const productToServer = (p) => (p === 'contacts_access' ? 'contact_access' : p);
 
   const buildServerQuery = React.useCallback(() => {
@@ -113,80 +113,109 @@ if (typeof window !== 'undefined') {
     return q;
   }, [page, pageSize, statusServer, productServer, userIdServer, orderServer]);
 
-  const fetchInvoices = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const url = ENDPOINTS.list(buildServerQuery());
-      const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
-      if (!res.ok) {
-        const msg = await extractBackendError(res);
-        await Toast.fire({ icon: 'error', html: msg });
-        setRows([]); setTotal(0);
-        return;
+  // Effect A: fetch invoices (controls "loading")
+  React.useEffect(() => {
+    const q = buildServerQuery();
+    const ac = new AbortController();
+    let canceled = false;
+
+    (async () => {
+      setLoading(true);
+      try {
+        const url = ENDPOINTS.list(q);
+        const res = await fetch(url, { headers: authHeaders(), cache: 'no-store', signal: ac.signal });
+        if (!res.ok) {
+          const msg = await extractBackendError(res);
+          await Toast.fire({ icon: 'error', html: msg });
+          setRows([]); setTotal(0);
+          return;
+        }
+        const json = await res.json();
+        const items = json?.data?.items ?? [];
+
+        const mapped = items.map((it) => {
+          const target = it.targetType || 'user';
+          const paidAt = it.paidAt ? new Date(it.paidAt) : null;
+          let expireAt = it.expireAt || it.expiresAt || null;
+          if (!expireAt && paidAt && it.durationDays) {
+            expireAt = new Date(paidAt.getTime() + it.durationDays * 86400000).toISOString();
+          }
+          let remainingDays = null;
+          if (expireAt) {
+            remainingDays = Math.ceil((new Date(expireAt).getTime() - Date.now()) / 86400000);
+          }
+          return {
+            ...it,
+            targetType: target,
+            expireAt,
+            remainingDays,
+            _id: it.id,
+            createdAtLabel: fmtDateTime(it.createdAt),
+            paidAtLabel:    fmtDateTime(it.paidAt),
+            expireAtLabel:  fmtDateTime(expireAt),
+            amountLabel:    money(it.amount, it.currency),
+          };
+        });
+
+        if (!canceled) {
+          setRows(mapped);
+          setTotal(Number(json?.data?.total ?? mapped.length));
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          console.error(e);
+          await Toast.fire({ icon: 'error', title: 'تعذر جلب الفواتير' });
+          if (!canceled) { setRows([]); setTotal(0); }
+        }
+      } finally {
+        // Always clear loading, even if the first (aborted) invocation finishes later
+        if (!canceled) setLoading(false);
+        else setLoading(false);
       }
-      const json = await res.json();
-      const items = json?.data?.items ?? [];
-      setTotal(Number(json?.data?.total ?? items.length));
+    })();
 
-      const mapped = items.map((it) => {
-        // fallback targetType to 'user' if null
-        const target = it.targetType || 'user';
+    return () => { canceled = true; ac.abort(); };
+  }, [buildServerQuery, authHeaders]);
 
-        // compute expireAt (server may use expireAt/expiresAt; else derive from paidAt + durationDays)
-        const paidAt = it.paidAt ? new Date(it.paidAt) : null;
-        let expireAt = it.expireAt || it.expiresAt || null;
-        if (!expireAt && paidAt && it.durationDays) {
-          expireAt = new Date(paidAt.getTime() + it.durationDays * 86400000).toISOString();
+  // Effect B: fetch users for current rows (never touches "loading")
+  React.useEffect(() => {
+    const idsAll = [...new Set(rows.map(x => x.userId).filter(Boolean))];
+    const ids = idsAll.filter(id =>
+      !Object.prototype.hasOwnProperty.call(userMap, id) &&
+      !inFlightUsersRef.current.has(id)
+    );
+    if (!ids.length) return;
+
+    ids.forEach(id => inFlightUsersRef.current.add(id));
+
+    (async () => {
+      const results = await Promise.allSettled(
+        ids.map(id => fetch(ENDPOINTS.user(id), { headers: authHeaders(), cache: 'no-store' }))
+      );
+      const entries = await Promise.all(results.map(async (r, i) => {
+        const id = ids[i];
+        if (r.status !== 'fulfilled' || !r.value.ok) return [id, null];
+        const data = await r.value.json().catch(() => null);
+        const u = data?.data?.user ?? data?.data ?? null;
+        if (!u) return [id, null];
+        return [id, { name: u.name || '-', email: u.email || '-', phone: u.phone || null }];
+      }));
+
+      setUserMap(prev => {
+        let changed = false;
+        const next = { ...prev };
+        for (const [id, val] of entries) {
+          if (!Object.prototype.hasOwnProperty.call(next, id)) {
+            next[id] = val; // cache even if null
+            changed = true;
+          }
         }
-
-        // remaining days from now until expireAt
-        let remainingDays = null;
-        if (expireAt) {
-          const diff = Math.ceil((new Date(expireAt).getTime() - Date.now()) / 86400000);
-          remainingDays = diff;
-        }
-
-        return {
-          ...it,
-          targetType: target,
-          expireAt,
-          remainingDays,
-          _id: it.id,
-          createdAtLabel: fmtDateTime(it.createdAt),
-          paidAtLabel:    fmtDateTime(it.paidAt),
-          expireAtLabel:  fmtDateTime(expireAt),
-          amountLabel:    money(it.amount, it.currency),
-        };
+        return changed ? next : prev;
       });
 
-      setRows(mapped);
-
-      // fetch users if needed
-      const ids = [...new Set(items.map(x => x.userId).filter(Boolean))].filter(id => !userMap[id]);
-      if (ids.length) {
-        const results = await Promise.allSettled(
-          ids.map(id => fetch(ENDPOINTS.user(id), { headers: authHeaders(), cache: 'no-store' }))
-        );
-        const entries = await Promise.all(results.map(async (r, i) => {
-          const id = ids[i];
-          if (r.status !== 'fulfilled' || !r.value.ok) return [id, null];
-          const data = await r.value.json().catch(() => null);
-          const u = data?.data?.user ?? data?.data ?? null;
-          if (!u) return [id, null];
-          return [id, { name: u.name || '-', email: u.email || '-', phone: u.phone || null }];
-        }));
-        setUserMap(prev => Object.fromEntries([...Object.entries(prev), ...entries]));
-      }
-    } catch (e) {
-      console.error(e);
-      await Toast.fire({ icon: 'error', title: 'تعذر جلب الفواتير' });
-      setRows([]); setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [authHeaders, buildServerQuery, userMap]);
-
-  React.useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+      ids.forEach(id => inFlightUsersRef.current.delete(id));
+    })();
+  }, [rows, authHeaders, userMap]);
 
   // header click filter/sort
   const cycle = (val, arr) => arr[(arr.indexOf(val) + 1) % arr.length];
@@ -205,7 +234,7 @@ if (typeof window !== 'undefined') {
     else { setSortBy(col); setSortDir('asc'); }
   };
 
-  // client sort (on current page data that server returned)
+  // client sort
   const sorted = React.useMemo(() => {
     const copy = [...rows];
     copy.sort((a, b) => {
@@ -217,10 +246,10 @@ if (typeof window !== 'undefined') {
         case 'targetType':
         case 'status':
           A = String(a[sortBy] || ''); B = String(b[sortBy] || ''); break;
-          case 'providerInvoiceId':
-  A = String(a.providerInvoiceId || '');
-  B = String(b.providerInvoiceId || '');
-  break;
+        case 'providerInvoiceId':
+          A = String(a.providerInvoiceId || '');
+          B = String(b.providerInvoiceId || '');
+          break;
         case 'createdAt': A = new Date(a.createdAt || 0).getTime(); B = new Date(b.createdAt || 0).getTime(); break;
         case 'paidAt':    A = new Date(a.paidAt || 0).getTime();    B = new Date(b.paidAt || 0).getTime(); break;
         case 'expireAt':  A = new Date(a.expireAt || 0).getTime();  B = new Date(b.expireAt || 0).getTime(); break;
@@ -244,7 +273,6 @@ if (typeof window !== 'undefined') {
     return sortDir === 'asc' ? <ArrowUp className="w-4 h-4 text-blue-600" /> : <ArrowDown className="w-4 h-4 text-blue-600" />;
   };
 
-  // remaining days badge style
   const remainingBadge = (days) => {
     if (days === null || typeof days === 'undefined') return <span className="text-sm text-gray-500">—</span>;
     if (days <= 0) return <span className="px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-700 border-red-200 whitespace-nowrap w-fit">منتهي</span>;
@@ -266,9 +294,7 @@ if (typeof window !== 'undefined') {
           <div className="p-4 border-b border-gray-100">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Search line */}
-              <div className="flex items-center gap-4">
-
-              </div>
+              <div className="flex items-center gap-4">{/* reserved */}</div>
 
               {/* Right: server filters + page size */}
               <div className="flex items-center justify-start lg:justify-end gap-3">
@@ -311,7 +337,6 @@ if (typeof window !== 'undefined') {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            {/* table-fixed to let width classes work */}
             <table className="min-w-full table-fixed">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
@@ -320,7 +345,6 @@ if (typeof window !== 'undefined') {
                   <Th label="المنتج" onClick={() => onHeaderClick('product')} sort={<SortIcon column="product" />} />
                   <Th label="الحالة" onClick={() => onHeaderClick('status')} sort={<SortIcon column="status" />} />
                   <Th label="المبلغ" onClick={() => onHeaderClick('amount')} sort={<SortIcon column="amount" />} />
-                  {/* order number takes 1/2 width */}
                   <Th label="رقم فاتورة المزود" onClick={() => onHeaderClick('providerInvoiceId')} sort={<SortIcon column="providerInvoiceId" />} />
                   <Th label="تاريخ السداد" onClick={() => onHeaderClick('paidAt')} sort={<SortIcon column="paidAt" />} />
                   <Th label="أيام المدة" onClick={() => onHeaderClick('durationDays')} sort={<SortIcon column="durationDays" />} />
@@ -353,38 +377,38 @@ if (typeof window !== 'undefined') {
                           </div>
                         </td>
 
-                        {/* الفئة (null => user) */}
+                        {/* الفئة */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${targetBadgeCls(r.targetType)}`}>
                             {r.targetType === 'coach' ? 'مدرب' : r.targetType === 'player' ? 'لاعب' : 'مستخدم'}
                           </span>
                         </td>
 
-                        {/* المنتج (supports contacts_access) */}
+                        {/* المنتج */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${productBadgeCls(r.product)}`}>
                             {r.product === 'contact_access' ? 'contacts_access' : r.product || '—'}
                           </span>
                         </td>
 
-                        {/* الحالة — make badge fit-width */}
+                        {/* الحالة */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${st.cls}`}>
                             {st.icon}{st.label}
                           </span>
                         </td>
 
-                        {/* المبلغ — bigger */}
+                        {/* المبلغ */}
                         <td className="px-6 py-4">
                           <div className="text-lg  text-gray-900">{r.amountLabel}</div>
                         </td>
 
-                        {/* رقم الطلب — take 1/2 width & truncate */}
+                        {/* رقم فاتورة المزود */}
                         <td className="px-6 py-4 w-1/2">
-  <div className="w-full truncate">
-    <span className="text-sm text-gray-900 font-mono">{r.providerInvoiceId || '—'}</span>
-  </div>
-</td>
+                          <div className="w-full truncate">
+                            <span className="text-sm text-gray-900 font-mono">{r.providerInvoiceId || '—'}</span>
+                          </div>
+                        </td>
 
                         {/* السداد */}
                         <td className="px-6 py-4"><div className="text-sm text-gray-700">{r.paidAtLabel}</div></td>
@@ -395,7 +419,7 @@ if (typeof window !== 'undefined') {
                         {/* المتبقي */}
                         <td className="px-6 py-4">{remainingBadge(r.remainingDays)}</td>
 
-                        {/* تاريخ الانتهاء (بدلاً من "آخر تحقق من المزود") */}
+                        {/* تاريخ الانتهاء */}
                         <td className="px-6 py-4"><div className="text-sm text-gray-700">{r.expireAtLabel}</div></td>
 
                         {/* روابط */}
@@ -428,7 +452,6 @@ if (typeof window !== 'undefined') {
 
                         {/* الإنشاء */}
                         <td className="px-6 py-4"><div className="text-sm text-gray-700">{r.createdAtLabel}</div></td>
-
                       </tr>
                     );
                   })
