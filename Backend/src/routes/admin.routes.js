@@ -156,6 +156,7 @@ router.patch(
     "socialLinks",
     "contactInfo",
     "existingMedia",
+    "isPromoted",
   ]),
   validate(updatePlayerSchema),
   updatePlayer
