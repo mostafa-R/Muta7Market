@@ -272,6 +272,7 @@ const playerSchema = new mongoose.Schema(
   }
 );
 
+playerSchema.index({ isActive: 1, activeExpireAt: 1 });
 playerSchema.index({ name: "text", position: "text" });
 playerSchema.index({ nationality: 1, jop: 1, status: 1 });
 playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
