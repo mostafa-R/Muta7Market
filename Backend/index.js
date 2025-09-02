@@ -7,13 +7,15 @@ import logger from "./src/utils/logger.js";
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
+if (!process.env.BASE_URL) {
+  process.env.BASE_URL = `http://localhost:${PORT}`;
+}
+
 const startServer = async () => {
   try {
-    // Connect to database
+   
     await connectDB();
 
-    // Start server
     const server = app.listen(PORT, () => {
       logger.info(
         `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
@@ -45,7 +47,6 @@ const startServer = async () => {
       process.exit(1);
     });
 
-    // Handle SIGTERM signal
     process.on("SIGTERM", () => {
       logger.info("👋 SIGTERM RECEIVED. Shutting down gracefully");
       console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
@@ -62,8 +63,4 @@ const startServer = async () => {
   }
 };
 
-// Start the server
 startServer();
-
-
-

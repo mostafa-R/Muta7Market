@@ -433,7 +433,7 @@ export default function UpdatePlayerPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log("🚀 بدء عملية التحديث...");
+  
     toast.loading("⏳ جاري تحديث بيانات اللاعب...", { 
       id: 'update-player',
       style: { direction: 'rtl', fontSize: '14px' }
@@ -524,7 +524,7 @@ export default function UpdatePlayerPage() {
         }
       );
       
-      console.log("✅ تم التحديث بنجاح:", response.data);
+    
       
       // Show success message
       toast.success("🎉 تم تحديث بيانات اللاعب بنجاح! سيتم التوجيه الآن...", {
@@ -549,18 +549,16 @@ export default function UpdatePlayerPage() {
       const response = error?.response;
       const data = response?.data;
       const status = response?.status;
+   
       
-      console.log("Response status:", status);
-      console.log("Response data:", data);
-      
-      // Clear loading toast
+    
       toast.dismiss('update-player');
       
-      // Handle different error types with clear messages
+    
       if (status === 400) {
         if (data?.error?.stack) {
           const validationErrors = data.error.stack;
-          console.log("Validation errors:", validationErrors);
+         
           
           Object.keys(validationErrors).forEach((field, index) => {
             const fieldErrors = validationErrors[field];

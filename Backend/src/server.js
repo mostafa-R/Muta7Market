@@ -16,17 +16,13 @@ import rateLimiter from "./middleware/rateLimiter.middleware.js";
 import routes from "./routes/index.js";
 import { initializeEmailService } from "./services/email.service.js";
 
-// __dirname setup for ES Module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize Express app
 const app = express();
 
-// Trust Proxy
 app.set("trust proxy", 1);
 
-// Security Middleware (Helmet CSP)
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -37,11 +33,10 @@ app.use(
         imgSrc: ["'self'", "data:", "https:", "http:", "*"],
       },
     },
-    crossOriginResourcePolicy: false, // Allow cross-origin requests for static files
+    crossOriginResourcePolicy: false,
   })
 );
 
-// CORS Configuration
 const corsOptions = {
   origin(origin, callback) {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
@@ -67,20 +62,15 @@ const corsOptions = {
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
-// Data Sanitization against NoSQL Injection
 app.use(mongoSanitize());
 
-// Body Parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Cookie Parser
 app.use(cookieParser());
 
-// Compression
 app.use(compression());
 
-// Logging Middleware
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 } else {
@@ -91,7 +81,6 @@ if (process.env.NODE_ENV === "development") {
   );
 }
 
-// i18n Configuration
 i18n.configure({
   locales: ["en", "ar"],
   directory: join(__dirname, "locales"),
@@ -105,7 +94,6 @@ i18n.configure({
 });
 app.use(i18n.init);
 
-// Static Files with CORS headers
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -125,7 +113,6 @@ app.use("/public", express.static(join(__dirname, "../public")));
 
 await initializeEmailService();
 
-// API Documentation (Swagger)
 app.use(
   "/api-docs",
   swaggerUi.serve,
@@ -135,13 +122,10 @@ app.use(
   })
 );
 
-// Rate Limiter for APIs
 app.use("/api/", rateLimiter);
 
-// API Routes
 app.use("/api/v1", routes);
 
-// Root Endpoint
 app.get("/", (req, res) => {
   res.json({
     message: "Welcome to Sports Platform API",
@@ -152,9 +136,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Health Check Endpoint
 app.get("/health", (req, res) => {
-  // Check if uploads directory is accessible
   const uploadsDir = join(__dirname, "../uploads");
   let uploadsStatus = "accessible";
   try {
@@ -175,7 +157,6 @@ app.get("/health", (req, res) => {
   res.status(200).json(healthcheck);
 });
 
-// 404 Handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -187,7 +168,6 @@ app.use((req, res) => {
   });
 });
 
-// Global Error Handler
 app.use(errorMiddleware);
 
 export default app;

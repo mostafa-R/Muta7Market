@@ -6,6 +6,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { processPlayerMedia } from "../utils/localMediaUtils.js";
+import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
 function escapeRegex(s = "") {
@@ -667,7 +668,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
 
   const existingPlayer = await Player.findById(id);
   if (!existingPlayer) {
-    throw new ApiError(404, "Player not found");
+    throw new ApiError(404, "اللاعب غير موجود");
   }
 
   const allowedFields = [
@@ -678,7 +679,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "customNationality",
     "birthCountry",
     "customBirthCountry",
-
     "jop",
     "roleType",
     "customRoleType",
@@ -688,76 +688,66 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "experience",
     "game",
     "customSport",
-
     "monthlySalary",
     "yearSalary",
     "contractEndDate",
     "transferredTo",
     "socialLinks",
     "contactInfo",
-
     "isListed",
     "isActive",
     "isConfirmed",
     "views",
-
-    "media",
     "stats",
     "bio",
     "isPromoted",
   ];
 
   const updates = {};
-
   Object.keys(req.body).forEach((key) => {
     if (allowedFields.includes(key)) {
       updates[key] = req.body[key];
     }
   });
 
-  let existingMediaFromBody = {};
-  try {
-    existingMediaFromBody = req.body.existingMedia
-      ? JSON.parse(req.body.existingMedia)
-      : {};
-  } catch (e) {}
-
-  if (req.files && Object.keys(req.files).length > 0) {
-    updates.media = await processPlayerMedia(
-      req.files,
-      req,
-      existingMediaFromBody
-    );
-  } else if (req.body.existingMedia) {
-    updates.media = existingMediaFromBody;
-  }
+  updates.media = await safelyUpdatePlayerMedia(
+    req.files,
+    existingPlayer,
+    req.body.existingMedia
+  );
 
   if (req.body.expreiance !== undefined) {
     updates.experience = req.body.expreiance;
+    console.warn(
+      "استخدم 'experience' بدلاً من 'expreiance' في طلبات العميل لتجنب الأخطاء المستقبلية"
+    );
   }
-
-  if (typeof updates.isListed === "string") {
+  if (typeof updates.isListed === "string")
     updates.isListed = updates.isListed === "true";
-  }
-  if (typeof updates.isActive === "string") {
+  if (typeof updates.isActive === "string")
     updates.isActive = updates.isActive === "true";
-  }
-  if (typeof updates.isConfirmed === "string") {
+  if (typeof updates.isConfirmed === "string")
     updates.isConfirmed = updates.isConfirmed === "true";
+  if (updates.age) updates.age = parseInt(updates.age, 10);
+  if (updates.experience) updates.experience = parseInt(updates.experience, 10);
+  if (updates.views) updates.views = parseInt(updates.views, 10);
+
+  const updatedPlayer = await Player.findByIdAndUpdate(
+    id,
+    { $set: updates },
+    { new: true, runValidators: true }
+  ).populate("user", "name email phone");
+
+  if (!updatedPlayer) {
+    throw new ApiError(
+      500,
+      "فشل في تحديث اللاعب، ربما بسبب خطأ في قاعدة البيانات"
+    );
   }
-
-  if (updates.age) updates.age = parseInt(updates.age);
-  if (updates.experience) updates.experience = parseInt(updates.experience);
-  if (updates.views) updates.views = parseInt(updates.views);
-
-  Object.assign(existingPlayer, updates);
-  const updatedPlayer = await existingPlayer
-    .save()
-    .then((doc) => doc.populate("user", "name email phone"));
 
   res
     .status(200)
-    .json(new ApiResponse(200, updatedPlayer, "Player updated successfully"));
+    .json(new ApiResponse(200, updatedPlayer, "تم تحديث اللاعب بنجاح"));
 });
 
 export const deletePlayer = asyncHandler(async (req, res) => {

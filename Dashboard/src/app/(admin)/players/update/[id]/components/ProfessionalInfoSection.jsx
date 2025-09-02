@@ -92,7 +92,7 @@ export default function ProfessionalInfoSection({
         {/* Role Type */}
         <div>
           <label className="block text-sm font-semibold text-gray-800 mb-2">
-            نوع الدور
+           الفئة
           </label>
           <select
             name="roleType"
@@ -100,7 +100,7 @@ export default function ProfessionalInfoSection({
             onChange={handleInputChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white"
           >
-            <option value="" disabled>اختر نوع الدور</option>
+            <option value="" disabled>اختر الفئة</option>
             {availableRoleTypes.map((option) => (
               <option key={option.id} value={option.value}>
                 {getRoleTypeLabel(option.value)}

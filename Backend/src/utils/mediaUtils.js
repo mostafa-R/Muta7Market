@@ -1,31 +1,24 @@
-/**
- * Media Utility Functions for Cloudinary Operations
- * This file centralizes all Cloudinary-related functionality for player profiles
- */
 import { cloudinary } from "../config/cloudinary.js";
 import ApiError from "./ApiError.js";
 
 /**
- * Handle media file upload to Cloudinary
- * @param {Object} file - The file object from multer
- * @param {String} resourceType - The resource type (image, video, raw)
- * @returns {Object} - Object with URL and publicId
+ * @param {Object} file
+ * @param {String} resourceType
+ * @returns {Object}
  */
 export const handleMediaUpload = async (file, resourceType = null) => {
   if (!file) return { url: null, publicId: null };
 
-  // Determine the resource type if not provided
   if (!resourceType) {
     if (file.mimetype.startsWith("image/")) resourceType = "image";
     else if (file.mimetype.startsWith("video/")) resourceType = "video";
-    else resourceType = "raw"; // Default to raw for documents
+    else resourceType = "raw";
   }
 
-  // Check file size before proceeding
   const MAX_SIZE = {
-    image: 10 * 1024 * 1024, // 10MB for images
-    video: 100 * 1024 * 1024, // 100MB for videos
-    raw: 10 * 1024 * 1024, // 10MB for documents
+    image: 10 * 1024 * 1024,
+    video: 100 * 1024 * 1024,
+    raw: 10 * 1024 * 1024,
   };
 
   if (file.size && file.size > MAX_SIZE[resourceType]) {
@@ -36,20 +29,18 @@ export const handleMediaUpload = async (file, resourceType = null) => {
     );
   }
 
-  // Make sure we're using the Cloudinary URL, not local path
-  // Add timeout handling if needed in the future
   try {
     let finalUrl = file.secure_url || file.path;
-    
-    // للمستندات، تأكد من أن URL يحتوي على الامتداد الصحيح
+
     if (resourceType === "raw" || resourceType === "auto") {
-      const extension = file.originalname ? file.originalname.split(".").pop() : null;
+      const extension = file.originalname
+        ? file.originalname.split(".").pop()
+        : null;
       if (extension && !finalUrl.endsWith(`.${extension}`)) {
-        // إذا لم يكن URL يحتوي على الامتداد، أضفه
         finalUrl = `${finalUrl}.${extension}`;
       }
     }
-    
+
     return {
       url: finalUrl,
       publicId: file.public_id || file.filename,
@@ -64,10 +55,9 @@ export const handleMediaUpload = async (file, resourceType = null) => {
 };
 
 /**
- * Delete media from Cloudinary
- * @param {String} publicId - The public ID of the media to delete
- * @param {String} resourceType - The resource type (image, video, raw)
- * @returns {Object} - Result of deletion
+ * @param {String} publicId
+ * @param {String} resourceType
+ * @returns {Object}
  */
 export const deleteMediaFromCloudinary = async (
   publicId,
@@ -90,9 +80,8 @@ export const deleteMediaFromCloudinary = async (
 };
 
 /**
- * Delete all media files for a player profile from Cloudinary
- * @param {Object} media - The media object from player profile
- * @returns {Object} - Deletion results with successful and failed arrays
+ * @param {Object} media
+ * @returns {Object}
  */
 export const deleteAllPlayerMedia = async (media) => {
   const deletionResults = {
@@ -103,7 +92,6 @@ export const deleteAllPlayerMedia = async (media) => {
   if (!media) return deletionResults;
 
   try {
-    // Delete profile image
     if (media.profileImage?.publicId) {
       try {
         await deleteMediaFromCloudinary(media.profileImage.publicId, "image");
@@ -121,7 +109,6 @@ export const deleteAllPlayerMedia = async (media) => {
       }
     }
 
-    // Delete video
     if (media.video?.publicId) {
       try {
         await deleteMediaFromCloudinary(media.video.publicId, "video");
@@ -139,7 +126,6 @@ export const deleteAllPlayerMedia = async (media) => {
       }
     }
 
-    // Delete document
     if (media.document?.publicId) {
       try {
         await deleteMediaFromCloudinary(media.document.publicId, "auto");
@@ -157,7 +143,6 @@ export const deleteAllPlayerMedia = async (media) => {
       }
     }
 
-    // Delete all images from the images array
     if (media.images && Array.isArray(media.images)) {
       for (let i = 0; i < media.images.length; i++) {
         const image = media.images[i];
@@ -190,14 +175,12 @@ export const deleteAllPlayerMedia = async (media) => {
 };
 
 /**
- * Process media for player profiles (create or update)
- * @param {Object} files - The files object from multer
- * @param {Object} existingMedia - Existing media object (for updates)
- * @returns {Object} - Processed media object
+ * @param {Object} files
+ * @param {Object} existingMedia
+ * @returns {Object}
  */
 export const processPlayerMedia = async (files, existingMedia = null) => {
-  // Initialize media object
-  const media = existingMedia || {
+  const defaultMedia = {
     profileImage: { url: null, publicId: null },
     video: {
       url: null,
@@ -214,12 +197,22 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
       size: 0,
       uploadedAt: null,
     },
-    images: [], // Empty array when no images uploaded
+    images: [],
   };
 
-  // Handle profile image
+  const validExistingMedia =
+    existingMedia && typeof existingMedia === "object" ? existingMedia : {};
+
+  const media = {
+    profileImage: validExistingMedia.profileImage || defaultMedia.profileImage,
+    video: validExistingMedia.video || defaultMedia.video,
+    document: validExistingMedia.document || defaultMedia.document,
+    images: Array.isArray(validExistingMedia.images)
+      ? [...validExistingMedia.images]
+      : [],
+  };
+
   if (files?.profileImage?.[0]) {
-    // Delete existing image if updating
     if (existingMedia?.profileImage?.publicId) {
       await deleteMediaFromCloudinary(
         existingMedia.profileImage.publicId,
@@ -232,9 +225,7 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
     );
   }
 
-  // Handle video - replace with new one
   if (files?.playerVideo?.[0]) {
-    // Delete existing video if updating
     if (existingMedia?.video?.publicId) {
       await deleteMediaFromCloudinary(
         existingMedia.video.publicId,
@@ -244,7 +235,6 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
       );
     }
 
-    // Set new video
     const videoData = await handleMediaUpload(files.playerVideo[0], "video");
     videoData.title = files.playerVideo[0].originalname || "video";
     videoData.duration = 0; // Can be updated later with actual duration if available
@@ -252,9 +242,7 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
     media.video = videoData;
   }
 
-  // Handle document - replace with new one
   if (files?.document?.[0]) {
-    // Delete existing document if updating
     if (existingMedia?.document?.publicId) {
       await deleteMediaFromCloudinary(
         existingMedia.document.publicId,
@@ -264,7 +252,6 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
       );
     }
 
-    // Set new document
     const documentData = await handleMediaUpload(files.document[0], "auto");
     documentData.title = files.document[0].originalname || "document";
     documentData.size = files.document[0].size || 0;
@@ -273,21 +260,12 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
     media.document = documentData;
   }
 
-  // Handle multiple images - Use existingMedia as base and add new ones
   if (files?.images && files.images.length > 0) {
-    console.log("📸 Processing new images - Using existingMedia as base");
-    console.log(
-      `📸 Existing images count: ${existingMedia?.images?.length || 0}`
-    );
-    console.log(`📸 New images to add: ${files.images.length}`);
-
-    // Start with existing images from existingMedia (already filtered by frontend)
     const existingImages =
       existingMedia?.images && Array.isArray(existingMedia.images)
         ? [...existingMedia.images]
         : [];
 
-    // Process new images
     const newImages = [];
     for (const imageFile of files.images) {
       const imageData = await handleMediaUpload(imageFile, "image");
@@ -298,11 +276,7 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
       newImages.push(imageData);
     }
 
-    // Combine existing + new images (limit to 5 total)
     media.images = [...existingImages, ...newImages].slice(0, 5);
-
-    console.log(`📸 Final images count: ${media.images.length}`);
-    console.log("📸 Image update completed successfully");
   } else if (existingMedia?.images) {
     // If no new images but existingMedia provided, use existing images as is
     media.images = Array.isArray(existingMedia.images)
@@ -314,11 +288,10 @@ export const processPlayerMedia = async (files, existingMedia = null) => {
 };
 
 /**
- * Process single media item replacement
- * @param {Object} file - The file object from multer
- * @param {Object} existingItem - Existing media item (for updates)
- * @param {String} resourceType - The resource type (image, video, raw)
- * @returns {Object} - Processed media item
+ * @param {Object} file
+ * @param {Object} existingItem
+ * @param {String} resourceType
+ * @returns {Object}
  */
 export const replaceMediaItem = async (
   file,
@@ -327,7 +300,6 @@ export const replaceMediaItem = async (
 ) => {
   if (!file) return existingItem || null;
 
-  // Delete existing item if updating
   if (existingItem?.publicId) {
     await deleteMediaFromCloudinary(existingItem.publicId, resourceType).catch(
       (err) =>
@@ -335,15 +307,13 @@ export const replaceMediaItem = async (
     );
   }
 
-  // Process new file
   return await handleMediaUpload(file, resourceType);
 };
 
 /**
- * Process player media with detailed tracking (for updates)
- * @param {Object} files - The files object from multer
- * @param {Object} existingMedia - Existing media object (for updates)
- * @returns {Object} - Object with updated media and operation results
+ * @param {Object} files
+ * @param {Object} existingMedia
+ * @returns {Object}
  */
 export const processPlayerMediaWithTracking = async (
   files,
@@ -359,15 +329,12 @@ export const processPlayerMediaWithTracking = async (
   };
 
   try {
-    // Track old media before processing
     const oldMediaSnapshot = existingMedia
       ? JSON.parse(JSON.stringify(existingMedia))
       : null;
 
-    // Process media using existing function
     results.media = await processPlayerMedia(files, existingMedia);
 
-    // Track what was updated and deleted
     if (files?.profileImage?.[0] && results.media.profileImage?.publicId) {
       if (oldMediaSnapshot?.profileImage?.publicId) {
         results.operations.deleted.push({

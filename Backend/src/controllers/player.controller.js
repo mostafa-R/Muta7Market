@@ -12,6 +12,7 @@ import {
   processPlayerMedia,
   replaceMediaItem,
 } from "../utils/localMediaUtils.js";
+import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
@@ -468,138 +469,74 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   };
 
   try {
-    if (req.files && Object.keys(req.files).length > 0) {
-      console.log(
-        "Processing media updates for player:",
-        playerId,
-        "Files:",
-        Object.keys(req.files)
-      );
+    const updatedMedia = await safelyUpdatePlayerMedia(req.files, player, null);
 
-      const oldMedia = player.media
-        ? JSON.parse(JSON.stringify(player.media))
-        : null;
+    const oldMedia = player.media
+      ? player.media.toObject
+        ? player.media.toObject()
+        : { ...player.media }
+      : null;
 
-      let updatedMedia;
-      try {
-        updatedMedia = await processPlayerMedia(req.files, player.media);
-      } catch (mediaError) {
-        console.error("Media processing error:", mediaError.message);
-        return res.status(400).json(
-          new ApiResponse(
-            400,
-            {
-              player,
-              mediaErrors: [
-                {
-                  message: mediaError.message,
-                  type: "media_processing_error",
-                },
-              ],
-            },
-            `Failed to process media: ${mediaError.message}`
-          )
-        );
-      }
+    player.media = updatedMedia;
 
-      if (!player.media) player.media = {};
-
-      if (
-        req.files.profileImage &&
-        updatedMedia.profileImage &&
-        updatedMedia.profileImage.url
-      ) {
-        if (oldMedia?.profileImage?.publicId) {
-          mediaUpdateResults.deleted.push({
-            type: "profile image",
-            publicId: oldMedia.profileImage.publicId,
-          });
-        }
-
-        player.media.profileImage = updatedMedia.profileImage;
-        mediaUpdateResults.updated.push({
+    if (req.files?.profileImage && player.media?.profileImage?.url) {
+      if (oldMedia?.profileImage?.publicId) {
+        mediaUpdateResults.deleted.push({
           type: "profile image",
-          publicId: updatedMedia.profileImage.publicId,
+          publicId: oldMedia.profileImage.publicId,
         });
-        console.log(
-          "Profile image updated:",
-          updatedMedia.profileImage.publicId
-        );
       }
+      mediaUpdateResults.updated.push({
+        type: "profile image",
+        publicId: player.media.profileImage.publicId,
+      });
+    }
 
-      if (
-        req.files.playerVideo &&
-        updatedMedia.video &&
-        updatedMedia.video.url
-      ) {
-        if (oldMedia?.video?.publicId) {
-          mediaUpdateResults.deleted.push({
-            type: "video",
-            publicId: oldMedia.video.publicId,
-          });
-        }
-
-        player.media.video = updatedMedia.video;
-        mediaUpdateResults.updated.push({
+    if (req.files?.playerVideo && player.media?.video?.url) {
+      if (oldMedia?.video?.publicId) {
+        mediaUpdateResults.deleted.push({
           type: "video",
-          publicId: updatedMedia.video.publicId,
+          publicId: oldMedia.video.publicId,
         });
-        console.log("Video updated:", updatedMedia.video.publicId);
       }
+      mediaUpdateResults.updated.push({
+        type: "video",
+        publicId: player.media.video.publicId,
+      });
+    }
 
-      if (
-        req.files.document &&
-        updatedMedia.document &&
-        updatedMedia.document.url
-      ) {
-        if (oldMedia?.document?.publicId) {
-          mediaUpdateResults.deleted.push({
-            type: "document",
-            publicId: oldMedia.document.publicId,
-          });
-        }
-
-        player.media.document = updatedMedia.document;
-        mediaUpdateResults.updated.push({
+    if (req.files?.document && player.media?.document?.url) {
+      if (oldMedia?.document?.publicId) {
+        mediaUpdateResults.deleted.push({
           type: "document",
-          publicId: updatedMedia.document.publicId,
+          publicId: oldMedia.document.publicId,
         });
-        console.log("Document updated:", updatedMedia.document.publicId);
       }
+      mediaUpdateResults.updated.push({
+        type: "document",
+        publicId: player.media.document.publicId,
+      });
+    }
 
-      if (
-        req.files.images &&
-        updatedMedia.images &&
-        Array.isArray(updatedMedia.images) &&
-        updatedMedia.images.length > 0
-      ) {
-        if (oldMedia?.images && Array.isArray(oldMedia.images)) {
-          oldMedia.images.forEach((img, index) => {
-            if (img?.publicId) {
-              mediaUpdateResults.deleted.push({
-                type: `gallery image ${index + 1}`,
-                publicId: img.publicId,
-              });
-            }
-          });
-        }
-
-        player.media.images = updatedMedia.images;
-        updatedMedia.images.forEach((img, index) => {
+    if (req.files?.images && player.media?.images?.length > 0) {
+      if (oldMedia?.images && Array.isArray(oldMedia.images)) {
+        oldMedia.images.forEach((img, index) => {
           if (img?.publicId) {
-            mediaUpdateResults.updated.push({
+            mediaUpdateResults.deleted.push({
               type: `gallery image ${index + 1}`,
               publicId: img.publicId,
             });
           }
         });
-        console.log(`${updatedMedia.images.length} gallery images updated`);
       }
 
-      console.log("Media update completed:", {
-        updated: mediaUpdateResults.updated.length,
-        deleted: mediaUpdateResults.deleted.length,
-        errors: mediaUpdateResults.errors.length,
+      player.media.images.forEach((img, index) => {
+        if (img?.publicId) {
+          mediaUpdateResults.updated.push({
+            type: `gallery image ${index + 1}`,
+            publicId: img.publicId,
+          });
+        }
       });
     }
   } catch (error) {
@@ -717,10 +654,6 @@ export const deleteSpecicImage = async (req, res) => {
 
       player.media.images = imagesToKeep;
       await player.save();
-
-      console.log(
-        `🗑️ Deleted ${publicIds.length} images from player ${playerId}`
-      );
 
       res.json({
         success: true,
