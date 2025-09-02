@@ -73,6 +73,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    activeExpireAt: {
+      type: Date,
+      default: null,
+    },
+
     bio: {
       type: String,
       default: "",
