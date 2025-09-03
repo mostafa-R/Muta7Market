@@ -1,7 +1,6 @@
-// context/AuthContext.jsx
 "use client";
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(undefined);
 
@@ -9,33 +8,25 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
   const isAuthenticated = !!user;
 
-  // دالة جديدة للتحقق من صلاحية الأدمن
   const isAdmin = () => {
     return user?.role === 'admin' || user?.role === 'super_admin';
   };
-
-  // فحص الـ authentication عند بدء التطبيق
+        
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
   const checkAuthStatus = () => {
     try {
-      // فحص الـ token من localStorage و sessionStorage
       const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
       const userData = localStorage.getItem('userData');
-
-      
 
       if (token && userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        
-        
-        // إضافة الـ token للكوكيز إذا لم يكن موجود
+
         if (!document.cookie.includes('accessToken=')) {
           document.cookie = `accessToken=${token}; path=/; SameSite=Strict`;
         }
@@ -51,10 +42,7 @@ export function AuthProvider({ children }) {
   };
 
   const login = (userData, token, remember = false) => {
-   
-    
     try {
-      // حفظ البيانات
       if (remember) {
         localStorage.setItem('accessToken', token);
       } else {
@@ -64,7 +52,6 @@ export function AuthProvider({ children }) {
       localStorage.setItem('userData', JSON.stringify(userData));
       setUser(userData);
       
-      // إضافة الـ token للكوكيز للـ middleware
       const maxAge = remember ? 'max-age=2592000;' : '';
       document.cookie = `accessToken=${token}; path=/; ${maxAge} SameSite=Strict`;
       
@@ -85,7 +72,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('userData');
     sessionStorage.removeItem('accessToken');
     
-    // مسح الكوكيز
+
     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   };
 
@@ -96,12 +83,11 @@ export function AuthProvider({ children }) {
     return hasAuth;
   };
 
-  // قيمة الكون텍ست مع إضافة دالة isAdmin
   const value = {
     user,
     isLoading,
     isAuthenticated,
-    isAdmin, // <-- الدالة المضافة
+    isAdmin,
     login,
     logout,
     checkAuth
@@ -114,7 +100,7 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Hook لاستخدام الـ AuthContext
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

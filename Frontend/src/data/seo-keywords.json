@@ -1,0 +1,136 @@
+{
+  "arabic": {
+    "brand": ["متا7 ماركت", "مطاع ماركت", "منصة متا7", "سوق متا7"],
+    "platform": [
+      "منصة رياضية",
+      "سوق الرياضة",
+      "منصة رياضية سعودية",
+      "سوق رياضي إلكتروني",
+      "منصة رياضية رقمية",
+      "شبكة التواصل الرياضي"
+    ],
+    "users": [
+      "لاعبين",
+      "لاعبون",
+      "مدربين",
+      "مدربون رياضيون",
+      "مدربين محترفين",
+      "كشافة المواهب",
+      "الحكام الرياضيون"
+    ],
+    "sports": [
+      "كرة القدم",
+      "كرة السلة",
+      "كرة الطائرة",
+      "التنس",
+      "الريشة الطائرة",
+      "كرة اليد",
+      "الاسكواش",
+      "المصارعة",
+      "الجودو",
+      "التايكوندو",
+      "البلياردو",
+      "الألعاب الرياضية"
+    ],
+    "services": [
+      "تدريب رياضي",
+      "أكاديمية رياضية",
+      "مواهب رياضية",
+      "التوظيف الرياضي",
+      "الانتقالات الرياضية",
+      "التطوير الرياضي",
+      "الاستشارات الرياضية"
+    ],
+    "locations": [
+      "السعودية",
+      "الرياض",
+      "جدة",
+      "الدمام",
+      "الخليج العربي",
+      "الشرق الأوسط"
+    ],
+    "categories": [
+      "لاعبون محترفون",
+      "لاعبون هواة",
+      "نخبة رياضية",
+      "براعم الرياضة",
+      "النساء في الرياضة"
+    ]
+  },
+  "english": {
+    "brand": ["Muta7Market", "Muta7 Market", "Mutah Market"],
+    "platform": [
+      "sports marketplace",
+      "sports platform",
+      "athletic network",
+      "sports community",
+      "sports networking platform",
+      "digital sports marketplace",
+      "online sports platform"
+    ],
+    "users": [
+      "athletes",
+      "players",
+      "coaches",
+      "sports coaches",
+      "professional trainers",
+      "talent scouts",
+      "sports officials",
+      "referees"
+    ],
+    "sports": [
+      "football",
+      "soccer",
+      "basketball",
+      "volleyball",
+      "tennis",
+      "badminton",
+      "handball",
+      "squash",
+      "wrestling",
+      "judo",
+      "taekwondo",
+      "billiards",
+      "sports"
+    ],
+    "services": [
+      "sports training",
+      "sports academy",
+      "talent discovery",
+      "sports recruitment",
+      "player transfers",
+      "athletic development",
+      "sports consultation",
+      "skill development",
+      "sports mentorship"
+    ],
+    "locations": [
+      "Saudi Arabia",
+      "Riyadh",
+      "Jeddah",
+      "Dammam",
+      "Gulf region",
+      "Middle East",
+      "GCC countries"
+    ],
+    "categories": [
+      "professional athletes",
+      "amateur players",
+      "elite sports",
+      "youth sports",
+      "women in sports",
+      "Paralympic sports"
+    ]
+  },
+  "combined_priority_keywords": [
+    "متاح ماركت Muta7Market",
+    "منصة رياضية sports marketplace",
+    "لاعبين athletes players",
+    "مدربين coaches trainers",
+    "كرة القدم football soccer",
+    "السعودية Saudi Arabia",
+    "تدريب رياضي sports training",
+    "مواهب رياضية athletic talents",
+    "منصة رياضية سعودية Saudi sports platform"
+  ]
+}

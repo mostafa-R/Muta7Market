@@ -1,36 +1,35 @@
 'use client';
 
-import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Swal from 'sweetalert2';
 import {
   ArrowRight,
-  Mail,
-  Phone,
-  Globe,
-  User2,
-  Shield,
   BadgeCheck,
   Calendar,
-  DollarSign,
-  PlayCircle,
-  FileText,
-  Eye,
-  Star,
   CheckCircle,
+  DollarSign,
+  Eye,
+  FileText,
+  Globe,
+  Mail,
+  Phone,
+  PlayCircle,
+  Shield,
+  Star,
+  User2,
   XCircle,
 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import React from 'react';
+import Swal from 'sweetalert2';
 
-// ====== API ENDPOINTS (ثابتة وصحيحة) ======
+
 const API_ROOT  = (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
 const ADMIN_BASE = `${API_ROOT}/admin`;
 
-const endpointOne  = (id) => `${ADMIN_BASE}/players/${id}`;           // GET لاعب
-const epConfirm    = (id) => `${ADMIN_BASE}/players/${id}/confirm`;   // PATCH { isConfirmed }
-const epActive     = (id) => `${ADMIN_BASE}/players/${id}/active`;    // PATCH { isActive }
-const epPromote    = (id) => `${ADMIN_BASE}/players/${id}/promote`;   // PATCH { status, startDate?, endDate?, type? }
+const endpointOne  = (id) => `${ADMIN_BASE}/players/${id}`;           
+const epConfirm    = (id) => `${ADMIN_BASE}/players/${id}/confirm`;   
+const epActive     = (id) => `${ADMIN_BASE}/players/${id}/active`;    
+const epPromote    = (id) => `${ADMIN_BASE}/players/${id}/promote`;   
 
-// ====== Toast عام ======
 const Toast = Swal.mixin({
   toast: true,
   position: 'top-end',
@@ -40,7 +39,6 @@ const Toast = Swal.mixin({
   timerProgressBar: true,
 });
 
-// ====== استخراج رسالة خطأ من الباك ======
 async function extractBackendError(res) {
   const ct = res.headers.get('content-type') || '';
   try {
@@ -54,7 +52,6 @@ async function extractBackendError(res) {
   }
 }
 
-// ====== Utilities ======
 const isCurrentlyPromoted = (promo) => {
   if (!promo || typeof promo !== 'object' || !promo.status) return false;
   const end = promo.endDate ? new Date(promo.endDate) : null;
@@ -62,7 +59,7 @@ const isCurrentlyPromoted = (promo) => {
 };
 
 function deriveStatus(p) {
-  const raw = (p?.status || '').toLowerCase(); // available | transferred | contracted
+  const raw = (p?.status || '').toLowerCase(); 
   const tStart = p?.transferredTo?.startDate ? new Date(p.transferredTo.startDate) : null;
   if (tStart) {
     const days = (Date.now() - tStart.getTime()) / 86400000;
@@ -102,6 +99,15 @@ const GenderBadge = ({ gender }) => {
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('ar-EG') : '—'; }
 function fmtMoney(obj) { return obj?.amount ? `${obj.amount.toLocaleString('ar-EG')} ${obj.currency || ''}` : '—'; }
 const hasText = (s) => typeof s === 'string' && s.trim().length > 0;
+
+const lineClampStyles = `
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+`;
 
 export default function PlayerProfilePage() {
   const { id } = useParams();
@@ -146,13 +152,12 @@ if (typeof window !== 'undefined') {
 
   React.useEffect(() => { fetchPlayer(); }, [fetchPlayer]);
 
-  // ====== Actions — تستخدم المسارات الصحيحة ======
   const toggleConfirmed = async () => {
     if (!player?._id) return;
     setBusy(true);
     const next = !Boolean(player.isConfirmed);
     try {
-      setPlayer((p) => ({ ...p, isConfirmed: next })); // optimistic
+      setPlayer((p) => ({ ...p, isConfirmed: next }));
       const res = await fetch(epConfirm(player._id), {
         method: 'PATCH',
         headers: headers(),
@@ -162,7 +167,7 @@ if (typeof window !== 'undefined') {
       await Toast.fire({ icon: 'success', title: next ? 'تم التأكيد' : 'تم إلغاء التأكيد' });
       await fetchPlayer();
     } catch (e) {
-      setPlayer((p) => (p ? { ...p, isConfirmed: !next } : p)); // revert
+      setPlayer((p) => (p ? { ...p, isConfirmed: !next } : p)); 
       await Toast.fire({ icon: 'error', html: e.message || 'تعذر تعديل حالة التأكيد' });
     } finally {
       setBusy(false);
@@ -174,7 +179,7 @@ if (typeof window !== 'undefined') {
     setBusy(true);
     const next = !Boolean(player.isActive);
     try {
-      setPlayer((p) => ({ ...p, isActive: next })); // optimistic
+      setPlayer((p) => ({ ...p, isActive: next })); 
       const res = await fetch(epActive(player._id), {
         method: 'PATCH',
         headers: headers(),
@@ -206,7 +211,7 @@ if (typeof window !== 'undefined') {
     };
 
     try {
-      setPlayer((p) => ({ ...p, isPromoted: { ...payload } })); // optimistic
+      setPlayer((p) => ({ ...p, isPromoted: { ...payload } })); 
       const res = await fetch(epPromote(player._id), {
         method: 'PATCH',
         headers: headers(),
@@ -216,7 +221,7 @@ if (typeof window !== 'undefined') {
       await Toast.fire({ icon: 'success', title: next ? 'تم الترويج' : 'تم إلغاء الترويج' });
       await fetchPlayer();
     } catch (e) {
-      setPlayer((p) => (p ? { ...p, isPromoted: player.isPromoted } : p)); // revert to previous
+      setPlayer((p) => (p ? { ...p, isPromoted: player.isPromoted } : p)); 
       await Toast.fire({ icon: 'error', html: e.message || 'تعذر تعديل الترويج' });
     } finally {
       setBusy(false);
@@ -224,14 +229,37 @@ if (typeof window !== 'undefined') {
   };
 
   // ====== Render ======
-  if (loading) return <div className="p-6 text-blue-600" dir="rtl">جارٍ التحميل…</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">جارٍ تحميل بيانات اللاعب</h2>
+          <p className="text-sm text-gray-500">يرجى الانتظار...</p>
+        </div>
+      </div>
+    );
+  }
+  
   if (!player) {
     return (
-      <div className="p-6" dir="rtl">
-        <div className="text-red-600 mb-4">لا توجد بيانات لعرضها.</div>
-        <button onClick={() => router.back()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
-          <ArrowRight className="w-4 h-4" /> رجوع
-        </button>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="text-center max-w-md mx-auto px-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+            <XCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">لم يتم العثور على اللاعب</h2>
+          <p className="text-sm text-gray-500 mb-6">عذراً، لا توجد بيانات لعرضها أو قد يكون المعرف غير صحيح.</p>
+          <button 
+            onClick={() => router.back()} 
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 font-medium"
+          >
+            <ArrowRight className="w-4 h-4" /> 
+            العودة للخلف
+          </button>
+        </div>
       </div>
     );
   }
@@ -242,50 +270,63 @@ if (typeof window !== 'undefined') {
   const coverURL = profURL || (player?.media?.images?.[0]?.url || '');
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
-      {/* Cover / Hero */}
-      <div className="relative h-56 sm:h-64 md:h-72 lg:h-80 w-8/12 mx-auto overflow-hidden">
+    <>
+      <style dangerouslySetInnerHTML={{ __html: lineClampStyles }} />
+      <div className="min-h-screen bg-slate-50" dir="rtl">
+        {/* Cover / Hero */}
+        <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 w-full overflow-hidden">
         {coverURL ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverURL} alt="cover" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-blue-600" />
+          <div className="w-full h-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        
+        {/* Back button overlay */}
+        <button
+          onClick={() => router.back()}
+          className="absolute top-4 right-4 p-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 text-white hover:bg-black/40 transition-all duration-200"
+          title="رجوع"
+        >
+          <ArrowRight className="w-5 h-5" />
+        </button>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="p-4 sm:p-6 md:p-7">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-center gap-4 sm:gap-5">
-                <div className="-mt-14 sm:-mt-16">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                <div className="-mt-16 sm:-mt-16 flex-shrink-0">
                   <div className="relative">
                     {profURL ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+                    
                       <img
                         src={profURL}
                         alt={player?.name || player?.user?.name || 'player'}
-                        className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl object-cover ring-4 ring-white shadow-xl"
+                        className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl object-cover ring-4 ring-white shadow-xl"
                       />
                     ) : (
-                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 ring-4 ring-white shadow-xl flex items-center justify-center text-white text-3xl font-bold">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 ring-4 ring-white shadow-xl flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
                         {(player?.name || player?.user?.name || 'PL').split(' ').slice(0,2).map(s => s[0]).join('').toUpperCase()}
                       </div>
                     )}
                     {promoted && (
-                      <span className="absolute -bottom-2 -left-2 bg-yellow-400 text-yellow-900 text-xs px-2 py-1 rounded-full shadow">
-                        <Star className="w-3.5 h-3.5 inline mr-1" /> مروّج
+                      <span className="absolute -bottom-2 -left-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-xs px-2.5 py-1 rounded-full shadow-lg font-medium">
+                        <Star className="w-3 h-3 inline mr-1" /> مروّج
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-1">
-                  <div className="flex items-center flex-wrap gap-2">
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                      {player?.name || player?.user?.name || '—'}
+                <div className="flex-1 min-w-0 mt-1">
+                  <div className="flex items-start flex-col gap-2">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight break-words max-w-full" title={player?.name || player?.user?.name || '—'}>
+                      <span className="line-clamp-2">
+                        {player?.name || player?.user?.name || '—'}
+                      </span>
                     </h1>
 
                     {/* نشط/غير نشط */}
@@ -333,46 +374,86 @@ if (typeof window !== 'undefined') {
               </div>
 
               {/* ACTIONS */}
-              <div className="flex items-center flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch gap-2 w-full lg:w-auto lg:min-w-80">
                 <button
                   onClick={toggleConfirmed}
                   disabled={busy}
-                  className={`px-3 py-2 text-sm rounded-lg text-white w-full ${player.isConfirmed ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                  className={`px-4 py-2.5 text-sm rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    player.isConfirmed 
+                      ? 'bg-amber-600 hover:bg-amber-700 focus:ring-4 focus:ring-amber-200 text-white' 
+                      : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 text-white'
+                  }`}
                   title={player.isConfirmed ? 'إلغاء التأكيد' : 'تأكيد'}
                 >
-                  {player.isConfirmed ? 'إلغاء التأكيد' : 'تأكيد'}
+                  {busy ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : player.isConfirmed ? (
+                    <XCircle className="w-4 h-4" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4" />
+                  )}
+                  <span className="truncate">
+                    {player.isConfirmed ? 'إلغاء التأكيد' : 'تأكيد'}
+                  </span>
                 </button>
 
                 <button
                   onClick={toggleActive}
                   disabled={busy}
-                  className={`px-3 py-2 text-sm rounded-lg text-white w-full ${player.isActive ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                  className={`px-4 py-2.5 text-sm rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    player.isActive 
+                      ? 'bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-200 text-white' 
+                      : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 text-white'
+                  }`}
                   title={player.isActive ? 'تعطيل ظهور اللاعب' : 'تفعيل ظهور اللاعب'}
                 >
-                  {player.isActive ? 'تعطيل ظهور اللاعب' : 'تفعيل ظهور اللاعب'}
+                  {busy ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : player.isActive ? (
+                    <Eye className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                  <span className="truncate">
+                    {player.isActive ? 'تعطيل' : 'تفعيل'}
+                  </span>
                 </button>
 
                 <button
                   onClick={togglePromoted}
                   disabled={busy}
-                  className={`px-3 py-2 text-sm rounded-lg text-white w-full ${isCurrentlyPromoted(player.isPromoted) ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  className={`px-4 py-2.5 text-sm rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    isCurrentlyPromoted(player.isPromoted) 
+                      ? 'bg-amber-600 hover:bg-amber-700 focus:ring-4 focus:ring-amber-200 text-white' 
+                      : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 text-white'
+                  }`}
                   title={isCurrentlyPromoted(player.isPromoted) ? 'إلغاء الترويج' : 'ترويج'}
                 >
-                  {isCurrentlyPromoted(player.isPromoted) ? 'إلغاء الترويج' : 'ترويج'}
+                  {busy ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Star className="w-4 h-4" />
+                  )}
+                  <span className="truncate">
+                    {isCurrentlyPromoted(player.isPromoted) ? 'إلغاء الترويج' : 'ترويج'}
+                  </span>
                 </button>
 
-                <button
-                  onClick={() => router.push(`/players/update/${player._id}`)}
-                  className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 w-full"
-                >
-                  تعديل
-                </button>
-                <button
-                  onClick={() => router.back()}
-                  className="px-3 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 w-full"
-                >
-                  <ArrowRight className="inline w-4 h-4" /> رجوع
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push(`/players/update/${player._id}`)}
+                    className="flex-1 px-4 py-2.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>تعديل</span>
+                  </button>
+                  <button
+                    onClick={() => router.back()}
+                    className="px-4 py-2.5 text-sm rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-gray-200 font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -495,16 +576,26 @@ if (typeof window !== 'undefined') {
 
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
 function Info({ label, value, icon, trailing }) {
+  const displayValue = value ?? '—';
+  const isLongValue = typeof displayValue === 'string' && displayValue.length > 30;
+  
   return (
-    <div className="bg-white rounded-lg p-3 border border-gray-200">
-      <div className="text-[11px] text-gray-500 flex items-center gap-1">{icon}{label}</div>
-      <div className="text-sm font-medium text-gray-900 mt-1 break-words flex items-center gap-2">
-        {value ?? '—'} {trailing}
+    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 transition-colors duration-200">
+      <div className="text-[11px] text-gray-500 flex items-center gap-1.5 font-medium uppercase tracking-wide">
+        <span className="text-gray-400">{icon}</span>
+        {label}
+      </div>
+      <div className="text-sm font-medium text-gray-900 mt-2 break-words flex items-start gap-2" title={isLongValue ? displayValue : undefined}>
+        <span className={`flex-1 ${isLongValue ? 'line-clamp-2' : ''}`}>
+          {displayValue}
+        </span>
+        {trailing && <span className="flex-shrink-0">{trailing}</span>}
       </div>
     </div>
   );

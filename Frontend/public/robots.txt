@@ -1,0 +1,81 @@
+# Robots.txt for Muta7Market Sports Platform
+# https://muta7markt.com
+
+User-agent: *
+Allow: /
+
+# Important pages for crawling
+Allow: /sports
+Allow: /players
+Allow: /coaches
+Allow: /register-profile
+Allow: /signin
+Allow: /signup
+Allow: /info
+Allow: /privacy-terms
+Allow: /home
+
+# Sports category pages
+Allow: /sports/football
+Allow: /sports/basketball
+Allow: /sports/volleyball
+Allow: /sports/tennis
+Allow: /sports/badminton
+Allow: /sports/handball
+Allow: /sports/squash
+Allow: /sports/wrestling
+Allow: /sports/judo
+Allow: /sports/taekwondo
+Allow: /sports/billiards
+
+# Disallow private/admin areas
+Disallow: /profile
+Disallow: /otp
+Disallow: /otp-for-restpassword
+Disallow: /forgetpassword
+
+# Disallow API endpoints if served from same domain
+Disallow: /api/
+
+# Disallow search parameters to avoid duplicate content
+Disallow: /*?*search=*
+Disallow: /*?*page=*
+Disallow: /*?*sort=*
+Disallow: /*?*filter=*
+
+# Common crawl restrictions
+Disallow: /uploads/
+Disallow: /*.pdf$
+Disallow: /tmp/
+Disallow: /logs/
+
+# Rate limiting to be respectful
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://muta7markt.com/sitemap.xml
+
+# Specific search engine directives
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: facebookexternalhit
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /

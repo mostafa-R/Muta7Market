@@ -1,11 +1,21 @@
 // app/payments/invoices/page.jsx
 'use client';
 
-import React from 'react';
 import {
-  Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
-  Mail, CheckCircle, XCircle, ExternalLink
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
+  ChevronLeft, ChevronRight,
+  Copy,
+  ExternalLink, Loader2,
+  Mail,
+  RefreshCw,
+  Users,
+  XCircle
 } from 'lucide-react';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 const API_ROOT  = (process.env.NEXT_PUBLIC_BASE_URL).replace(/\/$/, '');
@@ -47,6 +57,21 @@ async function extractBackendError(res) {
   }
 }
 
+const lineClampStyles = `
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+`;
+
 const fmtDateTime = (d) => d ? new Date(d).toLocaleString('ar-EG') : '—';
 const money = (amt, cur='SAR') => (amt || amt === 0) ? `${Number(amt).toLocaleString('ar-EG')} ${cur}` : '—';
 
@@ -71,27 +96,25 @@ const statusBadge = (s) => {
 };
 
 export default function InvoicesPage() {
-  // server pagination + filters
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
-  const [statusServer, setStatusServer] = React.useState('all'); // all | paid | notpaid
-  const [productServer, setProductServer] = React.useState('all'); // all | listing | promotion | contacts_access
-  const [userIdServer, setUserIdServer]   = React.useState('');
-  const [orderServer, setOrderServer]     = React.useState('');
+  const [statusServer, setStatusServer] = React.useState('all');
+  const [productServer, setProductServer] = React.useState('all');
+  const [userIdServer, setUserIdServer] = React.useState('');
+  const [orderServer, setOrderServer] = React.useState('');
 
-  // client sort
-  const [sortBy, setSortBy]   = React.useState('createdAt');
+  const [sortBy, setSortBy] = React.useState('createdAt');
   const [sortDir, setSortDir] = React.useState('desc');
 
-  // data
-  const [rows, setRows]   = React.useState([]);
+  const [rows, setRows] = React.useState([]);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [error, setError] = React.useState('');
 
-  // user cache { userId: {name, email, phone} | null }
   const [userMap, setUserMap] = React.useState({});
+  const [loadingUsers, setLoadingUsers] = React.useState(new Set());
 
-  // dedupe in-flight user requests
   const inFlightUsersRef = React.useRef(new Set());
 
   const authHeaders = React.useCallback(() => {
@@ -113,7 +136,56 @@ export default function InvoicesPage() {
     return q;
   }, [page, pageSize, statusServer, productServer, userIdServer, orderServer]);
 
-  // Effect A: fetch invoices (controls "loading")
+  const refreshData = React.useCallback(async () => {
+    setRefreshing(true);
+    const q = buildServerQuery();
+    
+    try {
+      const url = ENDPOINTS.list(q);
+      const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
+      if (!res.ok) {
+        const msg = await extractBackendError(res);
+        await Toast.fire({ icon: 'error', html: msg });
+        return;
+      }
+      const json = await res.json();
+      const items = json?.data?.items ?? [];
+
+      const mapped = items.map((it) => {
+        const target = it.targetType || 'user';
+        const paidAt = it.paidAt ? new Date(it.paidAt) : null;
+        let expireAt = it.expireAt || it.expiresAt || null;
+        if (!expireAt && paidAt && it.durationDays) {
+          expireAt = new Date(paidAt.getTime() + it.durationDays * 86400000).toISOString();
+        }
+        let remainingDays = null;
+        if (expireAt) {
+          remainingDays = Math.ceil((new Date(expireAt).getTime() - Date.now()) / 86400000);
+        }
+        return {
+          ...it,
+          targetType: target,
+          expireAt,
+          remainingDays,
+          _id: it.id,
+          createdAtLabel: fmtDateTime(it.createdAt),
+          paidAtLabel: fmtDateTime(it.paidAt),
+          expireAtLabel: fmtDateTime(expireAt),
+          amountLabel: money(it.amount, it.currency),
+        };
+      });
+
+      setRows(mapped);
+      setTotal(Number(json?.data?.total ?? mapped.length));
+      setError('');
+    } catch (e) {
+      console.error(e);
+      await Toast.fire({ icon: 'error', title: 'تعذر تحديث البيانات' });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [buildServerQuery, authHeaders]);
+
   React.useEffect(() => {
     const q = buildServerQuery();
     const ac = new AbortController();
@@ -121,13 +193,19 @@ export default function InvoicesPage() {
 
     (async () => {
       setLoading(true);
+      setError('');
+      
       try {
         const url = ENDPOINTS.list(q);
         const res = await fetch(url, { headers: authHeaders(), cache: 'no-store', signal: ac.signal });
         if (!res.ok) {
           const msg = await extractBackendError(res);
           await Toast.fire({ icon: 'error', html: msg });
-          setRows([]); setTotal(0);
+          if (!canceled) {
+            setRows([]);
+            setTotal(0);
+            setError('فشل في جلب الفواتير. تأكد من الاتصال بالإنترنت والصلاحيات.');
+          }
           return;
         }
         const json = await res.json();
@@ -151,24 +229,28 @@ export default function InvoicesPage() {
             remainingDays,
             _id: it.id,
             createdAtLabel: fmtDateTime(it.createdAt),
-            paidAtLabel:    fmtDateTime(it.paidAt),
-            expireAtLabel:  fmtDateTime(expireAt),
-            amountLabel:    money(it.amount, it.currency),
+            paidAtLabel: fmtDateTime(it.paidAt),
+            expireAtLabel: fmtDateTime(expireAt),
+            amountLabel: money(it.amount, it.currency),
           };
         });
 
         if (!canceled) {
           setRows(mapped);
           setTotal(Number(json?.data?.total ?? mapped.length));
+          setError('');
         }
       } catch (e) {
         if (e.name !== 'AbortError') {
           console.error(e);
           await Toast.fire({ icon: 'error', title: 'تعذر جلب الفواتير' });
-          if (!canceled) { setRows([]); setTotal(0); }
+          if (!canceled) {
+            setRows([]);
+            setTotal(0);
+            setError('حدث خطأ في جلب البيانات. يرجى المحاولة مرة أخرى.');
+          }
         }
       } finally {
-        // Always clear loading, even if the first (aborted) invocation finishes later
         if (!canceled) setLoading(false);
         else setLoading(false);
       }
@@ -177,7 +259,6 @@ export default function InvoicesPage() {
     return () => { canceled = true; ac.abort(); };
   }, [buildServerQuery, authHeaders]);
 
-  // Effect B: fetch users for current rows (never touches "loading")
   React.useEffect(() => {
     const idsAll = [...new Set(rows.map(x => x.userId).filter(Boolean))];
     const ids = idsAll.filter(id =>
@@ -186,34 +267,48 @@ export default function InvoicesPage() {
     );
     if (!ids.length) return;
 
-    ids.forEach(id => inFlightUsersRef.current.add(id));
+    ids.forEach(id => {
+      inFlightUsersRef.current.add(id);
+      setLoadingUsers(prev => new Set([...prev, id]));
+    });
 
     (async () => {
-      const results = await Promise.allSettled(
-        ids.map(id => fetch(ENDPOINTS.user(id), { headers: authHeaders(), cache: 'no-store' }))
-      );
-      const entries = await Promise.all(results.map(async (r, i) => {
-        const id = ids[i];
-        if (r.status !== 'fulfilled' || !r.value.ok) return [id, null];
-        const data = await r.value.json().catch(() => null);
-        const u = data?.data?.user ?? data?.data ?? null;
-        if (!u) return [id, null];
-        return [id, { name: u.name || '-', email: u.email || '-', phone: u.phone || null }];
-      }));
+      try {
+        const results = await Promise.allSettled(
+          ids.map(id => fetch(ENDPOINTS.user(id), { headers: authHeaders(), cache: 'no-store' }))
+        );
+        const entries = await Promise.all(results.map(async (r, i) => {
+          const id = ids[i];
+          if (r.status !== 'fulfilled' || !r.value.ok) return [id, null];
+          const data = await r.value.json().catch(() => null);
+          const u = data?.data?.user ?? data?.data ?? null;
+          if (!u) return [id, null];
+          return [id, { name: u.name || '-', email: u.email || '-', phone: u.phone || null }];
+        }));
 
-      setUserMap(prev => {
-        let changed = false;
-        const next = { ...prev };
-        for (const [id, val] of entries) {
-          if (!Object.prototype.hasOwnProperty.call(next, id)) {
-            next[id] = val; // cache even if null
-            changed = true;
+        setUserMap(prev => {
+          let changed = false;
+          const next = { ...prev };
+          for (const [id, val] of entries) {
+            if (!Object.prototype.hasOwnProperty.call(next, id)) {
+              next[id] = val;
+              changed = true;
+            }
           }
-        }
-        return changed ? next : prev;
-      });
-
-      ids.forEach(id => inFlightUsersRef.current.delete(id));
+          return changed ? next : prev;
+        });
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      } finally {
+        ids.forEach(id => {
+          inFlightUsersRef.current.delete(id);
+          setLoadingUsers(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        });
+      }
     })();
   }, [rows, authHeaders, userMap]);
 
@@ -280,14 +375,111 @@ export default function InvoicesPage() {
     return <span className="px-2 py-0.5 rounded-full text-xs font-medium border bg-emerald-50 text-emerald-700 border-emerald-200 whitespace-nowrap w-fit">{days} يوم</span>;
   };
 
+  const copyToClipboard = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      Toast.fire({ icon: 'success', title: `تم نسخ ${label}` });
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      Toast.fire({ icon: 'error', title: 'فشل في النسخ' });
+    }
+  };
+
   return (
-    <div className="min-h-screen p-4 sm:p-6" dir="rtl">
-      <div className="mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">كل الفواتير</h1>
-          <p className="text-gray-600">فلترة بالمنتج/الحالة عبر رأس الجدول + ترقيم صفحات من الخادم.</p>
-        </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: lineClampStyles }} />
+      <div className="min-h-screen p-4 sm:p-6 bg-gray-50" dir="rtl">
+        <div className="mx-auto max-w-full">
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">إدارة الفواتير</h1>
+                <p className="text-gray-600 mt-1">إدارة ومراقبة جميع الفواتير والمدفوعات في النظام</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {(loading || refreshing) && (
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">{refreshing ? 'جاري التحديث...' : 'جاري التحميل...'}</span>
+                  </div>
+                )}
+                <button
+                  onClick={refreshData}
+                  disabled={loading || refreshing}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="تحديث البيانات"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">تحديث</span>
+                </button>
+              </div>
+            </div>
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Stats */}
+          {!loading && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">إجمالي الفواتير</p>
+                    <p className="text-2xl font-bold text-gray-900">{total}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-100">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">المدفوعة</p>
+                    <p className="text-2xl font-bold text-emerald-600">
+                      {rows.filter(r => String(r.status || '').toLowerCase() === 'paid').length}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-100">
+                    <CheckCircle className="w-6 h-6 text-emerald-600" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">غير مدفوعة</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {rows.filter(r => {
+                        const s = String(r.status || '').toLowerCase();
+                        return s === 'pending' || s === 'unpaid' || s === 'notpaid';
+                      }).length}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-red-100">
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">آخر تحديث</p>
+                    <p className="text-lg font-bold text-indigo-600">{new Date().toLocaleTimeString('ar-EG')}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-indigo-100">
+                    <RefreshCw className="w-6 h-6 text-indigo-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Controls */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
@@ -296,13 +488,14 @@ export default function InvoicesPage() {
               {/* Search line */}
               <div className="flex items-center gap-4">{/* reserved */}</div>
 
-              {/* Right: server filters + page size */}
-              <div className="flex items-center justify-start lg:justify-end gap-3">
+              <div className="flex items-center justify-start lg:justify-end gap-3 flex-wrap">
                 <select
                   value={statusServer}
                   onChange={(e) => { setStatusServer(e.target.value); setPage(1); }}
-                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white"
-                  title="الحالة (من الخادم)"
+                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="فلترة حسب حالة الدفع"
+                  disabled={loading}
+                  aria-label="فلترة حسب حالة الدفع"
                 >
                   <option value="all">الحالة: الكل</option>
                   <option value="paid">مدفوع</option>
@@ -312,13 +505,15 @@ export default function InvoicesPage() {
                 <select
                   value={productServer}
                   onChange={(e) => { setProductServer(e.target.value); setPage(1); }}
-                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white"
-                  title="المنتج (من الخادم)"
+                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="فلترة حسب نوع المنتج"
+                  disabled={loading}
+                  aria-label="فلترة حسب نوع المنتج"
                 >
                   <option value="all">المنتج: الكل</option>
-                  <option value="listing">listing</option>
-                  <option value="promotion">promotion</option>
-                  <option value="contacts_access">contacts_access</option>
+                  <option value="listing">إعلان</option>
+                  <option value="promotion">ترويج</option>
+                  <option value="contacts_access">الوصول للجهات</option>
                 </select>
 
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -326,7 +521,9 @@ export default function InvoicesPage() {
                   <select
                     value={pageSize}
                     onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading}
+                    aria-label="عدد العناصر في كل صفحة"
                   >
                     {[5,10,20,50,100].map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
@@ -357,24 +554,108 @@ export default function InvoicesPage() {
 
               <tbody className="bg-white divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={12} className="px-6 py-10 text-center text-gray-500">جارٍ التحميل…</td></tr>
+                  <tr>
+                    <td colSpan={12} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900 mb-1">جارٍ تحميل الفواتير</h3>
+                          <p className="text-sm text-gray-500">يرجى الانتظار...</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 ) : sorted.length === 0 ? (
-                  <tr><td colSpan={12} className="px-6 py-10 text-center text-gray-500">لا توجد نتائج</td></tr>
+                  <tr>
+                    <td colSpan={12} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Users className="w-12 h-12 text-gray-300" />
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900 mb-1">لا توجد فواتير</h3>
+                          <p className="text-sm text-gray-500">
+                            {statusServer !== 'all' || productServer !== 'all' 
+                              ? 'لا توجد نتائج مطابقة للفلاتر المحددة' 
+                              : 'لم يتم العثور على أي فواتير في النظام'
+                            }
+                          </p>
+                        </div>
+                        {(statusServer !== 'all' || productServer !== 'all') && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setStatusServer('all');
+                                setProductServer('all');
+                                setPage(1);
+                              }}
+                              className="text-sm text-blue-600 hover:text-blue-700 underline"
+                            >
+                              مسح الفلاتر
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ) : (
                   sorted.map((r, index) => {
                     const st = statusBadge(r.status);
                     const u = userMap[r.userId] || null;
                     return (
                       <tr key={r._id} className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                        {/* المستخدم */}
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 flex flex-col">
-                            <span className="font-semibold">{u?.name || '—'}</span>
-                            <span className="text-xs text-gray-600 inline-flex items-center gap-1">
-                              <Mail className="w-4 h-4" /> {u?.email || '—'}
-                            </span>
-                            <span className="text-[11px] text-gray-400 mt-0.5">ID: <code className="font-mono">{r.userId || '—'}</code></span>
-                          </div>
+                          {loadingUsers.has(r.userId) ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                              <div className="text-sm text-gray-500">جارٍ التحميل...</div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-900 flex flex-col max-w-48">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold line-clamp-1" title={u?.name || 'غير متوفر'}>
+                                  {u?.name || 'غير متوفر'}
+                                </span>
+                                {u && (
+                                  <button
+                                    onClick={() => copyToClipboard(u.name, 'اسم المستخدم')}
+                                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                                    title="نسخ الاسم"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-600 inline-flex items-center gap-1 mt-1">
+                                <Mail className="w-3 h-3 flex-shrink-0" />
+                                <span className="line-clamp-1" title={u?.email || 'غير متوفر'}>
+                                  {u?.email || 'غير متوفر'}
+                                </span>
+                                {u?.email && (
+                                  <button
+                                    onClick={() => copyToClipboard(u.email, 'البريد الإلكتروني')}
+                                    className="text-gray-400 hover:text-blue-600 transition-colors ml-1"
+                                    title="نسخ البريد الإلكتروني"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
+                                <span>ID:</span>
+                                <code className="font-mono line-clamp-1" title={r.userId || 'غير متوفر'}>
+                                  {r.userId || 'غير متوفر'}
+                                </code>
+                                {r.userId && (
+                                  <button
+                                    onClick={() => copyToClipboard(r.userId, 'معرف المستخدم')}
+                                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                                    title="نسخ معرف المستخدم"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </td>
 
                         {/* الفئة */}
@@ -403,10 +684,22 @@ export default function InvoicesPage() {
                           <div className="text-lg  text-gray-900">{r.amountLabel}</div>
                         </td>
 
-                        {/* رقم فاتورة المزود */}
-                        <td className="px-6 py-4 w-1/2">
-                          <div className="w-full truncate">
-                            <span className="text-sm text-gray-900 font-mono">{r.providerInvoiceId || '—'}</span>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 max-w-48">
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-900 font-mono line-clamp-1" title={r.providerInvoiceId || 'غير متوفر'}>
+                                {r.providerInvoiceId || 'غير متوفر'}
+                              </div>
+                            </div>
+                            {r.providerInvoiceId && (
+                              <button
+                                onClick={() => copyToClipboard(r.providerInvoiceId, 'رقم فاتورة المزود')}
+                                className="text-gray-400 hover:text-blue-600 transition-colors flex-shrink-0"
+                                title="نسخ رقم الفاتورة"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </td>
 
@@ -422,18 +715,19 @@ export default function InvoicesPage() {
                         {/* تاريخ الانتهاء */}
                         <td className="px-6 py-4"><div className="text-sm text-gray-700">{r.expireAtLabel}</div></td>
 
-                        {/* روابط */}
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {r.paymentUrl ? (
                               <a
                                 href={r.paymentUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 whitespace-nowrap"
-                                title="رابط الدفع"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 whitespace-nowrap transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-emerald-200"
+                                title="فتح رابط الدفع في نافذة جديدة"
+                                aria-label="رابط الدفع"
                               >
-                                <ExternalLink className="w-3.5 h-3.5" /> دفع
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>دفع</span>
                               </a>
                             ) : null}
                             {r.receiptUrl ? (
@@ -441,12 +735,17 @@ export default function InvoicesPage() {
                                 href={r.receiptUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 whitespace-nowrap"
-                                title="إيصال"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 whitespace-nowrap transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-indigo-200"
+                                title="فتح الإيصال في نافذة جديدة"
+                                aria-label="إيصال الدفع"
                               >
-                                <ExternalLink className="w-3.5 h-3.5" /> إيصال
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>إيصال</span>
                               </a>
                             ) : null}
+                            {!r.paymentUrl && !r.receiptUrl && (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
                           </div>
                         </td>
 
@@ -519,18 +818,29 @@ export default function InvoicesPage() {
             </div>
           </div>
         </div>
-
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 function Th({ label, onClick, sort, className = '' }) {
   return (
     <th
-      className={`px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors ${className}`}
+      className={`px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider ${
+        onClick ? 'cursor-pointer group hover:bg-gray-100 transition-colors' : ''
+      } ${className}`}
       onClick={onClick}
-      title="اضغط للفرز/التبديل"
+      title={onClick ? 'اضغط للفرز أو التبديل' : label}
+      role={onClick ? 'button' : 'columnheader'}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
+      aria-label={onClick ? `فرز حسب ${label}` : label}
     >
       <div className="flex items-center gap-2">
         <span>{label}</span>

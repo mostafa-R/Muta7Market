@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/app/component/ui/card";
 import PaymentBtn from "@/app/register-profile/components/PaymentBtn";
+import DynamicSocialMeta from "@/components/SEO/DynamicSocialMeta";
 import { useLanguage } from "@/contexts/LanguageContext";
 import axios from "axios";
 import {
@@ -688,6 +689,34 @@ const PlayerProfile = () => {
       className="min-h-screen bg-gray-100"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
+      {/* Dynamic Social Media Meta Tags for Enhanced Sharing */}
+      <DynamicSocialMeta
+        title={`${player.name} - ${
+          player.jop === "coach" ? "مدرب" : "لاعب"
+        } ${getSportText(player.game, t)} | ${
+          player.jop === "coach" ? "Coach" : "Player"
+        } Profile`}
+        description={
+          player.jop === "coach"
+            ? `Professional ${player.game} coach from ${player.nationality}. View coaching profile and connect directly.`
+            : `${player.category || ""} ${player.game} player from ${
+                player.nationality
+              }${
+                player.age ? `, age ${player.age}` : ""
+              }. View full profile with videos and stats.`
+        }
+        image={player.media?.profileImage?.url}
+        type="profile"
+        playerData={{
+          name: player.name,
+          sport: player.game || "Sports",
+          nationality: player.nationality || "International",
+          age: player.age,
+          category: player.category,
+          status: player.status,
+          isCoach: player.jop === "coach",
+        }}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Link
