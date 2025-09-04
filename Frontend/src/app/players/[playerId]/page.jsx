@@ -41,40 +41,48 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  translateNationality,
+  translateSport,
+} from "../../../utils/translationFallback";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players`;
 
 const getSportText = (sport, t) => {
-  const sportKey = sport?.toLowerCase();
-  const translatedSport = t(`sports.${sportKey}`, { defaultValue: sport });
-  return translatedSport;
+  return translateSport(t, sport);
 };
 
 const getNationalityText = (nationality, t) => {
-  const nationalityKey = nationality?.toLowerCase();
-  const translatedNationality = t(`nationalities.${nationalityKey}`, {
-    defaultValue: nationality,
-  });
-  return translatedNationality;
+  return translateNationality(t, nationality);
 };
 
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
 
   const sportKey = sport?.toLowerCase();
-  let translatedPosition = t(
-    `positions.${sportKey}.${position.toLowerCase().replace(/\s+/g, "")}`,
-    { defaultValue: null }
-  );
+  const positionKey = position.toLowerCase().replace(/\s+/g, "");
 
-  if (!translatedPosition) {
-    translatedPosition = t(
-      `positions.${position.toLowerCase().replace(/\s+/g, "")}`,
-      { defaultValue: position }
-    );
+  
+  const fullKey = `positions.${sportKey}.${positionKey}`;
+  let translatedPosition = t(fullKey);
+
+  if (translatedPosition === fullKey) {
+    const generalKey = `positions.${positionKey}`;
+    translatedPosition = t(generalKey);
+
+    if (translatedPosition === generalKey) {
+      return formatPositionText(position);
+    }
   }
 
   return translatedPosition;
+};
+
+const formatPositionText = (text) => {
+  return text
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase()) 
+    .trim();
 };
 
 const PlayerProfile = () => {

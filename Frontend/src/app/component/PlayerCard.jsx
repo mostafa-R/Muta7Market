@@ -5,6 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  translateNationality,
+  translatePosition,
+  translateSport,
+} from "../../utils/translationFallback";
 import PlayerRoleBadge from "./PlayerRoleBadge";
 
 const getStatusColor = (status) => {
@@ -42,58 +47,35 @@ const getCategoryText = (jop, t) => {
 };
 
 const getSportText = (sport, t) => {
-  const sportKey = sport?.toLowerCase();
-  const translatedSport = t(`sports.${sportKey}`, { defaultValue: sport });
-  return translatedSport;
+  return translateSport(t, sport);
 };
 
 const getNationalityText = (nationality, t) => {
-  const nationalityKey = nationality?.toLowerCase();
-  const translatedNationality = t(`nationalities.${nationalityKey}`, {
-    defaultValue: nationality,
-  });
-  return translatedNationality;
+  return translateNationality(t, nationality);
 };
 
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
 
   if (position.includes(".")) {
-    let translatedPosition = t(position, { defaultValue: null });
-    if (
-      translatedPosition &&
-      translatedPosition !== position &&
-      translatedPosition !== null
-    ) {
-      return translatedPosition;
+    const translated = t(position);
+
+    if (translated === position) {
+      const positionKey = position.split(".").pop();
+      return formatPositionText(positionKey);
     }
 
-    const positionKey = position.split(".").pop();
-
-    const finalTranslation = t(`positions.${positionKey}`, {
-      defaultValue: null,
-    });
-    if (finalTranslation && finalTranslation !== `positions.${positionKey}`) {
-      return finalTranslation;
-    }
-
-    return positionKey;
+    return translated;
   }
 
-  const sportKey = sport?.toLowerCase();
-  let translatedPosition = t(
-    `positions.${sportKey}.${position.toLowerCase().replace(/\s+/g, "")}`,
-    { defaultValue: null }
-  );
+  return translatePosition(t, position, sport);
+};
 
-  if (!translatedPosition) {
-    translatedPosition = t(
-      `positions.${position.toLowerCase().replace(/\s+/g, "")}`,
-      { defaultValue: position }
-    );
-  }
-
-  return translatedPosition;
+const formatPositionText = (text) => {
+  return text
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
 };
 
 const getGenderBorderColor = (gender) => {

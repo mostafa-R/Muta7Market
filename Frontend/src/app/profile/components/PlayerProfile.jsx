@@ -54,30 +54,54 @@ const PlayerProfile = ({
         translatedValue = t(`player.status.${statusKey}`, {
           defaultValue: null,
         });
-      }
-      else if (translationNamespace === "positions") {
-        if (formData.game) {
-          const sportKey = formData.game.toLowerCase();
-          translatedValue = t(`positions.${sportKey}.${value.toLowerCase()}`, {
-            defaultValue: null,
-          });
+      } else if (translationNamespace === "positions") {
+        const positionKey = value.toLowerCase().replace(/\s+/g, "");
+        const sportKey = formData.game?.toLowerCase();
+
+        if (sportKey) {
+          const fullKey = `positions.${sportKey}.${positionKey}`;
+          translatedValue = t(fullKey);
+
+          if (translatedValue === fullKey) {
+            translatedValue = null;
+          }
         }
 
         if (!translatedValue) {
-          translatedValue = t(`positions.${value.toLowerCase()}`, {
-            defaultValue: null,
-          });
+          const generalKey = `positions.${positionKey}`;
+          translatedValue = t(generalKey);
+
+          if (translatedValue === generalKey) {
+            translatedValue = value
+              .replace(/([A-Z])/g, " $1")
+              .replace(/^./, (str) => str.toUpperCase())
+              .trim();
+          }
         }
-      }
-      else {
-        translatedValue = t(`${translationNamespace}.${value.toLowerCase()}`, {
-          defaultValue: null,
-        });
+      } else {
+        const key = `${translationNamespace}.${value.toLowerCase()}`;
+        translatedValue = t(key);
+
+        if (translatedValue === key) {
+          translatedValue = value
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, (str) => str.toUpperCase())
+            .trim();
+        }
       }
     }
 
     if (!translatedValue) {
-      translatedValue = t(value.toLowerCase(), { defaultValue: null });
+      const lastAttempt = t(value.toLowerCase());
+
+      if (lastAttempt === value.toLowerCase()) {
+        translatedValue = value
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, (str) => str.toUpperCase())
+          .trim();
+      } else {
+        translatedValue = lastAttempt;
+      }
     }
 
     return translatedValue || value;

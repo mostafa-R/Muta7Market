@@ -22,6 +22,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirection } from "@/hooks/use-direction";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { translateSport } from "../../utils/translationFallback";
 
 interface SportCardProps {
   searchTerm: string;
@@ -35,118 +36,118 @@ function SportCard({ searchTerm }: SportCardProps) {
   const sports = [
     {
       id: "handball",
-      name: t("sports.handball"),
+      name: translateSport(t, "handball"),
       icon: "./assets/handball.svg",
     },
     {
       id: "basketball",
-      name: t("sports.basketball"),
+      name: translateSport(t, "basketball"),
       icon: "./assets/basketball.svg",
     },
     {
       id: "volleyball",
-      name: t("sports.volleyball"),
+      name: translateSport(t, "volleyball"),
       icon: "./assets/volleyball.svg",
     },
     {
       id: "football",
-      name: t("sports.football"),
+      name: translateSport(t, "football"),
       icon: "./assets/football-ball.svg",
     },
     {
       id: "futsal",
-      name: t("sports.futsal"),
+      name: translateSport(t, "futsal"),
       icon: GiGoalKeeper,
     },
     {
       id: "badminton",
-      name: t("sports.badminton"),
+      name: translateSport(t, "badminton"),
       icon: "./assets/badminton.svg",
     },
     {
       id: "athletics",
-      name: t("sports.athletics"),
+      name: translateSport(t, "athletics"),
       icon: FaRunning,
     },
     {
       id: "tennis",
-      name: t("sports.tennis"),
+      name: translateSport(t, "tennis"),
       icon: MdSportsTennis,
     },
     {
       id: "tabletennis",
-      name: t("sports.tabletennis"),
+      name: translateSport(t, "tabletennis"),
       icon: FaTableTennis,
     },
     {
       id: "karate",
-      name: t("sports.karate"),
+      name: translateSport(t, "karate"),
       icon: GiKimono,
     },
     {
       id: "taekwondo",
-      name: t("sports.taekwondo"),
+      name: translateSport(t, "taekwondo"),
       icon: "./assets/taekwondo.svg",
     },
     {
       id: "archery",
-      name: t("sports.archery"),
+      name: translateSport(t, "archery"),
       icon: GiArcheryTarget,
     },
     {
       id: "esports",
-      name: t("sports.esports"),
+      name: translateSport(t, "esports"),
       icon: IoGameControllerOutline,
     },
     {
       id: "judo",
-      name: t("sports.judo"),
+      name: translateSport(t, "judo"),
       icon: "./assets/judo.svg",
     },
     {
       id: "fencing",
-      name: t("sports.fencing"),
+      name: translateSport(t, "fencing"),
       icon: GiSwordman,
     },
     {
       id: "cycling",
-      name: t("sports.cycling"),
+      name: translateSport(t, "cycling"),
       icon: FaBiking,
     },
     {
       id: "squash",
-      name: t("sports.squash"),
+      name: translateSport(t, "squash"),
       icon: "./assets/squash.svg",
     },
     {
       id: "weightlifting",
-      name: t("sports.weightlifting"),
+      name: translateSport(t, "weightlifting"),
       icon: FaDumbbell,
     },
 
     {
       id: "boxing",
-      name: t("sports.boxing"),
+      name: translateSport(t, "boxing"),
       icon: GiBoxingGlove,
     },
     {
       id: "gymnastics",
-      name: t("sports.gymnastics"),
+      name: translateSport(t, "gymnastics"),
       icon: MdSportsGymnastics,
     },
     {
       id: "billiards",
-      name: t("sports.billiards"),
+      name: translateSport(t, "billiards"),
       icon: "./assets/billiards.svg",
     },
     {
       id: "wrestling",
-      name: t("sports.wrestling"),
+      name: translateSport(t, "wrestling"),
       icon: "./assets/wrestling.svg",
     },
     {
       id: "swimming",
-      name: t("sports.swimming"),
+      name: translateSport(t, "swimming"),
       icon: FaSwimmer,
     },
   ];
