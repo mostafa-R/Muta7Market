@@ -1,11 +1,7 @@
-import { Metadata } from "next";
 
-interface PlayerLayoutProps {
-  params: { playerId: string };
-  children: React.ReactNode;
-}
+import React from "react";
 
-async function getPlayerData(playerId: string) {
+async function getPlayerData(playerId) {
   try {
     const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players/${playerId}`;
     const response = await fetch(API_URL, {
@@ -24,11 +20,7 @@ async function getPlayerData(playerId: string) {
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { playerId: string };
-}): Promise<Metadata> {
+export async function generateMetadata({ params }) {
   const player = await getPlayerData(params.playerId);
 
   if (!player) {
@@ -174,8 +166,8 @@ export async function generateMetadata({
 }
 
 // Helper functions for Arabic translations
-function getSportInArabic(sport: string): string {
-  const sportTranslations: { [key: string]: string } = {
+function getSportInArabic(sport) {
+  const sportTranslations = {
     football: "كرة القدم",
     basketball: "كرة السلة",
     volleyball: "كرة الطائرة",
@@ -191,8 +183,8 @@ function getSportInArabic(sport: string): string {
   return sportTranslations[sport.toLowerCase()] || sport;
 }
 
-function getNationalityInArabic(nationality: string): string {
-  const nationalityTranslations: { [key: string]: string } = {
+function getNationalityInArabic(nationality) {
+  const nationalityTranslations = {
     "Saudi Arabia": "السعودية",
     "Saudi Arabian": "سعودي",
     Egypt: "مصر",
@@ -219,6 +211,10 @@ function getNationalityInArabic(nationality: string): string {
   return nationalityTranslations[nationality] || nationality;
 }
 
-export default function PlayerLayout({ children }: PlayerLayoutProps) {
-  return children;
+export default function PlayerLayout({ children }) {
+  return (
+    <React.Fragment>
+      {children}
+    </React.Fragment>
+  );
 }
