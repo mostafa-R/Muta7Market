@@ -33,14 +33,11 @@ export const createSportSchema = Joi.object({
 
   roleTypes: Joi.array().items(
     Joi.object({
+      jop: Joi.string().valid("player", "coach").required(), // <-- add this
       name: Joi.object({
         ar: Joi.string().required(),
         en: Joi.string().required(),
       }).required(),
-      description: Joi.object({
-        ar: Joi.string().allow("", null),
-        en: Joi.string().allow("", null),
-      }),
     })
   ),
 
@@ -88,14 +85,11 @@ export const updateSportSchema = Joi.object({
 
   roleTypes: Joi.array().items(
     Joi.object({
+      jop: Joi.string().valid("player", "coach").required(), // <-- add this
       name: Joi.object({
         ar: Joi.string().required(),
         en: Joi.string().required(),
       }).required(),
-      description: Joi.object({
-        ar: Joi.string().allow("", null),
-        en: Joi.string().allow("", null),
-      }),
     })
   ),
 
