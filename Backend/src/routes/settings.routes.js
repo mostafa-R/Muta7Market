@@ -3,6 +3,7 @@ import {
   getLegalSettings,
   getPricingSettings,
   getSiteSettings,
+  restorePricingDefaults,
   restoreSeoDefaults,
   updateCustomTranslations,
   updateMaintenanceMode,
@@ -32,6 +33,7 @@ router.patch("/favicon", uploadImage.single("favicon"), updateSiteFavicon);
 // مسارات إعدادات الرسوم والاشتراكات
 router.get("/pricing", getPricingSettings);
 router.patch("/pricing", updatePricingSettings);
+router.post("/pricing/restore", restorePricingDefaults);
 
 // مسارات الشروط والأحكام وسياسة الخصوصية
 router.get("/legal", getLegalSettings);
