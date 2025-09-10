@@ -86,21 +86,6 @@ const siteSettingsSchema = new mongoose.Schema(
         price: { type: Number, default: 100 },
         days: { type: Number, default: 15 },
       },
-      // القيم القديمة للتوافق مع الكود القديم (ستزال لاحقاً)
-      contacts_access_year: { type: Number, default: 190 },
-      listing_year: {
-        player: { type: Number, default: 140 },
-        coach: { type: Number, default: 190 },
-      },
-      promotion_year: {
-        player: { type: Number, default: 100 },
-        coach: { type: Number, default: 100 },
-      },
-      promotion_per_day: {
-        player: { type: Number, default: 15 },
-        coach: { type: Number, default: 15 },
-      },
-      promotion_default_days: { type: Number, default: 15 },
     },
 
     maintenance: {
