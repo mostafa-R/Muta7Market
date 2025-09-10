@@ -61,20 +61,31 @@ const siteSettingsSchema = new mongoose.Schema(
 
     // إعدادات الرسوم والاشتراكات (تستخدم بدلاً من القيم الثابتة في ملف constants.js)
     pricing: {
-      contacts_access_year: { type: Number, default: 190 },
-      listing_year: {
-        player: { type: Number, default: 140 },
-        coach: { type: Number, default: 190 },
+      // إعدادات مشاهدة الملفات والتواصل
+      contacts_access: {
+        price: { type: Number, default: 190 },
+        days: { type: Number, default: 365 },
       },
-      promotion_year: {
-        player: { type: Number, default: 100 },
-        coach: { type: Number, default: 100 },
+      // إعدادات نشر الملفات للاعبين
+      listing_player: {
+        price: { type: Number, default: 140 },
+        days: { type: Number, default: 365 },
       },
-      promotion_per_day: {
-        player: { type: Number, default: 15 },
-        coach: { type: Number, default: 15 },
+      // إعدادات نشر الملفات للمدربين
+      listing_coach: {
+        price: { type: Number, default: 190 },
+        days: { type: Number, default: 365 },
       },
-      promotion_default_days: { type: Number, default: 15 },
+      // إعدادات تثبيت الملفات للاعبين
+      promotion_player: {
+        price: { type: Number, default: 100 },
+        days: { type: Number, default: 15 },
+      },
+      // إعدادات تثبيت الملفات للمدربين
+      promotion_coach: {
+        price: { type: Number, default: 100 },
+        days: { type: Number, default: 15 },
+      },
     },
 
     maintenance: {

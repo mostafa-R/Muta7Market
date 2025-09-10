@@ -1,4 +1,5 @@
-import { OFFER_STATUS, PRICING } from "../config/constants.js";
+import { OFFER_STATUS } from "../config/constants.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import Offer from "../models/offer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -22,10 +23,11 @@ export const createOffer = asyncHandler(async (req, res) => {
   const requirePayment = req.user.role !== "admin"; // Admin can create free offers
 
   if (requirePayment) {
+    const pricing = await getPricingSettings();
     const payment = await paymentService.createPayment({
       user: userId,
       type: "add_offer",
-      amount: req.body.pricing?.addOfferCost || PRICING.ADD_OFFER,
+      amount: req.body.pricing?.addOfferCost || pricing.ADD_OFFER,
       description: "Payment for adding new offer",
     });
 
@@ -216,9 +218,10 @@ export const getOfferById = asyncHandler(async (req, res) => {
     offer.contactInfo?.isHidden &&
     (!userId || userId.toString() !== offer.user.toString())
   ) {
+    const pricing = await getPricingSettings();
     offerData.contactInfo = {
       isHidden: true,
-      unlockCost: offer.pricing?.unlockContactCost || PRICING.UNLOCK_CONTACT,
+      unlockCost: offer.pricing?.unlockContactCost || pricing.UNLOCK_CONTACT,
     };
   }
 
@@ -384,9 +387,10 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Offer is already promoted");
   }
 
+  const pricing = await getPricingSettings();
   const promotionCost =
     days *
-    (offer.pricing?.promotionCost?.perDay || PRICING.PROMOTE_OFFER_PER_DAY);
+    (offer.pricing?.promotionCost?.perDay || pricing.PROMOTE_OFFER_PER_DAY);
 
   const payment = await paymentService.createPayment({
     user: userId,
@@ -453,7 +457,8 @@ export const unlockContact = asyncHandler(async (req, res) => {
     return;
   }
 
-  const unlockCost = offer.pricing?.unlockContactCost || PRICING.UNLOCK_CONTACT;
+  const pricing = await getPricingSettings();
+  const unlockCost = offer.pricing?.unlockContactCost || pricing.UNLOCK_CONTACT;
   const payment = await paymentService.createPayment({
     user: userId,
     type: "unlock_contact",
@@ -499,7 +504,8 @@ export const getOfferStatistics = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only view statistics for your own offers");
   }
 
-  const unlockCost = offer.pricing?.unlockContactCost || PRICING.UNLOCK_CONTACT;
+  const pricing = await getPricingSettings();
+  const unlockCost = offer.pricing?.unlockContactCost || pricing.UNLOCK_CONTACT;
 
   res.status(200).json(
     new ApiResponse(

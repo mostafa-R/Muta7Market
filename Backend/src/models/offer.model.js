@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { OFFER_STATUS, PRICING } from '../config/constants.js';
+import { OFFER_STATUS } from '../config/constants.js';
+import { getDefaultPricing } from '../utils/pricingUtils.js';
 
 const offerSchema = new mongoose.Schema({
   user: {
@@ -73,18 +74,18 @@ const offerSchema = new mongoose.Schema({
   pricing: {
     addOfferCost: {
       type: Number,
-      default: PRICING.ADD_OFFER
+      default: () => getDefaultPricing().ADD_OFFER
     },
     promotionCost: {
       perDay: {
         type: Number,
-        default: PRICING.PROMOTE_OFFER_PER_DAY
+        default: () => getDefaultPricing().PROMOTE_OFFER_PER_DAY
       },
       total: Number
     },
     unlockContactCost: {
       type: Number,
-      default: PRICING.UNLOCK_CONTACT
+      default: () => getDefaultPricing().UNLOCK_CONTACT
     }
   },
   payment: {

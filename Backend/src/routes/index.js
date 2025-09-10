@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PRICING } from "../config/constants.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import { initializeEmailService } from "../services/email.service.js";
 import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
@@ -40,12 +40,21 @@ router.use("/legal", legalDocumentRoutes);
 router.use("/promotions", promotionalOfferRoutes);
 router.use("/advertisements", advertisementRoutes);
 
-// Public pricing endpoint for frontend to fetch static prices
-router.get("/config/pricing", (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: PRICING,
-  });
+// Public pricing endpoint for frontend to fetch dynamic prices
+router.get("/config/pricing", async (req, res) => {
+  try {
+    const pricing = await getPricingSettings();
+    res.status(200).json({
+      success: true,
+      data: pricing,
+    });
+  } catch (error) {
+    console.error("Error fetching pricing settings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch pricing settings",
+    });
+  }
 });
 
 // Test Email Route

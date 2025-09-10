@@ -8,8 +8,9 @@ import {
   paylinkGetOrderByNumber, 
   paylinkGetTransactionsOfOrder, 
 } from "../services/paylink.client.js";
-import { PRICING } from "../config/constants.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
+import { applyPaidEffects } from "./payments.controller.js";
 
 
 export const getPaymentStatusByOrderNumber = async (req, res) => {
@@ -53,7 +54,7 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
       await session.withTransaction(async () => {
         const doc = await Invoice.findById(inv._id).session(session);
         if (!doc) return;
-        await applyInvoicePaid(doc, verify, session); 
+        await applyPaidEffects(doc, verify, session); 
       });
     } finally {
       session.endSession();
@@ -122,7 +123,7 @@ export const reconcileInvoices = async (req, res) => {
         await session.withTransaction(async () => {
           const doc = await Invoice.findById(inv._id).session(session);
           if (!doc) return;
-          await applyInvoicePaid(doc, verify, session);
+          await applyPaidEffects(doc, verify, session);
         });
         updated++;
       } finally {

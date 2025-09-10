@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { PRICING } from "../config/constants.js";
 import Entitlement from "../models/entitlement.model.js";
 import Invoice from "../models/invoice.model.js";
 import PaymentEvent from "../models/paymentEvent.model.js";
@@ -10,9 +9,13 @@ import {
   paylinkGetInvoice,
 } from "../services/paylink.client.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 
 async function applyPaidEffects(invoice, verify, session) {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+  // Get pricing settings from database
+  const PRICING = await getPricingSettings();
 
   const transactionNo =
     String(verify?.transactionNo || "") ||
@@ -26,11 +29,36 @@ async function applyPaidEffects(invoice, verify, session) {
     if (verify?.paymentReceipt?.url) {
       invoice.paymentReceiptUrl = verify.paymentReceipt.url;
     }
+    
+    // Update invoice expiresAt to reflect service expiration
+    if (invoice.product === "contacts_access") {
+      const durDays = Number(
+        invoice.durationDays ||
+          PRICING.contacts_access_days ||
+          PRICING.ONE_YEAR_DAYS ||
+          365
+      );
+      invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+    } else if (invoice.product === "listing") {
+      const durDays = Number(
+        invoice.durationDays ||
+          PRICING.ONE_YEAR_DAYS ||
+          365
+      );
+      invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+    }
+    
     await invoice.save({ session });
   }
 
   if (invoice.product === "contacts_access") {
-    const durDays = Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+    // Use the new pricing structure with custom duration
+    const durDays = Number(
+      invoice.durationDays ||
+        PRICING.contacts_access_days ||
+        PRICING.ONE_YEAR_DAYS ||
+        365
+    );
     const end = new Date(Date.now() + durDays * ONE_DAY_MS);
     await Entitlement.updateOne(
       {
@@ -50,16 +78,25 @@ async function applyPaidEffects(invoice, verify, session) {
     );
     await User.updateOne(
       { _id: invoice.userId },
-      { $set: { isActive: true ,activeExpireAt: end } },
+      { $set: { isActive: true, activeExpireAt: end } },
       { session }
     );
   } else if (invoice.product === "listing") {
-    const durDays = Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+    const durDays = Number(
+      invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365
+    );
     const end = new Date(Date.now() + durDays * ONE_DAY_MS);
     if (invoice.playerProfileId) {
       await PlayerProfile.updateOne(
         { _id: invoice.playerProfileId, user: invoice.userId },
-        { $set: { isListed: true, isActive: true, listingExpiresAt: end,activeExpireAt: end } },
+        {
+          $set: {
+            isListed: true,
+            isActive: true,
+            listingExpiresAt: end,
+            activeExpireAt: end,
+          },
+        },
         { session }
       );
     }
@@ -150,7 +187,7 @@ export const reconcileMyInvoices = async (req, res) => {
 
           if (isPaid) {
             if (inv.status !== "paid") {
-              await inv.save({ session }); 
+              await inv.save({ session });
               await applyPaidEffects(inv, verify, session);
               updated += 1;
               return;
@@ -175,14 +212,12 @@ export const reconcileMyInvoices = async (req, res) => {
             }
           }
 
-        
           await inv.save({ session });
         });
       } finally {
         session.endSession();
       }
     } catch (e) {
-    
       try {
         await Invoice.updateOne(
           { _id: p._id },
@@ -250,6 +285,9 @@ export const createDraftInvoice = async (req, res) => {
     if (!userId)
       return res.status(401).json({ success: false, message: "unauthorized" });
 
+    // Get pricing settings from database
+    const PRICING = await getPricingSettings();
+
     const { product, playerProfileId, durationDays, force } = req.body;
     const prod = String(product || "").toLowerCase();
 
@@ -261,11 +299,13 @@ export const createDraftInvoice = async (req, res) => {
 
     let targetType = null;
     let amount = 0;
-    let dur = Number(durationDays) || PRICING.ONE_YEAR_DAYS; 
+    let dur = Number(durationDays) || PRICING.ONE_YEAR_DAYS;
     let featureType = null;
 
     if (prod === "contacts_access") {
-      amount = PRICING.contacts_access_year;
+      // Use the new pricing structure
+      amount = PRICING.contacts_access_price || PRICING.contacts_access_year;
+      dur = PRICING.contacts_access_days || PRICING.ONE_YEAR_DAYS;
     } else {
       if (!playerProfileId)
         return res
@@ -282,18 +322,38 @@ export const createDraftInvoice = async (req, res) => {
       targetType = detectTargetTypeFromProfile(profile);
 
       if (prod === "listing") {
-        amount = PRICING.listing_year[targetType];
-        dur = PRICING.ONE_YEAR_DAYS;
+        // Use the new pricing structure with custom duration
+        amount =
+          PRICING.listing_price?.[targetType] ||
+          PRICING.listing_year[targetType];
+        dur = PRICING.listing_days?.[targetType] || PRICING.ONE_YEAR_DAYS;
       } else if (prod === "promotion") {
         featureType = "toplist";
-        const perDay = PRICING.promotion_per_day[targetType] || 15;
-        const d = Number(durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15);
-        if (!durationDays && PRICING.promotion_year[targetType] > 0 && d >= PRICING.ONE_YEAR_DAYS) {
-          amount = PRICING.promotion_year[targetType];
-          dur = PRICING.ONE_YEAR_DAYS;
+        // Use the new pricing structure with custom duration
+        const customDays = PRICING.promotion_days?.[targetType];
+        const customPrice = PRICING.promotion_price?.[targetType];
+
+        // If we have custom price and days, use them
+        if (customPrice && customDays && !durationDays) {
+          amount = customPrice;
+          dur = customDays;
         } else {
-          amount = perDay * d;
-          dur = d;
+          // Otherwise fall back to the old calculation method
+          const perDay = PRICING.promotion_per_day[targetType] || 15;
+          const d = Number(
+            durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
+          );
+          if (
+            !durationDays &&
+            PRICING.promotion_year[targetType] > 0 &&
+            d >= PRICING.ONE_YEAR_DAYS
+          ) {
+            amount = PRICING.promotion_year[targetType];
+            dur = PRICING.ONE_YEAR_DAYS;
+          } else {
+            amount = perDay * d;
+            dur = d;
+          }
         }
       }
     }
@@ -452,6 +512,9 @@ export const paymentWebhook = async (req, res) => {
     return res.status(401).send("unauthorized");
   }
 
+  // Get pricing settings from database
+  const PRICING = await getPricingSettings();
+
   const payload = req.body || {};
   const transactionNo = String(payload.transactionNo || "");
   const orderNumber = String(
@@ -492,19 +555,31 @@ export const paymentWebhook = async (req, res) => {
         return;
       }
 
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
       if (inv.status !== "paid") {
         inv.status = "paid";
         inv.paidAt = new Date();
         inv.providerTransactionNo = transactionNo;
         if (verify?.paymentReceipt?.url)
           inv.paymentReceiptUrl = verify.paymentReceipt.url;
+        
+        // Update invoice expiresAt to reflect service expiration
+        if (inv.product === "contacts_access") {
+          const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+          inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        } else if (inv.product === "listing") {
+          const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+          inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        }
+        
         await inv.save({ session });
       }
 
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
       if (inv.product === "contacts_access") {
-        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
         const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         await Entitlement.updateOne(
           {
@@ -530,12 +605,21 @@ export const paymentWebhook = async (req, res) => {
       }
 
       if (inv.product === "listing") {
-        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
         const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
             { _id: inv.playerProfileId, user: inv.userId },
-            { $set: { isListed: true, isActive: true, listingExpiresAt: end, activeExpireAt: end } },
+            {
+              $set: {
+                isListed: true,
+                isActive: true,
+                listingExpiresAt: end,
+                activeExpireAt: end,
+              },
+            },
             { session }
           );
         }
@@ -676,7 +760,7 @@ export const listMyInvoices = async (req, res) => {
     id: String(inv._id),
     createdAt: inv.createdAt,
     product: inv.product,
-    targetType: inv.targetType || "user", 
+    targetType: inv.targetType || "user",
     profileId: inv.playerProfileId || null,
     amount: inv.amount,
     currency: inv.currency || "SAR",
@@ -747,7 +831,7 @@ export const listAllInvoices = async (req, res) => {
     id: String(inv._id),
     createdAt: inv.createdAt,
     product: inv.product,
-    targetType: inv.targetType || "user", 
+    targetType: inv.targetType || "user",
     profileId: inv.playerProfileId || null,
     userId: inv.userId || inv.user || null,
     amount: inv.amount,
@@ -824,17 +908,36 @@ export const simulateSuccess = async (req, res) => {
         .status(404)
         .json({ success: false, message: "invoice_not_found" });
 
+    // Get pricing settings from database
+    const PRICING = await getPricingSettings();
+
     if (inv.status !== "paid") {
       inv.status = "paid";
       inv.paidAt = new Date();
       inv.providerTransactionNo =
         inv.providerTransactionNo || `SIM-${Date.now()}`;
+      
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+      
+      // Update invoice expiresAt to reflect service expiration
+      if (inv.product === "contacts_access") {
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
+        inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+      } else if (inv.product === "listing") {
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
+        inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+      }
+      
       await inv.save();
 
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
       if (inv.product === "contacts_access") {
-        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
         const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         await Entitlement.updateOne(
           {
@@ -852,16 +955,28 @@ export const simulateSuccess = async (req, res) => {
           },
           { upsert: true }
         );
-        await User.updateOne({ _id: inv.userId }, { $set: { isActive: true, activeExpireAt: end } });
+        await User.updateOne(
+          { _id: inv.userId },
+          { $set: { isActive: true, activeExpireAt: end } }
+        );
       }
 
       if (inv.product === "listing") {
-        const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
         const end = new Date(Date.now() + durDays * ONE_DAY_MS);
         if (inv.playerProfileId) {
           await PlayerProfile.updateOne(
             { _id: inv.playerProfileId, user: inv.userId },
-            { $set: { isListed: true, isActive: true, listingExpiresAt: end, activeExpireAt: end } }
+            {
+              $set: {
+                isListed: true,
+                isActive: true,
+                listingExpiresAt: end,
+                activeExpireAt: end,
+              },
+            }
           );
         }
         await Entitlement.updateOne(
@@ -927,3 +1042,5 @@ export const simulateSuccess = async (req, res) => {
     return res.status(500).json({ success: false, message: "simulate_failed" });
   }
 };
+
+export { applyPaidEffects };

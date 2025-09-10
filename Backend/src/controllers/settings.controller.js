@@ -193,6 +193,64 @@ export const updatePricingSettings = asyncHandler(async (req, res) => {
     );
 });
 
+// استعادة إعدادات الرسوم إلى الوضع الافتراضي
+export const restorePricingDefaults = asyncHandler(async (req, res) => {
+  const settings = await SiteSettings.findOneOrCreate();
+
+  // القيم الافتراضية للرسوم والاشتراكات
+  settings.pricing = {
+    // الهيكل الجديد للأسعار والمدد
+    contacts_access: {
+      price: 190,
+      days: 365,
+    },
+    listing_player: {
+      price: 140,
+      days: 365,
+    },
+    listing_coach: {
+      price: 190,
+      days: 365,
+    },
+    promotion_player: {
+      price: 100,
+      days: 15,
+    },
+    promotion_coach: {
+      price: 100,
+      days: 15,
+    },
+
+    // القيم القديمة للتوافق مع الكود القديم
+    contacts_access_year: 190,
+    listing_year: {
+      player: 140,
+      coach: 190,
+    },
+    promotion_year: {
+      player: 100,
+      coach: 100,
+    },
+    promotion_per_day: {
+      player: 15,
+      coach: 15,
+    },
+    promotion_default_days: 15,
+  };
+
+  await settings.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        settings.pricing,
+        "تم استعادة إعدادات الرسوم إلى الوضع الافتراضي بنجاح"
+      )
+    );
+});
+
 // الحصول على الشروط والأحكام وسياسة الخصوصية
 export const getLegalSettings = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.findOneOrCreate();
