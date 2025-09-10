@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import ContactSettingsForm from "./components/ContactSettingsForm";
 import GeneralSettingsForm from "./components/GeneralSettingsForm";
 import LogoSettingsForm from "./components/LogoSettingsForm";
-import MaintenanceSettingsForm from "./components/MaintenanceSettingsForm";
 import PricingSettingsForm from "./components/PricingSettingsForm";
 import SeoSettingsForm from "./components/SeoSettingsForm";
 import TranslationSettingsForm from "./components/TranslationSettingsForm";
@@ -23,7 +22,7 @@ export default function SettingsPage() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
-        const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+        const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
         
         const response = await fetch(`${API_BASE_URL}/settings`, {
           method: "GET",
@@ -82,13 +81,6 @@ export default function SettingsPage() {
             promotion_year: { player: 100, coach: 100 },
             promotion_per_day: { player: 15, coach: 15 },
             promotion_default_days: 15
-          },
-          maintenance: {
-            isEnabled: false,
-            message: {
-              ar: "الموقع تحت الصيانة حالياً، يرجى العودة لاحقاً",
-              en: "Site is under maintenance, please check back later"
-            }
           },
           translations: {
             custom: {}
@@ -160,7 +152,7 @@ export default function SettingsPage() {
             <TabsTrigger value="seo">إعدادات SEO</TabsTrigger>
             <TabsTrigger value="pricing">الأسعار والرسوم</TabsTrigger>
             <TabsTrigger value="contact">معلومات الاتصال</TabsTrigger>
-            <TabsTrigger value="maintenance">وضع الصيانة</TabsTrigger>
+         
             <TabsTrigger value="translations">الترجمات</TabsTrigger>
           </TabsList>
           
@@ -185,9 +177,7 @@ export default function SettingsPage() {
               <ContactSettingsForm settings={settings} setSettings={setSettings} />
             </TabsContent>
             
-            <TabsContent value="maintenance">
-              <MaintenanceSettingsForm settings={settings} setSettings={setSettings} />
-            </TabsContent>
+            
             
             <TabsContent value="translations">
               <TranslationSettingsForm settings={settings} setSettings={setSettings} />
