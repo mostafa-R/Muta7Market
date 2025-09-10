@@ -86,7 +86,7 @@ export default function SportsTable({ sports, loading, onSportUpdated, onSportDe
 
   if (sports.length === 0) {
     return (
-      <div className="p-6">
+      <div className="p-6" dir="rtl">
         <div className="flex flex-col items-center justify-center h-64">
           <div className="text-gray-400 dark:text-gray-500 text-lg mb-4">
             لا توجد ألعاب رياضية
@@ -100,7 +100,7 @@ export default function SportsTable({ sports, loading, onSportUpdated, onSportDe
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" dir="rtl">
       <table className="w-full">
         <thead>
           <tr className="bg-gray-50 dark:bg-slate-800 text-right">

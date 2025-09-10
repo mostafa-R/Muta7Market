@@ -3,11 +3,13 @@
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
 import { Textarea } from "@/app/component/ui/textarea";
+import { Facebook, Info, Instagram, Linkedin, Loader2, Mail, MapPin, Phone, Save, Twitter, Youtube } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function ContactSettingsForm({ settings, setSettings }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
   const [formData, setFormData] = useState({
     email: settings?.contactInfo?.email || "",
     phone: settings?.contactInfo?.phone || "",
@@ -56,15 +58,46 @@ export default function ContactSettingsForm({ settings, setSettings }) {
         [name]: value
       });
     }
+    
+    setHasChanges(true);
+  };
+  
+  // Validate URL format for social media links
+  const isValidUrl = (url) => {
+    if (!url) return true; // Empty is valid (optional field)
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate social media URLs
+    const socialMediaFields = ['facebook', 'twitter', 'instagram', 'youtube', 'linkedin'];
+    for (const field of socialMediaFields) {
+      const url = formData.socialMedia[field];
+      if (url && !isValidUrl(url)) {
+        toast.error(`رابط ${field} غير صالح. يرجى إدخال رابط صحيح`);
+        return;
+      }
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('يرجى إدخال بريد إلكتروني صحيح');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
-      const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+      const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
       
       const response = await fetch(`${API_BASE_URL}/settings`, {
         method: "PATCH",
@@ -90,6 +123,7 @@ export default function ContactSettingsForm({ settings, setSettings }) {
           ...settings,
           contactInfo: formData
         });
+        setHasChanges(false);
         toast.success("تم تحديث معلومات الاتصال بنجاح");
       } else {
         throw new Error(result.message || "فشل تحديث معلومات الاتصال");
@@ -103,154 +137,224 @@ export default function ContactSettingsForm({ settings, setSettings }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} dir="rtl">
       <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-4">معلومات الاتصال</h2>
+        {hasChanges && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-amber-800 flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              لديك تغييرات غير محفوظة
+            </p>
+          </div>
+        )}
+        
+        <div className=" dark:bg-blue-900/10 rounded-lg p-4 mb-6">
+          <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+            <Phone className="h-5 w-5 text-primary" />
+            معلومات الاتصال
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">هذه المعلومات سيتم عرضها للزوار في صفحة الاتصال وفي تذييل الموقع</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Mail className="h-4 w-4 text-gray-500" />
                 البريد الإلكتروني
               </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="أدخل البريد الإلكتروني للاتصال"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="أدخل البريد الإلكتروني للاتصال"
+                  className="pr-10 focus:ring-2 focus:ring-primary/30 transition-all"
+                  required
+                />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500">سيتم استخدام هذا البريد للتواصل مع العملاء</p>
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Phone className="h-4 w-4 text-gray-500" />
                 رقم الهاتف
               </label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="أدخل رقم الهاتف للاتصال"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="أدخل رقم الهاتف للاتصال"
+                  className="pr-10 focus:ring-2 focus:ring-primary/30 transition-all"
+                  required
+                />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500">سيتم عرض رقم الهاتف في صفحة الاتصال</p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-2">
-              <label htmlFor="address.ar" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="address.ar" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <MapPin className="h-4 w-4 text-gray-500" />
                 العنوان (بالعربية)
               </label>
-              <Textarea
-                id="address.ar"
-                name="address.ar"
-                value={formData.address.ar}
-                onChange={handleChange}
-                placeholder="أدخل العنوان بالعربية"
-                rows={2}
-              />
+              <div className="relative">
+                <Textarea
+                  id="address.ar"
+                  name="address.ar"
+                  value={formData.address.ar}
+                  onChange={handleChange}
+                  placeholder="أدخل العنوان بالعربية"
+                  rows={2}
+                  className="focus:ring-2 focus:ring-primary/30 transition-all"
+                />
+              </div>
+              <p className="text-xs text-gray-500">العنوان الذي سيظهر في الواجهة العربية</p>
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="address.en" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="address.en" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <MapPin className="h-4 w-4 text-gray-500" />
                 العنوان (بالإنجليزية)
               </label>
-              <Textarea
-                id="address.en"
-                name="address.en"
-                value={formData.address.en}
-                onChange={handleChange}
-                placeholder="Enter address in English"
-                rows={2}
-              />
+              <div className="relative">
+                <Textarea
+                  id="address.en"
+                  name="address.en"
+                  value={formData.address.en}
+                  onChange={handleChange}
+                  placeholder="Enter address in English"
+                  rows={2}
+                  className="focus:ring-2 focus:ring-primary/30 transition-all"
+                />
+              </div>
+              <p className="text-xs text-gray-500">العنوان الذي سيظهر في الواجهة الإنجليزية</p>
             </div>
           </div>
           
-          <h3 className="text-lg font-medium mb-4 mt-8">وسائل التواصل الاجتماعي</h3>
+          <h3 className="text-lg font-medium mb-4 mt-8 flex items-center gap-2 border-r-4 border-primary pr-2">
+            <span className="bg-primary/10 p-1.5 rounded-full">
+              <Facebook className="h-4 w-4 text-primary" />
+            </span>
+            وسائل التواصل الاجتماعي
+          </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 dark:bg-slate-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <div className="space-y-2">
-              <label htmlFor="socialMedia.facebook" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="socialMedia.facebook" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Facebook className="h-4 w-4 text-blue-600" />
                 فيسبوك
               </label>
-              <Input
-                id="socialMedia.facebook"
-                name="socialMedia.facebook"
-                value={formData.socialMedia.facebook}
-                onChange={handleChange}
-                placeholder="https://facebook.com/yourpage"
-              />
+              <div className="relative">
+                <Input
+                  id="socialMedia.facebook"
+                  name="socialMedia.facebook"
+                  value={formData.socialMedia.facebook}
+                  onChange={handleChange}
+                  placeholder="https://facebook.com/yourpage"
+                  className="pr-10 focus:ring-2 focus:ring-blue-300 transition-all"
+                />
+                <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-400" />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="socialMedia.twitter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="socialMedia.twitter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Twitter className="h-4 w-4 text-blue-400" />
                 تويتر
               </label>
-              <Input
-                id="socialMedia.twitter"
-                name="socialMedia.twitter"
-                value={formData.socialMedia.twitter}
-                onChange={handleChange}
-                placeholder="https://twitter.com/yourhandle"
-              />
+              <div className="relative">
+                <Input
+                  id="socialMedia.twitter"
+                  name="socialMedia.twitter"
+                  value={formData.socialMedia.twitter}
+                  onChange={handleChange}
+                  placeholder="https://twitter.com/yourhandle"
+                  className="pr-10 focus:ring-2 focus:ring-blue-300 transition-all"
+                />
+                <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-400" />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="socialMedia.instagram" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="socialMedia.instagram" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Instagram className="h-4 w-4 text-pink-600" />
                 انستغرام
               </label>
-              <Input
-                id="socialMedia.instagram"
-                name="socialMedia.instagram"
-                value={formData.socialMedia.instagram}
-                onChange={handleChange}
-                placeholder="https://instagram.com/yourprofile"
-              />
+              <div className="relative">
+                <Input
+                  id="socialMedia.instagram"
+                  name="socialMedia.instagram"
+                  value={formData.socialMedia.instagram}
+                  onChange={handleChange}
+                  placeholder="https://instagram.com/yourprofile"
+                  className="pr-10 focus:ring-2 focus:ring-pink-300 transition-all"
+                />
+                <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-pink-400" />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="socialMedia.youtube" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="socialMedia.youtube" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Youtube className="h-4 w-4 text-red-600" />
                 يوتيوب
               </label>
-              <Input
-                id="socialMedia.youtube"
-                name="socialMedia.youtube"
-                value={formData.socialMedia.youtube}
-                onChange={handleChange}
-                placeholder="https://youtube.com/yourchannel"
-              />
+              <div className="relative">
+                <Input
+                  id="socialMedia.youtube"
+                  name="socialMedia.youtube"
+                  value={formData.socialMedia.youtube}
+                  onChange={handleChange}
+                  placeholder="https://youtube.com/yourchannel"
+                  className="pr-10 focus:ring-2 focus:ring-red-300 transition-all"
+                />
+                <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-400" />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="socialMedia.linkedin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="socialMedia.linkedin" className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Linkedin className="h-4 w-4 text-blue-700" />
                 لينكد إن
               </label>
-              <Input
-                id="socialMedia.linkedin"
-                name="socialMedia.linkedin"
-                value={formData.socialMedia.linkedin}
-                onChange={handleChange}
-                placeholder="https://linkedin.com/company/yourcompany"
-              />
+              <div className="relative">
+                <Input
+                  id="socialMedia.linkedin"
+                  name="socialMedia.linkedin"
+                  value={formData.socialMedia.linkedin}
+                  onChange={handleChange}
+                  placeholder="https://linkedin.com/company/yourcompany"
+                  className="pr-10 focus:ring-2 focus:ring-blue-300 transition-all"
+                />
+                <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-600" />
+              </div>
             </div>
           </div>
         </div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
           <Button 
             type="submit" 
-            disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/90"
+            disabled={isSubmitting || !hasChanges}
+            className="bg-primary hover:bg-primary/90  flex items-center gap-2 transition-all px-6 py-2 shadow-sm "
           >
             {isSubmitting ? (
               <>
-                <span className="animate-spin mr-2">⏳</span>
+                <Loader2 className="h-5 w-5 animate-spin" />
                 جاري الحفظ...
               </>
-            ) : "حفظ التغييرات"}
+            ) : (
+              <>
+                <Save className="h-5 w-5" />
+                حفظ التغييرات
+              </>
+            )}
           </Button>
         </div>
       </div>

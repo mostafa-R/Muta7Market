@@ -156,7 +156,7 @@ export default function LegalDocumentsPage() {
 
 
   return (
-    <div className="p-6">
+    <div className="p-6" dir="rtl">
       <PageBreadCrumb pageTitle="المستندات القانونية" />
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-6">

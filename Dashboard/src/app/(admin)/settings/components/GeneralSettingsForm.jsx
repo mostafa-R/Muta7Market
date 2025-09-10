@@ -80,7 +80,7 @@ export default function GeneralSettingsForm({ settings, setSettings }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="space-y-6">
+      <div className="space-y-6" dir="rtl">
         <div>
           <h2 className="text-xl font-semibold mb-4">المعلومات الأساسية</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

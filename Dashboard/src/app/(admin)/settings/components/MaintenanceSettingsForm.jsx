@@ -91,7 +91,7 @@ export default function MaintenanceSettingsForm({ settings, setSettings }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} dir="rtl">
       <div className="space-y-6">
         <div>
           <h2 className="text-xl font-semibold mb-4">وضع الصيانة</h2>

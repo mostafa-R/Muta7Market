@@ -141,7 +141,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6" dir="rtl">
       <PageBreadCrumb pageTitle="الإعدادات العامة" />
       
       <div className="mt-8">

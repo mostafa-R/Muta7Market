@@ -18,11 +18,12 @@ import uploadImage from "../middleware/localUpload.middleware.js";
 
 const router = express.Router();
 
+router.get("/", getSiteSettings);
+
 // جميع المسارات تتطلب مصادقة ودور مسؤول
 router.use(authMiddleware, authorize("admin", "super_admin"));
 
 // مسارات الإعدادات العامة
-router.get("/", getSiteSettings);
 router.patch("/", updateSiteSettings);
 router.patch("/logo", uploadImage.single("logo"), updateSiteLogo);
 router.patch("/favicon", uploadImage.single("favicon"), updateSiteFavicon);

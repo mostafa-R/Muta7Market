@@ -24,6 +24,37 @@ import { useTranslation } from "react-i18next";
 import { create } from "zustand";
 import LanguageSwitcher from "./LanguageSwitcher";
 
+// Zustand site settings store
+const useSiteSettingsStore = create((set) => ({
+  siteName: { ar: "متاح ماركت", en: "Muta7Market" },
+  isLoading: false,
+  error: null,
+  fetchSettings: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+      const response = await axios.get(`${API_BASE_URL}/settings`);
+
+      if (response.data?.success && response.data?.data) {
+        const { siteName, logo } = response.data.data;
+        set({
+          siteName: siteName,
+          logo: logo?.url,
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching site settings:", error);
+      set({
+        error: error.message,
+        isLoading: false,
+        siteName: { ar: "متاح ماركت", en: "Muta7Market" },
+      });
+    }
+  },
+}));
+
 // Zustand auth store
 const useAuthStore = create((set, get) => ({
   isLoggedIn: false,
@@ -474,11 +505,24 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
         <div className="bg-[hsl(var(--primary))] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-white" />
-              </div>
+              {logo ? (
+                <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center overflow-hidden">
+                  <Image
+                    src={logo}
+                    alt={siteName?.[language] || "Muta7Market"}
+                    width={40}
+                    height={40}
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+              )}
               <span className="text-white font-bold text-lg">
-                {t("brand.name")}
+                {siteName?.[language] || t("brand.name")}
               </span>
             </div>
             <button
@@ -533,6 +577,7 @@ const Navbar = () => {
   const router = useRouter();
   const { checkAuth, isLoggedIn, setIsLoggedIn, setUser, initListener } =
     useAuthStore();
+  const { siteName, logo, fetchSettings } = useSiteSettingsStore();
   const {
     setLoading,
     setCurrentPath,
@@ -544,11 +589,14 @@ const Navbar = () => {
   useEffect(() => {
     checkAuth();
 
+    // Fetch site settings from backend
+    fetchSettings();
+
     // Initialize listener for profile updates
     const cleanup = initListener();
 
     return cleanup; // Cleanup listeners when component unmounts
-  }, [checkAuth, initListener]);
+  }, [checkAuth, initListener, fetchSettings]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -693,11 +741,24 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center group-hover:shadow-lg transition-all">
-                <Trophy className="w-6 h-6 text-white" />
-              </div>
+              {logo ? (
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center  transition-all overflow-hidden">
+                  <Image
+                    src={logo}
+                    alt={siteName?.[language] || "Muta7Market"}
+                    width={40}
+                    height={40}
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center group-hover:shadow-lg transition-all">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+              )}
               <span className="text-xl font-bold bg-[hsl(var(--primary))] bg-clip-text text-transparent">
-                {t("brand.name")}
+                {siteName?.[language] || t("brand.name")}
               </span>
             </Link>
 

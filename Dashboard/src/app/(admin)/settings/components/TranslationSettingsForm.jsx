@@ -105,7 +105,7 @@ export default function TranslationSettingsForm({ settings, setSettings }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       <div>
         <h2 className="text-xl font-semibold mb-4">الترجمات المخصصة</h2>
         

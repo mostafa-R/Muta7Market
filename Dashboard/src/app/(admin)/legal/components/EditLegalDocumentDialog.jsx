@@ -166,7 +166,7 @@ export default function EditLegalDocumentDialog({ document, isOpen, onClose, onD
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} dir="rtl">
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>تعديل المستند القانوني</DialogTitle>

@@ -201,7 +201,7 @@ export default function EditSportDialog({ sport, isOpen, onClose, onSportUpdated
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} dir="rtl">
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>تعديل اللعبة الرياضية</DialogTitle>

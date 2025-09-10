@@ -44,7 +44,7 @@ export default function LegalDocumentsTable({ documents, loading, onDocumentUpda
   const handleDeleteConfirm = async () => {
     if (!deletingDocument) return;
     
-    setIsDeleting(true);
+    setIsDeleting(true);  
     
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
@@ -126,7 +126,7 @@ export default function LegalDocumentsTable({ documents, loading, onDocumentUpda
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" dir="rtl">
       <table className="w-full">
         <thead>
           <tr className="bg-gray-50 dark:bg-slate-800 text-right">

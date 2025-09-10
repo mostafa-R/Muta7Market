@@ -155,7 +155,7 @@ export default function LogoSettingsForm({ settings, setSettings }) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" dir="rtl">
       <div>
         <h2 className="text-xl font-semibold mb-4">شعار الموقع</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -163,11 +163,11 @@ export default function LogoSettingsForm({ settings, setSettings }) {
             <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800">
               {logoPreview ? (
                 <div className="relative w-full h-32 mb-4">
-                  <Image 
+                  <img 
                     src={logoPreview} 
                     alt="شعار الموقع" 
                     fill
-                    className="object-contain"
+                    className="object-contain h-25 w-25"
                   />
                 </div>
               ) : (
@@ -213,11 +213,11 @@ export default function LogoSettingsForm({ settings, setSettings }) {
             <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800">
               {faviconPreview ? (
                 <div className="relative w-16 h-16 mb-4">
-                  <Image 
+                  <img 
                     src={faviconPreview} 
                     alt="أيقونة الموقع" 
                     fill
-                    className="object-contain"
+                    className="object-contain h-25 w-25"
                   />
                 </div>
               ) : (

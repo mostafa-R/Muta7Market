@@ -4,7 +4,6 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-// الحصول على قائمة المستندات القانونية
 export const getAllLegalDocuments = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -21,6 +20,7 @@ export const getAllLegalDocuments = asyncHandler(async (req, res) => {
     limit: parseInt(limit, 10),
     sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 },
   };
+  
   const filter = {};
   if (type) {
     filter.type = type;
