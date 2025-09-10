@@ -1,13 +1,17 @@
 "use client";
 
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/app/component/ui/alert-dialog";
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
 import { Textarea } from "@/app/component/ui/textarea";
+import { AlertTriangle, Loader2, RotateCcw, Save } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function SeoSettingsForm({ settings, setSettings }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [formData, setFormData] = useState({
     metaTitle: {
       ar: settings?.seo?.metaTitle?.ar || "",
@@ -38,6 +42,70 @@ export default function SeoSettingsForm({ settings, setSettings }) {
         ...formData,
         [name]: value
       });
+    }
+  };
+
+  // Reset to default values
+  const handleRestore = async () => {
+    setIsRestoring(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+      const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+      
+      const response = await fetch(`${API_BASE_URL}/settings/seo/restore`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local state with default values
+        const defaultSeo = result.data?.seo || {
+          metaTitle: { ar: "", en: "" },
+          metaDescription: { ar: "", en: "" },
+          keywords: [],
+          googleAnalyticsId: ""
+        };
+        
+        setSettings({
+          ...settings,
+          seo: defaultSeo
+        });
+        
+        // Update form data
+        setFormData({
+          metaTitle: {
+            ar: defaultSeo.metaTitle?.ar || "",
+            en: defaultSeo.metaTitle?.en || ""
+          },
+          metaDescription: {
+            ar: defaultSeo.metaDescription?.ar || "",
+            en: defaultSeo.metaDescription?.en || ""
+          },
+          keywords: defaultSeo.keywords?.join(", ") || "",
+          googleAnalyticsId: defaultSeo.googleAnalyticsId || ""
+        });
+        
+        toast.success("تم استعادة الإعدادات الافتراضية بنجاح");
+      } else {
+        throw new Error(result.message || "فشل استعادة الإعدادات الافتراضية");
+      }
+    } catch (error) {
+      console.error("Error restoring default SEO settings:", error);
+      toast.error(`حدث خطأ: ${error.message}`);
+    } finally {
+      setIsRestoring(false);
+      setShowRestoreDialog(false);
     }
   };
 
@@ -219,20 +287,74 @@ export default function SeoSettingsForm({ settings, setSettings }) {
           </div>
         </div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => setShowRestoreDialog(true)}
+            disabled={isSubmitting || isRestoring}
+            className="border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          >
+            {isRestoring ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                جاري الاستعادة...
+              </>
+            ) : (
+              <>
+                <RotateCcw className="h-4 w-4" />
+                استعادة الإعدادات الافتراضية
+              </>
+            )}
+          </Button>
+          
           <Button 
             type="submit" 
-            disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/90"
+            disabled={isSubmitting || isRestoring}
+            className="bg-primary hover:bg-primary/90 flex items-center gap-2"
           >
             {isSubmitting ? (
               <>
-                <span className="animate-spin mr-2">⏳</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
                 جاري الحفظ...
               </>
-            ) : "حفظ التغييرات"}
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                حفظ التغييرات
+              </>
+            )}
           </Button>
         </div>
+        
+        {/* Restore Confirmation Dialog */}
+        <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                استعادة الإعدادات الافتراضية
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من استعادة إعدادات SEO إلى الوضع الافتراضي؟ سيتم مسح جميع التخصيصات الحالية.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleRestore} 
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {isRestoring ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    جاري الاستعادة...
+                  </>
+                ) : "استعادة الإعدادات الافتراضية"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </form>
   );

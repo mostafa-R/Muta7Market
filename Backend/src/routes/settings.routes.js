@@ -3,6 +3,7 @@ import {
   getLegalSettings,
   getPricingSettings,
   getSiteSettings,
+  restoreSeoDefaults,
   updateCustomTranslations,
   updateMaintenanceMode,
   updatePricingSettings,
@@ -39,6 +40,7 @@ router.patch("/privacy", updatePrivacyPolicy);
 
 // مسارات إعدادات SEO
 router.patch("/seo", updateSeoSettings);
+router.post("/seo/restore", restoreSeoDefaults);
 
 // مسارات وضع الصيانة
 router.patch("/maintenance", updateMaintenanceMode);

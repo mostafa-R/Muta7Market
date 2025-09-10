@@ -287,6 +287,37 @@ export const updateSeoSettings = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, settings.seo, "تم تحديث إعدادات SEO بنجاح"));
 });
 
+// استعادة إعدادات SEO إلى الوضع الافتراضي (قيم فارغة)
+export const restoreSeoDefaults = asyncHandler(async (req, res) => {
+  const settings = await SiteSettings.findOneOrCreate();
+
+  // إعادة تعيين إعدادات SEO إلى قيم فارغة
+  settings.seo = {
+    metaTitle: {
+      ar: "",
+      en: "",
+    },
+    metaDescription: {
+      ar: "",
+      en: "",
+    },
+    keywords: [],
+    googleAnalyticsId: "",
+  };
+
+  await settings.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        settings.seo,
+        "تم استعادة إعدادات SEO إلى الوضع الافتراضي بنجاح"
+      )
+    );
+});
+
 // تحديث حالة الصيانة
 export const updateMaintenanceMode = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.findOneOrCreate();

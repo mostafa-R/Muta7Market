@@ -86,7 +86,7 @@ const playerSchema = new mongoose.Schema(
     },
     jop: {
       type: String,
-      enum: ["player", "coach"], // Restrict to specific values
+      enum: ["player", "coach"], 
       required: true,
     },
     roleType: {
