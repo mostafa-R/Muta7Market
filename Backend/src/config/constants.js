@@ -59,6 +59,11 @@ export const PRICING = {
     coach: Number(process.env.PRICE_PROMO_COACH_PER_DAY),
   },
 
+  // Offer pricing
+  ADD_OFFER: Number(process.env.PRICE_ADD_OFFER) || 50,
+  PROMOTE_OFFER_PER_DAY: Number(process.env.PRICE_PROMOTE_OFFER_PER_DAY) || 10,
+  UNLOCK_CONTACT: Number(process.env.PRICE_UNLOCK_CONTACT) || 25,
+
   ONE_YEAR_DAYS: 365,
   PROMOTION_DEFAULT_DAYS: Number(process.env.PROMOTION_DEFAULT_DAYS),
 };

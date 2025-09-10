@@ -8,9 +8,8 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
 import { generateAccessToken } from "../utils/jwt.js";
-
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import Invoice from "../models/invoice.model.js";
-import { PRICING } from "../config/constants.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 
 export const register = asyncHandler(async (req, res) => {
@@ -69,6 +68,7 @@ export const register = asyncHandler(async (req, res) => {
     });
 
     if (!exists) {
+      const pricing = await getPricingSettings();
       const orderNo = makeOrderNumber("contacts_access", String(user._id));
       await Invoice.create({
         orderNumber: orderNo,
@@ -77,9 +77,9 @@ export const register = asyncHandler(async (req, res) => {
         product: "contacts_access",
         targetType: null,
         profileId: null,
-        durationDays: PRICING.ONE_YEAR_DAYS || 365,
+        durationDays: pricing.contacts_access_days || pricing.ONE_YEAR_DAYS || 365,
         featureType: null,
-        amount: PRICING.contacts_access_year,
+        amount: pricing.contacts_access_price || pricing.contacts_access_year,
         currency: "SAR",
         status: "pending",
         

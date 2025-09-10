@@ -91,6 +91,11 @@ export const getPricingSettings = async () => {
         settings.pricing.promotion_player?.days ||
         settings.pricing.promotion_default_days ||
         DEFAULT_PRICING.PROMOTION_DEFAULT_DAYS,
+
+      // Offer pricing
+      ADD_OFFER: settings.pricing.add_offer || DEFAULT_PRICING.ADD_OFFER,
+      PROMOTE_OFFER_PER_DAY: settings.pricing.promote_offer_per_day || DEFAULT_PRICING.PROMOTE_OFFER_PER_DAY,
+      UNLOCK_CONTACT: settings.pricing.unlock_contact || DEFAULT_PRICING.UNLOCK_CONTACT,
     };
 
     return pricing;

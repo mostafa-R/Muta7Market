@@ -29,6 +29,25 @@ async function applyPaidEffects(invoice, verify, session) {
     if (verify?.paymentReceipt?.url) {
       invoice.paymentReceiptUrl = verify.paymentReceipt.url;
     }
+    
+    // Update invoice expiresAt to reflect service expiration
+    if (invoice.product === "contacts_access") {
+      const durDays = Number(
+        invoice.durationDays ||
+          PRICING.contacts_access_days ||
+          PRICING.ONE_YEAR_DAYS ||
+          365
+      );
+      invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+    } else if (invoice.product === "listing") {
+      const durDays = Number(
+        invoice.durationDays ||
+          PRICING.ONE_YEAR_DAYS ||
+          365
+      );
+      invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+    }
+    
     await invoice.save({ session });
   }
 
@@ -536,16 +555,26 @@ export const paymentWebhook = async (req, res) => {
         return;
       }
 
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
       if (inv.status !== "paid") {
         inv.status = "paid";
         inv.paidAt = new Date();
         inv.providerTransactionNo = transactionNo;
         if (verify?.paymentReceipt?.url)
           inv.paymentReceiptUrl = verify.paymentReceipt.url;
+        
+        // Update invoice expiresAt to reflect service expiration
+        if (inv.product === "contacts_access") {
+          const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+          inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        } else if (inv.product === "listing") {
+          const durDays = Number(inv.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+          inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        }
+        
         await inv.save({ session });
       }
-
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
       if (inv.product === "contacts_access") {
         const durDays = Number(
@@ -887,9 +916,23 @@ export const simulateSuccess = async (req, res) => {
       inv.paidAt = new Date();
       inv.providerTransactionNo =
         inv.providerTransactionNo || `SIM-${Date.now()}`;
-      await inv.save();
-
+      
       const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+      
+      // Update invoice expiresAt to reflect service expiration
+      if (inv.product === "contacts_access") {
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
+        inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+      } else if (inv.product === "listing") {
+        const durDays = Number(
+          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
+        );
+        inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+      }
+      
+      await inv.save();
 
       if (inv.product === "contacts_access") {
         const durDays = Number(
@@ -999,3 +1042,5 @@ export const simulateSuccess = async (req, res) => {
     return res.status(500).json({ success: false, message: "simulate_failed" });
   }
 };
+
+export { applyPaidEffects };

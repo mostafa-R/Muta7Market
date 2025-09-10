@@ -1,4 +1,4 @@
-import { PRICING } from "../config/constants.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import Invoice from "../models/invoice.model.js";
 import { default as Player } from "../models/player.model.js";
 import User from "../models/user.model.js";
@@ -72,11 +72,12 @@ export const createPlayer = asyncHandler(async (req, res) => {
     try {
       const raw = String(req.body.jop || player.jop || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
+      const pricing = await getPricingSettings();
 
       const amount =
         targetType === "coach"
-          ? PRICING.listing_year.coach
-          : PRICING.listing_year.player;
+          ? pricing.listing_price.coach || pricing.listing_year.coach
+          : pricing.listing_price.player || pricing.listing_year.player;
 
       const orderNo = makeOrderNumber("listing", String(req.user._id));
 
@@ -94,7 +95,9 @@ export const createPlayer = asyncHandler(async (req, res) => {
             invoiceNumber: orderNo,
             amount,
             currency: "SAR",
-            durationDays: PRICING.ONE_YEAR_DAYS,
+            durationDays: targetType === "coach" 
+              ? pricing.listing_days.coach || pricing.ONE_YEAR_DAYS
+              : pricing.listing_days.player || pricing.ONE_YEAR_DAYS,
             featureType: null,
             status: "pending",
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -115,11 +118,12 @@ export const createPlayer = asyncHandler(async (req, res) => {
     try {
       const raw = String(req.body.jop || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
+      const pricing = await getPricingSettings();
 
       const amount =
         targetType === "coach"
-          ? PRICING.listing_year.coach
-          : PRICING.listing_year.player;
+          ? pricing.listing_price.coach || pricing.listing_year.coach
+          : pricing.listing_price.player || pricing.listing_year.player;
 
       const orderNo = makeOrderNumber("listing", String(userId));
 
@@ -137,7 +141,9 @@ export const createPlayer = asyncHandler(async (req, res) => {
             invoiceNumber: orderNo,
             amount,
             currency: "SAR",
-            durationDays: PRICING.ONE_YEAR_DAYS || 365,
+            durationDays: targetType === "coach" 
+              ? pricing.listing_days.coach || pricing.ONE_YEAR_DAYS
+              : pricing.listing_days.player || pricing.ONE_YEAR_DAYS,
             featureType: null,
             status: "pending",
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),

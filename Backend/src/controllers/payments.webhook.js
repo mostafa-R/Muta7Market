@@ -69,28 +69,71 @@ async function paylinkWebhook(req, res) {
         if (verify.paymentReceipt && verify.paymentReceipt.url) {
           invoice.paymentReceiptUrl = verify.paymentReceipt.url;
         }
+        
+        // Update invoice expiresAt to reflect service expiration
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+        if (invoice.product === "contacts_access") {
+          const durDays = Number(invoice.durationDays || 365);
+          invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        } else if (invoice.product === "listing") {
+          const durDays = Number(invoice.durationDays || 365);
+          invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        }
+        
         await invoice.save({ session });
         console.log("[PaymentsWebhook(cjs)][webhook] invoice marked paid", {
           invoiceId: String(invoice._id),
           paidAt: invoice.paidAt,
           receiptUrl: invoice.paymentReceiptUrl || null,
+          expiresAt: invoice.expiresAt,
         });
       }
 
       if (invoice.product === "contacts_access") {
+        // Calculate expiration date based on durationDays
+        const durDays = Number(invoice.durationDays || 365);
+        const expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        
         await Entitlement.updateOne(
           { userId: invoice.userId, type: "contacts_access", playerProfileId: null },
-          { $setOnInsert: { active: true, grantedAt: new Date(), sourceInvoice: invoice._id } },
+          { 
+            $set: { 
+              active: true, 
+              grantedAt: new Date(), 
+              expiresAt: expiresAt,
+              sourceInvoice: invoice._id 
+            } 
+          },
           { upsert: true, session }
         );
-        console.log("[PaymentsWebhook(cjs)][webhook] contacts_access entitlement ensured", { userId: String(invoice.userId) });
-      } else if (invoice.product === "player_listing") {
+        console.log("[PaymentsWebhook(cjs)][webhook] contacts_access entitlement ensured", { 
+          userId: String(invoice.userId),
+          expiresAt: expiresAt,
+          durationDays: durDays
+        });
+      } else if (invoice.product === "listing") {
+        // Calculate expiration date based on durationDays
+        const durDays = Number(invoice.durationDays || 365);
+        const expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
+        
         await Entitlement.updateOne(
           { userId: invoice.userId, type: "player_listed", playerProfileId: invoice.playerProfileId },
-          { $setOnInsert: { active: true, grantedAt: new Date(), sourceInvoice: invoice._id } },
+          { 
+            $set: { 
+              active: true, 
+              grantedAt: new Date(), 
+              expiresAt: expiresAt,
+              sourceInvoice: invoice._id 
+            } 
+          },
           { upsert: true, session }
         );
-        console.log("[PaymentsWebhook(cjs)][webhook] player_listed entitlement ensured", { userId: String(invoice.userId), playerProfileId: invoice.playerProfileId ? String(invoice.playerProfileId) : null });
+        console.log("[PaymentsWebhook(cjs)][webhook] player_listed entitlement ensured", { 
+          userId: String(invoice.userId), 
+          playerProfileId: invoice.playerProfileId ? String(invoice.playerProfileId) : null,
+          expiresAt: expiresAt,
+          durationDays: durDays
+        });
         // Optionally flip PlayerProfile visibility if you store it:
         // await PlayerProfile.updateOne({ _id: invoice.playerProfileId, userId: invoice.userId }, { $set: { is_listed: true } }, { session });
       }
