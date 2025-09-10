@@ -12,8 +12,8 @@ const PaymentErrorSchema = new mongoose.Schema(
 
 const InvoiceSchema = new mongoose.Schema(
   {
-    orderNumber: { type: String, unique: true, index: true },
-    invoiceNumber: { type: String, index: true }, 
+    orderNumber: { type: String },
+    invoiceNumber: { type: String, index: true },
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -33,15 +33,15 @@ const InvoiceSchema = new mongoose.Schema(
       enum: ["player", "coach", null],
       default: null,
       index: true,
-    }, 
+    },
     playerProfileId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
       index: true,
-    }, 
+    },
 
     durationDays: { type: Number, default: 365 },
-    featureType: { type: String, default: null }, 
+    featureType: { type: String, default: null },
 
     amount: { type: Number, required: true },
     currency: { type: String, default: "SAR" },
@@ -53,8 +53,8 @@ const InvoiceSchema = new mongoose.Schema(
     },
 
     provider: { type: String, default: "paylink" },
-    providerInvoiceId: { type: String, default: undefined, index: true }, 
-    providerTransactionNo: { type: String, unique: true, sparse: true },
+    providerInvoiceId: { type: String, default: undefined, index: true },
+    providerTransactionNo: { type: String },
 
     paymentUrl: { type: String, default: null },
     paymentReceiptUrl: { type: String, default: null },
@@ -70,6 +70,13 @@ const InvoiceSchema = new mongoose.Schema(
 InvoiceSchema.index(
   { userId: 1, product: 1, targetType: 1, playerProfileId: 1, status: 1 },
   { unique: true, partialFilterExpression: { status: "pending" } }
+);
+
+// إضافة فهارس فريدة
+InvoiceSchema.index({ orderNumber: 1 }, { unique: true });
+InvoiceSchema.index(
+  { providerTransactionNo: 1 },
+  { unique: true, sparse: true }
 );
 
 export default mongoose.model("Invoice", InvoiceSchema);

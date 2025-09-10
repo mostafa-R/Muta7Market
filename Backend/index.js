@@ -1,66 +1,59 @@
 import dotenv from "dotenv";
-dotenv.config();
-
+import { createServer } from "http";
+import { Server } from "socket.io";
 import connectDB from "./src/config/db.js";
+import { createCronJobs } from "./src/cron/expiry.jobs.js";
 import app from "./src/server.js";
 import logger from "./src/utils/logger.js";
 
+// تحميل متغيرات البيئة
+dotenv.config();
+
+// إنشاء متغير للبورت
 const PORT = process.env.PORT || 5000;
 
-if (!process.env.BASE_URL) {
-  process.env.BASE_URL = `http://localhost:${PORT}`;
-}
+// الاتصال بقاعدة البيانات
+connectDB();
 
-const startServer = async () => {
-  try {
-   
-    await connectDB();
+// إنشاء خادم HTTP
+const server = createServer(app);
 
-    const server = app.listen(PORT, () => {
-      logger.info(
-        `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
-      );
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
-      console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-    });
+// إنشاء خادم Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || "*",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
-    // Handle unhandled promise rejections
-    process.on("unhandledRejection", (err) => {
-      logger.error("UNHANDLED REJECTION! 💥 Shutting down...");
-      logger.error(`${err.name}: ${err.message}`);
-      console.error("UNHANDLED REJECTION! 💥 Shutting down...");
-      console.error(err);
+// تعريف أحداث Socket.IO
+io.on("connection", (socket) => {
+  logger.info(`Socket connected: ${socket.id}`);
 
-      server.close(() => {
-        process.exit(1);
-      });
-    });
+  // الاستماع لأحداث من العميل
+  socket.on("join", (room) => {
+    socket.join(room);
+    logger.info(`Socket ${socket.id} joined room: ${room}`);
+  });
 
-    // Handle uncaught exceptions
-    process.on("uncaughtException", (err) => {
-      logger.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
-      logger.error(`${err.name}: ${err.message}`);
-      console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
-      console.error(err);
+  socket.on("leave", (room) => {
+    socket.leave(room);
+    logger.info(`Socket ${socket.id} left room: ${room}`);
+  });
 
-      process.exit(1);
-    });
+  socket.on("disconnect", () => {
+    logger.info(`Socket disconnected: ${socket.id}`);
+  });
+});
 
-    process.on("SIGTERM", () => {
-      logger.info("👋 SIGTERM RECEIVED. Shutting down gracefully");
-      console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
+// تصدير كائن io للاستخدام في أماكن أخرى
+export { io };
 
-      server.close(() => {
-        logger.info("💥 Process terminated!");
-        console.log("💥 Process terminated!");
-      });
-    });
-  } catch (error) {
-    logger.error("Failed to start server:", error);
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
+// بدء الخادم
+server.listen(PORT, () => {
+  logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 
-startServer();
+  // بدء مهام cron
+  createCronJobs();
+});

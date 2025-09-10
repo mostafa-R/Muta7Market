@@ -42,28 +42,25 @@ export const NOTIFICATION_TYPES = {
 };
 
 export const PRICING = {
-  
-  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR || 190),
+  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR),
 
-  
   listing_year: {
-    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR || 140),
-    coach: Number(process.env.PRICE_LISTING_COACH_YEAR || 190),
+    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR),
+    coach: Number(process.env.PRICE_LISTING_COACH_YEAR),
   },
 
   promotion_year: {
-    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR || 100),
-    coach: Number(process.env.PRICE_PROMO_COACH_YEAR || 100),
+    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR),
+    coach: Number(process.env.PRICE_PROMO_COACH_YEAR),
   },
 
   promotion_per_day: {
-    player: Number(process.env.PRICE_PROMO_PLAYER_PER_DAY || 15),
-    coach: Number(process.env.PRICE_PROMO_COACH_PER_DAY || 15),
+    player: Number(process.env.PRICE_PROMO_PLAYER_PER_DAY),
+    coach: Number(process.env.PRICE_PROMO_COACH_PER_DAY),
   },
 
   ONE_YEAR_DAYS: 365,
-  PROMOTION_DEFAULT_DAYS: Number(process.env.PROMOTION_DEFAULT_DAYS || 15),
-  
+  PROMOTION_DEFAULT_DAYS: Number(process.env.PROMOTION_DEFAULT_DAYS),
 };
 
 export const PAGINATION = {

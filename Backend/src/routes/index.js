@@ -12,6 +12,13 @@ import playerRoutes from "./player.routes.js";
 import uploadRoutes from "./upload.routes.js";
 import userRoutes from "./user.routes.js";
 
+// استيراد المسارات الجديدة
+import advertisementRoutes from "./advertisement.routes.js";
+import legalDocumentRoutes from "./legal-document.routes.js";
+import promotionalOfferRoutes from "./promotional-offer.routes.js";
+import settingsRoutes from "./settings.routes.js";
+import sportRoutes from "./sport.routes.js";
+
 const router = Router();
 
 // API Routes
@@ -25,6 +32,13 @@ router.use("/notifications", notificationRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/entitlements", entitlementRoutes);
 router.use("/upload", uploadRoutes);
+
+// تسجيل المسارات الجديدة
+router.use("/settings", settingsRoutes);
+router.use("/sports", sportRoutes);
+router.use("/legal", legalDocumentRoutes);
+router.use("/promotions", promotionalOfferRoutes);
+router.use("/advertisements", advertisementRoutes);
 
 // Public pricing endpoint for frontend to fetch static prices
 router.get("/config/pricing", (req, res) => {

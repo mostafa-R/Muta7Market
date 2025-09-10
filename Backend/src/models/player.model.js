@@ -51,7 +51,7 @@ const playerSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true, // Remove leading/trailing whitespace
+      trim: true, 
     },
     age: {
       type: Number,

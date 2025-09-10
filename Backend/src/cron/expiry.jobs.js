@@ -6,7 +6,7 @@ import User from "../models/user.model.js";
 const TZ = "Africa/Cairo";
 
 export async function runExpirySweep(now = new Date()) {
-  const n = new Date(now); 
+  const n = new Date(now);
   const users = await User.updateMany(
     { isActive: true, activeExpireAt: { $ne: null, $lte: n } },
     { $set: { isActive: false }, $unset: { activeExpireAt: "" } }
@@ -32,7 +32,6 @@ export async function runExpirySweep(now = new Date()) {
     }
   );
 
- 
   let entitlements = { modifiedCount: 0 };
   try {
     entitlements = await Entitlement.updateMany(
@@ -61,4 +60,8 @@ export function startExpiryCron() {
     },
     { timezone: TZ }
   );
+}
+
+export function createCronJobs() {
+  startExpiryCron();
 }

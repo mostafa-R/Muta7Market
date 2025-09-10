@@ -4,11 +4,16 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext.jsx";
 import {
+  AdIcon,
   ChevronDownIcon,
+  DocumentIcon,
+  GameIcon,
   GridIcon,
   HorizontaLDots,
   PageIcon,
   PlugInIcon,
+  SettingsIcon,
+  TagIcon,
   UserCircleIcon
 } from "../icons/index";
 
@@ -50,6 +55,31 @@ const navItems = [
       // { name: "إحصائيات", path: "/blank", pro: false },
       { name: "جدول المدفوعات", path: "/payment", pro: false },
     ],
+  },
+  {
+    name: "الإعدادات العامة",
+    icon: <SettingsIcon />,
+    path: "/settings",
+  },
+  {
+    name: "الألعاب الرياضية",
+    icon: <GameIcon />,
+    path: "/sports",
+  },
+  {
+    name: "الشروط والسياسات",
+    icon: <DocumentIcon />,
+    path: "/legal",
+  },
+  {
+    name: "العروض الترويجية",
+    icon: <TagIcon />,
+    path: "/promotions",
+  },
+  {
+    name: "الإعلانات",
+    icon: <AdIcon />,
+    path: "/advertisements",
   },
 ];
 

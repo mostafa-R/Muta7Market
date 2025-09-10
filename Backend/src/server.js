@@ -10,7 +10,6 @@ import morgan from "morgan";
 import { dirname, join } from "path";
 import swaggerUi from "swagger-ui-express";
 import { fileURLToPath } from "url";
-import { runExpirySweep } from "./cron/expiry.jobs.js";
 import swaggerDocument from "./docs/swagger.js";
 import errorMiddleware from "./middleware/error.middleware.js";
 import rateLimiter from "./middleware/rateLimiter.middleware.js";
@@ -22,7 +21,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 
-runExpirySweep();
+// تم نقل runExpirySweep() إلى index.js من خلال createCronJobs()
 app.set("trust proxy", 1);
 
 app.use(
