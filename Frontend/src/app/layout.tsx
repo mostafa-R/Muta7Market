@@ -5,12 +5,13 @@ import "./globals.css";
 import DynamicSeo from "@/components/DynamicSeo";
 import { Noto_Sans_Arabic } from "next/font/google";
 import Script from "next/script";
+import DynamicFavicon from "./component/DynamicFavicon";
 import Footer from "./component/Footer";
 import Navbar from "./component/header";
 import WhatsAppButton from "./component/WhatsAppButton";
 import { Providers } from "./providers";
 
-// Default metadata that will be overridden by dynamic SEO settings
+
 export const metadata: Metadata = {
   title: {
     default: "Muta7Market - منصة الرياضة الرائدة | Sports Marketplace Platform",
@@ -19,7 +20,6 @@ export const metadata: Metadata = {
   description:
     "منصة متاح ماركت - أكبر سوق رياضي في المنطقة. اكتشف أفضل اللاعبين والمدربين في كرة القدم، كرة السلة، التنس، والمزيد. Muta7Market - The leading sports marketplace connecting players and coaches across all sports.",
   keywords: [
-    // Arabic keywords
     "متاح ماركت",
     "منصة رياضية",
     "سوق الرياضة",
@@ -41,7 +41,6 @@ export const metadata: Metadata = {
     "مواهب رياضية",
     "السعودية",
 
-    // English keywords
     "Muta7Market",
     "sports marketplace",
     "sports platform",
@@ -124,11 +123,11 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  icons: {
-    icon: "/trophy.png",
-    shortcut: "/trophy.png",
-    apple: "/trophy.png",
-  },
+  // icons: {
+  //   icon: "/trophy.png", 
+  //   shortcut: "/trophy.png",
+  //   apple: "/trophy.png",
+  // },
   manifest: "/manifest.json",
   category: "Sports",
   classification: "Sports Marketplace",
@@ -167,6 +166,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={`${notoSansArabic.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <DynamicFavicon />
         <DynamicSeo />
         <script
           type="application/ld+json"

@@ -8,7 +8,6 @@ import GeneralSettingsForm from "./components/GeneralSettingsForm";
 import LogoSettingsForm from "./components/LogoSettingsForm";
 import PricingSettingsForm from "./components/PricingSettingsForm";
 import SeoSettingsForm from "./components/SeoSettingsForm";
-import TranslationSettingsForm from "./components/TranslationSettingsForm";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null);
@@ -152,8 +151,6 @@ export default function SettingsPage() {
             <TabsTrigger value="seo">إعدادات SEO</TabsTrigger>
             <TabsTrigger value="pricing">الأسعار والرسوم</TabsTrigger>
             <TabsTrigger value="contact">معلومات الاتصال</TabsTrigger>
-         
-            <TabsTrigger value="translations">الترجمات</TabsTrigger>
           </TabsList>
           
           <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-6">
@@ -178,10 +175,7 @@ export default function SettingsPage() {
             </TabsContent>
             
             
-            
-            <TabsContent value="translations">
-              <TranslationSettingsForm settings={settings} setSettings={setSettings} />
-            </TabsContent>
+        
           </div>
         </Tabs>
       </div>

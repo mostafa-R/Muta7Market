@@ -4,17 +4,18 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext.jsx";
 import {
-  AdIcon,
-  ChevronDownIcon,
-  DocumentIcon,
-  GameIcon,
-  GridIcon,
-  HorizontaLDots,
-  PageIcon,
-  PlugInIcon,
-  SettingsIcon,
-  TagIcon,
-  UserCircleIcon
+    AdIcon,
+    ChevronDownIcon,
+    DocumentIcon,
+    GameIcon,
+    GlobeIcon,
+    GridIcon,
+    HorizontaLDots,
+    PageIcon,
+    PlugInIcon,
+    SettingsIcon,
+    TagIcon,
+    UserCircleIcon
 } from "../icons/index";
 
 const navItems = [
@@ -80,6 +81,11 @@ const navItems = [
     name: "الإعلانات",
     icon: <AdIcon />,
     path: "/advertisements",
+  },
+  {
+    name: "إدارة اللغات",
+    icon: <GlobeIcon />,
+    path: "/localization",
   },
 ];
 

@@ -40,17 +40,28 @@ export const LanguageProvider = ({ children }) => {
     };
 
     try {
+      // Default to Arabic if no saved language
       const savedLanguage = localStorage.getItem("language") || "ar";
       setCurrentLanguage(savedLanguage);
       const isRtl = savedLanguage === "ar";
       setIsRTL(isRtl);
 
-      if (typeof i18n?.changeLanguage === "function") {
+      // Force Arabic as default if no language is set
+      if (!i18n.language || i18n.language === "cimode") {
+        i18n.changeLanguage("ar");
+      } else if (typeof i18n?.changeLanguage === "function") {
         i18n.changeLanguage(savedLanguage);
       }
-      document.documentElement.lang = savedLanguage;
 
+      document.documentElement.lang = savedLanguage;
       applyRTLStyles(isRtl);
+
+      // Import translations for this language immediately
+      if (typeof window !== "undefined") {
+        import("@/utils/localizationHelper").then((module) => {
+          module.initDynamicTranslations(savedLanguage);
+        });
+      }
     } catch (error) {
       console.error("Error loading language:", error);
       setCurrentLanguage("ar");
@@ -61,7 +72,7 @@ export const LanguageProvider = ({ children }) => {
       document.documentElement.lang = "ar";
       applyRTLStyles(true);
     }
-  }, [i18n]);
+  }, []);
 
   const changeLanguage = (lng) => {
     try {

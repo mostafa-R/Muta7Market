@@ -323,7 +323,9 @@ export default function CreateSportForm({ onSportCreated }) {
               )}
               <input id="icon-upload" type="file" ref={iconInputRef} onChange={handleIconChange} accept="image/*" className="hidden" />
               <label htmlFor="icon-upload" className="cursor-pointer bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-md transition-colors">اختيار أيقونة</label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">الإرسال الحالي JSON فقط — رفع الأيقونة عبر مسار الأيقونة لاحقًا.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                يُفضّل SVG/PNG بخلفية شفافة. الحد الأقصى 2MB.
+              </p>
             </div>
           </div>
 

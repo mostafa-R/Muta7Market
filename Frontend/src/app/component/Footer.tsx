@@ -1,14 +1,24 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import useContactInfoStore from "@/stores/contactInfoStore";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import useSiteSettingsStore from "../../stores/siteSettingsStore";
 
 const Footer = () => {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const isRTL = language === "ar";
+  const { contactInfo, fetchContactInfo } = useContactInfoStore();
+  const { siteName, fetchSettings } = useSiteSettingsStore();
+
+  useEffect(() => {
+    fetchContactInfo();
+    fetchSettings();
+  }, [fetchContactInfo, fetchSettings]);
 
   return (
     <footer className="bg-[hsl(var(--card))] border-t border-[hsl(var(--border))] py-12">
@@ -20,7 +30,9 @@ const Footer = () => {
               <div className="w-8 h-8 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center mr-3 ml-3">
                 <Trophy className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold">{t("brand.name")}</span>
+              <span className="text-lg font-bold">
+                {siteName?.[language] || t("brand.name")}
+              </span>
             </div>
             <p className="text-[hsl(var(--muted-foreground))] text-sm">
               {t("footer.description")}
@@ -84,7 +96,7 @@ const Footer = () => {
               </div>
               <div>
                 <a
-                  href="mailto:info@muta7market.com"
+                  href={`mailto:${contactInfo.email}`}
                   className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors text-sm"
                 >
                   {isRTL ? "تواصل معنا" : "Contact Us"}
@@ -129,15 +141,16 @@ const Footer = () => {
         <div className="border-t border-[hsl(var(--border))] pt-8 text-center">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             <p className="text-[hsl(var(--muted-foreground))] text-sm">
-              © {new Date().getFullYear()} {t("brand.name")}.{" "}
+              © {new Date().getFullYear()}{" "}
+              {siteName?.[language] || t("brand.name")}.{" "}
               {isRTL ? "جميع الحقوق محفوظة" : "All rights reserved"}.
             </p>
             <div className="flex items-center space-x-4 space-x-reverse">
               <a
-                href="mailto:info@muta7market.com"
+                href={`mailto:${contactInfo.email}`}
                 className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors text-sm"
               >
-                info@muta7market.com
+                {contactInfo.email}
               </a>
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   FiAward,
   FiGlobe,
@@ -13,10 +14,16 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { useLanguage } from "../../contexts/LanguageContext";
+import useContactInfoStore from "../../stores/contactInfoStore";
 
 function AboutPage() {
   const { language } = useLanguage();
   const isRTL = language === "ar";
+  const { contactInfo, fetchContactInfo, isLoading } = useContactInfoStore();
+
+  useEffect(() => {
+    fetchContactInfo();
+  }, [fetchContactInfo]);
 
   const values = [
     {
@@ -246,8 +253,7 @@ function AboutPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "البريد الإلكتروني" : "Email"}
               </h3>
-              <p className="text-gray-300">info@muta7market.com</p>
-              <p className="text-gray-300">support@muta7market.com</p>
+              <p className="text-gray-300">{contactInfo.email}</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -256,7 +262,9 @@ function AboutPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "الهاتف" : "Phone"}
               </h3>
-              <p className="text-gray-300">00966531540229</p>
+              <p className="text-gray-300">
+                {contactInfo.phone.formatted || contactInfo.phone.primary}
+              </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -266,7 +274,7 @@ function AboutPage() {
                 {isRTL ? "العنوان" : "Address"}
               </h3>
               <p className="text-gray-300">
-                {isRTL ? "المملكة العربية السعودية" : "Saudi Arabia"}
+                {isRTL ? contactInfo.address.ar : contactInfo.address.en}
               </p>
             </div>
           </div>
@@ -274,17 +282,11 @@ function AboutPage() {
           <div className="text-center">
             <div className="flex flex-wrap justify-center gap-4">
               <a
-                href="mailto:info@muta7market.com"
+                href={`mailto:${contactInfo.email}`}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center"
               >
-                <FiMail className="mr-2" />
+                <FiMail className="mr-2 ml-2" />
                 {isRTL ? "راسلنا" : "Email Us"}
-              </a>
-              <a
-                href="/register-profile"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200"
-              >
-                {isRTL ? "انضم إلينا" : "Join Us"}
               </a>
             </div>
           </div>

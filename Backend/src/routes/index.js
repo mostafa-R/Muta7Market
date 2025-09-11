@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getPricingSettings } from "../utils/pricingUtils.js";
 import { initializeEmailService } from "../services/email.service.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
 import coachRoutes from "./coach.routes.js";
@@ -15,6 +15,7 @@ import userRoutes from "./user.routes.js";
 // استيراد المسارات الجديدة
 import advertisementRoutes from "./advertisement.routes.js";
 import legalDocumentRoutes from "./legal-document.routes.js";
+import localizationRoutes from "./localization.routes.js";
 import promotionalOfferRoutes from "./promotional-offer.routes.js";
 import settingsRoutes from "./settings.routes.js";
 import sportRoutes from "./sport.routes.js";
@@ -39,6 +40,7 @@ router.use("/sports", sportRoutes);
 router.use("/legal", legalDocumentRoutes);
 router.use("/promotions", promotionalOfferRoutes);
 router.use("/advertisements", advertisementRoutes);
+router.use("/localization", localizationRoutes);
 
 // Public pricing endpoint for frontend to fetch dynamic prices
 router.get("/config/pricing", async (req, res) => {

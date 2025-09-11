@@ -12,6 +12,7 @@ import swaggerUi from "swagger-ui-express";
 import { fileURLToPath } from "url";
 import swaggerDocument from "./docs/swagger.js";
 import errorMiddleware from "./middleware/error.middleware.js";
+import localizationMiddleware from "./middleware/localization.middleware.js";
 import rateLimiter from "./middleware/rateLimiter.middleware.js";
 import routes from "./routes/index.js";
 import { initializeEmailService } from "./services/email.service.js";
@@ -95,6 +96,7 @@ i18n.configure({
   syncFiles: process.env.NODE_ENV === "development",
 });
 app.use(i18n.init);
+app.use(localizationMiddleware);
 
 app.use(
   "/uploads",

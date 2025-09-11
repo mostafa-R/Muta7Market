@@ -1,10 +1,14 @@
 import express from "express";
 import {
+  addTranslation,
+  deleteTranslation,
   getLegalSettings,
   getPricingSettings,
   getSiteSettings,
+  getTranslations,
   restorePricingDefaults,
   restoreSeoDefaults,
+  restoreTranslationsDefaults,
   updateCustomTranslations,
   updateMaintenanceMode,
   updatePricingSettings,
@@ -21,6 +25,7 @@ import uploadImage from "../middleware/localUpload.middleware.js";
 const router = express.Router();
 
 router.get("/", getSiteSettings);
+router.get("/translations", getTranslations);
 
 // جميع المسارات تتطلب مصادقة ودور مسؤول
 router.use(authMiddleware, authorize("admin", "super_admin"));
@@ -49,5 +54,8 @@ router.patch("/maintenance", updateMaintenanceMode);
 
 // مسارات الترجمات المخصصة
 router.patch("/translations", updateCustomTranslations);
+router.post("/translations", addTranslation);
+router.delete("/translations/:key", deleteTranslation);
+router.post("/translations/restore", restoreTranslationsDefaults);
 
 export default router;
