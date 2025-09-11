@@ -95,8 +95,9 @@ export const getAllSports = asyncHandler(async (req, res) => {
     ];
   }
 
-  const [sports, totalSports] = await Promise.all([
+  const [sports,totalSports] = await Promise.all([
     Sport.find(filter)
+      .select("-__v -createdAt -updatedAt -seo ")
       .sort(sort)
       .skip((options.page - 1) * options.limit)
       .limit(options.limit),
@@ -116,7 +117,7 @@ export const getAllSports = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { sports, pagination },
+        { sports,  pagination },
         "تم الحصول على قائمة الألعاب الرياضية بنجاح"
       )
     );
