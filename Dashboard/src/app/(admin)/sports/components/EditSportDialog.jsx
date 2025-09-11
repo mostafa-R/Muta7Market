@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
-import { toast } from "sonner";
 import { Button } from "@/app/component/ui/button";
 import {
   Dialog,
@@ -12,7 +9,6 @@ import {
   DialogTitle,
 } from "@/app/component/ui/dialog";
 import { Input } from "@/app/component/ui/input";
-import { Textarea } from "@/app/component/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,6 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/component/ui/select";
+import { Textarea } from "@/app/component/ui/textarea";
+import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const JOB_OPTIONS = [
   { value: "player", label: "لاعب" },
@@ -316,26 +316,26 @@ export default function EditSportDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose} dir="rtl">
-      <DialogContent className="max-w-5xl p-0 overflow-hidden">
+      <DialogContent className="max-w-5xl p-0 overflow-hidden rounded-lg shadow-lg border-0">
         {/* header */}
-        <div className="bg-gradient-to-l from-primary/80 to-primary p-5 text-white">
+        <div className="bg-gradient-to-l from-primary/80 to-primary p-6 text-black pb-3">
           <DialogHeader>
-            <DialogTitle className="text-xl">
+            <DialogTitle className="text-2xl font-bold">
               تعديل: <span className="font-semibold">{title}</span>
             </DialogTitle>
           </DialogHeader>
-          <p className="text-xs mt-1 opacity-90">
+          <p className="text-sm mt-2 opacity-90">
             حدّث معلومات اللعبة، المواقع، وأنواع الأدوار. ثم اضغط حفظ.
           </p>
         </div>
 
         {/* body */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* left (form) */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic info */}
-            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-4">
-              <h3 className="font-medium mb-3">المعلومات الأساسية</h3>
+            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-5 shadow-sm transition-all hover:shadow-md">
+              <h3 className="font-semibold text-lg mb-4 text-primary">المعلومات الأساسية</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Input
                   placeholder="اسم اللعبة (عربي) *"
@@ -350,7 +350,8 @@ export default function EditSportDialog({
               </div>
 
               {/* SEO */}
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h4 className="md:col-span-2 font-medium text-gray-600 dark:text-gray-300">معلومات SEO</h4>
                 <Input
                   placeholder="Meta Title (عربي)"
                   value={form.seo.metaTitle.ar}
@@ -388,10 +389,10 @@ export default function EditSportDialog({
             </section>
 
             {/* Positions */}
-            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-4">
+            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-5 shadow-sm transition-all hover:shadow-md">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium">المواقع</h3>
-                <Button type="button" onClick={addPosition} className="bg-primary">
+                <h3 className="font-semibold text-lg text-primary">المواقع</h3>
+                <Button type="button" onClick={addPosition} className="bg-primary hover:bg-primary/90 transition-colors">
                   إضافة موقع
                 </Button>
               </div>
@@ -405,7 +406,7 @@ export default function EditSportDialog({
                   {form.positions.map((pos, idx) => (
                     <div
                       key={`pos-${idx}`}
-                      className="grid grid-cols-1 md:grid-cols-7 gap-3 border rounded-lg p-3"
+                      className="grid grid-cols-1 md:grid-cols-7 gap-3 border rounded-lg p-4 shadow-sm hover:shadow-md transition-all bg-white/80 dark:bg-slate-800/60"
                     >
                       <Input
                         className="md:col-span-3"
@@ -424,7 +425,7 @@ export default function EditSportDialog({
                           type="button"
                           variant="destructive"
                           onClick={() => removePosition(idx)}
-                          className="h-9"
+                          className="h-9 hover:bg-red-600 transition-colors"
                         >
                           إزالة
                         </Button>
@@ -436,10 +437,10 @@ export default function EditSportDialog({
             </section>
 
             {/* Role Types */}
-            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-4">
+            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-5 shadow-sm transition-all hover:shadow-md">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium">أنواع الأدوار</h3>
-                <Button type="button" onClick={addRole} className="bg-primary">
+                <h3 className="font-semibold text-lg text-primary">أنواع الأدوار</h3>
+                <Button type="button" onClick={addRole} className="bg-primary hover:bg-primary/90 transition-colors">
                   إضافة نوع
                 </Button>
               </div>
@@ -453,7 +454,7 @@ export default function EditSportDialog({
                   {form.roleTypes.map((role, idx) => (
                     <div
                       key={`role-${idx}`}
-                      className="grid grid-cols-1 md:grid-cols-7 gap-3 border rounded-lg p-3"
+                      className="grid grid-cols-1 md:grid-cols-7 gap-3 border rounded-lg p-4 shadow-sm hover:shadow-md transition-all bg-white/80 dark:bg-slate-800/60"
                     >
                       <div className="md:col-span-2">
                         <Select
@@ -491,7 +492,7 @@ export default function EditSportDialog({
                           type="button"
                           variant="destructive"
                           onClick={() => removeRole(idx)}
-                          className="h-9"
+                          className="h-9 hover:bg-red-600 transition-colors"
                         >
                           إزالة
                         </Button>
@@ -504,16 +505,16 @@ export default function EditSportDialog({
           </div>
 
           {/* right (icon + meta) */}
-          <div className="space-y-6">
-            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-4">
-              <h3 className="font-medium mb-4">أيقونة اللعبة</h3>
-              <div className="border border-dashed rounded-lg p-4 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800">
+          <div className="space-y-6 h-full flex flex-col">
+            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-5 shadow-sm transition-all hover:shadow-md flex-grow">
+              <h3 className="font-semibold text-lg mb-4 text-primary">أيقونة اللعبة</h3>
+              <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => document.getElementById('icon-upload-edit').click()}>
                 {iconPreview ? (
-                  <div className="relative w-32 h-32 mb-4">
+                  <div className="relative w-36 h-36 mb-4 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all">
                     <Image src={iconPreview} alt="أيقونة اللعبة" fill className="object-contain" />
                   </div>
                 ) : (
-                  <div className="h-32 w-32 flex items-center justify-center text-gray-400 mb-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="h-36 w-36 flex items-center justify-center text-gray-400 mb-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-slate-700/50">
                     <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -535,8 +536,9 @@ export default function EditSportDialog({
                 />
                 <label
                   htmlFor="icon-upload-edit"
-                  className="cursor-pointer bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-md transition-colors"
+                  className="cursor-pointer bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-md transition-colors font-medium flex items-center gap-2"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                   اختيار/تغيير الأيقونة
                 </label>
 
@@ -544,38 +546,68 @@ export default function EditSportDialog({
                   type="button"
                   onClick={handleIconSubmit}
                   disabled={isIconSubmitting || !iconInputRef.current?.files?.[0]}
-                  className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                 >
-                  {isIconSubmitting ? "جاري الرفع..." : "تحديث الأيقونة"}
+                  {isIconSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      جاري الرفع...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      تحديث الأيقونة
+                    </>
+                  )}
                 </Button>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
                   يُفضّل SVG/PNG بخلفية شفافة. الحد الأقصى 2MB.
                 </p>
               </div>
             </section>
 
-            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-4 text-sm">
-              <h3 className="font-medium mb-2">معلومات</h3>
-              <div className="space-y-1 text-muted-foreground">
-                <div>المعرّف: <code className="text-xs">{sport?._id}</code></div>
+            <section className="rounded-xl border bg-white/50 dark:bg-slate-900/40 p-5 text-sm shadow-sm">
+              <h3 className="font-semibold text-lg mb-3 text-primary">معلومات</h3>
+              <div className="space-y-2 text-muted-foreground">
+                <div className="flex items-center gap-2"><span className="font-medium">المعرّف:</span> <code className="text-xs bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">{sport?._id}</code></div>
                 {sport?.slug && (
-                  <div>الرابط: <code className="text-xs">{sport.slug}</code></div>
+                  <div className="flex items-center gap-2"><span className="font-medium">الرابط:</span> <code className="text-xs bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">{sport.slug}</code></div>
                 )}
-                <div>أنشئ: {sport?.createdAt ? new Date(sport.createdAt).toLocaleDateString("ar-SA") : "—"}</div>
-                <div>آخر تحديث: {sport?.updatedAt ? new Date(sport.updatedAt).toLocaleDateString("ar-SA") : "—"}</div>
+                <div className="flex items-center gap-2"><span className="font-medium">أنشئ:</span> <span>{sport?.createdAt ? new Date(sport.createdAt).toLocaleDateString("ar-SA") : "—"}</span></div>
+                <div className="flex items-center gap-2"><span className="font-medium">آخر تحديث:</span> <span>{sport?.updatedAt ? new Date(sport.updatedAt).toLocaleDateString("ar-SA") : "—"}</span></div>
               </div>
             </section>
           </div>
         </div>
 
         {/* footer */}
-        <DialogFooter className="border-t bg-gray-50 dark:bg-slate-900 px-6 py-4 flex items-center justify-between">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <DialogFooter className="border-t bg-gray-50 dark:bg-slate-900 px-6 py-4 flex items-center justify-between sticky bottom-0">
+          <Button type="button" variant="outline" onClick={onClose} className="hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
             إلغاء
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-primary">
-            {isSubmitting ? "جاري الحفظ..." : "حفظ التغييرات"}
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-primary hover:bg-primary/90 transition-colors flex items-center gap-2">
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                جاري الحفظ...
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                حفظ التغييرات
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
