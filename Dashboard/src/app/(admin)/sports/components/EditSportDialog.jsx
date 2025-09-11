@@ -134,7 +134,6 @@ export default function EditSportDialog({
       return next;
     });
 
-  // roles
   const addRole = () =>
     setForm((p) => ({
       ...p,
@@ -151,11 +150,10 @@ export default function EditSportDialog({
     setForm((p) => {
       const next = structuredClone(p);
       if (path === "jop") next.roleTypes[idx].jop = value;
-      else next.roleTypes[idx].name[path] = value; // ar/en
+      else next.roleTypes[idx].name[path] = value;
       return next;
     });
 
-  // icon preview only
   const handleIconChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -228,7 +226,6 @@ export default function EditSportDialog({
       return;
     }
 
-    // quick validations
     const invalidPos = form.positions.some(
       (p) => (p?.name?.ar || p?.name?.en) && (!p?.name?.ar || !p?.name?.en)
     );
@@ -248,24 +245,61 @@ export default function EditSportDialog({
     setIsSubmitting(true);
     try {
       const payload = buildPayload();
-      const res = await fetch(`${API_BASE_URL}/sports/${sport._id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = json?.message || json?.error?.message || `HTTP ${res.status}`;
-        throw new Error(msg);
+      
+      const hasNewIcon = iconInputRef.current?.files?.[0];
+      
+      if (hasNewIcon) {
+        const formData = new FormData();
+        console.log('Edit dialog payload before sending:', payload);
+        
+        formData.append('name', JSON.stringify(payload.name));
+        formData.append('positions', JSON.stringify(payload.positions || []));
+        formData.append('roleTypes', JSON.stringify(payload.roleTypes || []));
+        formData.append('seo', JSON.stringify(payload.seo || {}));
+        
+        formData.append('icon', iconInputRef.current.files[0]);
+        
+        const res = await fetch(`${API_BASE_URL}/sports/${sport._id}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: formData,
+        });
+        
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = json?.message || json?.error?.message || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+        const updated = json?.data ?? json;
+        onSportUpdated?.(updated);
+        toast.success("تم حفظ التغييرات بنجاح");
+        
+        // Clear the file input after successful upload
+        if (iconInputRef.current) iconInputRef.current.value = "";
+      } else {
+        // Use standard JSON for data-only updates
+        const res = await fetch(`${API_BASE_URL}/sports/${sport._id}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = json?.message || json?.error?.message || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+        const updated = json?.data ?? json;
+        onSportUpdated?.(updated);
+        toast.success("تم حفظ التغييرات بنجاح");
       }
-      const updated = json?.data ?? json;
-      onSportUpdated?.(updated);
-      toast.success("تم حفظ التغييرات بنجاح");
     } catch (err) {
       console.error(err);
       toast.error(`حدث خطأ: ${err.message}`);

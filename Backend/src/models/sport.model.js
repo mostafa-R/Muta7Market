@@ -6,7 +6,6 @@ const sportSchema = new mongoose.Schema(
       ar: { type: String, required: true },
       en: { type: String, required: true },
     },
-    // ✅ slug is needed because you still create it in the pre-validate hook
     slug: {
       type: String,
       required: true,
@@ -54,19 +53,20 @@ const sportSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Text index on names
 sportSchema.index({ "name.ar": "text", "name.en": "text" });
-// Keep slug unique
 sportSchema.index({ slug: 1 }, { unique: true });
 
-// Generate slug from English name
 sportSchema.pre("validate", function (next) {
   if (this.isNew || this.isModified("name.en")) {
-    this.slug = this.name.en
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+    if (this.name && this.name.en) {
+      this.slug = this.name.en
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    } else {
+      this.slug = `sport-${Date.now()}`;
+    }
   }
   next();
 });

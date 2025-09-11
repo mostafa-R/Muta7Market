@@ -1,19 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
 import Image from "next/image";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
-import { Textarea } from "@/app/component/ui/textarea";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/app/component/ui/select";
+import { Textarea } from "@/app/component/ui/textarea";
 
 const JOB_OPTIONS = [
   { value: "player", label: "لاعب" },
@@ -27,8 +27,8 @@ export default function CreateSportForm({ onSportCreated }) {
 
   const [formData, setFormData] = useState({
     name: { ar: "", en: "" },
-    positions: [],               // [{ name:{ar,en} }]
-    roleTypes: [],               // [{ jop, name:{ar,en} }]
+    positions: [],               
+    roleTypes: [],              
     seo: {
       metaTitle: { ar: "", en: "" },
       metaDescription: { ar: "", en: "" },
@@ -53,7 +53,6 @@ export default function CreateSportForm({ onSportCreated }) {
     else setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  // positions
   const addPosition = () =>
     setFormData((p) => ({
       ...p,
@@ -71,7 +70,6 @@ export default function CreateSportForm({ onSportCreated }) {
       return clone;
     });
 
-  // roleTypes
   const addRole = () =>
     setFormData((p) => ({
       ...p,
@@ -103,7 +101,6 @@ export default function CreateSportForm({ onSportCreated }) {
     fr.readAsDataURL(file);
   };
 
-  // Build payload that NEVER sends an invalid roleTypes array
   const buildPayload = () => {
     const keywords =
       formData.seo.keywords
@@ -122,7 +119,7 @@ export default function CreateSportForm({ onSportCreated }) {
 
     const roleTypesValid = (formData.roleTypes || [])
       .map((r) => ({
-        jop: (r?.jop || "").trim(), // "player" | "coach"
+        jop: (r?.jop || "").trim(), 
         name: {
           ar: (r?.name?.ar || "").trim(),
           en: (r?.name?.en || "").trim(),
@@ -146,7 +143,7 @@ export default function CreateSportForm({ onSportCreated }) {
     };
 
     if (positions.length)    payload.positions = positions;
-    if (roleTypesValid.length) payload.roleTypes = roleTypesValid; // omit entirely if none valid
+    if (roleTypesValid.length) payload.roleTypes = roleTypesValid;
 
     return payload;
   };
@@ -159,7 +156,6 @@ export default function CreateSportForm({ onSportCreated }) {
       return;
     }
 
-    // quick client guard to avoid obvious 400s
     const badPos = formData.positions.some(
       (p) => (p?.name?.ar || p?.name?.en) && (!p?.name?.ar || !p?.name?.en)
     );
@@ -172,29 +168,41 @@ export default function CreateSportForm({ onSportCreated }) {
       return toast.error("كل نوع دور يجب أن يحتوي على (لاعب/مدرب) والاسم بالعربية والإنجليزية");
     }
 
-    const payload = buildPayload();
-
     setIsSubmitting(true);
     try {
       const token =
         localStorage.getItem("token") || sessionStorage.getItem("accessToken");
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_BASE_URL ;
+        process.env.NEXT_PUBLIC_BASE_URL;
+
+      const formDataToSend = new FormData();
+      
+      const payload = buildPayload();
+      console.log('Client payload before sending:', payload);
+      
+      formDataToSend.append('name', JSON.stringify(payload.name));
+      formDataToSend.append('positions', JSON.stringify(payload.positions || []));
+      formDataToSend.append('roleTypes', JSON.stringify(payload.roleTypes || []));
+      formDataToSend.append('seo', JSON.stringify(payload.seo || {}));
+      
+    
+      if (iconInputRef.current?.files?.[0]) {
+        formDataToSend.append('icon', iconInputRef.current.files[0]);
+      }
 
       const res = await fetch(`${API_BASE_URL}/sports`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      
         },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: formDataToSend,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        // If backend still returns structured details, show them
         const msg = json?.message || json?.error?.message || `HTTP ${res.status}`;
         throw new Error(msg);
       }
@@ -203,7 +211,6 @@ export default function CreateSportForm({ onSportCreated }) {
       toast.success("تم إنشاء اللعبة الرياضية بنجاح");
       onSportCreated?.(created);
 
-      // reset
       setFormData({
         name: { ar: "", en: "" },
         positions: [],

@@ -1,6 +1,5 @@
 import Joi from "joi";
 
-// مخطط التحقق من صحة إنشاء لعبة رياضية جديدة
 export const createSportSchema = Joi.object({
   name: Joi.object({
     ar: Joi.string().required().messages({
@@ -33,7 +32,7 @@ export const createSportSchema = Joi.object({
 
   roleTypes: Joi.array().items(
     Joi.object({
-      jop: Joi.string().valid("player", "coach").required(), // <-- add this
+      jop: Joi.string().valid("player", "coach").required(),
       name: Joi.object({
         ar: Joi.string().required(),
         en: Joi.string().required(),
@@ -58,7 +57,6 @@ export const createSportSchema = Joi.object({
   }),
 });
 
-// مخطط التحقق من صحة تحديث لعبة رياضية
 export const updateSportSchema = Joi.object({
   name: Joi.object({
     ar: Joi.string(),
@@ -85,7 +83,7 @@ export const updateSportSchema = Joi.object({
 
   roleTypes: Joi.array().items(
     Joi.object({
-      jop: Joi.string().valid("player", "coach").required(), // <-- add this
+      jop: Joi.string().valid("player", "coach").required(),
       name: Joi.object({
         ar: Joi.string().required(),
         en: Joi.string().required(),

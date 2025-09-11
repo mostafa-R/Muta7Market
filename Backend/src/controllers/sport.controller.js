@@ -6,7 +6,6 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { handleMediaUpload } from "../utils/localMediaUtils.js";
 
-/* ------------------------ helpers ------------------------ */
 const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
 
 const sanitizeI18n = (v = {}) => ({
@@ -69,12 +68,11 @@ const sanitizeSEO = (seo = {}) => {
   };
 };
 
-/* -------------------- GET /sports (list) -------------------- */
 export const getAllSports = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    sortBy = "createdAt", // default sort since displayOrder was removed
+    sortBy = "createdAt",
     sortOrder = "asc",
     search,
   } = req.query;
@@ -84,7 +82,6 @@ export const getAllSports = asyncHandler(async (req, res) => {
     limit: Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100),
   };
 
-  // Only allow safe sort fields
   const allowedSort = new Set(["createdAt", "updatedAt", "name.en", "name.ar"]);
   const sortKey = allowedSort.has(sortBy) ? sortBy : "createdAt";
   const sort = { [sortKey]: sortOrder === "desc" ? -1 : 1 };
@@ -125,7 +122,6 @@ export const getAllSports = asyncHandler(async (req, res) => {
     );
 });
 
-/* -------------------- GET /sports/:id -------------------- */
 export const getSportById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -141,12 +137,53 @@ export const getSportById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, sport, "تم الحصول على اللعبة الرياضية بنجاح"));
 });
 
-/* -------------------- POST /sports -------------------- */
-// POST /sports
 export const createSport = asyncHandler(async (req, res) => {
-  const { name, positions, roleTypes, seo } = req.body;
+  let data;
+  if (req.validatedBody) {
+    data = req.validatedBody;
+  } else {
+    data = req.body;
 
-  if (!name || !isNonEmptyString(name.ar) || !isNonEmptyString(name.en)) {
+    let name = {};
+    let positions = [];
+    let roleTypes = [];
+    let seo = {};
+
+    try {
+      if (data.name) {
+        name =
+          typeof data.name === "string" ? JSON.parse(data.name) : data.name;
+      }
+
+      if (data.positions) {
+        positions =
+          typeof data.positions === "string"
+            ? JSON.parse(data.positions)
+            : data.positions;
+      }
+
+      if (data.roleTypes) {
+        roleTypes =
+          typeof data.roleTypes === "string"
+            ? JSON.parse(data.roleTypes)
+            : data.roleTypes;
+      }
+
+      if (data.seo) {
+        seo = typeof data.seo === "string" ? JSON.parse(data.seo) : data.seo;
+      }
+
+      data = { name, positions, roleTypes, seo };
+    } catch (error) {
+      throw new ApiError(400, "خطأ في تنسيق البيانات المرسلة");
+    }
+  }
+
+  if (
+    !data.name ||
+    !isNonEmptyString(data.name.ar) ||
+    !isNonEmptyString(data.name.en)
+  ) {
     throw new ApiError(
       400,
       "يرجى توفير اسم اللعبة باللغتين العربية والإنجليزية"
@@ -154,20 +191,35 @@ export const createSport = asyncHandler(async (req, res) => {
   }
 
   const existingSport = await Sport.findOne({
-    $or: [{ "name.ar": name.ar.trim() }, { "name.en": name.en.trim() }],
+    $or: [
+      { "name.ar": data.name.ar.trim() },
+      { "name.en": data.name.en.trim() },
+    ],
   });
   if (existingSport)
     throw new ApiError(400, "توجد لعبة رياضية بنفس الاسم بالفعل");
 
-  const cleanedPositions = sanitizePositions(positions);
-  const cleanedRoleTypes = sanitizeRoleTypes(roleTypes);
-  const cleanedSEO = sanitizeSEO(seo);
+  const cleanedPositions = sanitizePositions(data.positions);
+  const cleanedRoleTypes = sanitizeRoleTypes(data.roleTypes);
+  const cleanedSEO = sanitizeSEO(data.seo);
+
+  let icon = { url: null, publicId: null };
+  if (req.file) {
+    const iconUploadResult = await handleMediaUpload(req.file, req, "image");
+    if (iconUploadResult?.url) {
+      icon = {
+        url: iconUploadResult.url,
+        publicId: iconUploadResult.publicId,
+      };
+    }
+  }
 
   const newSport = await Sport.create({
-    name: { ar: name.ar.trim(), en: name.en.trim() },
+    name: { ar: data.name.ar.trim(), en: data.name.en.trim() },
     positions: cleanedPositions,
-    roleTypes: cleanedRoleTypes, // keep valid only
+    roleTypes: cleanedRoleTypes,
     seo: cleanedSEO,
+    icon: icon,
   });
 
   return res
@@ -175,34 +227,95 @@ export const createSport = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newSport, "تم إنشاء اللعبة الرياضية بنجاح"));
 });
 
-// PATCH /sports/:id
 export const updateSport = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, positions, roleTypes, seo } = req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(id))
+  let data;
+  if (req.validatedBody) {
+    data = req.validatedBody;
+  } else {
+    data = {};
+
+    try {
+      if (req.body.name) {
+        data.name =
+          typeof req.body.name === "string"
+            ? JSON.parse(req.body.name)
+            : req.body.name;
+      }
+
+      if (req.body.positions) {
+        data.positions =
+          typeof req.body.positions === "string"
+            ? JSON.parse(req.body.positions)
+            : req.body.positions;
+      }
+
+      if (req.body.roleTypes) {
+        data.roleTypes =
+          typeof req.body.roleTypes === "string"
+            ? JSON.parse(req.body.roleTypes)
+            : req.body.roleTypes;
+      }
+
+      if (req.body.seo) {
+        data.seo =
+          typeof req.body.seo === "string"
+            ? JSON.parse(req.body.seo)
+            : req.body.seo;
+      }
+    } catch (error) {
+      throw new ApiError(400, "خطأ في تنسيق البيانات المرسلة");
+    }
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(400, "معرف اللعبة غير صالح");
-  const sport = await Sport.findById(id);
-  if (!sport) throw new ApiError(404, "اللعبة الرياضية غير موجودة");
+  }
 
-  if (name && (isNonEmptyString(name.ar) || isNonEmptyString(name.en))) {
+  const sport = await Sport.findById(id);
+  if (!sport) {
+    throw new ApiError(404, "اللعبة الرياضية غير موجودة");
+  }
+
+  if (
+    data.name &&
+    (isNonEmptyString(data.name.ar) || isNonEmptyString(data.name.en))
+  ) {
     const query = { _id: { $ne: id }, $or: [] };
-    if (isNonEmptyString(name.ar))
-      query.$or.push({ "name.ar": name.ar.trim() });
-    if (isNonEmptyString(name.en))
-      query.$or.push({ "name.en": name.en.trim() });
+    if (isNonEmptyString(data.name.ar))
+      query.$or.push({ "name.ar": data.name.ar.trim() });
+    if (isNonEmptyString(data.name.en))
+      query.$or.push({ "name.en": data.name.en.trim() });
     if (query.$or.length && (await Sport.findOne(query))) {
       throw new ApiError(400, "توجد لعبة رياضية أخرى بنفس الاسم");
     }
   }
 
-  if (name) {
-    if (isNonEmptyString(name.ar)) sport.name.ar = name.ar.trim();
-    if (isNonEmptyString(name.en)) sport.name.en = name.en.trim();
+  if (data.name) {
+    if (isNonEmptyString(data.name.ar)) sport.name.ar = data.name.ar.trim();
+    if (isNonEmptyString(data.name.en)) sport.name.en = data.name.en.trim();
   }
-  if (positions !== undefined) sport.positions = sanitizePositions(positions);
-  if (roleTypes !== undefined) sport.roleTypes = sanitizeRoleTypes(roleTypes);
-  if (seo !== undefined) sport.seo = { ...sport.seo, ...sanitizeSEO(seo) };
+  if (data.positions !== undefined)
+    sport.positions = sanitizePositions(data.positions);
+  if (data.roleTypes !== undefined)
+    sport.roleTypes = sanitizeRoleTypes(data.roleTypes);
+  if (data.seo !== undefined)
+    sport.seo = { ...sport.seo, ...sanitizeSEO(data.seo) };
+
+  if (req.file) {
+    if (sport.icon?.publicId) {
+      await deleteFromCloudinary(sport.icon.publicId);
+    }
+
+    const iconUploadResult = await handleMediaUpload(req.file, req, "image");
+    if (iconUploadResult?.url) {
+      sport.icon = {
+        url: iconUploadResult.url,
+        publicId: iconUploadResult.publicId,
+      };
+    }
+  }
 
   await sport.save();
   return res
@@ -210,7 +323,6 @@ export const updateSport = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, sport, "تم تحديث اللعبة الرياضية بنجاح"));
 });
 
-/* -------------------- PATCH /sports/:id/icon -------------------- */
 export const updateSportIcon = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -242,7 +354,6 @@ export const updateSportIcon = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, sport, "تم تحديث أيقونة اللعبة الرياضية بنجاح"));
 });
 
-/* -------------------- DELETE /sports/:id -------------------- */
 export const deleteSport = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -263,8 +374,6 @@ export const deleteSport = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "تم حذف اللعبة الرياضية بنجاح"));
 });
 
-/* -------------- Public list (kept name for compatibility) -------------- */
-// Since isActive/displayOrder were removed, return all sports with useful fields.
 export const getActiveSports = asyncHandler(async (_req, res) => {
   const sports = await Sport.find({})
     .select("name icon positions roleTypes")
@@ -277,8 +386,6 @@ export const getActiveSports = asyncHandler(async (_req, res) => {
     );
 });
 
-/* -------------------- Removed: slug-based lookup -------------------- */
 export const getSportBySlug = asyncHandler(async (_req, _res) => {
-  // If your routes still call this, it's now obsolete because slug was removed from the schema.
   throw new ApiError(410, "تم إزالة خاصية الـ slug من نموذج اللعبة.");
 });

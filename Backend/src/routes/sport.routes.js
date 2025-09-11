@@ -10,8 +10,8 @@ import {
   updateSportIcon,
 } from "../controllers/sport.controller.js";
 import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
+import validateFormData from "../middleware/formDataValidation.middleware.js";
 import uploadImage from "../middleware/localUpload.middleware.js";
-import validate from "../middleware/validation.middleware.js";
 import {
   createSportSchema,
   updateSportSchema,
@@ -19,17 +19,25 @@ import {
 
 const router = express.Router();
 
-// مسارات عامة (لا تتطلب مصادقة)
 router.get("/active", getActiveSports);
 router.get("/slug/:slug", getSportBySlug);
 
-// مسارات تتطلب مصادقة ودور مسؤول
 router.use(authMiddleware, authorize("admin", "super_admin"));
 
 router.get("/", getAllSports);
 router.get("/:id", getSportById);
-router.post("/", validate(createSportSchema), createSport);
-router.patch("/:id", validate(updateSportSchema), updateSport);
+router.post(
+  "/",
+  uploadImage.single("icon"),
+  validateFormData(createSportSchema),
+  createSport
+);
+router.patch(
+  "/:id",
+  uploadImage.single("icon"),
+  validateFormData(updateSportSchema),
+  updateSport
+);
 router.patch("/:id/icon", uploadImage.single("icon"), updateSportIcon);
 router.delete("/:id", deleteSport);
 
