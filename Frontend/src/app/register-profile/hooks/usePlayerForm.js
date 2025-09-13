@@ -719,6 +719,16 @@ export const usePlayerForm = (idParam, router) => {
       "socialLinks",
       "isPromoted",
       "contactInfo",
+      // Add multilingual data fields
+      "jopName",
+      "roleTypeName",
+      "gameName",
+      "positionName",
+      "statusName",
+      // Add original API data references
+      "gameData",
+      "positionData",
+      "roleTypeData",
     ].forEach((key) => {
       if (payload[key] && typeof payload[key] === "object") {
         fd.append(key, JSON.stringify(payload[key]));

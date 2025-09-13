@@ -51,7 +51,7 @@ const playerSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true, 
+      trim: true,
     },
     age: {
       type: Number,
@@ -86,7 +86,7 @@ const playerSchema = new mongoose.Schema(
     },
     jop: {
       type: String,
-      enum: ["player", "coach"], 
+      enum: ["player", "coach"],
       required: true,
     },
     roleType: {
