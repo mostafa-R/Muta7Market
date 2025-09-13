@@ -1,28 +1,28 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Search } from "lucide-react";
-import {
-  FaBiking,
-  FaDumbbell,
-  FaRunning,
-  FaSwimmer,
-  FaTableTennis,
-} from "react-icons/fa";
-import {
-  GiArcheryTarget,
-  GiBoxingGlove,
-  GiGoalKeeper,
-  GiKimono,
-  GiSwordman,
-} from "react-icons/gi";
-import { IoGameControllerOutline } from "react-icons/io5";
-import { MdSportsGymnastics, MdSportsTennis } from "react-icons/md";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirection } from "@/hooks/use-direction";
+import useSportsStore from "@/stores/sportsStore";
+import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { translateSport } from "../../utils/translationFallback";
+
+// Define Sport type
+interface Sport {
+  _id: string;
+  name: {
+    ar: string;
+    en: string;
+  };
+  icon?: {
+    url: string;
+    publicId: string;
+  };
+  slug: string;
+  positions: any[];
+  roleTypes: any[];
+}
 
 interface SportCardProps {
   searchTerm: string;
@@ -30,163 +30,86 @@ interface SportCardProps {
 
 function SportCard({ searchTerm }: SportCardProps) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
   const { classes } = useDirection();
+  const { sports, isLoading, error, fetchSports } = useSportsStore();
 
-  const sports = [
-    {
-      id: "handball",
-      name: translateSport(t, "handball"),
-      icon: "./assets/handball.svg",
-    },
-    {
-      id: "basketball",
-      name: translateSport(t, "basketball"),
-      icon: "./assets/basketball.svg",
-    },
-    {
-      id: "volleyball",
-      name: translateSport(t, "volleyball"),
-      icon: "./assets/volleyball.svg",
-    },
-    {
-      id: "football",
-      name: translateSport(t, "football"),
-      icon: "./assets/football-ball.svg",
-    },
-    {
-      id: "futsal",
-      name: translateSport(t, "futsal"),
-      icon: GiGoalKeeper,
-    },
-    {
-      id: "badminton",
-      name: translateSport(t, "badminton"),
-      icon: "./assets/badminton.svg",
-    },
-    {
-      id: "athletics",
-      name: translateSport(t, "athletics"),
-      icon: FaRunning,
-    },
-    {
-      id: "tennis",
-      name: translateSport(t, "tennis"),
-      icon: MdSportsTennis,
-    },
-    {
-      id: "tabletennis",
-      name: translateSport(t, "tabletennis"),
-      icon: FaTableTennis,
-    },
-    {
-      id: "karate",
-      name: translateSport(t, "karate"),
-      icon: GiKimono,
-    },
-    {
-      id: "taekwondo",
-      name: translateSport(t, "taekwondo"),
-      icon: "./assets/taekwondo.svg",
-    },
-    {
-      id: "archery",
-      name: translateSport(t, "archery"),
-      icon: GiArcheryTarget,
-    },
-    {
-      id: "esports",
-      name: translateSport(t, "esports"),
-      icon: IoGameControllerOutline,
-    },
-    {
-      id: "judo",
-      name: translateSport(t, "judo"),
-      icon: "./assets/judo.svg",
-    },
-    {
-      id: "fencing",
-      name: translateSport(t, "fencing"),
-      icon: GiSwordman,
-    },
-    {
-      id: "cycling",
-      name: translateSport(t, "cycling"),
-      icon: FaBiking,
-    },
-    {
-      id: "squash",
-      name: translateSport(t, "squash"),
-      icon: "./assets/squash.svg",
-    },
-    {
-      id: "weightlifting",
-      name: translateSport(t, "weightlifting"),
-      icon: FaDumbbell,
-    },
+  // Fetch sports data on component mount
+  useEffect(() => {
+    fetchSports();
+  }, [fetchSports]);
 
-    {
-      id: "boxing",
-      name: translateSport(t, "boxing"),
-      icon: GiBoxingGlove,
-    },
-    {
-      id: "gymnastics",
-      name: translateSport(t, "gymnastics"),
-      icon: MdSportsGymnastics,
-    },
-    {
-      id: "billiards",
-      name: translateSport(t, "billiards"),
-      icon: "./assets/billiards.svg",
-    },
-    {
-      id: "wrestling",
-      name: translateSport(t, "wrestling"),
-      icon: "./assets/wrestling.svg",
-    },
-    {
-      id: "swimming",
-      name: translateSport(t, "swimming"),
-      icon: FaSwimmer,
-    },
-  ];
+  // Helper function to get sport name based on language
+  const getSportName = (sport: Sport) => {
+    return language === "ar" ? sport.name?.ar : sport.name?.en;
+  };
 
-  const uniqueSports = sports.reduce<typeof sports>((unique, sport) => {
-    return unique.find((item) => item.id === sport.id)
-      ? unique
-      : [...unique, sport];
-  }, []);
+  // Helper function to get sport icon
+  const getSportIcon = (sport: Sport) => {
+    // If sport has an uploaded icon, use it
+    return sport.icon?.url || null;
+  };
 
-  const filteredSports = uniqueSports.filter((sport) =>
-    sport.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter sports based on search term
+  const filteredSports = sports.filter((sport: Sport) => {
+    const sportName = getSportName(sport) || "";
+    return sportName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--primary))]"></div>
+        <span className="ml-3 text-[hsl(var(--foreground))]">
+          {t("common.loading") || "Loading..."}
+        </span>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+          <Search className="w-10 h-10 text-red-500" />
+        </div>
+        <h3 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-3">
+          {t("common.error") || "Error loading sports"}
+        </h3>
+        <p className="text-[hsl(var(--muted-foreground))] text-base leading-relaxed">
+          {error}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
       {/* Sports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-        {filteredSports.map((sport) => {
-          const Icon = sport.icon;
+        {filteredSports.map((sport: Sport) => {
+          const sportName = getSportName(sport);
+          const sportIcon = getSportIcon(sport);
+
           return (
-            <Link key={sport.id} href={`/sports/${sport.id}`}>
+            <Link key={sport._id} href={`/sports/${sport.slug || sportName} `}>
               <div className="h-full relative overflow-hidden group transition-all duration-300 ease-in-out border border-gray-200 rounded-2xl bg-[hsl(var(--card))] shadow-sm hover:shadow-lg hover:border-[hsl(var(--primary))] transform hover:-translate-y-1">
                 <div className="p-6">
                   <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
-                    {typeof sport.icon === "string" ? (
+                    {sportIcon && (
                       <img
-                        src={sport.icon}
-                        alt={sport.name}
+                        src={sportIcon}
+                        alt={sportName}
                         className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300"
                         style={{ filter: "brightness(0) invert(1)" }} // Makes SVG white
                       />
-                    ) : (
-                      <Icon className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
                     )}
                   </div>
 
                   <h3 className="text-lg font-bold text-[hsl(var(--card-foreground))] mb-4 group-hover:text-[hsl(var(--primary))] transition-colors duration-300 text-center leading-tight">
-                    {sport.name}
+                    {sportName || t(`sports.${sport.slug}`) || "Sport"}
                   </h3>
 
                   <button

@@ -377,7 +377,7 @@ export const deleteSport = asyncHandler(async (req, res) => {
 
 export const getActiveSports = asyncHandler(async (_req, res) => {
   const sports = await Sport.find({})
-    .select("name icon positions roleTypes")
+    .select("name icon positions roleTypes slug")
     .sort({ "name.en": 1 });
 
   return res

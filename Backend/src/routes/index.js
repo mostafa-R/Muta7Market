@@ -14,7 +14,6 @@ import userRoutes from "./user.routes.js";
 
 // استيراد المسارات الجديدة
 import advertisementRoutes from "./advertisement.routes.js";
-import legalDocumentRoutes from "./legal-document.routes.js";
 import localizationRoutes from "./localization.routes.js";
 import promotionalOfferRoutes from "./promotional-offer.routes.js";
 import settingsRoutes from "./settings.routes.js";
@@ -37,7 +36,6 @@ router.use("/upload", uploadRoutes);
 // تسجيل المسارات الجديدة
 router.use("/settings", settingsRoutes);
 router.use("/sports", sportRoutes);
-router.use("/legal", legalDocumentRoutes);
 router.use("/promotions", promotionalOfferRoutes);
 router.use("/advertisements", advertisementRoutes);
 router.use("/localization", localizationRoutes);

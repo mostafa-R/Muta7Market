@@ -67,11 +67,11 @@ const navItems = [
     icon: <GameIcon />,
     path: "/sports",
   },
-  {
-    name: "الشروط والسياسات",
-    icon: <DocumentIcon />,
-    path: "/legal",
-  },
+  // {
+  //   name: "الشروط والسياسات",
+  //   icon: <DocumentIcon />,
+  //   path: "/legal",
+  // },
   {
     name: "العروض الترويجية",
     icon: <TagIcon />,

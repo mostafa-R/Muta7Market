@@ -1,8 +1,6 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
-import useContactInfoStore from "@/stores/contactInfoStore";
-import { useEffect } from "react";
 import {
   FiDatabase,
   FiFileText,
@@ -17,11 +15,6 @@ import {
 function PrivacyTermsPage() {
   const { language } = useLanguage();
   const isRTL = language === "ar";
-  const { contactInfo, fetchContactInfo, isLoading } = useContactInfoStore();
-
-  useEffect(() => {
-    fetchContactInfo();
-  }, [fetchContactInfo]);
 
   const privacySections = [
     {
@@ -291,8 +284,8 @@ function PrivacyTermsPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "البريد الإلكتروني" : "Email"}
               </h3>
-
-              <p className="text-gray-300">{contactInfo.email}</p>
+              <p className="text-gray-300">privacy@muta7market.com</p>
+              <p className="text-gray-300">info@muta7market.com</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -301,9 +294,7 @@ function PrivacyTermsPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "الهاتف" : "Phone"}
               </h3>
-              <p className="text-gray-300">
-                {contactInfo.phone.formatted || contactInfo.phone.primary}
-              </p>
+              <p className="text-gray-300">+966 53 154 0229</p>
               <p className="text-sm text-gray-400 mt-2">
                 {isRTL ? "للاستفسارات والدعم" : "For inquiries and support"}
               </p>

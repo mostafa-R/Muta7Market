@@ -70,6 +70,7 @@
     "react-hook-toast": "^0.0.3",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
+    "react-quill": "^2.0.0",
     "react-resizable-panels": "^3.0.4",
     "react-toastify": "^11.0.5",
     "recharts": "^3.1.2",
@@ -103,10 +104,10 @@
     "@react-jvectormap/world": {
       "react": "^16.8.0 || ^17 || ^18 || ^19",
       "react-dom": "^16.8.0 || ^17 || ^18 || ^19"
+    },
+    "react-quill": {
+      "react": "^16.8.0 || ^17 || ^18 || ^19",
+      "react-dom": "^16.8.0 || ^17 || ^18 || ^19"
     }
   }
 }
-
-
-
-  

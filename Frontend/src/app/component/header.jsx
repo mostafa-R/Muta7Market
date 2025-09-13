@@ -399,8 +399,9 @@ const NavLink = ({ item, isActive, onClick, isMobile = false }) => {
   );
 };
 
-const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
+const MobileNavMenu = ({ navItems, onClose, currentPath, logo, siteName }) => {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const { isLoggedIn, setIsLoggedIn, user } = useAuthStore();
   const { setLoading, setCurrentPath, setProgress, setHeaderVisible } =
     useNavigationStore();
@@ -506,7 +507,7 @@ const MobileNavMenu = ({ navItems, onClose, currentPath }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {logo ? (
-                <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center overflow-hidden">
+                <div className="w-10 h-10 backdrop-blur rounded-lg flex items-center justify-center overflow-hidden">
                   <Image
                     src={logo}
                     alt={siteName?.[language] || "Muta7Market"}
@@ -799,6 +800,8 @@ const Navbar = () => {
           navItems={navItems}
           onClose={() => setIsOpen(false)}
           currentPath={pathname}
+          logo={logo}
+          siteName={siteName}
         />
       )}
 
