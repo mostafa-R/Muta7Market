@@ -11,7 +11,14 @@ import { toast } from "react-toastify";
 import { playerFormSchema } from "../schemas/playerFormSchema";
 import { validateWithJoi } from "../types/validateWithJoi";
 import { initialFormValues } from "../utils/constants";
-import { getErrorMessage, getSuccessMessage } from "../utils/helpers";
+import {
+  getErrorMessage,
+  getPositionValue,
+  getRoleTypeValue,
+  getSuccessMessage,
+  isOtherPosition,
+  isOtherRoleType,
+} from "../utils/helpers";
 
 export const usePlayerForm = (idParam, router) => {
   const { t } = useTranslation();
@@ -40,7 +47,9 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        const joiErrors = validateWithJoi(playerFormSchema)(transformedValues);
+        const joiErrors = validateWithJoi(playerFormSchema(t))(
+          transformedValues
+        );
 
         const errors = { ...joiErrors };
 
@@ -155,11 +164,25 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        if (!values.game || values.game.trim() === "") {
+        // Check if game is valid (string or object)
+        if (!values.game) {
           errors.game = t("sportsValidation.sportRequired");
+        } else if (typeof values.game === "string") {
+          if (values.game.trim() === "") {
+            errors.game = t("sportsValidation.sportRequired");
+          }
+        } else if (typeof values.game === "object") {
+          if (!values.game.ar || !values.game.en) {
+            errors.game = t("sportsValidation.sportRequired");
+          }
         }
 
-        if (values.game === "other") {
+        // Check if game is "other" (string or object with slug "other")
+        const isOtherSport =
+          values.game === "other" ||
+          (typeof values.game === "object" && values.game.slug === "other");
+
+        if (isOtherSport) {
           if (!values.customSport || values.customSport.trim() === "") {
             errors.customSport = t("sportsValidation.customSportRequired");
           } else if (values.customSport.trim().length < 2) {
@@ -173,11 +196,14 @@ export const usePlayerForm = (idParam, router) => {
           errors.jop = t("sportsValidation.categoryRequired");
         }
 
-        if (values.jop && (!values.roleType || values.roleType.trim() === "")) {
+        if (
+          values.jop &&
+          (!values.roleType || getRoleTypeValue(values.roleType).trim() === "")
+        ) {
           errors.roleType = t("sportsValidation.roleTypeRequired");
         }
 
-        if (values.roleType === "other") {
+        if (isOtherRoleType(values.roleType)) {
           if (!values.customRoleType || values.customRoleType.trim() === "") {
             errors.customRoleType = t(
               "sportsValidation.customRoleTypeRequired"
@@ -192,14 +218,20 @@ export const usePlayerForm = (idParam, router) => {
         }
 
         if (values.jop === "player") {
-          if (!values.position || values.position.trim() === "") {
+          if (
+            !values.position ||
+            getPositionValue(values.position).trim() === ""
+          ) {
             errors.position = t("sportsValidation.positionRequired");
-          } else if (values.position.length < 2) {
+          } else if (
+            typeof values.position === "string" &&
+            values.position.length < 2
+          ) {
             errors.position = t("sportsValidation.positionTooShort");
           }
         }
 
-        if (values.jop === "player" && values.position === "other") {
+        if (values.jop === "player" && isOtherPosition(values.position)) {
           if (!values.customPosition || values.customPosition.trim() === "") {
             errors.customPosition = t(
               "sportsValidation.customPositionRequired"
@@ -223,7 +255,14 @@ export const usePlayerForm = (idParam, router) => {
 
         return errors;
       } catch (err) {
-        return { [err.path[0]]: err.message };
+        console.error("Validation error:", err);
+        // Check if err and err.path exist before accessing err.path[0]
+        if (err && err.path && err.path.length > 0) {
+          return { [err.path[0]]: err.message };
+        } else {
+          // Return a generic error if we can't determine the specific field
+          return { form: "Validation error occurred" };
+        }
       }
     },
     onSubmit: async (values) => {
@@ -621,10 +660,34 @@ export const usePlayerForm = (idParam, router) => {
 
   const handleJsonSubmission = async (url, method, payload, token) => {
     try {
+      // Process the payload to ensure game, roleType, and position objects are properly handled
+      const processedPayload = { ...payload };
+
+      // Make sure game object is properly handled
+      if (processedPayload.game && typeof processedPayload.game === "object") {
+        processedPayload.game = { ...processedPayload.game };
+      }
+
+      // Make sure roleType object is properly handled
+      if (
+        processedPayload.roleType &&
+        typeof processedPayload.roleType === "object"
+      ) {
+        processedPayload.roleType = { ...processedPayload.roleType };
+      }
+
+      // Make sure position object is properly handled
+      if (
+        processedPayload.position &&
+        typeof processedPayload.position === "object"
+      ) {
+        processedPayload.position = { ...processedPayload.position };
+      }
+
       const response = await apiClient({
         method,
         url: url.replace(API_URL, ""),
-        data: payload,
+        data: processedPayload,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -662,12 +725,33 @@ export const usePlayerForm = (idParam, router) => {
     fd.append("customNationality", payload.customNationality || "");
     fd.append("birthCountry", payload.birthCountry || "");
     fd.append("customBirthCountry", payload.customBirthCountry || "");
-    fd.append("game", payload.game || "");
+    // Handle game field which can be string or object
+    if (typeof payload.game === "object") {
+      // Make sure the object is properly serialized
+      const gameObj = { ...payload.game };
+      fd.append("game", JSON.stringify(gameObj));
+    } else {
+      fd.append("game", payload.game || "");
+    }
     fd.append("customSport", payload.customSport || "");
     fd.append("jop", payload.jop || "");
-    fd.append("roleType", payload.roleType || "");
+    // Handle roleType field which can be string or object
+    if (typeof payload.roleType === "object") {
+      // Make sure the object is properly serialized
+      const roleTypeObj = { ...payload.roleType };
+      fd.append("roleType", JSON.stringify(roleTypeObj));
+    } else {
+      fd.append("roleType", payload.roleType || "");
+    }
     fd.append("customRoleType", payload.customRoleType || "");
-    fd.append("position", payload.position || "");
+    // Handle position field which can be string or object
+    if (typeof payload.position === "object") {
+      // Make sure the object is properly serialized
+      const positionObj = { ...payload.position };
+      fd.append("position", JSON.stringify(positionObj));
+    } else {
+      fd.append("position", payload.position || "");
+    }
     fd.append("customPosition", payload.customPosition || "");
     fd.append("status", payload.status || "");
     fd.append("experience", payload.experience || "0");

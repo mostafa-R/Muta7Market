@@ -19,7 +19,7 @@ export const useSportsData = () => {
       return [];
     }
 
-    return sports.map((sport) => ({
+    const sportOptions = sports.map((sport) => ({
       id: sport.slug,
       name: {
         ar: sport.name.ar,
@@ -28,6 +28,18 @@ export const useSportsData = () => {
       value: sport.slug,
       _original: sport,
     }));
+
+    // Add "Other" option
+    sportOptions.push({
+      id: "other",
+      name: {
+        ar: "أخرى",
+        en: "Other",
+      },
+      value: "other",
+    });
+
+    return sportOptions;
   };
 
   /**

@@ -56,13 +56,32 @@ const getNationalityText = (nationality, t) => {
   return translateNationality(t, nationality);
 };
 
+// Helper function to extract string value from multilingual objects or strings
+const getStringValue = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && (value.ar || value.en || value.slug)) {
+    return value.slug || value.en || value.ar;
+  }
+  return String(value);
+};
+
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
 
-  const sportKey = sport?.toLowerCase();
-  const positionKey = position.toLowerCase().replace(/\s+/g, "");
+  // Check if position is already a multilingual object with display value
+  if (typeof position === "object" && (position.ar || position.en)) {
+    // For multilingual objects, prefer current language
+    // Note: We don't have language context here, so we'll default to English then Arabic
+    return position.en || position.ar;
+  }
 
-  
+  const sportStringValue = getStringValue(sport);
+  const positionStringValue = getStringValue(position);
+
+  const sportKey = sportStringValue?.toLowerCase();
+  const positionKey = positionStringValue.toLowerCase().replace(/\s+/g, "");
+
   const fullKey = `positions.${sportKey}.${positionKey}`;
   let translatedPosition = t(fullKey);
 
@@ -71,7 +90,7 @@ const getPositionText = (position, sport, t) => {
     translatedPosition = t(generalKey);
 
     if (translatedPosition === generalKey) {
-      return formatPositionText(position);
+      return formatPositionText(positionStringValue);
     }
   }
 
@@ -81,7 +100,7 @@ const getPositionText = (position, sport, t) => {
 const formatPositionText = (text) => {
   return text
     .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (str) => str.toUpperCase()) 
+    .replace(/^./, (str) => str.toUpperCase())
     .trim();
 };
 
@@ -706,10 +725,17 @@ const PlayerProfile = () => {
         } Profile`}
         description={
           player.jop === "coach"
-            ? `Professional ${player.game} coach from ${player.nationality}. View coaching profile and connect directly.`
-            : `${player.category || ""} ${player.game} player from ${
-                player.nationality
-              }${
+            ? `Professional ${getSportText(
+                player.game,
+                t
+              )} coach from ${getNationalityText(
+                player.nationality,
+                t
+              )}. View coaching profile and connect directly.`
+            : `${player.category || ""} ${getSportText(
+                player.game,
+                t
+              )} player from ${getNationalityText(player.nationality, t)}${
                 player.age ? `, age ${player.age}` : ""
               }. View full profile with videos and stats.`
         }
@@ -717,8 +743,9 @@ const PlayerProfile = () => {
         type="profile"
         playerData={{
           name: player.name,
-          sport: player.game || "Sports",
-          nationality: player.nationality || "International",
+          sport: getSportText(player.game, t) || "Sports",
+          nationality:
+            getNationalityText(player.nationality, t) || "International",
           age: player.age,
           category: player.category,
           status: player.status,
@@ -894,9 +921,20 @@ const PlayerProfile = () => {
                     <Trophy className="w-5 h-5 text-primary" />
                     <div>
                       <div className="text-sm text-gray-500">
-                        {t("player.sport")}
+                        {language === "ar" ? "الرياضة" : t("player.sport")}
                       </div>
-                      <div className="font-medium">{sportText}</div>
+                      <div className="font-medium">
+                        {player?.game && typeof player.game === "object" ? (
+                          <div className="space-y-1">
+                            <div className="text-base font-semibold">
+                              {player.game[language]}
+                            </div>
+                            
+                          </div>
+                        ) : (
+                          sportText
+                        )}
+                      </div>
                     </div>
                   </div>
                   {positionText && (
@@ -904,9 +942,21 @@ const PlayerProfile = () => {
                       <Star className="w-5 h-5 text-primary" />
                       <div>
                         <div className="text-sm text-gray-500">
-                          {t("player.position")}
+                          {language === "ar" ? "المركز" : t("player.position")}
                         </div>
-                        <div className="font-medium">{positionText}</div>
+                        <div className="font-medium">
+                          {player?.position &&
+                          typeof player.position === "object" ? (
+                            <div className="space-y-1">
+                              <div className="text-base font-semibold">
+                                {player.position[language]}
+                              </div>
+                              
+                            </div>
+                          ) : (
+                            positionText
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -915,16 +965,31 @@ const PlayerProfile = () => {
                       <Award className="w-5 h-5 text-primary" />
                       <div>
                         <div className="text-sm text-gray-500">
-                          {t("playerDetail.roleType")}
+                          {language === "ar"
+                            ? "الفئة"
+                            : t("playerDetail.roleType")}
                         </div>
                         <div className="font-medium">
-                          {player.jop === "player"
-                            ? t(`playerRoles.${player.roleType}`, {
-                                defaultValue: player.roleType,
-                              })
-                            : t(`coachRoles.${player.roleType}`, {
-                                defaultValue: player.roleType,
-                              })}
+                          {player?.roleType &&
+                          typeof player.roleType === "object" ? (
+                            <div className="space-y-1">
+                              <div className="text-base font-semibold">
+                                {player.roleType[language]}
+                              </div>
+                             
+                            </div>
+                          ) : player.jop === "player" ? (
+                            t(
+                              `playerRoles.${getStringValue(player.roleType)}`,
+                              {
+                                defaultValue: getStringValue(player.roleType),
+                              }
+                            )
+                          ) : (
+                            t(`coachRoles.${getStringValue(player.roleType)}`, {
+                              defaultValue: getStringValue(player.roleType),
+                            })
+                          )}
                         </div>
                       </div>
                     </div>

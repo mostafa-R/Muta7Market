@@ -24,7 +24,7 @@ export const sportsOptions = [
   { id: "boxing", name: "sports.boxing", value: "boxing" },
   { id: "gymnastics", name: "sports.gymnastics", value: "gymnastics" },
   { id: "billiards", name: "sports.billiards", value: "billiards" },
-  
+  { id: "other", name: "sports.other", value: "other" },
 ];
 
 // Sport-specific positions mapping with updated comprehensive lists

@@ -64,7 +64,21 @@ export const createPlayer = asyncHandler(async (req, res) => {
       transferredTo: req.body.transferredTo,
       socialLinks: req.body.socialLinks,
       contactInfo: req.body.contactInfo,
-      game: req.body.game,
+      game: (() => {
+        try {
+          // If it's a JSON string (from form-data), parse it
+          if (
+            typeof req.body.game === "string" &&
+            req.body.game.startsWith("{")
+          ) {
+            return JSON.parse(req.body.game);
+          }
+          return req.body.game;
+        } catch (error) {
+          console.error("Error parsing game field:", error);
+          return req.body.game; // Fallback to original value
+        }
+      })(),
       customSport: req.body.customSport,
       media,
     });
@@ -206,7 +220,16 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   if (jop) and.push({ jop });
   if (status) and.push({ status });
   if (gender) and.push({ gender });
-  if (game) and.push({ game: { $regex: game, $options: "i" } });
+  if (game) {
+    and.push({
+      $or: [
+        { game: { $regex: game, $options: "i" } }, // String search
+        { "game.ar": { $regex: game, $options: "i" } }, // Object search - Arabic
+        { "game.en": { $regex: game, $options: "i" } }, // Object search - English
+        { "game.slug": { $regex: game, $options: "i" } }, // Object search - Slug
+      ],
+    });
+  }
 
   if (ageMin || ageMax) {
     const age = {};
@@ -368,16 +391,61 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (req.body.customBirthCountry !== undefined)
     player.customBirthCountry = req.body.customBirthCountry;
   if (req.body.jop !== undefined) player.jop = req.body.jop;
-  if (req.body.roleType !== undefined) player.roleType = req.body.roleType;
+  if (req.body.roleType !== undefined) {
+    // Handle roleType field which can be string or object
+    try {
+      // If it's a JSON string (from form-data), parse it
+      if (
+        typeof req.body.roleType === "string" &&
+        req.body.roleType.startsWith("{")
+      ) {
+        player.roleType = JSON.parse(req.body.roleType);
+      } else {
+        player.roleType = req.body.roleType;
+      }
+    } catch (error) {
+      console.error("Error parsing roleType field:", error);
+      player.roleType = req.body.roleType; // Fallback to original value
+    }
+  }
   if (req.body.customRoleType !== undefined)
     player.customRoleType = req.body.customRoleType;
-  if (req.body.position !== undefined) player.position = req.body.position;
+  if (req.body.position !== undefined) {
+    // Handle position field which can be string or object
+    try {
+      // If it's a JSON string (from form-data), parse it
+      if (
+        typeof req.body.position === "string" &&
+        req.body.position.startsWith("{")
+      ) {
+        player.position = JSON.parse(req.body.position);
+      } else {
+        player.position = req.body.position;
+      }
+    } catch (error) {
+      console.error("Error parsing position field:", error);
+      player.position = req.body.position; // Fallback to original value
+    }
+  }
   if (req.body.customPosition !== undefined)
     player.customPosition = req.body.customPosition;
   if (req.body.status !== undefined) player.status = req.body.status;
   if (req.body.experience !== undefined)
     player.experience = req.body.experience;
-  if (req.body.game !== undefined) player.game = req.body.game;
+  if (req.body.game !== undefined) {
+    // Handle game field which can be string or object
+    try {
+      // If it's a JSON string (from form-data), parse it
+      if (typeof req.body.game === "string" && req.body.game.startsWith("{")) {
+        player.game = JSON.parse(req.body.game);
+      } else {
+        player.game = req.body.game;
+      }
+    } catch (error) {
+      console.error("Error parsing game field:", error);
+      player.game = req.body.game; // Fallback to original value
+    }
+  }
   if (req.body.customSport !== undefined)
     player.customSport = req.body.customSport;
   if (req.body.views !== undefined) player.views = req.body.views;

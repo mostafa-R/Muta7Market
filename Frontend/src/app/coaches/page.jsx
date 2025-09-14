@@ -22,20 +22,22 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   age: apiPlayer.age,
   status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
   gender: apiPlayer.gender === "male" ? "Male" : "Female",
-  nationality: apiPlayer.nationality,
+  nationality: apiPlayer.nationality, // String from backend
+  birthCountry: apiPlayer.birthCountry, // String from backend
   category: apiPlayer.category,
   monthlySalary: apiPlayer.monthlySalary?.amount,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
-  sport: apiPlayer.game,
-  position: apiPlayer.position,
+  game: apiPlayer.game, // Object with {ar, en, slug} from backend
+  sport: apiPlayer.game, // Deprecated, use game instead
+  position: apiPlayer.position, // Object with {ar, en, slug} from backend
+  roleType: apiPlayer.roleType, // Object with {ar, en, slug} from backend
   profilePicture: undefined,
   rating: undefined,
-  experience: apiPlayer.expreiance,
+  experience: apiPlayer.experience || apiPlayer.expreiance, // Fixed typo
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   annualContractValue: apiPlayer.yearSalary?.amount,
   jop: apiPlayer.jop,
-  roleType: apiPlayer.roleType,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
@@ -72,28 +74,70 @@ export default function CoachesPage() {
     fetchPlayers();
   }, [t]);
 
+  // Helper function to extract string value for comparison and filtering
+  const getStringValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object") {
+      if (value.slug) return value.slug;
+      if (value.en) return value.en;
+      if (value.ar) return value.ar;
+    }
+    return String(value);
+  };
+
+  // Helper function to extract searchable text from multilingual objects
+  const getSearchableValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object") {
+      const values = [];
+      if (value.ar) values.push(value.ar);
+      if (value.en) values.push(value.en);
+      if (value.slug) values.push(value.slug);
+      return values.join(" ");
+    }
+    return String(value);
+  };
+
   // Get unique values for filters
-  const uniqueSports = [...new Set(players.map((player) => player.sport))].sort(
-    (a, b) => a.localeCompare(b, language)
-  );
+  const uniqueSports = [
+    ...new Set(
+      players.map((player) => getStringValue(player.game || player.sport))
+    ),
+  ].sort((a, b) => a.localeCompare(b, language));
 
   const uniqueNationalities = [
-    ...new Set(players.map((player) => player.nationality)),
+    ...new Set(players.map((player) => getStringValue(player.nationality))),
   ].sort((a, b) => a.localeCompare(b, language));
 
   // Filter players
   const filteredPlayers = players.filter((player) => {
+    const searchableNationality = getSearchableValue(
+      player.nationality
+    ).toLowerCase();
+    const searchableSport = getSearchableValue(
+      player.game || player.sport
+    ).toLowerCase();
+    const searchTerm_lower = searchTerm.toLowerCase();
+
     const matchesSearch =
-      player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.nationality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.sport.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSport = sportFilter === "all" || player.sport === sportFilter;
+      player.name.toLowerCase().includes(searchTerm_lower) ||
+      searchableNationality.includes(searchTerm_lower) ||
+      searchableSport.includes(searchTerm_lower);
+
+    // For filters, extract string values to compare
+    const sportValue = player.game || player.sport;
+    const sportString = getStringValue(sportValue);
+    const nationalityString = getStringValue(player.nationality);
+
+    const matchesSport = sportFilter === "all" || sportString === sportFilter;
     const matchesStatus =
       statusFilter === "all" || player.status === statusFilter;
     const matchesCategory =
       categoryFilter === "all" || player.category === categoryFilter;
     const matchesNationality =
-      nationalityFilter === "all" || player.nationality === nationalityFilter;
+      nationalityFilter === "all" || nationalityString === nationalityFilter;
 
     return (
       matchesSearch &&

@@ -35,9 +35,45 @@ const PlayerProfile = ({
     setCurrentImageUrl(null);
   };
 
+  // Helper function to extract string value from multilingual objects or strings
+  const getStringValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object") {
+      // For multilingual objects, prefer current language or fallback to English
+      if (value.slug) return value.slug; // Use slug for translation keys
+      if (language === "ar" && value.ar) return value.ar;
+      if (value.en) return value.en;
+      if (value.ar) return value.ar;
+    }
+    return String(value);
+  };
+
+  // Helper function to get display value from multilingual objects
+  const getDisplayValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object") {
+      // For multilingual objects, prefer current language
+      if (language === "ar" && value.ar) return value.ar;
+      if (language === "en" && value.en) return value.en;
+      if (value.ar) return value.ar;
+      if (value.en) return value.en;
+    }
+    return String(value);
+  };
+
   const getTranslatedValue = (key, value, translationNamespace = null) => {
     if (!value) return "";
 
+    // If value is already a multilingual object, try to get the display value first
+    if (typeof value === "object" && (value.ar || value.en)) {
+      const displayValue = getDisplayValue(value);
+      if (displayValue) return displayValue;
+    }
+
+    // Convert value to string for translation lookup
+    const stringValue = getStringValue(value);
     let translatedValue = null;
 
     if (translationNamespace) {
@@ -50,13 +86,14 @@ const PlayerProfile = ({
           contracted: "contracted",
           transferred: "transferred",
         };
-        const statusKey = statusMap[value.toLowerCase()] || value.toLowerCase();
+        const statusKey =
+          statusMap[stringValue.toLowerCase()] || stringValue.toLowerCase();
         translatedValue = t(`player.status.${statusKey}`, {
           defaultValue: null,
         });
       } else if (translationNamespace === "positions") {
-        const positionKey = value.toLowerCase().replace(/\s+/g, "");
-        const sportKey = formData.game?.toLowerCase();
+        const positionKey = stringValue.toLowerCase().replace(/\s+/g, "");
+        const sportKey = getStringValue(formData.game)?.toLowerCase();
 
         if (sportKey) {
           const fullKey = `positions.${sportKey}.${positionKey}`;
@@ -72,18 +109,18 @@ const PlayerProfile = ({
           translatedValue = t(generalKey);
 
           if (translatedValue === generalKey) {
-            translatedValue = value
+            translatedValue = stringValue
               .replace(/([A-Z])/g, " $1")
               .replace(/^./, (str) => str.toUpperCase())
               .trim();
           }
         }
       } else {
-        const key = `${translationNamespace}.${value.toLowerCase()}`;
+        const key = `${translationNamespace}.${stringValue.toLowerCase()}`;
         translatedValue = t(key);
 
         if (translatedValue === key) {
-          translatedValue = value
+          translatedValue = stringValue
             .replace(/([A-Z])/g, " $1")
             .replace(/^./, (str) => str.toUpperCase())
             .trim();
@@ -92,10 +129,10 @@ const PlayerProfile = ({
     }
 
     if (!translatedValue) {
-      const lastAttempt = t(value.toLowerCase());
+      const lastAttempt = t(stringValue.toLowerCase());
 
-      if (lastAttempt === value.toLowerCase()) {
-        translatedValue = value
+      if (lastAttempt === stringValue.toLowerCase()) {
+        translatedValue = stringValue
           .replace(/([A-Z])/g, " $1")
           .replace(/^./, (str) => str.toUpperCase())
           .trim();
@@ -104,7 +141,7 @@ const PlayerProfile = ({
       }
     }
 
-    return translatedValue || value;
+    return translatedValue || stringValue;
   };
 
   const FormField = ({

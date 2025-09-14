@@ -24,6 +24,14 @@ import {
   sportPositions as fallbackSportPositions,
   sportsOptions as fallbackSportsOptions,
 } from "../constants/sportsPositions";
+import {
+  getGameValue,
+  getPositionValue,
+  getRoleTypeValue,
+  isOtherGame,
+  isOtherPosition,
+  isOtherRoleType,
+} from "../utils/helpers";
 import { ConditionalSelect } from "./ConditionalSelect";
 
 export const SportsInfoCard = ({ formik }) => {
@@ -43,7 +51,8 @@ export const SportsInfoCard = ({ formik }) => {
     !isLoading && !error ? getSportsOptions() : fallbackSportsOptions;
 
   // Get sport positions for the selected sport
-  const getPositionsForSport = (sportSlug) => {
+  const getPositionsForSport = (game) => {
+    const sportSlug = getGameValue(game);
     if (!sportSlug) return [];
     return !isLoading && !error
       ? getSportPositions(sportSlug)
@@ -51,7 +60,8 @@ export const SportsInfoCard = ({ formik }) => {
   };
 
   // Get role types based on job type
-  const getRoleTypesForJob = (jobType, sportSlug) => {
+  const getRoleTypesForJob = (jobType, game) => {
+    const sportSlug = getGameValue(game);
     if (!jobType) return [];
     if (jobType === "player") {
       return !isLoading && !error && sportSlug
@@ -137,7 +147,7 @@ export const SportsInfoCard = ({ formik }) => {
                   <span className="text-red-500 mr-1 ml-1">*</span>
                 </Label>
                 <Select
-                  value={formik.values.roleType || ""}
+                  value={getRoleTypeValue(formik.values.roleType) || ""}
                   onValueChange={(value) => {
                     // Find the selected role type with all its multilingual data
                     const roleTypes = getRoleTypesForJob(
@@ -148,16 +158,22 @@ export const SportsInfoCard = ({ formik }) => {
                       (role) => role.value === value
                     );
 
-                    // Store both the value and the full multilingual data
-                    formik.setFieldValue("roleType", value);
+                    // Store the roleType data
                     formik.setFieldTouched("roleType", true);
 
-                    // Store the multilingual name data if available
                     if (
                       selectedRoleType &&
                       selectedRoleType.name &&
                       typeof selectedRoleType.name === "object"
                     ) {
+                      // Store the multilingual name directly in the roleType field
+                      formik.setFieldValue("roleType", {
+                        ar: selectedRoleType.name.ar,
+                        en: selectedRoleType.name.en,
+                        slug: value, // Keep the slug for reference
+                      });
+
+                      // Also store in roleTypeName for UI components that might need it
                       formik.setFieldValue("roleTypeName", {
                         ar: selectedRoleType.name.ar,
                         en: selectedRoleType.name.en,
@@ -170,6 +186,9 @@ export const SportsInfoCard = ({ formik }) => {
                           selectedRoleType._original
                         );
                       }
+                    } else {
+                      // Fallback to string value if no multilingual data
+                      formik.setFieldValue("roleType", value);
                     }
 
                     if (value !== "other") {
@@ -229,7 +248,7 @@ export const SportsInfoCard = ({ formik }) => {
                   )}
 
                 {/* Custom role type input field when "other" is selected */}
-                {formik.values.roleType === "other" && (
+                {isOtherRoleType(formik.values.roleType) && (
                   <div className="mt-4 space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
                       {formik.values.jop === "player"
@@ -293,24 +312,30 @@ export const SportsInfoCard = ({ formik }) => {
               </span>
             </Label>
             <Select
-              value={formik.values.game || ""}
+              value={getGameValue(formik.values.game) || ""}
               onValueChange={(value) => {
                 // Find the selected sport with all its multilingual data
                 const selectedSport = sportsOptions.find(
                   (sport) => sport.value === value
                 );
 
-                // Store both the value and the full multilingual data
-                formik.setFieldValue("game", value);
+                // Store the multilingual data directly in game field
                 formik.setFieldValue("gameSelected", true);
                 formik.setFieldTouched("game", true);
 
-                // Store the multilingual name data if available
                 if (
                   selectedSport &&
                   selectedSport.name &&
                   typeof selectedSport.name === "object"
                 ) {
+                  // Store the multilingual name directly in the game field
+                  formik.setFieldValue("game", {
+                    ar: selectedSport.name.ar,
+                    en: selectedSport.name.en,
+                    slug: value, // Keep the slug for reference
+                  });
+
+                  // Also store in gameName for UI components that might need it
                   formik.setFieldValue("gameName", {
                     ar: selectedSport.name.ar,
                     en: selectedSport.name.en,
@@ -320,6 +345,9 @@ export const SportsInfoCard = ({ formik }) => {
                   if (selectedSport._original) {
                     formik.setFieldValue("gameData", selectedSport._original);
                   }
+                } else {
+                  // Fallback to string value if no multilingual data
+                  formik.setFieldValue("game", value);
                 }
 
                 // Reset position-related fields
@@ -378,7 +406,7 @@ export const SportsInfoCard = ({ formik }) => {
               </SelectContent>
             </Select>
 
-            {formik.values.game === "other" && (
+            {isOtherGame(formik.values.game) && (
               <div className="mt-4 space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
                   {t("registerProfile.form.sportsInfo.customSport")}
@@ -444,7 +472,7 @@ export const SportsInfoCard = ({ formik }) => {
               getPositionsForSport(formik.values.game).length > 0 ? (
                 <>
                   <Select
-                    value={formik.values.position || ""}
+                    value={getPositionValue(formik.values.position) || ""}
                     onValueChange={(value) => {
                       // Find the selected position with all its multilingual data
                       const positions = getPositionsForSport(
@@ -454,16 +482,22 @@ export const SportsInfoCard = ({ formik }) => {
                         (pos) => pos.value === value
                       );
 
-                      // Store both the value and the full multilingual data
-                      formik.setFieldValue("position", value);
+                      // Store the position data
                       formik.setFieldTouched("position", true);
 
-                      // Store the multilingual name data if available
                       if (
                         selectedPosition &&
                         selectedPosition.name &&
                         typeof selectedPosition.name === "object"
                       ) {
+                        // Store the multilingual name directly in the position field
+                        formik.setFieldValue("position", {
+                          ar: selectedPosition.name.ar,
+                          en: selectedPosition.name.en,
+                          slug: value, // Keep the slug for reference
+                        });
+
+                        // Also store in positionName for UI components that might need it
                         formik.setFieldValue("positionName", {
                           ar: selectedPosition.name.ar,
                           en: selectedPosition.name.en,
@@ -476,6 +510,9 @@ export const SportsInfoCard = ({ formik }) => {
                             selectedPosition._original
                           );
                         }
+                      } else {
+                        // Fallback to string value if no multilingual data
+                        formik.setFieldValue("position", value);
                       }
 
                       if (value !== "other") {
@@ -537,7 +574,7 @@ export const SportsInfoCard = ({ formik }) => {
                   </Select>
 
                   {/* Custom position input field when "other" is selected */}
-                  {formik.values.position === "other" && (
+                  {isOtherPosition(formik.values.position) && (
                     <div className="mt-4 space-y-2">
                       <Label className="text-sm font-medium text-gray-700">
                         {t("registerProfile.form.sportsInfo.customPosition")}

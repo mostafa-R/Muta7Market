@@ -23,16 +23,19 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   age: apiPlayer.age,
   status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
   gender: apiPlayer.gender === "male" ? "Male" : "Female",
-  nationality: apiPlayer.nationality,
+  nationality: apiPlayer.nationality, // String from backend
+  birthCountry: apiPlayer.birthCountry, // String from backend
   category: apiPlayer.category,
   monthlySalary: apiPlayer.monthlySalary?.amount,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
-  sport: apiPlayer.game,
-  position: apiPlayer.position,
+  game: apiPlayer.game, // Object with {ar, en, slug} from backend
+  sport: apiPlayer.game, // Deprecated, use game instead
+  position: apiPlayer.position, // Object with {ar, en, slug} from backend
+  roleType: apiPlayer.roleType, // Object with {ar, en, slug} from backend
   profilePicture: undefined,
   rating: undefined,
-  experience: apiPlayer.expreiance,
+  experience: apiPlayer.experience || apiPlayer.expreiance, // Fixed typo
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   annualContractValue: apiPlayer.yearSalary?.amount,
   jop: apiPlayer.jop,
@@ -90,23 +93,81 @@ export default function PlayersPage() {
     } catch {}
   }, []);
 
-  const uniqueSports = [...new Set(players.map((player) => player.sport))];
-  const uniqueNationalities = [
-    ...new Set(players.map((player) => player.nationality)),
+  // Helper function to extract string value from multilingual objects or strings
+  const getStringValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && (value.ar || value.en || value.slug)) {
+      return value.slug || value.en || value.ar;
+    }
+    return String(value);
+  };
+
+  // Helper function to extract searchable text from multilingual objects
+  const getSearchableValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && (value.ar || value.en || value.slug)) {
+      const values = [];
+      if (value.ar) values.push(value.ar);
+      if (value.en) values.push(value.en);
+      if (value.slug) values.push(value.slug);
+      return values.join(" ");
+    }
+    return String(value);
+  };
+
+  // Create unique arrays using string extraction to avoid duplicate keys
+  const uniqueSportsKeys = [
+    ...new Set(
+      players.map((player) => getStringValue(player.game || player.sport))
+    ),
+  ];
+  const uniqueNationalityKeys = [
+    ...new Set(players.map((player) => getStringValue(player.nationality))),
   ];
 
+  // For rendering, we need the original objects for proper translation
+  const uniqueSports = uniqueSportsKeys.map((key) => {
+    const player = players.find(
+      (p) => getStringValue(p.game || p.sport) === key
+    );
+    return player?.game || player?.sport || key;
+  });
+
+  const uniqueNationalities = uniqueNationalityKeys.map((key) => {
+    const player = players.find((p) => getStringValue(p.nationality) === key);
+    return player?.nationality || key;
+  });
+
   const filteredPlayers = players.filter((player) => {
+    const searchTerm_lower = searchTerm.toLowerCase();
+
+    // For search, use searchable values that include all language variants
+    const searchableName = player.name.toLowerCase();
+    const searchableNationality = getSearchableValue(
+      player.nationality
+    ).toLowerCase();
+    const searchableSport = getSearchableValue(
+      player.game || player.sport
+    ).toLowerCase();
+
     const matchesSearch =
-      player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.nationality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.sport.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSport = sportFilter === "all" || player.sport === sportFilter;
+      searchableName.includes(searchTerm_lower) ||
+      searchableNationality.includes(searchTerm_lower) ||
+      searchableSport.includes(searchTerm_lower);
+
+    // For filters, use string values for comparison
+    const sportKey = getStringValue(player.game || player.sport);
+    const nationalityKey = getStringValue(player.nationality);
+
+    const matchesSport = sportFilter === "all" || sportKey === sportFilter;
     const matchesStatus =
       statusFilter === "all" || player.status === statusFilter;
     const matchesCategory =
       categoryFilter === "all" || player.category === categoryFilter;
     const matchesNationality =
-      nationalityFilter === "all" || player.nationality === nationalityFilter;
+      nationalityFilter === "all" || nationalityKey === nationalityFilter;
 
     return (
       matchesSearch &&
@@ -235,11 +296,22 @@ export default function PlayersPage() {
               }`}
             >
               <option value="all">{t("players.allSports")}</option>
-              {uniqueSports.map((sport) => (
-                <option key={sport} value={sport}>
-                  {t(`sports.${sport.toLowerCase()}`, { defaultValue: sport })}
-                </option>
-              ))}
+              {uniqueSports.map((sport) => {
+                const sportKey = getStringValue(sport);
+                const sportDisplay =
+                  typeof sport === "object" && sport.ar
+                    ? sport.ar
+                    : typeof sport === "object" && sport.en
+                    ? sport.en
+                    : sportKey;
+                return (
+                  <option key={sportKey} value={sportKey}>
+                    {t(`sports.${sportKey.toLowerCase()}`, {
+                      defaultValue: sportDisplay,
+                    })}
+                  </option>
+                );
+              })}
             </select>
             {/* Status Filter */}
             <select
@@ -282,13 +354,22 @@ export default function PlayersPage() {
               }`}
             >
               <option value="all">{t("players.allNationalities")}</option>
-              {uniqueNationalities.map((nationality) => (
-                <option key={nationality} value={nationality}>
-                  {t(`nationalities.${nationality.toLowerCase()}`, {
-                    defaultValue: nationality,
-                  })}
-                </option>
-              ))}
+              {uniqueNationalities.map((nationality) => {
+                const nationalityKey = getStringValue(nationality);
+                const nationalityDisplay =
+                  typeof nationality === "object" && nationality.ar
+                    ? nationality.ar
+                    : typeof nationality === "object" && nationality.en
+                    ? nationality.en
+                    : nationalityKey;
+                return (
+                  <option key={nationalityKey} value={nationalityKey}>
+                    {t(`nationalities.${nationalityKey.toLowerCase()}`, {
+                      defaultValue: nationalityDisplay,
+                    })}
+                  </option>
+                );
+              })}
             </select>
           </div>
           {/* Clear Filters Button */}

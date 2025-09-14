@@ -46,38 +46,6 @@ const getCategoryText = (jop, t) => {
   return texts[jop] || jop;
 };
 
-const getSportText = (sport, t) => {
-  return translateSport(t, sport);
-};
-
-const getNationalityText = (nationality, t) => {
-  return translateNationality(t, nationality);
-};
-
-const getPositionText = (position, sport, t) => {
-  if (!position) return null;
-
-  if (position.includes(".")) {
-    const translated = t(position);
-
-    if (translated === position) {
-      const positionKey = position.split(".").pop();
-      return formatPositionText(positionKey);
-    }
-
-    return translated;
-  }
-
-  return translatePosition(t, position, sport);
-};
-
-const formatPositionText = (text) => {
-  return text
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
-};
-
 const getGenderBorderColor = (gender) => {
   return gender?.toLowerCase() === "female"
     ? "border-pink-400"
@@ -98,16 +66,22 @@ const PlayerCard = ({ player }) => {
     [player.jop, t]
   );
   const sportText = useMemo(
-    () => getSportText(player.sport, t),
-    [player.sport, t]
+    () => translateSport(t, player.game || player.sport, language),
+    [player.game, player.sport, t, language]
   );
   const nationalityText = useMemo(
-    () => getNationalityText(player.nationality, t),
+    () => translateNationality(t, player.nationality),
     [player.nationality, t]
   );
   const positionText = useMemo(
-    () => getPositionText(player.position, player.sport, t),
-    [player.position, player.sport, t]
+    () =>
+      translatePosition(
+        t,
+        player.position,
+        player.game || player.sport,
+        language
+      ),
+    [player.position, player.game, player.sport, t, language]
   );
 
   const borderColorClass = useMemo(

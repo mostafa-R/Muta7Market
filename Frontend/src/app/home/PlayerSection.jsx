@@ -15,18 +15,20 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   age: apiPlayer.age,
   status: apiPlayer.status === "available" ? "Free Agent" : "Contracted",
   gender: apiPlayer.gender === "male" ? "Male" : "Female",
-  nationality: apiPlayer.nationality,
+  nationality: apiPlayer.nationality, // String from backend
+  birthCountry: apiPlayer.birthCountry, // String from backend
   category: apiPlayer.category === "player" ? "Professional" : "Elite",
   monthlySalary: apiPlayer.monthlySalary?.amount,
   annualContractValue: apiPlayer.yearSalary?.amount,
   contractConditions: undefined,
   transferDeadline: apiPlayer.contractEndDate,
-  sport: apiPlayer.game,
-  position: apiPlayer.position,
+  game: apiPlayer.game, // Object with {ar, en, slug} from backend
+  sport: apiPlayer.game, // Deprecated, use game instead
+  position: apiPlayer.position, // Object with {ar, en, slug} from backend
+  roleType: apiPlayer.roleType, // Object with {ar, en, slug} from backend
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
-  experience: apiPlayer.expreiance,
-  roleType: apiPlayer.roleType,
+  experience: apiPlayer.experience || apiPlayer.expreiance, // Fixed typo
   jop: apiPlayer.jop,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });

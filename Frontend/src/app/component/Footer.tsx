@@ -15,6 +15,17 @@ const Footer = () => {
   const { contactInfo, fetchContactInfo } = useContactInfoStore();
   const { siteName, fetchSettings } = useSiteSettingsStore();
 
+  // Helper function to safely get site name string
+  const getSiteNameText = () => {
+    if (typeof siteName === "object" && siteName) {
+      return siteName[language] || siteName.en || siteName.ar || "Muta7Market";
+    }
+    if (typeof siteName === "string") {
+      return siteName;
+    }
+    return t("brand.name") || "Muta7Market";
+  };
+
   useEffect(() => {
     fetchContactInfo();
     fetchSettings();
@@ -30,9 +41,7 @@ const Footer = () => {
               <div className="w-8 h-8 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center mr-3 ml-3">
                 <Trophy className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold">
-                {siteName?.[language] || t("brand.name")}
-              </span>
+              <span className="text-lg font-bold">{getSiteNameText()}</span>
             </div>
             <p className="text-[hsl(var(--muted-foreground))] text-sm">
               {t("footer.description")}
@@ -141,8 +150,7 @@ const Footer = () => {
         <div className="border-t border-[hsl(var(--border))] pt-8 text-center">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             <p className="text-[hsl(var(--muted-foreground))] text-sm">
-              © {new Date().getFullYear()}{" "}
-              {siteName?.[language] || t("brand.name")}.{" "}
+              © {new Date().getFullYear()} {getSiteNameText()}.{" "}
               {isRTL ? "جميع الحقوق محفوظة" : "All rights reserved"}.
             </p>
             <div className="flex items-center space-x-4 space-x-reverse">

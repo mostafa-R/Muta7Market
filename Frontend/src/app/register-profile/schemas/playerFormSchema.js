@@ -126,17 +126,44 @@ export const createPlayerFormSchema = (t) =>
 
     roleType: Joi.when("jop", {
       is: Joi.exist(),
-      then: Joi.string()
+      then: Joi.alternatives()
+        .try(
+          Joi.string()
+            .required()
+            .messages({
+              "string.empty": t("sportsValidation.roleTypeRequired"),
+              "any.required": t("sportsValidation.roleTypeRequired"),
+            }),
+          Joi.object({
+            ar: Joi.string().required(),
+            en: Joi.string().required(),
+            slug: Joi.string().optional(),
+          })
+            .required()
+            .messages({
+              "object.base": t("sportsValidation.roleTypeRequired"),
+              "any.required": t("sportsValidation.roleTypeRequired"),
+            })
+        )
         .required()
         .messages({
-          "string.empty": t("sportsValidation.roleTypeRequired"),
+          "alternatives.match": t("sportsValidation.roleTypeRequired"),
           "any.required": t("sportsValidation.roleTypeRequired"),
         }),
-      otherwise: Joi.optional(),
+      otherwise: Joi.alternatives()
+        .try(
+          Joi.string().optional(),
+          Joi.object({
+            ar: Joi.string().optional(),
+            en: Joi.string().optional(),
+            slug: Joi.string().optional(),
+          }).optional()
+        )
+        .optional(),
     }),
 
     customRoleType: Joi.when("roleType", {
-      is: "other",
+      is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
       then: Joi.string()
         .min(2)
         .max(50)
@@ -150,22 +177,49 @@ export const createPlayerFormSchema = (t) =>
     }),
     position: Joi.when("jop", {
       is: "player",
-      then: Joi.string()
-        .min(2)
-        .max(100)
+      then: Joi.alternatives()
+        .try(
+          Joi.string()
+            .min(2)
+            .max(100)
+            .required()
+            .messages({
+              "string.empty": t("sportsValidation.positionRequired"),
+              "string.min": t("sportsValidation.positionTooShort"),
+              "string.max": t("sportsValidation.positionTooShort"),
+            }),
+          Joi.object({
+            ar: Joi.string().required(),
+            en: Joi.string().required(),
+            slug: Joi.string().optional(),
+          })
+            .required()
+            .messages({
+              "object.base": t("sportsValidation.positionRequired"),
+              "any.required": t("sportsValidation.positionRequired"),
+            })
+        )
         .required()
         .messages({
-          "string.empty": t("sportsValidation.positionRequired"),
-          "string.min": t("sportsValidation.positionTooShort"),
-          "string.max": t("sportsValidation.positionTooShort"),
+          "alternatives.match": t("sportsValidation.positionRequired"),
+          "any.required": t("sportsValidation.positionRequired"),
         }),
-      otherwise: Joi.string().allow("").optional(),
+      otherwise: Joi.alternatives()
+        .try(
+          Joi.string().allow("").optional(),
+          Joi.object({
+            ar: Joi.string().optional(),
+            en: Joi.string().optional(),
+            slug: Joi.string().optional(),
+          }).optional()
+        )
+        .optional(),
     }),
 
     customPosition: Joi.when(Joi.ref("jop"), {
       is: "player",
       then: Joi.when("position", {
-        is: "other",
+        is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
         then: Joi.string()
           .min(2)
           .max(50)
@@ -258,16 +312,34 @@ export const createPlayerFormSchema = (t) =>
       }).optional(),
     }).optional(),
 
-    game: Joi.string()
-      .min(2)
+    game: Joi.alternatives()
+      .try(
+        Joi.string()
+          .min(2)
+          .required()
+          .messages({
+            "string.empty": t("sportsValidation.sportRequired"),
+            "string.min": t("sportsValidation.sportRequired"),
+          }),
+        Joi.object({
+          ar: Joi.string().required(),
+          en: Joi.string().required(),
+          slug: Joi.string().optional(),
+        })
+          .required()
+          .messages({
+            "object.base": t("sportsValidation.sportRequired"),
+            "any.required": t("sportsValidation.sportRequired"),
+          })
+      )
       .required()
       .messages({
-        "string.empty": t("sportsValidation.sportRequired"),
-        "string.min": t("sportsValidation.sportRequired"),
+        "alternatives.match": t("sportsValidation.sportRequired"),
+        "any.required": t("sportsValidation.sportRequired"),
       }),
 
     customSport: Joi.when("game", {
-      is: "other",
+      is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
       then: Joi.string()
         .min(2)
         .max(50)
@@ -277,7 +349,16 @@ export const createPlayerFormSchema = (t) =>
           "string.min": t("sportsValidation.customSportTooShort"),
           "string.max": t("sportsValidation.customSportTooLong"),
         }),
-      otherwise: Joi.optional(),
+      otherwise: Joi.string()
+        .min(2)
+        .max(50)
+        .allow("")
+        .optional()
+        .messages({
+          "string.empty": t("sportsValidation.customSportRequired"),
+          "string.min": t("sportsValidation.customSportTooShort"),
+          "string.max": t("sportsValidation.customSportTooLong"),
+        }),
     }),
 
     media: Joi.object({
@@ -324,200 +405,333 @@ export const createPlayerFormSchema = (t) =>
     documentFile: Joi.any().optional(),
     jopSelected: Joi.boolean().optional(),
     statusSelected: Joi.boolean().optional(),
-    gameSelected: Joi.boolean().optional(), 
+    gameSelected: Joi.boolean().optional(),
     isActive: Joi.boolean().default(false),
     views: Joi.number().default(0),
     seo: Joi.object().optional(),
   });
 
-export const playerFormSchema = Joi.object({
-  name: Joi.string().min(2).max(100).required(),
-  age: Joi.number().integer().min(15).max(50).required(),
-  gender: Joi.string().valid("male", "female").required(),
-  nationality: Joi.string()
-    .valid(
-      "saudi",
-      "uae",
-      "egypt",
-      "morocco",
-      "kuwait",
-      "qatar",
-      "bahrain",
-      "oman",
-      "jordan",
-      "lebanon",
-      "syria",
-      "iraq",
-      "libya",
-      "tunisia",
-      "algeria",
-      "sudan",
-      "yemen",
-      "other"
-    )
-    .required(),
-  customNationality: Joi.when("nationality", {
-    is: "other",
-    then: Joi.string().min(2).max(50).required(),
-    otherwise: Joi.optional(),
-  }),
-  birthCountry: Joi.string()
-    .valid(
-      "saudi",
-      "uae",
-      "egypt",
-      "morocco",
-      "kuwait",
-      "qatar",
-      "bahrain",
-      "oman",
-      "jordan",
-      "lebanon",
-      "syria",
-      "iraq",
-      "libya",
-      "tunisia",
-      "algeria",
-      "sudan",
-      "yemen",
-      "other"
-    )
-    .required(),
-  customBirthCountry: Joi.when("birthCountry", {
-    is: "other",
-    then: Joi.string().min(2).max(50).required(),
-    otherwise: Joi.optional(),
-  }),
-  jop: Joi.string().valid("player", "coach").required(),
-  roleType: Joi.when("jop", {
-    is: Joi.exist(),
-    then: Joi.string().required(),
-    otherwise: Joi.optional(),
-  }),
-  customRoleType: Joi.when("roleType", {
-    is: "other",
-    then: Joi.string().min(2).max(50).required(),
-    otherwise: Joi.optional(),
-  }),
-  position: Joi.when("jop", {
-    is: "player",
-    then: Joi.string().min(2).max(100).required(),
-    otherwise: Joi.string().allow("").optional(),
-  }),
-  customPosition: Joi.when(Joi.ref("jop"), {
-    is: "player",
-    then: Joi.when("position", {
+export const playerFormSchema = (t) =>
+  Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    age: Joi.number().integer().min(15).max(50).required(),
+    gender: Joi.string().valid("male", "female").required(),
+    nationality: Joi.string()
+      .valid(
+        "saudi",
+        "uae",
+        "egypt",
+        "morocco",
+        "kuwait",
+        "qatar",
+        "bahrain",
+        "oman",
+        "jordan",
+        "lebanon",
+        "syria",
+        "iraq",
+        "libya",
+        "tunisia",
+        "algeria",
+        "sudan",
+        "yemen",
+        "other"
+      )
+      .required(),
+    customNationality: Joi.when("nationality", {
       is: "other",
       then: Joi.string().min(2).max(50).required(),
       otherwise: Joi.optional(),
     }),
-    otherwise: Joi.optional(),
-  }),
-  status: Joi.string()
-    .valid("available", "contracted", "transferred")
-    .required(),
-  experience: Joi.number().integer().min(0).max(30).optional(),
-  monthlySalary: Joi.object({
-    amount: Joi.alternatives()
-      .try(Joi.number().min(0), Joi.string().allow("").optional())
-      .optional(),
-    currency: Joi.string().default("SAR"),
-  }).optional(),
-  yearSalary: Joi.object({
-    amount: Joi.alternatives()
-      .try(Joi.number().min(0), Joi.string().allow("").optional())
-      .optional(),
-    currency: Joi.string().default("SAR"),
-  }).optional(),
-  contractEndDate: Joi.alternatives()
-    .try(Joi.date(), Joi.string().allow("").optional())
-    .optional(),
-  transferredTo: Joi.object({
-    club: Joi.string().allow("").optional(),
-    startDate: Joi.alternatives()
-      .try(Joi.date(), Joi.string().allow("").optional())
-      .optional(),
-    endDate: Joi.alternatives()
-      .try(Joi.date(), Joi.string().allow("").optional())
-      .optional(),
-    amount: Joi.alternatives()
-      .try(Joi.number().min(0), Joi.string().allow("").optional())
-      .optional(),
-  }).optional(),
-  socialLinks: Joi.object({
-    instagram: Joi.string().uri().allow("").optional(),
-    twitter: Joi.string().uri().allow("").optional(),
-    whatsapp: Joi.string().allow("").optional(),
-    youtube: Joi.string().uri().allow("").optional(),
-  }).optional(),
-  isPromoted: Joi.object({
-    status: Joi.boolean().default(false),
-    startDate: Joi.string().allow("", null).optional(),
-    endDate: Joi.string().allow("", null).optional(),
-    type: Joi.string()
-      .valid("featured", "premium")
-      .allow(null)
-      .default("featured"),
-  }).optional(),
-  contactInfo: Joi.object({
-    isHidden: Joi.boolean().default(false),
-    email: Joi.string().email().allow("").optional(),
-    phone: Joi.string().allow("").optional(),
-    agent: Joi.object({
-      name: Joi.string().allow("").optional(),
-      phone: Joi.string().allow("").optional(),
-      email: Joi.string().email().allow("").optional(),
-    }).optional(),
-  }).optional(),
-  game: Joi.string().min(2).required(),
-  customSport: Joi.when("game", {
-    is: "other",
-    then: Joi.string().min(2).max(50).required(),
-    otherwise: Joi.optional(),
-  }),
-  media: Joi.object({
-    video: Joi.object({
-      url: Joi.string().allow(null).optional(),
-      publicId: Joi.string().allow(null).optional(),
-      title: Joi.string().allow(null).optional(),
-      duration: Joi.number().default(0),
-      uploadedAt: Joi.string().allow(null).optional(),
-    }).optional(),
-    document: Joi.object({
-      url: Joi.string().allow(null).optional(),
-      publicId: Joi.string().allow(null).optional(),
-      title: Joi.string().allow(null).optional(),
-      type: Joi.string().allow(null).optional(),
-      size: Joi.number().default(0),
-      uploadedAt: Joi.string().allow(null).optional(),
-    }).optional(),
-    images: Joi.array()
-      .items(
-        Joi.object({
-          url: Joi.string().allow(null).optional(),
-          publicId: Joi.string().allow(null).optional(),
-          title: Joi.string().allow(null).optional(),
-          type: Joi.string().allow(null).optional(),
-          size: Joi.number().default(0),
-          uploadedAt: Joi.string().allow(null).optional(),
-        })
+    birthCountry: Joi.string()
+      .valid(
+        "saudi",
+        "uae",
+        "egypt",
+        "morocco",
+        "kuwait",
+        "qatar",
+        "bahrain",
+        "oman",
+        "jordan",
+        "lebanon",
+        "syria",
+        "iraq",
+        "libya",
+        "tunisia",
+        "algeria",
+        "sudan",
+        "yemen",
+        "other"
       )
-      .max(4)
+      .required(),
+    customBirthCountry: Joi.when("birthCountry", {
+      is: "other",
+      then: Joi.string().min(2).max(50).required(),
+      otherwise: Joi.optional(),
+    }),
+    jop: Joi.string().valid("player", "coach").required(),
+    roleType: Joi.when("jop", {
+      is: Joi.exist(),
+      then: Joi.alternatives()
+        .try(
+          Joi.string()
+            .required()
+            .messages({
+              "string.empty": t("sportsValidation.roleTypeRequired"),
+              "any.required": t("sportsValidation.roleTypeRequired"),
+            }),
+          Joi.object({
+            ar: Joi.string().required(),
+            en: Joi.string().required(),
+            slug: Joi.string().optional(),
+          })
+            .required()
+            .messages({
+              "object.base": t("sportsValidation.roleTypeRequired"),
+              "any.required": t("sportsValidation.roleTypeRequired"),
+            })
+        )
+        .required()
+        .messages({
+          "alternatives.match": t("sportsValidation.roleTypeRequired"),
+          "any.required": t("sportsValidation.roleTypeRequired"),
+        }),
+      otherwise: Joi.alternatives()
+        .try(
+          Joi.string().optional(),
+          Joi.object({
+            ar: Joi.string().optional(),
+            en: Joi.string().optional(),
+            slug: Joi.string().optional(),
+          }).optional()
+        )
+        .optional(),
+    }),
+    customRoleType: Joi.when("roleType", {
+      is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
+      then: Joi.string()
+        .min(2)
+        .max(50)
+        .required()
+        .messages({
+          "string.empty": t("sportsValidation.customRoleTypeRequired"),
+          "string.min": t("sportsValidation.customRoleTypeTooShort"),
+          "string.max": t("sportsValidation.customRoleTypeTooLong"),
+        }),
+      otherwise: Joi.optional(),
+    }),
+    position: Joi.when("jop", {
+      is: "player",
+      then: Joi.alternatives()
+        .try(
+          Joi.string()
+            .min(2)
+            .max(100)
+            .required()
+            .messages({
+              "string.empty": t("sportsValidation.positionRequired"),
+              "string.min": t("sportsValidation.positionTooShort"),
+              "string.max": t("sportsValidation.positionTooShort"),
+            }),
+          Joi.object({
+            ar: Joi.string().required(),
+            en: Joi.string().required(),
+            slug: Joi.string().optional(),
+          })
+            .required()
+            .messages({
+              "object.base": t("sportsValidation.positionRequired"),
+              "any.required": t("sportsValidation.positionRequired"),
+            })
+        )
+        .required()
+        .messages({
+          "alternatives.match": t("sportsValidation.positionRequired"),
+          "any.required": t("sportsValidation.positionRequired"),
+        }),
+      otherwise: Joi.alternatives()
+        .try(
+          Joi.string().allow("").optional(),
+          Joi.object({
+            ar: Joi.string().optional(),
+            en: Joi.string().optional(),
+            slug: Joi.string().optional(),
+          }).optional()
+        )
+        .optional(),
+    }),
+    customPosition: Joi.when(Joi.ref("jop"), {
+      is: "player",
+      then: Joi.when("position", {
+        is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
+        then: Joi.string()
+          .min(2)
+          .max(50)
+          .required()
+          .messages({
+            "string.empty": t("sportsValidation.customPositionRequired"),
+            "string.min": t("sportsValidation.customPositionTooShort"),
+            "string.max": t("sportsValidation.customPositionTooLong"),
+          }),
+        otherwise: Joi.optional(),
+      }),
+      otherwise: Joi.optional(),
+    }),
+    status: Joi.string()
+      .valid("available", "contracted", "transferred")
+      .required(),
+    experience: Joi.number().integer().min(0).max(30).optional(),
+    monthlySalary: Joi.object({
+      amount: Joi.alternatives()
+        .try(Joi.number().min(0), Joi.string().allow("").optional())
+        .optional(),
+      currency: Joi.string().default("SAR"),
+    }).optional(),
+    yearSalary: Joi.object({
+      amount: Joi.alternatives()
+        .try(Joi.number().min(0), Joi.string().allow("").optional())
+        .optional(),
+      currency: Joi.string().default("SAR"),
+    }).optional(),
+    contractEndDate: Joi.alternatives()
+      .try(Joi.date(), Joi.string().allow("").optional())
       .optional(),
-  }).optional(),
-  agreeToTerms: Joi.boolean().valid(true).required(),
-  profilePicturePreview: Joi.string().allow("").optional(),
-  profilePictureFile: Joi.any().optional(),
-  documentFile: Joi.any().optional(),
-  jopSelected: Joi.boolean().optional(),
-  statusSelected: Joi.boolean().optional(),
-  gameSelected: Joi.boolean().optional(),
-  customPosition: Joi.when("position", {
-    is: "other",
-    then: Joi.string().min(2).max(50).required(),
-    otherwise: Joi.optional(),
-  }),
-  isActive: Joi.boolean().default(false),
-  views: Joi.number().default(0),
-  seo: Joi.object().optional(),
-});
+    transferredTo: Joi.object({
+      club: Joi.string().allow("").optional(),
+      startDate: Joi.alternatives()
+        .try(Joi.date(), Joi.string().allow("").optional())
+        .optional(),
+      endDate: Joi.alternatives()
+        .try(Joi.date(), Joi.string().allow("").optional())
+        .optional(),
+      amount: Joi.alternatives()
+        .try(Joi.number().min(0), Joi.string().allow("").optional())
+        .optional(),
+    }).optional(),
+    socialLinks: Joi.object({
+      instagram: Joi.string().uri().allow("").optional(),
+      twitter: Joi.string().uri().allow("").optional(),
+      whatsapp: Joi.string().allow("").optional(),
+      youtube: Joi.string().uri().allow("").optional(),
+    }).optional(),
+    isPromoted: Joi.object({
+      status: Joi.boolean().default(false),
+      startDate: Joi.string().allow("", null).optional(),
+      endDate: Joi.string().allow("", null).optional(),
+      type: Joi.string()
+        .valid("featured", "premium")
+        .allow(null)
+        .default("featured"),
+    }).optional(),
+    contactInfo: Joi.object({
+      isHidden: Joi.boolean().default(false),
+      email: Joi.string().email().allow("").optional(),
+      phone: Joi.string().allow("").optional(),
+      agent: Joi.object({
+        name: Joi.string().allow("").optional(),
+        phone: Joi.string().allow("").optional(),
+        email: Joi.string().email().allow("").optional(),
+      }).optional(),
+    }).optional(),
+    game: Joi.alternatives()
+      .try(
+        Joi.string()
+          .min(2)
+          .required()
+          .messages({
+            "string.empty": t("sportsValidation.sportRequired"),
+            "string.min": t("sportsValidation.sportRequired"),
+          }),
+        Joi.object({
+          ar: Joi.string().required(),
+          en: Joi.string().required(),
+          slug: Joi.string().optional(),
+        })
+          .required()
+          .messages({
+            "object.base": t("sportsValidation.sportRequired"),
+            "any.required": t("sportsValidation.sportRequired"),
+          })
+      )
+      .required()
+      .messages({
+        "alternatives.match": t("sportsValidation.sportRequired"),
+        "any.required": t("sportsValidation.sportRequired"),
+      }),
+    customSport: Joi.when("game", {
+      is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
+      then: Joi.string()
+        .min(2)
+        .max(50)
+        .required()
+        .messages({
+          "string.empty": t("sportsValidation.customSportRequired"),
+          "string.min": t("sportsValidation.customSportTooShort"),
+          "string.max": t("sportsValidation.customSportTooLong"),
+        }),
+      otherwise: Joi.string()
+        .min(2)
+        .max(50)
+        .allow("")
+        .optional()
+        .messages({
+          "string.empty": t("sportsValidation.customSportRequired"),
+          "string.min": t("sportsValidation.customSportTooShort"),
+          "string.max": t("sportsValidation.customSportTooLong"),
+        }),
+    }),
+    media: Joi.object({
+      video: Joi.object({
+        url: Joi.string().allow(null).optional(),
+        publicId: Joi.string().allow(null).optional(),
+        title: Joi.string().allow(null).optional(),
+        duration: Joi.number().default(0),
+        uploadedAt: Joi.string().allow(null).optional(),
+      }).optional(),
+      document: Joi.object({
+        url: Joi.string().allow(null).optional(),
+        publicId: Joi.string().allow(null).optional(),
+        title: Joi.string().allow(null).optional(),
+        type: Joi.string().allow(null).optional(),
+        size: Joi.number().default(0),
+        uploadedAt: Joi.string().allow(null).optional(),
+      }).optional(),
+      images: Joi.array()
+        .items(
+          Joi.object({
+            url: Joi.string().allow(null).optional(),
+            publicId: Joi.string().allow(null).optional(),
+            title: Joi.string().allow(null).optional(),
+            type: Joi.string().allow(null).optional(),
+            size: Joi.number().default(0),
+            uploadedAt: Joi.string().allow(null).optional(),
+          })
+        )
+        .max(4)
+        .optional(),
+    }).optional(),
+    agreeToTerms: Joi.boolean().valid(true).required(),
+    profilePicturePreview: Joi.string().allow("").optional(),
+    profilePictureFile: Joi.any().optional(),
+    documentFile: Joi.any().optional(),
+    jopSelected: Joi.boolean().optional(),
+    statusSelected: Joi.boolean().optional(),
+    gameSelected: Joi.boolean().optional(),
+    customPosition: Joi.when("position", {
+      is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
+      then: Joi.string()
+        .min(2)
+        .max(50)
+        .required()
+        .messages({
+          "string.empty": t("sportsValidation.customPositionRequired"),
+          "string.min": t("sportsValidation.customPositionTooShort"),
+          "string.max": t("sportsValidation.customPositionTooLong"),
+        }),
+      otherwise: Joi.optional(),
+    }),
+    isActive: Joi.boolean().default(false),
+    views: Joi.number().default(0),
+    seo: Joi.object().optional(),
+  });

@@ -1,4 +1,3 @@
-
 import React from "react";
 
 async function getPlayerData(playerId) {
@@ -39,8 +38,18 @@ export async function generateMetadata({ params }) {
   const playerType = isCoach ? "Coach" : "Player";
   const playerTypeAr = isCoach ? "مدرب" : "لاعب";
 
+  // Helper function to extract string value from multilingual objects or strings
+  const getStringValue = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && (value.ar || value.en || value.slug)) {
+      return value.slug || value.en || value.ar;
+    }
+    return String(value);
+  };
+
   // Create sport text
-  const sport = player.game || "Sports";
+  const sport = getStringValue(player.game) || "Sports";
   const sportAr = getSportInArabic(sport);
 
   // Create nationality text
@@ -212,9 +221,5 @@ function getNationalityInArabic(nationality) {
 }
 
 export default function PlayerLayout({ children }) {
-  return (
-    <React.Fragment>
-      {children}
-    </React.Fragment>
-  );
+  return <React.Fragment>{children}</React.Fragment>;
 }

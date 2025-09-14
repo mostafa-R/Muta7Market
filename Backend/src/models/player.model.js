@@ -90,9 +90,19 @@ const playerSchema = new mongoose.Schema(
       required: true,
     },
     roleType: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       default: null,
-      trim: true,
+      validate: {
+        validator: function (v) {
+          if (v === null) return true;
+          return (
+            typeof v === "string" ||
+            (v && typeof v === "object" && v.ar && v.en)
+          );
+        },
+        message:
+          "RoleType must be a string or an object with ar and en properties",
+      },
     },
     customRoleType: {
       type: String,
@@ -100,9 +110,18 @@ const playerSchema = new mongoose.Schema(
       trim: true,
     },
     position: {
-      type: String,
-
-      trim: true,
+      type: mongoose.Schema.Types.Mixed,
+      validate: {
+        validator: function (v) {
+          if (v === null) return true;
+          return (
+            typeof v === "string" ||
+            (v && typeof v === "object" && v.ar && v.en)
+          );
+        },
+        message:
+          "Position must be a string or an object with ar and en properties",
+      },
     },
     customPosition: {
       type: String,
@@ -202,9 +221,17 @@ const playerSchema = new mongoose.Schema(
       },
     },
     game: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       required: true,
-      trim: true,
+      validate: {
+        validator: function (v) {
+          return (
+            typeof v === "string" ||
+            (v && typeof v === "object" && v.ar && v.en)
+          );
+        },
+        message: "Game must be a string or an object with ar and en properties",
+      },
     },
     customSport: {
       type: String,
@@ -262,8 +289,20 @@ const playerSchema = new mongoose.Schema(
           ret.position = ret.customPosition;
         }
 
-        if ((ret.game === "other" || ret.game === "") && ret.customSport) {
+        // Handle game field which can be string or object
+        if (
+          typeof ret.game === "string" &&
+          (ret.game === "other" || ret.game === "") &&
+          ret.customSport
+        ) {
           ret.game = ret.customSport;
+        } else if (
+          typeof ret.game === "object" &&
+          ret.game.slug === "other" &&
+          ret.customSport
+        ) {
+          ret.game.ar = ret.customSport;
+          ret.game.en = ret.customSport;
         }
 
         return ret;

@@ -16,9 +16,27 @@ export const createPlayerSchema = Joi.object({
 
   // Role & position
   jop: Joi.string().valid("player", "coach").required(),
-  roleType: Joi.string().trim().allow("", null).optional(),
+  roleType: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .optional(),
   customRoleType: Joi.string().trim().allow("", null).optional(),
-  position: Joi.string().trim().allow("", null).optional(),
+  position: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .optional(),
   customPosition: Joi.string().trim().allow("", null).optional(),
   status: Joi.string()
     .valid(...Object.values(PROFILE_STATUS))
@@ -92,7 +110,16 @@ export const createPlayerSchema = Joi.object({
   }).optional(),
 
   // Game & status
-  game: Joi.string().trim().required(),
+  game: Joi.alternatives()
+    .try(
+      Joi.string().trim(),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .required(),
   customSport: Joi.string().trim().allow("", null).optional(),
   views: Joi.number().min(0).optional(),
   isActive: Joi.boolean().optional(),
@@ -115,9 +142,27 @@ export const updatePlayerSchema = Joi.object({
   customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
   jop: Joi.string().valid("player", "coach"),
-  roleType: Joi.string().trim().allow("", null).optional(),
+  roleType: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .optional(),
   customRoleType: Joi.string().trim().allow("", null).optional(),
-  position: Joi.string().trim().allow("", null).optional(),
+  position: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .optional(),
   customPosition: Joi.string().trim().allow("", null).optional(),
   status: Joi.string().valid(...Object.values(PROFILE_STATUS)),
 
