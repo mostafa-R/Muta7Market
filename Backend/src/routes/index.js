@@ -18,6 +18,8 @@ import localizationRoutes from "./localization.routes.js";
 import promotionalOfferRoutes from "./promotional-offer.routes.js";
 import settingsRoutes from "./settings.routes.js";
 import sportRoutes from "./sport.routes.js";
+import termsRouter from "./term.routes.js";
+import aboutsRouter from "./about.routes.js";
 
 const router = Router();
 
@@ -32,6 +34,8 @@ router.use("/notifications", notificationRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/entitlements", entitlementRoutes);
 router.use("/upload", uploadRoutes);
+router.use("/terms" , termsRouter);
+router.use("/about" , aboutsRouter); // مؤقتًا، استبدل بـ aboutRoutes عند الإنتهاء
 
 // تسجيل المسارات الجديدة
 router.use("/settings", settingsRoutes);
