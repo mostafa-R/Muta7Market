@@ -2,9 +2,17 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSportsData } from "./useSportsData";
 
 export const usePlayerForm = () => {
   const router = useRouter();
+  
+  // Sports data hook for object transformation
+  const {
+    getSportObjectBySlug,
+    getPositionObjectByValue,
+    getRoleTypeObjectByValue
+  } = useSportsData();
   
   // Form State
   const [loading, setLoading] = useState(false);
@@ -151,6 +159,19 @@ export const usePlayerForm = () => {
       setShowCustomFields((prev) => ({
         ...prev,
         position: false,
+      }));
+    }
+
+    // Clear roleType when job type changes
+    if (name === "jop") {
+      setFormData((prev) => ({
+        ...prev,
+        roleType: "",
+        customRoleType: "",
+      }));
+      setShowCustomFields((prev) => ({
+        ...prev,
+        roleType: false,
       }));
     }
   };
@@ -428,8 +449,46 @@ export const usePlayerForm = () => {
     });
     
     try {
-
+      // Transform sports data to object format before sending
+      const transformedFormData = { ...formData };
       
+      // Store original game slug for use in roleType and position transformation
+      const originalGameSlug = transformedFormData.game === "other" ? null : transformedFormData.game;
+      
+      // Transform game field
+      if (transformedFormData.game && transformedFormData.game !== "other") {
+        const gameObject = getSportObjectBySlug(transformedFormData.game);
+        if (gameObject) {
+          transformedFormData.game = gameObject;
+        }
+      }
+      // If game is "other", keep it as string and use customSport
+      
+      // Transform roleType field
+      if (transformedFormData.roleType && transformedFormData.roleType !== "other") {
+        const roleTypeObject = getRoleTypeObjectByValue(
+          transformedFormData.roleType, 
+          originalGameSlug, 
+          transformedFormData.jop
+        );
+        if (roleTypeObject) {
+          transformedFormData.roleType = roleTypeObject;
+        }
+      }
+      // If roleType is "other", keep it as string and use customRoleType
+      
+      // Transform position field (only for players)
+      if (transformedFormData.jop === "player" && transformedFormData.position && transformedFormData.position !== "other") {
+        const positionObject = getPositionObjectByValue(
+          transformedFormData.position, 
+          originalGameSlug
+        );
+        if (positionObject) {
+          transformedFormData.position = positionObject;
+        }
+      }
+      // If position is "other", keep it as string and use customPosition
+
       const formDataToSend = new FormData();
       
       // Append all form data - مطابق لما يتوقعه الباك اند
@@ -439,11 +498,14 @@ export const usePlayerForm = () => {
         "transferredTo", 
         "socialLinks", 
         "contactInfo",
-        "isPromoted"
+        "isPromoted",
+        "game",
+        "roleType", 
+        "position"
       ];
       
-      Object.keys(formData).forEach((key) => {
-        const value = formData[key];
+      Object.keys(transformedFormData).forEach((key) => {
+        const value = transformedFormData[key];
         
         // تخطي القيم undefined أو null
         if (value === undefined || value === null) {
@@ -452,13 +514,8 @@ export const usePlayerForm = () => {
         }
         
         if (typeof value === "object") {
-          // فقط stringify الحقول المحددة في الباك اند
-          if (fieldsToStringify.includes(key)) {
-            formDataToSend.append(key, JSON.stringify(value));
-          } else {
-            // تحويل Objects إلى string فارغ إذا لم يكن في القائمة
-            formDataToSend.append(key, "");
-          }
+          // تحويل Objects إلى JSON string
+          formDataToSend.append(key, JSON.stringify(value));
         } else {
           // القيم العادية (strings, numbers, booleans)
           formDataToSend.append(key, String(value));

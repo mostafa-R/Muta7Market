@@ -101,7 +101,7 @@ const playerSchema = new mongoose.Schema(
           );
         },
         message:
-          "RoleType must be a string or an object with ar and en properties",
+          "RoleType must be a string or an object with ar, en, and optional slug properties",
       },
     },
     customRoleType: {
@@ -120,7 +120,7 @@ const playerSchema = new mongoose.Schema(
           );
         },
         message:
-          "Position must be a string or an object with ar and en properties",
+          "Position must be a string or an object with ar, en, and optional slug properties",
       },
     },
     customPosition: {
@@ -230,7 +230,8 @@ const playerSchema = new mongoose.Schema(
             (v && typeof v === "object" && v.ar && v.en)
           );
         },
-        message: "Game must be a string or an object with ar and en properties",
+        message:
+          "Game must be a string or an object with ar, en, and optional slug properties",
       },
     },
     customSport: {

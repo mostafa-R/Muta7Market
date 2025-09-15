@@ -37,6 +37,28 @@ const ENDPOINTS = {
   delete: (id) => `${ADMIN_BASE}/players/${id}`,
 };
 
+// Helper functions to extract Arabic names from sports object format
+const getSportsDisplayValue = (sportsData) => {
+  if (!sportsData) return '-';
+  
+  // If it's already a string (legacy data or custom entry)
+  if (typeof sportsData === 'string') {
+    return sportsData || '-';
+  }
+  
+  // If it's an object with ar property, use Arabic name
+  if (typeof sportsData === 'object' && sportsData.ar) {
+    return sportsData.ar;
+  }
+  
+  // Fallback to English name if Arabic not available
+  if (typeof sportsData === 'object' && sportsData.en) {
+    return sportsData.en;
+  }
+  
+  return '-';
+};
+
 // ===== Toast =====
 const Toast = Swal.mixin({
   toast: true,
@@ -132,7 +154,7 @@ if (typeof window !== 'undefined') {
           name: p.name || p.user?.name || '-',
           email: p.user?.email || p.contactInfo?.email || '-',
           nationality: p.nationality || '-',
-          game: p.game || '-',
+          game: getSportsDisplayValue(p.game),
           age: Number(p.age ?? 0),
           image: p.media?.profileImage?.url || '',
           status: st,
@@ -457,7 +479,7 @@ if (typeof window !== 'undefined') {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100" onClick={() => toggleSort('name')}>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 w-80" onClick={() => toggleSort('name')}>
                     <div className="flex items-center gap-2"><span>المدرب</span><SortIcon column="name" /></div>
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100" onClick={() => toggleSort('email')}>
@@ -492,12 +514,17 @@ if (typeof window !== 'undefined') {
                       className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
                     >
                       {/* المدرب */}
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 w-80">
                         <div className="flex items-center gap-4">
                           <Avatar name={r.name} src={r.image} promoted={r.isPromoted} />
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">{r.name}</div>
-                            <div className="text-xs text-gray-500">انضم في {r.joinDate}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                              <span className="line-clamp-2 max-w-64 break-words" title={r.name}>
+                                {r.name}
+                              </span>
+                              {r.isPromoted && <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" title="مروّج" />}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">انضم في {r.joinDate}</div>
                           </div>
                         </div>
                       </td>

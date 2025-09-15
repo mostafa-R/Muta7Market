@@ -35,6 +35,28 @@ const ENDPOINTS = {
   delete: (id) => `${BASE}/players/${id}`,
 };
 
+// Helper functions to extract Arabic names from sports object format
+const getSportsDisplayValue = (sportsData) => {
+  if (!sportsData) return '-';
+  
+  // If it's already a string (legacy data or custom entry)
+  if (typeof sportsData === 'string') {
+    return sportsData || '-';
+  }
+  
+  // If it's an object with ar property, use Arabic name
+  if (typeof sportsData === 'object' && sportsData.ar) {
+    return sportsData.ar;
+  }
+  
+  // Fallback to English name if Arabic not available
+  if (typeof sportsData === 'object' && sportsData.en) {
+    return sportsData.en;
+  }
+  
+  return '-';
+};
+
 const lineClampStyles = `
   .line-clamp-1 {
     display: -webkit-box;
@@ -162,7 +184,7 @@ if (typeof window !== 'undefined') {
         email: p.user?.email || p.contactInfo?.email || '-',
         gender: (p.gender || '').toLowerCase(),
         nationality: p.nationality || '-',
-        game: p.game || '-',
+        game: getSportsDisplayValue(p.game),
         age: Number(p.age ?? 0),
         image: p.media?.profileImage?.url || '',
         status: st,
@@ -886,7 +908,8 @@ if (typeof window !== 'undefined') {
                         />
                       </td>
 
-                      <td className="px-6 py-4">
+                      {/* Actions - Always visible */}
+                      <td className="px-3 py-4 w-24">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => router.push(`/players/${r._id}`)}

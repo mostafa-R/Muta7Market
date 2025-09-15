@@ -54,7 +54,6 @@ router.use(authMiddleware, authorize("admin", "super_admin"));
 
 router.get("/dashboard/stats", getDashboardStats);
 
-
 router.get("/users", validateQuery(getUsersQuerySchema), getAllUsers);
 
 router.get("/users/:id", getUserById);
@@ -71,9 +70,7 @@ router.put("/users/:id", validate(updateUserSchema), updateUser);
 
 router.delete("/users/:id", deleteUser);
 
-
 router.patch("/users/bulk", validate(bulkUpdateUsersSchema), bulkUpdateUsers);
-
 
 router.get(
   "/players/recent",
@@ -137,6 +134,9 @@ router.post(
     "socialLinks",
     "isPromoted",
     "contactInfo",
+    "game",
+    "roleType",
+    "position",
   ]),
   createUserWithPlayerProfile
 );

@@ -1,4 +1,3 @@
-import { getPricingSettings } from "../utils/pricingUtils.js";
 import Invoice from "../models/invoice.model.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
@@ -8,6 +7,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { processPlayerMedia } from "../utils/localMediaUtils.js";
 import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 
 function escapeRegex(s = "") {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -565,7 +565,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
           userId: user._id,
           product: "listing",
           targetType,
-          profileId: player._id,
+          playerProfileId: player._id,
           status: "pending",
         },
         {
@@ -574,9 +574,10 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
             invoiceNumber: orderNo,
             amount,
             currency: "SAR",
-            durationDays: targetType === "coach" 
-              ? pricing.listing_days.coach || pricing.ONE_YEAR_DAYS
-              : pricing.listing_days.player || pricing.ONE_YEAR_DAYS,
+            durationDays:
+              targetType === "coach"
+                ? pricing.listing_days.coach || pricing.ONE_YEAR_DAYS
+                : pricing.listing_days.player || pricing.ONE_YEAR_DAYS,
             featureType: null,
             status: "pending",
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
