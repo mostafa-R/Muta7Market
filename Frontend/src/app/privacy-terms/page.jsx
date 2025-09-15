@@ -1,116 +1,249 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FiDatabase,
   FiFileText,
-  FiGlobe,
   FiLock,
   FiMail,
   FiPhone,
-  FiShield,
   FiUser,
 } from "react-icons/fi";
+
+const API_BASE =
+  (process.env.NEXT_PUBLIC_API_BASE_URL &&
+    process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "")) ||
+  "";
+
+// ---- helpers for rendering raw SVG safely(ish)
+const isSvgMarkup = (s) => typeof s === "string" && s.trim().startsWith("<svg");
+
+function prepareSvg(svg) {
+  // add minimal sizing if author didn’t include classes/size (optional)
+  if (!isSvgMarkup(svg)) return null;
+  // If there’s already a class/size, we don’t touch it.
+  if (/\sclass=/.test(svg) || /\s(width|height)=/.test(svg)) return svg;
+  return svg.replace("<svg", '<svg width="24" height="24"');
+}
+
+function SvgIcon({ svg }) {
+  if (!svg || !isSvgMarkup(svg)) return null;
+  const clean = prepareSvg(svg);
+  return (
+    <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white mb-6 overflow-hidden">
+      {/* If you want sanitization, install `isomorphic-dompurify` and sanitize `clean` before injecting. */}
+      <span
+        className="inline-block"
+        dangerouslySetInnerHTML={{ __html: clean }}
+      />
+    </div>
+  );
+}
 
 function PrivacyTermsPage() {
   const { language } = useLanguage();
   const isRTL = language === "ar";
+  const langKey = isRTL ? "ar" : "en";
 
-  const privacySections = [
+  const [term, setTerm] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+
+        const res = await axios.get(`${API_BASE}/terms`, {
+          params: { page: 1, limit: 1 },
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const payload = res.data;
+        if (payload && payload.success === false) {
+          throw new Error(
+            (payload.error && payload.error.message) ||
+              payload.message ||
+              "Request failed"
+          );
+        }
+
+        let doc = null;
+        if (payload && payload.data) {
+          if (Array.isArray(payload.data?.data)) {
+            doc = payload.data.data[0] || null;
+          } else if (Array.isArray(payload.data)) {
+            doc = payload.data[0] || null;
+          } else if (typeof payload.data === "object") {
+            doc = payload.data;
+          }
+        }
+
+        setTerm(doc);
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          setErrorMsg(err?.message || "Failed to fetch terms");
+          setTerm(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, []);
+
+  // ----- map API data -> UI
+  const apiSections = useMemo(() => {
+    if (!term || !term.terms || !term.terms.length) return [];
+    return term.terms.map((sec) => ({
+      title: sec?.title?.[langKey],
+      description: sec?.description?.[langKey],
+      list:
+        (sec?.list || []).map((it) => ({
+          iconSvg: it?.icon || null, // raw SVG string expected here
+          title: it?.title?.[langKey],
+          content: it?.description?.[langKey],
+        })) || [],
+    }));
+  }, [term, langKey]);
+
+  // ----- fallbacks (no icons here to honor "only show if exists")
+  const fallbackPrivacy = [
     {
-      icon: <FiUser className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "الخدمة والمسؤولية" : "Service and Responsibility",
       content: isRTL
-        ? "الموقع يقدم خدمة الربط بين المستفيد (اللاعب أو المدرب أو الأخصائي) وبين الأندية في مختلف الدول دون أدنى مسؤولية على الشركة."
-        : "The website provides a connection service between the beneficiary (player, coach, or specialist) and clubs in different countries without any liability on the company.",
+        ? "الموقع يقدم خدمة الربط بين المستفيد..."
+        : "The website provides a connection service...",
     },
     {
-      icon: <FiLock className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "الرسوم والمدفوعات" : "Fees and Payments",
       content: isRTL
-        ? "يدفع المستفيد (اللاعب أو المدرب أو الأخصائي) مبلغ 55 دولار امريكي لصالح الشركة غير مسترد لنشر المعلومات الخاصة به، كما يدفع المستخدم مبلغ 55 دولار امريكي غير مسترد للاستفادة من الموقع بالوصول لكافة المعلومات سواء الاتصال او السير الذاتية او المقاطع المرئية وما إلى ذلك."
-        : "The beneficiary (player, coach, or specialist) pays a non-refundable fee of 55 USD to the company to publish their information. Users also pay a non-refundable fee of 55 USD to access all information including contacts, resumes, videos, etc.",
+        ? "يدفع المستفيد (اللاعب أو المدرب...)"
+        : "The beneficiary pays a non-refundable fee...",
     },
     {
-      icon: <FiShield className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "إخلاء المسؤولية" : "Disclaimer",
       content: isRTL
-        ? 'يتم تقديم جميع المعلومات الواردة على الموقع الإلكتروني "كما هي"، أي بنفس الصورة التي حصلت عليها الشركة من المصدر. لا تقدم الشركة أي نوع من الضمانات (سواء صريحًا أو ضمنيًا) لمدى دقة وجودة المعلومات المقدمة، بما في ذلك الضمانات المتعلقة بالمعلومات ومدى دقتها، أو كفاءة اللاعب أو المدرب أو الأخصائي.'
-        : 'All information on the website is provided "as is", exactly as received by the company from the source. The company provides no warranties (express or implied) regarding the accuracy and quality of the information provided, including warranties related to the information and its accuracy, or the competence of the player, coach, or specialist.',
+        ? 'يتم تقديم جميع المعلومات "كما هي"...'
+        : 'All information is provided "as is"...',
     },
     {
-      icon: <FiDatabase className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "دقة المعلومات" : "Information Accuracy",
       content: isRTL
-        ? "يبذل الموقع أقصى جهوده للتأكد من جودة المعلومات المنشورة على الموقع الإلكتروني، ومن مدى دقتها وحداثتها. ومع ذلك، فإن الموقع لا يضمن بأي شكل من الأشكال صحة أو اكتمال أو دقة أو شمولية المعلومات أو المحتوى المنشور، ويحتفظ بحقه في تعديل أو تصحيح محتوى المعلومات والوثائق المنشورة في أي وقت ودون إشعار مسبق."
-        : "The website makes every effort to ensure the quality, accuracy, and timeliness of information published. However, the website does not guarantee in any way the correctness, completeness, accuracy, or comprehensiveness of the published information or content, and reserves the right to modify or correct the content of information and documents published at any time without prior notice.",
+        ? "يبذل الموقع أقصى جهوده..."
+        : "The website makes every effort...",
     },
   ];
 
-  const termsSections = [
+  const fallbackTerms = [
     {
-      icon: <FiGlobe className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "توفر الموقع" : "Website Availability",
       content: isRTL
-        ? "تسعى الشركة لإتاحة موقعها الإلكتروني للمستخدمين على مدار الساعة (24 ساعة في اليوم، 7 أيام في الأسبوع). ومع ذلك، لا يمكن للشركة ضمان إتاحة الموقع الإلكتروني أو ضمان إمكانية الوصول إليه بصفة دائمة. تحتفظ الشركة بحقها في إلغاء أو تقييد أو تعليق أو المنع المؤقت للوصول إلى الموقع الإلكتروني (جزئيًا أو كليًا) في أي وقت ودون إشعار مسبق."
-        : "The company strives to make its website available to users 24/7. However, the company cannot guarantee the website's availability or permanent accessibility. The company reserves the right to cancel, restrict, suspend, or temporarily prevent access to the website (partially or completely) at any time without prior notice.",
+        ? "تسعى الشركة لإتاحة موقعها..."
+        : "The company strives to make its website available...",
     },
     {
-      icon: <FiShield className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "أمن البيانات" : "Data Security",
       content: isRTL
-        ? "على الرغم من الوسائل المتقدمة التي تستخدمها الشركة ومقدمو الخدمات الفنية التابعون لها لضمان إتاحة الموقع وحماية البيانات، فإن الشركة تحرص على تحذير المستخدمين دائمًا من عدم موثوقية شبكة الإنترنت، خاصةً فيما يتعلق بأمان نقل البيانات، وسرعة نقل البيانات، وإمكانية نقل الفيروسات الإلكترونية."
-        : "Despite the advanced means used by the company and its technical service providers to ensure website availability and data protection, the company is keen to always warn users about the unreliability of the internet, especially regarding data transfer security, data transfer speed, and the possibility of transmitting electronic viruses.",
+        ? "على الرغم من الوسائل المتقدمة..."
+        : "Despite advanced means to ensure protection...",
     },
     {
-      icon: <FiLock className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "الانقطاع والأعطال" : "Interruptions and Malfunctions",
       content: isRTL
-        ? "يتم التأكيد هنا بشكل صريح على احتمال وقوع أخطاء تتعلق بشبكة الإنترنت وأنظمة تكنولوجيا المعلومات والاتصالات، والتي قد تؤدي بدورها إلى حدوث بعض الانقطاعات والأعطال في الموقع الإلكتروني للشركة."
-        : "It is explicitly confirmed here that there is a possibility of errors related to the internet and information and communication technology systems, which may in turn lead to some interruptions and malfunctions in the company's website.",
+        ? "احتمال وقوع أخطاء تتعلق بالشبكة..."
+        : "Possibility of errors related to networks...",
     },
     {
-      icon: <FiFileText className="w-6 h-6" />,
+      iconSvg: null,
       title: isRTL ? "الملكية الفكرية" : "Intellectual Property",
       content: isRTL
-        ? "جميع أنواع المحتوى المتاحة على الموقع الإلكتروني تُعد ملكًا حصريًا للشركة، لذلك فهي محمية بموجب قوانين الملكية الفكرية المُطبقة. يُحظر حظرًا تامًا استخدام الموقع الإلكتروني أو أي مكون من مكوناته لأغراض تجارية، كما يُحظر نسخ أو توزيع أو إعادة إنتاج أو تعديل أو ترجمة أو نقل الموقع أو أي عنصر من عناصره بدون إذن خطي مسبق."
-        : "All types of content available on the website are the exclusive property of the company and are protected by applicable intellectual property laws. It is strictly prohibited to use the website or any of its components for commercial purposes, as well as copy, distribute, reproduce, modify, translate, or transfer the website or any of its elements without prior written permission.",
+        ? "جميع أنواع المحتوى ملك حصري..."
+        : "All content is the exclusive property...",
     },
   ];
+
+  const privacySections = apiSections[0]?.list?.length
+    ? apiSections[0].list
+    : fallbackPrivacy;
+
+  const termsSections = apiSections[1]?.list?.length
+    ? apiSections[1].list
+    : fallbackTerms;
+
+  const heroTitle =
+    term?.headTitle?.[langKey] ||
+    (isRTL ? "الشروط والأحكام" : "Terms and Conditions");
+
+  const heroDescription =
+    term?.headDescription?.[langKey] ||
+    (isRTL
+      ? "شروط وأحكام استخدام منصة متاح ماركت للاعبين والمدربين"
+      : "Terms and conditions for using Muta7Market platform for players and coaches");
+
+  const serviceHeading =
+    apiSections[0]?.title || (isRTL ? "شروط الخدمة" : "Service Terms");
+
+  const termsHeading =
+    apiSections[1]?.title || (isRTL ? "الشروط والأحكام" : "Terms & Conditions");
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700">
         <div className="absolute inset-0 bg-black/30"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-              {isRTL ? "الشروط والأحكام" : "Terms and Conditions"}
+              {heroTitle}
             </h1>
             <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-4xl mx-auto leading-relaxed">
-              {isRTL
-                ? "شروط وأحكام استخدام منصة متاح ماركت للاعبين والمدربين"
-                : "Terms and conditions for using Muta7Market platform for players and coaches"}
+              {heroDescription}
             </p>
             <p className="text-sm text-blue-200">
               {isRTL ? "آخر تحديث: يناير 2024" : "Last updated: January 2024"}
             </p>
+            {loading && (
+              <p className="text-xs text-blue-200 mt-2">
+                {isRTL ? "جارٍ تحميل الشروط…" : "Loading terms…"}
+              </p>
+            )}
+            {errorMsg && (
+              <p className="text-xs text-red-200 mt-2">
+                {isRTL ? "تعذّر تحميل الشروط: " : "Failed to load terms: "}
+                {errorMsg}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Service Terms Section */}
+      {/* Service Terms */}
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              {isRTL ? "شروط الخدمة" : "Service Terms"}
+              {serviceHeading}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {isRTL
-                ? "الشروط الأساسية لاستخدام منصتنا والاستفادة من خدماتنا"
-                : "Basic terms for using our platform and benefiting from our services"}
+              {apiSections[0]?.description ||
+                (isRTL
+                  ? "الشروط الأساسية لاستخدام منصتنا والاستفادة من خدماتنا"
+                  : "Basic terms for using our platform and benefiting from our services")}
             </p>
           </div>
 
@@ -120,9 +253,11 @@ function PrivacyTermsPage() {
                 key={index}
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100"
               >
-                <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white mb-6">
-                  {section.icon}
-                </div>
+                {/* only render icon if SVG exists */}
+                {section.iconSvg && isSvgMarkup(section.iconSvg) ? (
+                  <SvgIcon svg={section.iconSvg} />
+                ) : null}
+
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
                   {section.title}
                 </h3>
@@ -133,7 +268,7 @@ function PrivacyTermsPage() {
             ))}
           </div>
 
-          {/* Data Rights Section */}
+          {/* Data Rights (static, kept) */}
           <div className="bg-blue-50 rounded-xl p-8 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               {isRTL ? "حقوقك في البيانات" : "Your Data Rights"}
@@ -188,17 +323,18 @@ function PrivacyTermsPage() {
         </div>
       </div>
 
-      {/* Terms & Conditions Section */}
+      {/* Terms & Conditions */}
       <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              {isRTL ? "الشروط والأحكام" : "Terms & Conditions"}
+              {termsHeading}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {isRTL
-                ? "القواعد والإرشادات لاستخدام منصتنا"
-                : "Rules and guidelines for using our platform"}
+              {apiSections[1]?.description ||
+                (isRTL
+                  ? "القواعد والإرشادات لاستخدام منصتنا"
+                  : "Rules and guidelines for using our platform")}
             </p>
           </div>
 
@@ -208,9 +344,11 @@ function PrivacyTermsPage() {
                 key={index}
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100"
               >
-                <div className="w-14 h-14 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center text-white mb-6">
-                  {section.icon}
-                </div>
+                {/* only render icon if SVG exists */}
+                {section.iconSvg && isSvgMarkup(section.iconSvg) ? (
+                  <SvgIcon svg={section.iconSvg} />
+                ) : null}
+
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
                   {section.title}
                 </h3>
@@ -221,7 +359,7 @@ function PrivacyTermsPage() {
             ))}
           </div>
 
-          {/* Additional Terms */}
+          {/* Additional Terms (static) */}
           <div className="bg-gray-100 rounded-xl p-8 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
               {isRTL ? "أحكام إضافية" : "Additional Terms"}
@@ -233,8 +371,8 @@ function PrivacyTermsPage() {
                 </h4>
                 <p className="text-gray-600">
                   {isRTL
-                    ? "يشمل المحتوى المحمي النصوص والمعلومات ورسومات الجرافيكس والتصاميم والرسوم التوضيحية والصور الفوتوغرافية والأصوات والفيديوهات وهيكل الموقع وتصميمه وشعاراته."
-                    : "Protected content includes text information, graphics, designs, illustrations, photographs, audio, video, website structure and design, and logos."}
+                    ? "يشمل المحتوى المحمي النصوص والمعلومات ورسومات الجرافيكس..."
+                    : "Protected content includes text information, graphics, designs..."}
                 </p>
               </div>
               <div>
@@ -243,8 +381,8 @@ function PrivacyTermsPage() {
                 </h4>
                 <p className="text-gray-600">
                   {isRTL
-                    ? "يُسمح بالنسخ للاستخدام الشخصي فقط في حدود قوانين الملكية الفكرية. يُحظر النسخ أو التوزيع أو الترجمة أو النقل لأغراض تجارية."
-                    : "Copying for personal use is allowed only within the limits of intellectual property laws. Copying, distribution, translation, or transfer for commercial purposes is prohibited."}
+                    ? "يُسمح بالنسخ للاستخدام الشخصي فقط..."
+                    : "Copying for personal use is allowed only..."}
                 </p>
               </div>
               <div>
@@ -253,8 +391,8 @@ function PrivacyTermsPage() {
                 </h4>
                 <p className="text-gray-600">
                   {isRTL
-                    ? "يجب إرسال جميع طلبات تصريحات النسخ وإعادة الإنتاج لأي محتوى من محتويات الموقع إلى الشركة على عنوان البريد الإلكتروني الرسمي."
-                    : "All requests for copying and reproduction permissions for any website content must be sent to the company at the official email address."}
+                    ? "يجب إرسال جميع طلبات التصاريح..."
+                    : "All permission requests must be sent to the official email."}
                 </p>
               </div>
             </div>
@@ -262,7 +400,7 @@ function PrivacyTermsPage() {
         </div>
       </div>
 
-      {/* Contact Section */}
+      {/* Contact (static) */}
       <div className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
