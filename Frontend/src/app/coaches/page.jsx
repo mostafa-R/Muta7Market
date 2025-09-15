@@ -359,7 +359,7 @@ export default function CoachesPage() {
             })}
           </p>
           {filteredPlayers.length !== players.length && (
-            <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
+            <span className="inline-flex items-center bg-muted-foreground  rounded-full px-3 py-1 text-sm font-semibold text-foreground">
               {t("coaches.filtersApplied")}
             </span>
           )}

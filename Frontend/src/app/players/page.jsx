@@ -236,7 +236,7 @@ export default function PlayersPage() {
           </p>
 
           <div className="flex items-center justify-center space-x-4 space-x-reverse">
-            <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
+            <span className="inline-flex items-center bg-muted-foreground  rounded-full px-3 py-1 text-sm font-semibold text-foreground">
               <Users className="w-4 h-4" />
               <span>
                 {players.length} {t("players.registeredPlayers")}
@@ -400,7 +400,7 @@ export default function PlayersPage() {
             })}
           </p>
           {filteredPlayers.length !== players.length && (
-            <span className="inline-flex items-center bg-muted-foreground text-white rounded-full px-3 py-1 text-sm font-semibold">
+            <span className="inline-flex items-center bg-muted-foreground  rounded-full px-3 py-1 text-sm font-semibold text-foreground">
               {t("players.filtersApplied")}
             </span>
           )}
