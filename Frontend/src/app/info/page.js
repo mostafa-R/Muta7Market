@@ -53,10 +53,13 @@ function AboutPage() {
         setErrorMsg(null);
 
         // Same-origin call to your API route
-        const res = await axios.get("/api/v1/about/", {
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
-        });
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/about`,
+          {
+            signal: controller.signal,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
         const payload = res.data;
         if (payload && payload.success === false) {
