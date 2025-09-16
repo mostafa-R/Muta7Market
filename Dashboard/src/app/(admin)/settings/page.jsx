@@ -149,12 +149,12 @@ export default function SettingsPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-8 flex flex-wrap gap-2">
             <TabsTrigger value="general">معلومات عامة</TabsTrigger>
-            <TabsTrigger value="about">من نحن</TabsTrigger>
-            <TabsTrigger value="terms">الشروط والأحكام</TabsTrigger>
             <TabsTrigger value="logo">الشعار والأيقونة</TabsTrigger>
             <TabsTrigger value="seo">إعدادات SEO</TabsTrigger>
             <TabsTrigger value="pricing">الأسعار والرسوم</TabsTrigger>
             <TabsTrigger value="contact">معلومات الاتصال</TabsTrigger>
+            <TabsTrigger value="terms">الشروط والأحكام</TabsTrigger>
+            <TabsTrigger value="about">من نحن</TabsTrigger>
           </TabsList>
           
           <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-6">

@@ -14,13 +14,13 @@ const localizedPartial = Joi.object({
 const itemCreate = Joi.object({
   name: localizedRequired,
   description: localizedRequired,
-  icon: Joi.string().trim().optional(),
+  icon: Joi.string().trim().optional().optional().allow("")
 });
 
 const itemPatch = Joi.object({
   name: localizedPartial,
   description: localizedPartial,
-  icon: Joi.string().trim(),
+  icon: Joi.string().trim().optional().allow("")
 }).min(1);
 
 const sectionCreate = Joi.object({
