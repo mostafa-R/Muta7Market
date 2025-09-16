@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
 import { toast } from "sonner";
@@ -116,6 +116,35 @@ export default function AboutSettingsForm() {
   const [saving, setSaving] = useState(false);
   const [rawJson, setRawJson] = useState("");
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  // stable keys for lists/items to avoid React re-using DOM nodes when adding new items
+  const listKeysRef = useRef([]);
+  const itemKeysRef = useRef([]);
+
+  const makeKey = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+
+  // keep keysRef in sync with doc structure
+  useEffect(() => {
+    const lists = doc?.list || [];
+
+    // ensure outer list keys
+    if (listKeysRef.current.length < lists.length) {
+      for (let i = listKeysRef.current.length; i < lists.length; i++) listKeysRef.current[i] = makeKey();
+    } else if (listKeysRef.current.length > lists.length) {
+      listKeysRef.current.length = lists.length;
+    }
+
+    // ensure item keys per list
+    for (let i = 0; i < lists.length; i++) {
+      const items = (lists[i] && lists[i].items) || [];
+      itemKeysRef.current[i] = itemKeysRef.current[i] || [];
+      if (itemKeysRef.current[i].length < items.length) {
+        for (let k = itemKeysRef.current[i].length; k < items.length; k++) itemKeysRef.current[i].push(makeKey());
+      } else if (itemKeysRef.current[i].length > items.length) {
+        itemKeysRef.current[i].length = items.length;
+      }
+    }
+  }, [doc]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -175,6 +204,13 @@ export default function AboutSettingsForm() {
 
   // list operations
   const addList = () => updateDoc((d) => ({ ...d, list: [...(d.list || []), makeEmptyList()] }));
+  // keep key refs in sync when adding a list
+  const addListWithKey = () => {
+    updateDoc((d) => ({ ...d, list: [...(d.list || []), makeEmptyList()] }));
+    // push a key for the new list
+    listKeysRef.current.push(makeKey());
+    itemKeysRef.current.push([makeKey()]);
+  };
   const removeList = (idx) => updateDoc((d) => ({ ...d, list: (d.list || []).filter((_, i) => i !== idx) }));
 
   const updateListField = (idx, field, lang, value) => {
@@ -195,6 +231,18 @@ export default function AboutSettingsForm() {
     list[listIdx] = l;
     return { ...d, list };
   });
+
+  const addItemWithKey = (listIdx) => {
+    updateDoc((d) => {
+      const list = d.list ? [...d.list] : [];
+      const l = { ...(list[listIdx] || makeEmptyList()) };
+      l.items = l.items ? [...l.items, makeEmptyItem()] : [makeEmptyItem()];
+      list[listIdx] = l;
+      return { ...d, list };
+    });
+    itemKeysRef.current[listIdx] = itemKeysRef.current[listIdx] || [];
+    itemKeysRef.current[listIdx].push(makeKey());
+  };
 
   const removeItem = (listIdx, itemIdx) => updateDoc((d) => {
     const list = d.list ? [...d.list] : [];
@@ -261,8 +309,8 @@ export default function AboutSettingsForm() {
           setDoc(result.data || result);
           setRawJson(JSON.stringify(result.data || result, null, 2));
           toast.success("تم حفظ بيانات صفحة من نحن بنجاح");
-          // open public About page so admin can see changes immediately
-          try { window.open((process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000') + '/info', '_blank'); } catch (e) { /* ignore */ }
+          // show inline success message instead of opening a new tab
+          setSuccessMessage("تم حفظ بيانات صفحة من نحن بنجاح");
           // notify other tabs/clients to reload About data without full page reload
           try {
             if (typeof BroadcastChannel !== 'undefined') {
@@ -299,7 +347,8 @@ export default function AboutSettingsForm() {
           setDoc(result.data || result);
           setRawJson(JSON.stringify(result.data || result, null, 2));
           toast.success("تم إنشاء وثيقة من نحن وحفظها");
-          try { window.open((process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000') + '/info', '_blank'); } catch (e) { /* ignore */ }
+          // show inline success message instead of opening a new tab
+          setSuccessMessage("تم إنشاء وثيقة من نحن وحفظها");
           try {
             if (typeof BroadcastChannel !== 'undefined') {
               const bc = new BroadcastChannel('site-settings');
@@ -364,47 +413,28 @@ export default function AboutSettingsForm() {
               onChange={(e) => updateDoc(d => ({ ...d, description: { ...(d.description||{}), en: e.target.value } }))}
             />
           </div>
-
-          {/* Quick edit: Mission & Values sections */}
-          <div className="border p-4 rounded-md bg-gray-50">
-            <h3 className="text-md font-semibold mb-2">تحرير سريع: رسالتنا وقيمنا</h3>
-            <p className="text-sm text-gray-600 mb-3">هنا يمكنك تحرير القسم المسمّى "رسالتنا" و"قيمنا" مباشرة؛ إن لم يجدا سيُنشآ تلقائياً عند الحفظ.</p>
-
-            {/* Mission editors */}
-            <MissionValuesEditor
-              labelAr="رسالتنا"
-              labelEn="Our Mission"
-              doc={doc}
-              updateDoc={updateDoc}
-              makeEmptyList={makeEmptyList}
-              makeEmptyItem={makeEmptyItem}
-            />
-
-            <div className="my-4" />
-
-            {/* Values editors */}
-            <MissionValuesEditor
-              labelAr="قيمنا"
-              labelEn="Our Values"
-              doc={doc}
-              updateDoc={updateDoc}
-              makeEmptyList={makeEmptyList}
-              makeEmptyItem={makeEmptyItem}
-            />
-          </div>
-
           <div>
             <h3 className="text-lg font-semibold">القوائم التفصيلية (مثال: مميزات، خدمات، فرق العمل)</h3>
             <p className="text-sm text-gray-600 mb-3">أضف/حرّر/احذف قوائم وبنود داخل كل قائمة.</p>
 
             <div className="space-y-4">
               {(doc?.list || []).map((lst, lIdx) => (
-                <div key={lIdx} className="border rounded-lg p-4 bg-white">
+                <div key={listKeysRef.current[lIdx] || lIdx} className="border rounded-lg p-4 bg-white">
                   <div className="flex justify-between items-start mb-3">
-                    <strong>القائمة #{lIdx + 1}</strong>
-                    <div className="space-x-2">
-                      <Button type="button" onClick={() => addItem(lIdx)} className="mr-2">إضافة بند</Button>
-                      <Button type="button" onClick={() => removeList(lIdx)} className="bg-red-600">حذف القائمة</Button>
+                    <strong className="text-gray-800">القائمة #{lIdx + 1}</strong>
+                    <div className="flex gap-2">
+                      <Button type="button" onClick={() => addItemWithKey(lIdx)} size="sm">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        إضافة بند
+                      </Button>
+                      <Button type="button" onClick={() => removeList(lIdx)} variant="destructive" size="sm">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        حذف القائمة
+                      </Button>
                     </div>
                   </div>
 
@@ -430,11 +460,16 @@ export default function AboutSettingsForm() {
                   </div>
 
                   <div className="space-y-3">
-                    {(lst.items || []).map((it, itIdx) => (
-                      <div key={itIdx} className="p-3 border rounded">
+              {(lst.items || []).map((it, itIdx) => (
+            <div key={itemKeysRef.current[lIdx]?.[itIdx] || itIdx} className="p-3 border rounded">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">بند #{itIdx + 1}</span>
-                          <Button type="button" onClick={() => removeItem(lIdx, itIdx)} className="bg-red-600">حذف البند</Button>
+                          <span className="font-medium text-gray-800">بند #{itIdx + 1}</span>
+                          <Button type="button" onClick={() => removeItem(lIdx, itIdx)} variant="destructive" size="sm">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف البند
+                          </Button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
@@ -465,28 +500,26 @@ export default function AboutSettingsForm() {
                   </div>
                 </div>
               ))}
-
-              <div>
-                <Button type="button" onClick={addList}>إضافة قائمة جديدة</Button>
-              </div>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">تحرير JSON كامل (اختياري)</label>
-            <textarea
-              className="w-full border p-2 rounded-md min-h-[200px] font-mono text-sm"
-              value={rawJson}
-              onChange={(e) => setRawJson(e.target.value)}
-            />
-          </div>
-
+          
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving} className="bg-primary">
+            <Button type="submit" disabled={saving} size="sm">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
               {saving ? "جاري الحفظ..." : "حفظ صفحة من نحن"}
             </Button>
           </div>
         </form>
+      )}
+
+      {/* inline success banner (dismissible) */}
+      {successMessage && (
+        <div className="mt-4 rounded-md bg-green-50 p-3 border border-green-200 flex items-start justify-between">
+          <div className="text-sm text-green-800">{successMessage}</div>
+          <button type="button" onClick={() => setSuccessMessage(null)} className="text-green-600 font-medium ml-4">إغلاق</button>
+        </div>
       )}
 
       {error && <p className="text-sm text-red-600 mt-2">{error}</p>}

@@ -111,6 +111,11 @@ function AboutPage() {
       (s) => s?.title?.ar === "قيمنا" || s?.title?.en === "Our Values"
     ) || null;
 
+  const visionSection =
+    about?.list?.find(
+      (s) => s?.title?.ar === "رؤيتنا" || s?.title?.en === "Our Vision"
+    ) || null;
+
   // Stats (prefer API totals; fallback to nice defaults)
   const stats = [
     {
@@ -172,98 +177,121 @@ function AboutPage() {
         </div>
       </div>
 
-      {/* TWO-COLUMN: Mission (left) + Core Values (right) */}
-      <div className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            {/* Left: Mission */}
-            <section>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                {missionSection?.title?.[langKey] ||
-                  (isRTL ? "رسالتنا" : "Our Mission")}
-              </h2>
-              <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                {missionSection?.description?.[langKey] ||
-                  (isRTL
-                    ? "نساعد الأفراد والشركات على إنشاء تجربة رقمية عالية الجودة بأقل جهد."
-                    : "We help individuals and teams craft high-quality digital experiences with minimal effort.")}
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {(missionSection?.items || []).map((item) => (
-                  <div
-                    key={item?._id || item?.name?.[langKey]}
-                    className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-6 text-center"
-                  >
-                    {/* Only show icon if it is raw SVG */}
-                    {isSvgMarkup(item?.icon) ? (
-                      <SvgIcon svg={item.icon} />
-                    ) : null}
-
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {item?.name?.[langKey]}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {item?.description?.[langKey]}
-                    </p>
+      {/* TWO-COLUMN: Vision (right) + Mission (left) */}
+       <div className="py-20 bg-white">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+      
+      {/* Right: Vision with Cards - prefer data from API when available */}
+      <section className="order-2 lg:order-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {(visionSection?.items && visionSection.items.length > 0)
+            ? visionSection.items.map((item, idx) => (
+                <div key={item._id || item.name?.[langKey] || idx} className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-6 text-right hover:shadow-lg transition-all duration-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white mb-4 mx-auto">
+                    {isSvgMarkup(item.icon) ? (
+                      <span className="w-8 h-8" dangerouslySetInnerHTML={{ __html: prepareSvg(item.icon) }} />
+                    ) : (
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                    )}
                   </div>
-                ))}
-                {!missionSection?.items?.length && !loading && (
-                  <div className="col-span-full text-center text-gray-400">
-                    {isRTL
-                      ? "لا توجد عناصر للعرض حالياً"
-                      : "No items to display yet."}
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{item.name?.[langKey] || item.name?.ar || item.name?.en || (isRTL? 'عنوان' : 'Title')}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{item.description?.[langKey] || item.description?.ar || item.description?.en || ''}</p>
+                </div>
+              ))
+            : (
+              // fallback: original static cards
+              <>
+                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl p-6 text-right hover:shadow-lg transition-all duration-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white mb-4 mx-auto">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
                   </div>
-                )}
-              </div>
-            </section>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {isRTL ? "التميز" : "Excellence"}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {isRTL ? "أعلى معايير الجودة" : "Highest quality standards"}
+                  </p>
+                </div>
 
-            {/* Right: Core Values (from "قيمنا / Our Values") */}
-            <section>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                {isRTL ? "قيمنا الأساسية" : "Our Core Values"}
-              </h2>
-              <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                {valuesSection?.description?.[langKey] ||
-                  (isRTL
-                    ? "نعمل بشفافية، وبروح فريق، وبسعي دائم للابتكار."
-                    : "We operate with transparency, teamwork, and a constant drive to innovate.")}
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {(valuesSection?.items || []).map((item) => (
-                  <div
-                    key={item?._id || item?.name?.[langKey]}
-                    className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-6 text-center"
-                  >
-                    {/* Only show icon if it is raw SVG */}
-                    {isSvgMarkup(item?.icon) ? (
-                      <SvgIcon svg={item.icon} />
-                    ) : null}
-
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {item?.name?.[langKey]}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {item?.description?.[langKey]}
-                    </p>
+                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-6 text-right hover:shadow-lg transition-all duration-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white mb-4 mx-auto">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
                   </div>
-                ))}
-                {!valuesSection?.items?.length && !loading && (
-                  <div className="col-span-full text-center text-gray-400">
-                    {isRTL
-                      ? "لا توجد عناصر للعرض حالياً"
-                      : "No items to display yet."}
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {isRTL ? "الهدف" : "Goal"}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {isRTL ? "ربط المواهب بالفرص" : "Connecting talents with opportunities"}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl p-6 text-right hover:shadow-lg transition-all duration-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white mb-4 mx-auto">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                )}
-              </div>
-            </section>
-          </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {isRTL ? "العالمية" : "Global"}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {isRTL ? "وصول لجميع أنحاء العالم" : "Reach all around the world"}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-6 text-right hover:shadow-lg transition-all duration-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white mb-4 mx-auto">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {isRTL ? "المجتمع" : "Community"}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {isRTL ? "بناء شبكة رياضية قوية" : "Building a strong sports network"}
+                  </p>
+                </div>
+              </>
+            )}
         </div>
-      </div>
+      </section>
+
+      {/* Left: Mission */}
+      <section className="order-1 lg:order-1 flex flex-col justify-center">
+        <div className="text-right">
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            {visionSection?.title?.[langKey] || (isRTL ? "رؤيتنا" : "Our Vision")}
+          </h2>
+          <p className="text-lg text-gray-600 leading-relaxed mb-8">
+            {visionSection?.description?.[langKey] || (isRTL
+              ? "أن نكون المنصة الرائدة عالمياً في ربط المواهب الرياضية بالفرص المناسبة، وبناء جسر من التواصل بين اللاعبين والمدربين والأندية الرياضية."
+              : "To be the world's leading platform in connecting sports talents with suitable opportunities, and building a bridge of communication between players, coaches and sports clubs.")}
+          </p>
+
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            {missionSection?.title?.[langKey] || (isRTL ? "مهمتنا" : "Our Mission")}
+          </h2>
+          <p className="text-lg text-gray-600 leading-relaxed">
+            {missionSection?.description?.[langKey] || (isRTL
+              ? "نعمل على توفير منصة آمنة ومتطورة تتيح للاعبين عرض مواهبهم وللمدربين تقديم خبراتهم، مع ضمان الوصول إلى أفضل الفرص الرياضية المتاحة."
+              : "We work to provide a safe and advanced platform that allows players to showcase their talents and coaches to share their expertise, while ensuring access to the best available sports opportunities.")}
+          </p>
+        </div>
+      </section>
+      
+    </div>
+  </div>
+</div>
+
 
       {/* Stats */}
-      <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+      {/* <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
@@ -286,7 +314,7 @@ function AboutPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Contact */}
       <div className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white">
