@@ -8,6 +8,8 @@ import GeneralSettingsForm from "./components/GeneralSettingsForm";
 import LogoSettingsForm from "./components/LogoSettingsForm";
 import PricingSettingsForm from "./components/PricingSettingsForm";
 import SeoSettingsForm from "./components/SeoSettingsForm";
+import AboutSettingsForm from "./components/AboutSettingsForm";
+import TermsSettingsForm from "./components/TermsSettingsForm";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null);
@@ -147,6 +149,8 @@ export default function SettingsPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-8 flex flex-wrap gap-2">
             <TabsTrigger value="general">معلومات عامة</TabsTrigger>
+            <TabsTrigger value="about">من نحن</TabsTrigger>
+            <TabsTrigger value="terms">الشروط والأحكام</TabsTrigger>
             <TabsTrigger value="logo">الشعار والأيقونة</TabsTrigger>
             <TabsTrigger value="seo">إعدادات SEO</TabsTrigger>
             <TabsTrigger value="pricing">الأسعار والرسوم</TabsTrigger>
@@ -156,6 +160,14 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-6">
             <TabsContent value="general">
               <GeneralSettingsForm settings={settings} setSettings={setSettings} />
+            </TabsContent>
+
+            <TabsContent value="about">
+              <AboutSettingsForm />
+            </TabsContent>
+
+            <TabsContent value="terms">
+              <TermsSettingsForm />
             </TabsContent>
             
             <TabsContent value="logo">
