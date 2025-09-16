@@ -354,14 +354,14 @@ if (typeof window !== 'undefined') {
 
                   <div className="text-sm text-gray-600 mt-1 flex flex-wrap items-center gap-2">
                     <Shield className="w-4 h-4 text-purple-600" />
-                    <span>{player?.roleType || '—'}</span>
+                    <span>{player?.roleType?.ar || player?.roleType || '—'}</span>
                     <span className="text-gray-300">•</span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 border border-gray-200 text-gray-700">
-                      {player?.position || '—'}
+                      {player?.position?.ar || player?.position || '—'}
                     </span>
                     <span className="text-gray-300">•</span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 border border-indigo-200 text-indigo-700">
-                      {player?.game || '—'}
+                      {player?.game?.ar || player?.game || '—'}
                     </span>
                     <span className="text-gray-300">•</span>
                     <GenderBadge gender={player?.gender} />

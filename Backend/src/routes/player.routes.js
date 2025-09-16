@@ -52,7 +52,6 @@ router.delete(
   deletePlayerDocument
 );
 
-// Get player by ID (must be last in public routes to avoid overriding)
 router.get("/:id", getPlayerById);
 
 /**
@@ -70,7 +69,7 @@ router.post(
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
     { name: "playerVideo", maxCount: 1 },
-    { name: "images", maxCount: 5 }, // Support up to 5 additional images
+    { name: "images", maxCount: 5 }, 
   ]),
   parseJsonFields([
     "monthlySalary",
@@ -92,7 +91,7 @@ router.patch(
     { name: "profileImage", maxCount: 1 },
     { name: "document", maxCount: 1 },
     { name: "playerVideo", maxCount: 1 },
-    { name: "images", maxCount: 5 }, // Support up to 5 additional images
+    { name: "images", maxCount: 5 },
   ]),
   parseJsonFields([
     "monthlySalary",

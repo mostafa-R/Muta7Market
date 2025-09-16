@@ -125,6 +125,19 @@ if (typeof window !== 'undefined') {
     days,
   }), [page, rowsPerPage, query, jopFilter, activeFilter, promotedFilter, days]);
 
+  // Helper function to extract string value from multilingual objects or strings
+  const getStringValue = React.useCallback((value) => {
+    if (!value) return '-';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object') {
+      // For multilingual objects, prefer Arabic then English then slug
+      if (value.ar) return value.ar;
+      if (value.en) return value.en;
+      if (value.slug) return value.slug;
+    }
+    return String(value);
+  }, []);
+
   const mapRows = React.useCallback((players = []) => {
     return players.map((p) => {
       const st = deriveStatus(p);
@@ -146,12 +159,12 @@ if (typeof window !== 'undefined') {
         status: st,
         statusLabel: statusLabel(st),
         age: Number(p.age ?? 0),
-        nationality: p.nationality || '-',
-        game: p.game || '-',
+        nationality: getStringValue(p.nationality),
+        game: getStringValue(p.game),
         createdAt: p.createdAt ? new Date(p.createdAt).getTime() : 0,
       };
     });
-  }, []);
+  }, [getStringValue]);
 
   const fetchRows = React.useCallback(async () => {
     setLoading(true);

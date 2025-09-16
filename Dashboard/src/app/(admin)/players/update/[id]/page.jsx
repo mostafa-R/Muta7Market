@@ -4,20 +4,19 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
-// Import form components
 import BasicInfoSection from "./components/BasicInfoSection";
 import ContactInfoSection from "./components/ContactInfoSection";
 import FinancialInfoSection from "./components/FinancialInfoSection";
 import MediaUploadSection from "./components/MediaUploadSection";
 import ProfessionalInfoSection from "./components/ProfessionalInfoSection";
 import PromotionSettingsSection from "./components/PromotionSettingsSection";
+import { useSportsData } from "./hooks/useSportsData";
+import { playerFormSchema } from "./types/scheme";
 
-// API Configuration
 const API_BASE = process.env.NEXT_PUBLIC_BASE_URL
   ? `${process.env.NEXT_PUBLIC_BASE_URL}/admin`
   : "http://localhost:5000/api/v1/admin";
 
-// Helper function for error messages
 const errText = (err, fallback = "حدث خطأ") => {
   const r = err?.response;
   const d = r?.data ?? {};
@@ -32,7 +31,6 @@ const errText = (err, fallback = "حدث خطأ") => {
   return cands.find((s) => typeof s === "string" && s.trim()) || fallback;
 };
 
-// Initial form data structure
 const initialFormData = {
   name: "",
   age: "",
@@ -42,9 +40,9 @@ const initialFormData = {
   birthCountry: "",
   customBirthCountry: "",
   jop: "",
-  roleType: "",
+  roleType: null,
   customRoleType: "",
-  position: "",
+  position: null, 
   customPosition: "",
   status: "",
   experience: 0,
@@ -84,7 +82,7 @@ const initialFormData = {
     endDate: "",
     type: "",
   },
-  game: "",
+  game: null, 
   customSport: "",
   isListed: true,
   isActive: true,
@@ -92,7 +90,6 @@ const initialFormData = {
   views: 0,
 };
 
-// Initial custom fields visibility
 const initialCustomFields = {
   nationality: false,
   birthCountry: false,
@@ -105,13 +102,14 @@ export default function UpdatePlayerPage() {
   const router = useRouter();
   const { id } = useParams();
   
-  // State management
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showCustomFields, setShowCustomFields] = useState(initialCustomFields);
   const [formData, setFormData] = useState(initialFormData);
   
-  // File States
+  
+  const { getSportBySlug, getPositionBySlug, getRoleTypeBySlug } = useSportsData();
+
   const [files, setFiles] = useState({
     profileImage: null,
     document: null,
@@ -124,7 +122,6 @@ export default function UpdatePlayerPage() {
     images: [],
   });
 
-  // Existing media from API
   const [existingMedia, setExistingMedia] = useState({
     profileImage: null,
     document: null,
@@ -132,16 +129,14 @@ export default function UpdatePlayerPage() {
     images: [],
   });
 
-  // Computed values that are used across the component
   const computedShowCustomFields = {
     nationality: formData.nationality === "other",
     birthCountry: formData.birthCountry === "other",
-    roleType: formData.roleType === "other",
-    position: formData.position === "other",
-    sport: formData.game === "other",
+    roleType: formData.roleType?.slug === "other",
+    position: formData.position?.slug === "other",
+    game: formData.game?.slug === "other",
   };
 
-  // Fetch existing player data
   useEffect(() => {
     const fetchPlayerData = async () => {
         if (!id) {
@@ -190,7 +185,11 @@ export default function UpdatePlayerPage() {
           style: { direction: 'rtl' }
         });
 
-        // Populate form with player data
+        const sportObject = typeof player.game === 'object' ? player.game : getSportBySlug(player.game);
+        const positionObject = typeof player.position === 'object' ? player.position : getPositionBySlug(player.game, player.position);
+        const roleTypeObject = typeof player.roleType === 'object' ? player.roleType : getRoleTypeBySlug(player.game, player.roleType, player.jop);
+
+
         setFormData({
           name: player.name || "",
           age: player.age || "",
@@ -200,9 +199,9 @@ export default function UpdatePlayerPage() {
           birthCountry: player.birthCountry || "",
           customBirthCountry: player.customBirthCountry || "",
           jop: player.jop || "",
-          roleType: player.roleType || "",
+          roleType: roleTypeObject,
           customRoleType: player.customRoleType || "",
-          position: player.position || "",
+          position: positionObject,
           customPosition: player.customPosition || "",
           status: player.status || "",
           experience: player.experience || 0,
@@ -242,7 +241,7 @@ export default function UpdatePlayerPage() {
             endDate: player.isPromoted?.endDate ? new Date(player.isPromoted.endDate).toISOString().split('T')[0] : "",
             type: player.isPromoted?.type || "",
           },
-          game: player.game || "",
+          game: sportObject,
           customSport: player.customSport || "",
           isListed: Boolean(player.isListed),
           isActive: Boolean(player.isActive),
@@ -258,13 +257,12 @@ export default function UpdatePlayerPage() {
           images: player.media?.images || [],
         });
 
-        // Set custom field visibility
         setShowCustomFields({
           nationality: player.nationality === "other",
           birthCountry: player.birthCountry === "other",
-          roleType: player.roleType === "other",
-          position: player.position === "other",
-          sport: player.game === "other",
+          roleType: (typeof player.roleType === 'string' && player.roleType === "other") || (typeof player.roleType === 'object' && player.roleType?.slug === "other"),
+          position: (typeof player.position === 'string' && player.position === "other") || (typeof player.position === 'object' && player.position?.slug === "other"),
+          sport: (typeof player.game === 'string' && player.game === "other") || (typeof player.game === 'object' && player.game?.slug === "other"),
         });
 
       } catch (error) {
@@ -279,9 +277,8 @@ export default function UpdatePlayerPage() {
     };
 
     fetchPlayerData();
-  }, [id]);
+  }, [id, getSportBySlug, getPositionBySlug, getRoleTypeBySlug]);
 
-  // Handle file changes
   const handleFileChange = (e) => {
     const { name, files: uploadedFiles } = e.target;
     
@@ -302,7 +299,6 @@ export default function UpdatePlayerPage() {
         return { ...prev, images: updatedImages };
       });
       
-      // Create previews for new images
       const newPreviews = newImageFiles.map((file) => URL.createObjectURL(file));
       setPreviews((prev) => ({ ...prev, images: [...prev.images, ...newPreviews].slice(0, 4) }));
     } else {
@@ -315,7 +311,6 @@ export default function UpdatePlayerPage() {
     }
   };
 
-  // Remove image
   const removeImage = (index) => {
     setFiles((prev) => {
       const updatedImages = prev.images.filter((_, i) => i !== index);
@@ -328,7 +323,6 @@ export default function UpdatePlayerPage() {
     });
   };
 
-  // Remove existing media
   const removeExistingImage = (index) => {
     setExistingMedia((prev) => ({
       ...prev,
@@ -336,7 +330,6 @@ export default function UpdatePlayerPage() {
     }));
   };
 
-  // Remove existing profile image
   const removeExistingProfileImage = () => {
     setExistingMedia((prev) => ({
       ...prev,
@@ -344,7 +337,6 @@ export default function UpdatePlayerPage() {
     }));
   };
 
-  // Remove existing video
   const removeExistingVideo = () => {
     setExistingMedia((prev) => ({
       ...prev,
@@ -352,7 +344,6 @@ export default function UpdatePlayerPage() {
     }));
   };
 
-  // Remove existing document
   const removeExistingDocument = () => {
     setExistingMedia((prev) => ({
       ...prev,
@@ -360,7 +351,6 @@ export default function UpdatePlayerPage() {
     }));
   };
 
-  // Cleanup previews on unmount
   useEffect(() => {
     return () => {
       if (previews.profileImage) URL.revokeObjectURL(previews.profileImage);
@@ -368,10 +358,41 @@ export default function UpdatePlayerPage() {
     };
   }, [previews]);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    if (name === "game") {
+      const sportObject = getSportBySlug(value);
+      setFormData(prev => ({
+        ...prev,
+        game: sportObject,
+        position: null, 
+        roleType: null,
+        customPosition: "",
+        customRoleType: "",
+        customSport: sportObject?.slug === "other" ? prev.customSport : "",
+      }));
+      return;
+    }
+    if (name === "position") {
+      const positionObject = getPositionBySlug(formData.game?.slug, value);
+      setFormData(prev => ({
+        ...prev,
+        position: positionObject,
+        customPosition: positionObject?.slug === "other" ? prev.customPosition : "",
+      }));
+      return;
+    }
+    if (name === "roleType") {
+      const roleTypeObject = getRoleTypeBySlug(formData.game?.slug, value, formData.jop);
+      setFormData(prev => ({
+        ...prev,
+        roleType: roleTypeObject,
+        customRoleType: roleTypeObject?.slug === "other" ? prev.customRoleType : "",
+      }));
+      return;
+    }
+
     if (name.includes(".")) {
       const keys = name.split(".");
       setFormData((prev) => {
@@ -391,45 +412,30 @@ export default function UpdatePlayerPage() {
           ...prev,
           [name]: type === "checkbox" ? checked : value,
         };
-        
-        // Clear position fields when job type changes to coach
-        if (name === "jop" && value === "coach") {
-          updated.position = "";
-          updated.customPosition = "";
+
+        if (name === "jop") {
+          updated.roleType = null;
+          updated.customRoleType = "";
+          if (value === "coach") {
+            updated.position = null;
+            updated.customPosition = "";
+          }
         }
         
+        const fieldsWithCustomOption = {
+          nationality: "customNationality",
+          birthCountry: "customBirthCountry",
+        };
+
+        if (fieldsWithCustomOption[name] && value !== "other") {
+          updated[fieldsWithCustomOption[name]] = "";
+        }
+
         return updated;
       });
     }
-
-    // Handle "other" selections
-    if (value === "other") {
-      setShowCustomFields((prev) => ({
-        ...prev,
-        [name]: true,
-      }));
-    } else if (name === "nationality" || name === "birthCountry" || name === "roleType" || name === "position" || name === "game") {
-      setShowCustomFields((prev) => ({
-        ...prev,
-        [name]: false,
-      }));
-    }
-
-    // Clear position when sport changes
-    if (name === "game") {
-      setFormData((prev) => ({
-        ...prev,
-        position: "",
-        customPosition: "",
-      }));
-      setShowCustomFields((prev) => ({
-        ...prev,
-        position: false,
-      }));
-    }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -449,7 +455,6 @@ export default function UpdatePlayerPage() {
     try {
       const formDataToSend = new FormData();
       
-      // Basic fields
       if (formData.name) formDataToSend.append("name", formData.name);
       if (formData.age) formDataToSend.append("age", String(formData.age));
       if (formData.gender) formDataToSend.append("gender", formData.gender);
@@ -458,22 +463,21 @@ export default function UpdatePlayerPage() {
       if (formData.birthCountry) formDataToSend.append("birthCountry", formData.birthCountry);
       if (formData.customBirthCountry) formDataToSend.append("customBirthCountry", formData.customBirthCountry);
       if (formData.jop) formDataToSend.append("jop", formData.jop);
-      if (formData.roleType) formDataToSend.append("roleType", formData.roleType);
+      
+      if (formData.roleType) formDataToSend.append("roleType", JSON.stringify(formData.roleType));
       if (formData.customRoleType) formDataToSend.append("customRoleType", formData.customRoleType);
-      if (formData.position) formDataToSend.append("position", formData.position);
+      if (formData.position) formDataToSend.append("position", JSON.stringify(formData.position));
       if (formData.customPosition) formDataToSend.append("customPosition", formData.customPosition);
       if (formData.status) formDataToSend.append("status", formData.status);
-      if (formData.game) formDataToSend.append("game", formData.game);
+      if (formData.game) formDataToSend.append("game", JSON.stringify(formData.game));
       if (formData.customSport) formDataToSend.append("customSport", formData.customSport);
       if (formData.experience !== undefined) formDataToSend.append("experience", String(formData.experience));
       
-      // Boolean fields
       formDataToSend.append("isListed", String(formData.isListed));
       formDataToSend.append("isActive", String(formData.isActive));
       formDataToSend.append("isConfirmed", String(formData.isConfirmed));
       if (formData.views !== undefined) formDataToSend.append("views", String(formData.views));
 
-      // Nested objects as JSON
       if (formData.monthlySalary.amount || formData.monthlySalary.currency) {
         formDataToSend.append("monthlySalary", JSON.stringify(formData.monthlySalary));
       }
@@ -526,7 +530,6 @@ export default function UpdatePlayerPage() {
       
     
       
-      // Show success message
       toast.success("🎉 تم تحديث بيانات اللاعب بنجاح! سيتم التوجيه الآن...", {
         id: 'update-player',
         duration: 3000,
@@ -618,44 +621,20 @@ export default function UpdatePlayerPage() {
     }
   };
 
-  // Basic form validation
   const validateForm = () => {
-    if (!formData.name) {
-      toast.error("⚠️ يرجى إدخال اسم اللاعب", {
-        style: { direction: 'rtl', background: '#f59e0b', color: '#fff' },
-        duration: 4000
-      });
-      return false;
-    }
+    const { error } = playerFormSchema.validate(formData, {
+      abortEarly: false, 
+      allowUnknown: true, 
+    });
 
-    if (formData.age && (formData.age < 10 || formData.age > 80)) {
-      toast.error("⚠️ العمر يجب أن يكون بين 10 و 80", {
-        style: { direction: 'rtl', background: '#f59e0b', color: '#fff' },
-        duration: 4000
-      });
-      return false;
-    }
-
-    if (formData.contactInfo.email && !formData.contactInfo.email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
-      toast.error("⚠️ يرجى إدخال بريد إلكتروني صحيح للتواصل", {
-        style: { direction: 'rtl', background: '#f59e0b', color: '#fff' },
-        duration: 4000
-      });
-      return false;
-    }
-
-    if (formData.socialLinks.instagram && !formData.socialLinks.instagram.includes('instagram.com')) {
-      toast.error("⚠️ يرجى إدخال رابط إنستجرام صحيح", {
-        style: { direction: 'rtl', background: '#f59e0b', color: '#fff' },
-        duration: 4000
-      });
-      return false;
-    }
-
-    if (formData.socialLinks.youtube && !formData.socialLinks.youtube.includes('youtube.com')) {
-      toast.error("⚠️ يرجى إدخال رابط يوتيوب صحيح", {
-        style: { direction: 'rtl', background: '#f59e0b', color: '#fff' },
-        duration: 4000
+    if (error) {
+      error.details.forEach((err, index) => {
+        setTimeout(() => {
+          toast.error(`⚠️ ${err.message}`, {
+            style: { direction: 'rtl', background: '#f59e0b', color: '#fff', textAlign: 'right' },
+            duration: 4000 + index * 500,
+          });
+        }, index * 300);
       });
       return false;
     }

@@ -330,17 +330,35 @@ export const updatePlayerSchema = Joi.object({
     "any.only": "Job must be either player or coach",
   }),
 
-  roleType: Joi.string().trim().max(100).allow("").messages({
-    "string.max": "Role type cannot exceed 100 characters",
-  }),
+  roleType: Joi.alternatives()
+    .try(
+      Joi.string().trim().max(100).allow(""),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      }).unknown()
+    )
+    .messages({
+      "string.max": "Role type cannot exceed 100 characters",
+    }),
 
   customRoleType: Joi.string().trim().max(100).allow("").messages({
     "string.max": "Custom role type cannot exceed 100 characters",
   }),
 
-  position: Joi.string().trim().max(100).allow("").messages({
-    "string.max": "Position cannot exceed 100 characters",
-  }),
+  position: Joi.alternatives()
+    .try(
+      Joi.string().trim().max(100).allow(""),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      }).unknown()
+    )
+    .messages({
+      "string.max": "Position cannot exceed 100 characters",
+    }),
 
   customPosition: Joi.string().trim().max(100).allow("").messages({
     "string.max": "Custom position cannot exceed 100 characters",
@@ -367,21 +385,14 @@ export const updatePlayerSchema = Joi.object({
       "number.max": "Experience cannot exceed 30 years",
     }),
 
-  experience: Joi.alternatives()
-    .try(
-      Joi.number().integer().min(0).max(30),
-      Joi.string()
-        .pattern(/^\d+$/)
-        .custom((value) => parseInt(value))
-    )
-    .messages({
-      "number.base": "Experience must be a number",
-      "number.integer": "Experience must be a whole number",
-      "number.min": "Experience cannot be negative",
-      "number.max": "Experience cannot exceed 30 years",
-    }),
-
-  game: Joi.string().max(100).allow(""),
+  game: Joi.alternatives().try(
+    Joi.string().max(100).allow(""),
+    Joi.object({
+      ar: Joi.string().required(),
+      en: Joi.string().required(),
+      slug: Joi.string().optional(),
+    }).unknown()
+  ),
 
   customSport: Joi.string().trim().max(100).allow("").messages({
     "string.max": "Custom sport cannot exceed 100 characters",

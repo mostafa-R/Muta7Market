@@ -1,6 +1,6 @@
 "use client";
 
-import { currencyOptions } from "../playerOptions";
+import { currencyOptions } from "../hooks/useSportsData";
 
 export default function FinancialInfoSection({ formData, handleInputChange }) {
   return (

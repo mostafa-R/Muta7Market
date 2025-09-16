@@ -1,6 +1,6 @@
 "use client";
 
-import { genderOptions, nationalities } from "../playerOptions";
+import { genderOptions, nationalities } from "../hooks/useSportsData";
 
 export default function BasicInfoSection({ 
   formData, 
@@ -92,7 +92,7 @@ export default function BasicInfoSection({
             <option value="" disabled>اختر الجنسية</option>
             {nationalities.map((option) => (
               <option key={option.id} value={option.value}>
-                {getNationalityLabel(option.value)}
+                {option.name}
               </option>
             ))}
           </select>
@@ -129,7 +129,7 @@ export default function BasicInfoSection({
             <option value="" disabled>اختر بلد الولادة</option>
             {nationalities.map((option) => (
               <option key={option.id} value={option.value}>
-                {getNationalityLabel(option.value)}
+                {option.name}
               </option>
             ))}
           </select>
@@ -156,28 +156,3 @@ export default function BasicInfoSection({
   );
 }
 
-// Helper function to get nationality labels
-function getNationalityLabel(value) {
-  const labels = {
-    "saudi": "السعودية",
-    "uae": "الإمارات", 
-    "egypt": "مصر",
-    "morocco": "المغرب",
-    "kuwait": "الكويت",
-    "qatar": "قطر",
-    "bahrain": "البحرين",
-    "oman": "عُمان",
-    "jordan": "الأردن",
-    "lebanon": "لبنان",
-    "syria": "سوريا",
-    "iraq": "العراق",
-    "libya": "ليبيا",
-    "tunisia": "تونس",
-    "algeria": "الجزائر",
-    "sudan": "السودان",
-    "yemen": "اليمن",
-    "other": "أخرى"
-  };
-  
-  return labels[value] || value;
-}

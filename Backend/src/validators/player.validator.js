@@ -222,7 +222,14 @@ export const updatePlayerSchema = Joi.object({
     }),
   }),
 
-  game: Joi.string().trim(),
+  game: Joi.alternatives().try(
+    Joi.string().trim(),
+    Joi.object({
+      ar: Joi.string().required(),
+      en: Joi.string().required(),
+      slug: Joi.string().optional(),
+    })
+  ),
   customSport: Joi.string().trim().allow("", null).optional(),
   views: Joi.number().min(0),
   isActive: Joi.boolean(),

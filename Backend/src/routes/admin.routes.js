@@ -157,6 +157,9 @@ router.patch(
     "contactInfo",
     "existingMedia",
     "isPromoted",
+    "game",
+    "position",
+    "roleType",
   ]),
   validate(updatePlayerSchema),
   updatePlayer

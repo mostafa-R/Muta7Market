@@ -10,6 +10,7 @@ import {
   Download,
   Edit3,
   Eye,
+  Home,
   Image as ImageIcon,
   Loader2,
   RefreshCw,
@@ -39,17 +40,14 @@ const ENDPOINTS = {
 const getSportsDisplayValue = (sportsData) => {
   if (!sportsData) return '-';
   
-  // If it's already a string (legacy data or custom entry)
   if (typeof sportsData === 'string') {
     return sportsData || '-';
   }
   
-  // If it's an object with ar property, use Arabic name
   if (typeof sportsData === 'object' && sportsData.ar) {
     return sportsData.ar;
   }
   
-  // Fallback to English name if Arabic not available
   if (typeof sportsData === 'object' && sportsData.en) {
     return sportsData.en;
   }
@@ -193,7 +191,7 @@ if (typeof window !== 'undefined') {
         createdAt: p.createdAt ? new Date(p.createdAt).getTime() : 0,
         isActive: !!p.isActive,
         isPromoted: promoted,
-        isConfirmed: !!p.isConfirmed, // may be absent in many docs
+        isConfirmed: !!p.isConfirmed, 
       };
     });
   }, []);
@@ -204,10 +202,16 @@ if (typeof window !== 'undefined') {
     params.set('limit', String(rowsPerPage));
     params.set('jop', 'player');
     if (query.trim()) params.set('search', query.trim());
+    
     if (filterMode === 'active') params.set('isActive', 'true');
     else if (filterMode === 'inactive') params.set('isActive', 'false');
+    if (filterMode === 'promoted') params.set('isPromoted', 'true');
+    
+    if (confirmFilter === 'confirmed') params.set('isConfirmed', 'true');
+    else if (confirmFilter === 'unconfirmed') params.set('isConfirmed', 'false');
+    
     return params;
-  }, [rowsPerPage, query, filterMode]);
+  }, [page, rowsPerPage, query, filterMode, confirmFilter]);
 
   const fetchPlayers = React.useCallback(async (isRefresh = false) => {
     if (isRefresh) {
@@ -520,49 +524,41 @@ if (typeof window !== 'undefined') {
           </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">إجمالي اللاعبين</p>
-                <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-blue-100">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-blue-100">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">إجمالي اللاعبين</p>
+              <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">المروّجون (هذه الصفحة)</p>
-                <p className="text-2xl font-bold text-yellow-600">{rows.filter((r) => r.isPromoted).length}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-yellow-100">
-                <Star className="w-6 h-6 text-yellow-600" />
-              </div>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-yellow-100">
+              <Star className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">المروّجون (هذه الصفحة)</p>
+              <p className="text-2xl font-bold text-yellow-600">{rows.filter((r) => r.isPromoted).length}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">المؤكَّدون (هذه الصفحة)</p>
-                <p className="text-2xl font-bold text-emerald-600">{rows.filter((r) => r.isConfirmed).length}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-emerald-100">
-                <CheckCircle className="w-6 h-6 text-emerald-600" />
-              </div>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-emerald-100">
+              <CheckCircle className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">المؤكَّدون (هذه الصفحة)</p>
+              <p className="text-2xl font-bold text-emerald-600">{rows.filter((r) => r.isConfirmed).length}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">آخر تحديث</p>
-                <p className="text-2xl font-bold text-indigo-600">{new Date().toLocaleTimeString('ar-EG')}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-indigo-100">
-                <Users className="w-6 h-6 text-indigo-600" />
-              </div>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-indigo-100">
+              <RefreshCw className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">آخر تحديث</p>
+              <p className="text-xl font-bold text-indigo-600">{new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
             </div>
           </div>
         </div>
@@ -653,10 +649,10 @@ if (typeof window !== 'undefined') {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => router.push('/')}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    <ChevronLeft className="w-4 h-4" />
-                    <span className="hidden sm:inline">الرجوع للصفحة الرئيسية</span>
+                    <Home className="w-4 h-4" />
+                    <span className="hidden sm:inline">الرئيسية</span>
                   </button>
 
                   <button
@@ -684,369 +680,369 @@ if (typeof window !== 'undefined') {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full" dir="rtl">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                <tr>
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('name')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>اللاعب</span>
-                      <SortIcon column="name" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('email')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>البريد الإلكتروني</span>
-                      <SortIcon column="email" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('gender')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>الجنس</span>
-                      <SortIcon column="gender" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('nationality')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>الجنسية</span>
-                      <SortIcon column="nationality" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('game')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>اللعبة</span>
-                      <SortIcon column="game" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('age')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>السن</span>
-                      <SortIcon column="age" />
-                    </div>
-                  </th>
-                  {/* Status */}
-                  <th
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('status')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>الحالة</span>
-                      <SortIcon column="status" />
-                    </div>
-                  </th>
-                  {/* Promoted */}
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">مروّج</th>
-                  {/* Confirmed */}
-                  <th
-                    className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100"
-                    onClick={() => toggleSort('isConfirmed')}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <span>مؤكَّد</span>
-                      <SortIcon column="isConfirmed" />
-                    </div>
-                  </th>
-                  {/* Active */}
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">نشط</th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">الإجراءات</th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-white divide-y divide-gray-100">
-                {loading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-fixed" dir="rtl">
+                <thead className="bg-gray-100 border-b-2 border-gray-200">
                   <tr>
-                    <td colSpan={11} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900 mb-1">جارٍ تحميل اللاعبين</h3>
-                          <p className="text-sm text-gray-500">يرجى الانتظار...</p>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : sorted.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <Users className="w-12 h-12 text-gray-300" />
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900 mb-1">لا توجد لاعبين</h3>
-                          <p className="text-sm text-gray-500">
-                            {query || filterMode !== 'all' || confirmFilter !== 'all' 
-                              ? 'لا توجد نتائج مطابقة لبحثك أو الفلاتر المحددة' 
-                              : 'لم يتم العثور على أي لاعبين في النظام'
-                            }
-                          </p>
-                        </div>
-                        {(query || filterMode !== 'all' || confirmFilter !== 'all') && (
-                          <div className="flex gap-2">
-                            {query && (
-                              <button
-                                onClick={() => setQuery('')}
-                                className="text-sm text-blue-600 hover:text-blue-700 underline"
-                              >
-                                مسح البحث
-                              </button>
-                            )}
-                            {(filterMode !== 'all' || confirmFilter !== 'all') && (
-                              <button
-                                onClick={() => {
-                                  setFilterMode('all');
-                                  setConfirmFilter('all');
-                                  setPage(1);
-                                }}
-                                className="text-sm text-blue-600 hover:text-blue-700 underline"
-                              >
-                                مسح الفلاتر
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  sorted.map((r, index) => (
-                    <tr
-                      key={r._id}
-                      className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
-                      }`}
+                    <th
+                      className="w-72 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('name')}
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <Avatar name={r.name} src={r.image} />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-gray-900 flex items-center gap-1">
-                              <span className="line-clamp-1 max-w-48" title={r.name}>
-                                {r.name}
-                              </span>
-                              {r.isPromoted && <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" title="مروّج" />}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">انضم في {r.joinDate}</div>
+                      <div className="flex items-center gap-2">
+                        <span>اللاعب</span>
+                        <SortIcon column="name" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-64 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('email')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>البريد الإلكتروني</span>
+                        <SortIcon column="email" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-32 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('gender')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>الجنس</span>
+                        <SortIcon column="gender" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-40 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('nationality')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>الجنسية</span>
+                        <SortIcon column="nationality" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-32 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('game')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>اللعبة</span>
+                        <SortIcon column="game" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-20 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('age')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>السن</span>
+                        <SortIcon column="age" />
+                      </div>
+                    </th>
+                    {/* Status */}
+                    <th
+                      className="w-40 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('status')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>الحالة</span>
+                        <SortIcon column="status" />
+                      </div>
+                    </th>
+                    {/* Promoted */}
+                    <th className="w-24 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">مروّج</th>
+                    {/* Confirmed */}
+                    <th
+                      className="w-24 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('isConfirmed')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span>مؤكَّد</span>
+                        <SortIcon column="isConfirmed" />
+                      </div>
+                    </th>
+                    {/* Active */}
+                    <th className="w-24 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">نشط</th>
+                    <th className="w-32 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">الإجراءات</th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={11} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900 mb-1">جارٍ تحميل اللاعبين</h3>
+                            <p className="text-sm text-gray-500">يرجى الانتظار...</p>
                           </div>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 font-mono">
-                          <span className="line-clamp-1 max-w-48" title={r.email}>
-                            {r.email}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* الجنس */}
-                      <td className="px-6 py-4">
-                        <GenderBadge gender={r.gender} />
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-200 max-w-32 truncate" title={r.nationality}>
-                          {r.nationality}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-200 max-w-28 truncate" title={r.game}>
-                          {r.game}
-                        </span>
-                      </td>
-
-                      {/* السن */}
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 font-medium">{r.age}</div>
-                      </td>
-
-                      {/* الحالة */}
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusClass(r.status)}`}>
-                          {r.statusLabel}
-                        </span>
-                      </td>
-
-                      {/* مروّج */}
-                      <td className="px-6 py-4 text-center">
-                        {r.isPromoted ? <Star className="w-4 h-4 text-yellow-500 inline" /> : <span className="text-gray-400 text-xs">—</span>}
-                      </td>
-
-                      {/* مؤكد */}
-                      <td className="px-6 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                            r.isConfirmed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-600 border-gray-200'
-                          }`}
-                        >
-                          {r.isConfirmed ? 'نعم' : 'لا'}
-                        </span>
-                      </td>
-
-                      {/* نشط */}
-                      <td className="px-6 py-4 text-center">
-                        <div
-                          className={`w-2 h-2 rounded-full ${r.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}
-                          title={r.isActive ? 'نشط' : 'غير نشط'}
-                        />
-                      </td>
-
-                      {/* Actions - Always visible */}
-                      <td className="px-3 py-4 w-24">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => router.push(`/players/${r._id}`)}
-                            className="p-2 rounded-lg hover:bg-sky-100 text-sky-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-sky-200"
-                            title="عرض ملف اللاعب"
-                            aria-label={`عرض ملف اللاعب ${r.name}`}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(r._id)}
-                            className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-yellow-200"
-                            title="تحرير اللاعب"
-                            aria-label={`تحرير اللاعب ${r.name}`}
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r._id)}
-                            disabled={deletingId === r._id}
-                            className={`p-2 rounded-lg hover:bg-red-100 text-red-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-red-200 ${
-                              deletingId === r._id ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                            title={deletingId === r._id ? 'جارٍ الحذف…' : 'حذف اللاعب'}
-                            aria-label={`حذف اللاعب ${r.name}`}
-                          >
-                            {deletingId === r._id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Users className="w-12 h-12 text-gray-300" />
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900 mb-1">لا توجد لاعبين</h3>
+                            <p className="text-sm text-gray-500">
+                              {query || filterMode !== 'all' || confirmFilter !== 'all' 
+                                ? 'لا توجد نتائج مطابقة لبحثك أو الفلاتر المحددة' 
+                                : 'لم يتم العثور على أي لاعبين في النظام'
+                              }
+                            </p>
+                          </div>
+                          {(query || filterMode !== 'all' || confirmFilter !== 'all') && (
+                            <div className="flex gap-2">
+                              {query && (
+                                <button
+                                  onClick={() => setQuery('')}
+                                  className="text-sm text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  مسح البحث
+                                </button>
+                              )}
+                              {(filterMode !== 'all' || confirmFilter !== 'all') && (
+                                <button
+                                  onClick={() => {
+                                    setFilterMode('all');
+                                    setConfirmFilter('all');
+                                    setPage(1);
+                                  }}
+                                  className="text-sm text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  مسح الفلاتر
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    sorted.map((r, index) => (
+                      <tr
+                        key={r._id}
+                        className="transition-colors duration-150 hover:bg-gray-50"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <Avatar name={r.name} src={r.image} />
+                            <div className="min-w-20 flex-1">
+                              <div className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                                <span className="line-clamp-1 min-w-28" title={r.name}>
+                                  {r.name}
+                                </span>
+                                {r.isPromoted && <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" title="مروّج" />}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">انضم في {r.joinDate}</div>
+                            </div>
+                          </div>
+                        </td>
 
-          <div className="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="text-sm text-gray-600">
-                عرض <span className="font-semibold text-gray-900">{totalCount ? pageStart : 0}</span>
-                {' '}–{' '}
-                <span className="font-semibold text-gray-900">{totalCount ? pageEnd : 0}</span>
-                {' '}من{' '}
-                <span className="font-semibold text-gray-900">{totalCount}</span> لاعب
-              </div>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 font-mono truncate">
+                            <span className="truncate" title={r.email}>
+                              {r.email}
+                            </span>
+                          </div>
+                        </td>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
-                  disabled={page <= 1}
-                  title="السابق"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+                        {/* الجنس */}
+                        <td className="px-6 py-4">
+                          <GenderBadge gender={r.gender} />
+                        </td>
 
-                <div className="flex items-center gap-1">
-                  {(() => {
-                    const pages = [];
-                    const maxVisible = 5;
-                    let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
-                    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-                    
-                    if (endPage - startPage + 1 < maxVisible) {
-                      startPage = Math.max(1, endPage - maxVisible + 1);
-                    }
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200" title={r.nationality}>
+                            <span className="truncate">{r.nationality}</span>
+                          </span>
+                        </td>
 
-                    if (startPage > 1) {
-                      pages.push(
-                        <button
-                          key="1"
-                          onClick={() => setPage(1)}
-                          className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm"
-                        >
-                          1
-                        </button>
-                      );
-                      
-                      if (startPage > 2) {
-                        pages.push(
-                          <span key="start-ellipsis" className="px-2 text-gray-400">...</span>
-                        );
-                      }
-                    }
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 max-w-28 " title={r.game}>
+                            <span className="truncatemax-w-28 ">{r.game}</span>
+                          </span>
+                        </td>
 
-                    for (let p = startPage; p <= endPage; p++) {
-                      const isActive = p === page;
-                      pages.push(
-                        <button
-                          key={p}
-                          onClick={() => setPage(p)}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                            isActive
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                              : 'hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm'
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      );
-                    }
+                        {/* السن */}
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-600 font-medium">{r.age}</div>
+                        </td>
 
-                    if (endPage < totalPages) {
-                      if (endPage < totalPages - 1) {
-                        pages.push(
-                          <span key="end-ellipsis" className="px-2 text-gray-400">...</span>
-                        );
-                      }
-                      
-                      pages.push(
-                        <button
-                          key={totalPages}
-                          onClick={() => setPage(totalPages)}
-                          className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm"
-                        >
-                          {totalPages}
-                        </button>
-                      );
-                    }
+                        {/* الحالة */}
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusClass(r.status)}`}>
+                            {r.statusLabel}
+                          </span>
+                        </td>
 
-                    return pages;
-                  })()}
+                        {/* مروّج */}
+                        <td className="px-6 py-4 text-center">
+                          {r.isPromoted ? <Star className="w-4 h-4 text-yellow-500 inline" /> : <span className="text-gray-400 text-xs">—</span>}
+                        </td>
+
+                        {/* مؤكد */}
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                              r.isConfirmed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-600 border-gray-200'
+                            }`}
+                          >
+                            {r.isConfirmed ? 'نعم' : 'لا'}
+                          </span>
+                        </td>
+
+                        {/* نشط */}
+                        <td className="px-6 py-4 text-center">
+                          <div
+                            className={`w-2 h-2 rounded-full ${r.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}
+                            title={r.isActive ? 'نشط' : 'غير نشط'}
+                          />
+                        </td>
+
+                        {/* Actions - Always visible */}
+                        <td className="px-3 py-4 w-24">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => router.push(`/players/${r._id}`)}
+                              className="p-2 rounded-lg hover:bg-sky-100 text-sky-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-sky-200"
+                              title="عرض ملف اللاعب"
+                              aria-label={`عرض ملف اللاعب ${r.name}`}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(r._id)}
+                              className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-yellow-200"
+                              title="تحرير اللاعب"
+                              aria-label={`تحرير اللاعب ${r.name}`}
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(r._id)}
+                              disabled={deletingId === r._id}
+                              className={`p-2 rounded-lg hover:bg-red-100 text-red-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-red-200 ${
+                                deletingId === r._id ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                              title={deletingId === r._id ? 'جارٍ الحذف…' : 'حذف اللاعب'}
+                              aria-label={`حذف اللاعب ${r.name}`}
+                            >
+                              {deletingId === r._id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-sm text-gray-600">
+                  عرض <span className="font-semibold text-gray-900">{totalCount ? pageStart : 0}</span>
+                  {' '}–{' '}
+                  <span className="font-semibold text-gray-900">{totalCount ? pageEnd : 0}</span>
+                  {' '}من{' '}
+                  <span className="font-semibold text-gray-900">{totalCount}</span> لاعب
                 </div>
 
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
-                  disabled={page >= totalPages}
-                  title="التالي"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                    disabled={page <= 1}
+                    title="السابق"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const pages = [];
+                      const maxVisible = 5;
+                      let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                      
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+
+                      if (startPage > 1) {
+                        pages.push(
+                          <button
+                            key="1"
+                            onClick={() => setPage(1)}
+                            className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm"
+                          >
+                            1
+                          </button>
+                        );
+                        
+                        if (startPage > 2) {
+                          pages.push(
+                            <span key="start-ellipsis" className="px-2 text-gray-400">...</span>
+                          );
+                        }
+                      }
+
+                      for (let p = startPage; p <= endPage; p++) {
+                        const isActive = p === page;
+                        pages.push(
+                          <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              isActive
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                                : 'hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      }
+
+                      if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                          pages.push(
+                            <span key="end-ellipsis" className="px-2 text-gray-400">...</span>
+                          );
+                        }
+                        
+                        pages.push(
+                          <button
+                            key={totalPages}
+                            onClick={() => setPage(totalPages)}
+                            className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm"
+                          >
+                            {totalPages}
+                          </button>
+                        );
+                      }
+
+                      return pages;
+                    })()}
+                  </div>
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                    disabled={page >= totalPages}
+                    title="التالي"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
