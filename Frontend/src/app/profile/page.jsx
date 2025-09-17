@@ -1,6 +1,8 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSettings } from "@/contexts/SettingsContext";
+import { useAdvertisements } from "@/hooks/useAdvertisements";
 import { joiResolver } from "@hookform/resolvers/joi";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -10,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import { IoMdMenu } from "react-icons/io";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../component/LoadingSpinner";
+import AdBanner from "../component/advertisements/AdBanner.jsx";
+import AdvertisementRenderer from "../component/advertisements/AdvertisementRenderer";
 import ConfirmModal from "./components/ConfirmModal";
 import EditProfile from "./components/EditProfile";
 import ErrorMessage from "./components/ErrorMessage";
@@ -44,6 +48,11 @@ const UserProfile = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [player, setPlayer] = useState(null);
   const [paymentBanner, setPaymentBanner] = useState(null);
+  const { settings, loading: settingsLoading } = useSettings();
+  const { ads: profileAds, loading: adsLoading } = useAdvertisements(
+    "profile",
+    settings
+  );
 
   const router = useRouter();
 
@@ -516,6 +525,17 @@ const UserProfile = () => {
           >
             <IoMdMenu className="text-xl text-gray-700" />
           </button>
+
+          {/* Ads Section */}
+          <div className="my-8">
+            {adsLoading || settingsLoading ? (
+              <AdBanner loading={true} />
+            ) : profileAds.length > 0 ? (
+              profileAds.map((ad) => (
+                <AdvertisementRenderer key={ad._id} ad={ad} />
+              ))
+            ) : null}
+          </div>
 
           <div className="animate-fadeIn">
             {activeSection === "profile" && (

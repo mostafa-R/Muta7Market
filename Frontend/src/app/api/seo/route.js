@@ -5,8 +5,8 @@ export async function GET() {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     const response = await fetch(`${API_BASE_URL}/settings`, {
-      cache: "no-cache", // Don't cache this request
-      next: { revalidate: 3600 }, // Revalidate every hour
+      cache: "no-cache", 
+      next: { revalidate: 3600 }, 
     });
 
     if (!response.ok) {

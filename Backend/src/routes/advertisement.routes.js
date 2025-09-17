@@ -20,7 +20,7 @@ import {
 const router = express.Router();
 
 // مسارات عامة (لا تتطلب مصادقة)
-router.get("/position/:position", getActiveAdvertisementsByPosition);
+router.get("/active/:position", getActiveAdvertisementsByPosition);
 router.get("/click/:id", registerAdvertisementClick);
 
 // مسارات تتطلب مصادقة ودور مسؤول

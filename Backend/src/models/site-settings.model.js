@@ -105,6 +105,22 @@ const siteSettingsSchema = new mongoose.Schema(
     translations: {
       custom: { type: mongoose.Schema.Types.Mixed, default: {} },
     },
+
+    // إعدادات الإعلانات
+    ads: {
+      googleAds: {
+        enabled: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      internalAdsRatio: {
+        type: Number,
+        default: 100,
+        min: 0,
+        max: 100,
+      },
+    },
   },
   {
     timestamps: true,

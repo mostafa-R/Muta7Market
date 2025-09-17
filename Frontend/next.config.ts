@@ -1,14 +1,25 @@
-import type { NextConfig } from "next";
-// import withFlowbiteReact from "flowbite-react/plugin/nextjs";
+/** @type {import('next').NextConfig} */
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const apiBaseUrl =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+const apiUrl = new URL(apiBaseUrl);
 
+const nextConfig = {
+  reactStrictMode: false,
+  swcMinify: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: apiUrl.protocol.replace(":", ""),
+        hostname: apiUrl.hostname,
+        port: apiUrl.port,
+        pathname: "/uploads/**",
+      },
+    ],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Increase static generation timeout to avoid premature timeouts
-  // when building pages
   staticPageGenerationTimeout: 120,
 };
 

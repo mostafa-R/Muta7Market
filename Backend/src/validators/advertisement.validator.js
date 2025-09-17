@@ -18,6 +18,20 @@ export const createAdvertisementSchema = Joi.object({
     en: Joi.string().allow("", null),
   }),
 
+  source: Joi.string().valid("internal", "google").default("internal"),
+
+  googleAd: Joi.when("source", {
+    is: "google",
+    then: Joi.object({
+      adSlotId: Joi.string().required().messages({
+        "string.empty": "يجب توفير معرف الوحدة الإعلانية لإعلانات Google",
+        "any.required": "يجب توفير معرف الوحدة الإعلانية لإعلانات Google",
+      }),
+      adFormat: Joi.string().default("auto"),
+    }).required(),
+    otherwise: Joi.forbidden(),
+  }),
+
   type: Joi.string()
     .valid("banner", "popup", "sidebar", "featured", "inline")
     .required()
@@ -36,9 +50,13 @@ export const createAdvertisementSchema = Joi.object({
       "any.only": "موقع الإعلان غير صالح",
     }),
 
-  link: Joi.object({
-    url: Joi.string().uri().allow("", null),
-    target: Joi.string().valid("_blank", "_self").default("_blank"),
+  link: Joi.when("source", {
+    is: "internal",
+    then: Joi.object({
+      url: Joi.string().uri().allow("", null),
+      target: Joi.string().valid("_blank", "_self").default("_blank"),
+    }),
+    otherwise: Joi.forbidden(),
   }),
 
   displayPeriod: Joi.object({
@@ -72,16 +90,6 @@ export const createAdvertisementSchema = Joi.object({
     isPaid: Joi.boolean().default(false),
     paymentDate: Joi.date().allow(null),
     paymentReference: Joi.string().allow("", null),
-  }),
-
-  targeting: Joi.object({
-    countries: Joi.array().items(Joi.string()),
-    sports: Joi.array().items(Joi.string()),
-    ageRange: Joi.object({
-      min: Joi.number().integer().min(0).allow(null),
-      max: Joi.number().integer().min(Joi.ref("min")).allow(null),
-    }),
-    gender: Joi.string().valid("male", "female", "all").default("all"),
   }),
 });
 
@@ -127,15 +135,5 @@ export const updateAdvertisementSchema = Joi.object({
     isPaid: Joi.boolean(),
     paymentDate: Joi.date().allow(null),
     paymentReference: Joi.string().allow("", null),
-  }),
-
-  targeting: Joi.object({
-    countries: Joi.array().items(Joi.string()),
-    sports: Joi.array().items(Joi.string()),
-    ageRange: Joi.object({
-      min: Joi.number().integer().min(0).allow(null),
-      max: Joi.number().integer().min(Joi.ref("min")).allow(null),
-    }),
-    gender: Joi.string().valid("male", "female", "all"),
   }),
 });

@@ -71,7 +71,7 @@ export default function GeneralSettingsForm({ settings, setSettings }) {
         throw new Error(result.message || "فشل تحديث الإعدادات");
       }
     } catch (error) {
-      console.error("Error updating settings:", error);
+   
       toast.error(`حدث خطأ: ${error.message}`);
     } finally {
       setIsSubmitting(false);

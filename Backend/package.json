@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon .",
-    "test": "jest --coverage",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "sync-indexes": "node scripts/sync-indexes.js",
     "lint": "eslint src/",
     "seed": "node src/seeds/seed.js",
     "seed:players": "node src/seeds/player.seed.js"

@@ -1,22 +1,22 @@
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/app/component/ui/alert-dialog";
 import { Badge } from "@/app/component/ui/badge";
 import { Button } from "@/app/component/ui/button";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/app/component/ui/table";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
@@ -35,7 +35,7 @@ export default function PromotionsTable({ promotions, loading, onDelete, onUpdat
 
     try {
       setDeletingId(selectedPromotion._id);
-      await api.delete(`/promotional-offers/${selectedPromotion._id}`);
+      await api.delete(`/promotions/${selectedPromotion._id}`);
       onDelete();
     } catch (error) {
       console.error("Failed to delete promotion:", error);

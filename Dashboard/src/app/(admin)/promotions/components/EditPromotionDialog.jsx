@@ -212,11 +212,8 @@ export default function EditPromotionDialog({ open, onOpenChange, promotion, onU
         formData.append("media", values.image[0]);
       }
 
-      await api.patch(`/promotional-offers/${promotion._id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await api.patch(`/promotions/${promotion._id}`, formData);
+      // Note: Don't set Content-Type manually for FormData - browser will set it automatically with boundary
 
       onOpenChange(false);
       onUpdate();

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import DynamicSeo from "@/components/DynamicSeo";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { Noto_Sans_Arabic } from "next/font/google";
 import Script from "next/script";
 import DynamicFavicon from "./component/DynamicFavicon";
@@ -10,7 +11,6 @@ import Footer from "./component/Footer";
 import Navbar from "./component/header";
 import WhatsAppButton from "./component/WhatsAppButton";
 import { Providers } from "./providers";
-
 
 export const metadata: Metadata = {
   title: {
@@ -124,7 +124,7 @@ export const metadata: Metadata = {
     },
   },
   // icons: {
-  //   icon: "/trophy.png", 
+  //   icon: "/trophy.png",
   //   shortcut: "/trophy.png",
   //   apple: "/trophy.png",
   // },
@@ -293,11 +293,21 @@ export default function RootLayout({
           src="https://paylink.sa/assets/js/paylink.js"
           strategy="afterInteractive"
         />
+
+        {/* Google AdSense Script */}
+        <Script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_GOOGLE_ADS_CLIENT_ID}`}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <Providers>
-          <Navbar />
-          <main className="min-h-screen">{children}</main>
-          <WhatsAppButton />
-          <Footer />
+          <SettingsProvider>
+            <Navbar />
+            <main className="min-h-screen">{children}</main>
+            <WhatsAppButton />
+            <Footer />
+          </SettingsProvider>
         </Providers>
       </body>
     </html>

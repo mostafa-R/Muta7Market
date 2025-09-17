@@ -18,9 +18,10 @@ export default function PromotionsPage() {
   const fetchPromotions = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/promotional-offers/admin");
-      setPromotions(response.data.data);
+      const response = await api.get("/promotions");
+      setPromotions(response.data.data || []);
     } catch (error) {
+      setPromotions([]); // تأكد من أن promotions يبقى array حتى لو فشل API call
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء جلب العروض الترويجية",
@@ -60,11 +61,11 @@ export default function PromotionsPage() {
     });
   };
 
-  const filteredPromotions = promotions.filter((promotion) => {
+  const filteredPromotions = (promotions || []).filter((promotion) => {
     const matchesSearch = 
-      promotion.name.ar.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      promotion.name.en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      promotion.code.toLowerCase().includes(searchQuery.toLowerCase());
+      promotion?.name?.ar?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      promotion?.name?.en?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      promotion?.code?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = 
       statusFilter === "all" || 

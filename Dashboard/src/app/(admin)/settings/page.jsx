@@ -3,12 +3,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/component/ui/tabs";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { useEffect, useState } from "react";
+import AboutSettingsForm from "./components/AboutSettingsForm";
+import AdSettingsForm from "./components/AdSettingsForm";
 import ContactSettingsForm from "./components/ContactSettingsForm";
 import GeneralSettingsForm from "./components/GeneralSettingsForm";
 import LogoSettingsForm from "./components/LogoSettingsForm";
 import PricingSettingsForm from "./components/PricingSettingsForm";
 import SeoSettingsForm from "./components/SeoSettingsForm";
-import AboutSettingsForm from "./components/AboutSettingsForm";
 import TermsSettingsForm from "./components/TermsSettingsForm";
 
 export default function SettingsPage() {
@@ -47,7 +48,7 @@ export default function SettingsPage() {
           throw new Error(result.message || "Invalid response format");
         }
       } catch (err) {
-        console.error("Error fetching settings:", err);
+       
         setError(err.message);
         
         // بيانات تجريبية للعرض عند وجود خطأ
@@ -149,6 +150,7 @@ export default function SettingsPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-8 flex flex-wrap gap-2">
             <TabsTrigger value="general">معلومات عامة</TabsTrigger>
+            <TabsTrigger value="ads">إعدادات الإعلانات</TabsTrigger>
             <TabsTrigger value="logo">الشعار والأيقونة</TabsTrigger>
             <TabsTrigger value="seo">إعدادات SEO</TabsTrigger>
             <TabsTrigger value="pricing">الأسعار والرسوم</TabsTrigger>
@@ -172,6 +174,10 @@ export default function SettingsPage() {
             
             <TabsContent value="logo">
               <LogoSettingsForm settings={settings} setSettings={setSettings} />
+            </TabsContent>
+
+            <TabsContent value="ads">
+              <AdSettingsForm />
             </TabsContent>
             
             <TabsContent value="seo">

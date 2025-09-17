@@ -3,12 +3,22 @@ import mongoose from "mongoose";
 const advertisementSchema = new mongoose.Schema(
   {
     title: {
-      ar: { type: String, required: true },
-      en: { type: String, required: true },
+      ar: { type: String, required: true, trim: true },
+      en: { type: String, required: true, trim: true },
     },
     description: {
-      ar: { type: String, default: null },
-      en: { type: String, default: null },
+      ar: { type: String, trim: true, default: null },
+      en: { type: String, trim: true, default: null },
+    },
+    source: {
+      type: String,
+      enum: ["internal", "google"],
+      default: "internal",
+      required: true,
+    },
+    googleAd: {
+      adSlotId: { type: String, trim: true },
+      adFormat: { type: String, trim: true, default: "auto" },
     },
     type: {
       type: String,
@@ -63,9 +73,9 @@ const advertisementSchema = new mongoose.Schema(
       default: 0,
     },
     advertiser: {
-      name: { type: String, required: true },
-      email: { type: String, default: null },
-      phone: { type: String, default: null },
+      name: { type: String, trim: true },
+      email: { type: String, trim: true },
+      phone: { type: String, trim: true },
     },
     pricing: {
       cost: { type: Number, default: 0 },
@@ -74,33 +84,31 @@ const advertisementSchema = new mongoose.Schema(
       paymentDate: { type: Date, default: null },
       paymentReference: { type: String, default: null },
     },
-    targeting: {
-      countries: [String],
-      sports: [{ type: mongoose.Schema.Types.ObjectId, ref: "Sport" }],
-      ageRange: {
-        min: { type: Number, default: null },
-        max: { type: Number, default: null },
-      },
-      gender: {
-        type: String,
-        enum: ["male", "female", "all"],
-        default: "all",
-      },
-    },
   },
   {
     timestamps: true,
   }
 );
 
+// Performance-optimized indexes
 advertisementSchema.index({
   isActive: 1,
   "displayPeriod.startDate": 1,
   "displayPeriod.endDate": 1,
 });
 advertisementSchema.index({ type: 1, position: 1 });
-advertisementSchema.index({ "targeting.countries": 1, "targeting.sports": 1 });
-
+advertisementSchema.index({ source: 1, position: 1 });
+advertisementSchema.index({ priority: -1, createdAt: -1 });
+advertisementSchema.index({
+  "advertiser.name": "text",
+  "title.ar": "text",
+  "title.en": "text",
+});
+// advertisementSchema.index({ "targeting.countries": 1, "targeting.sports": 1 }); // This causes an error on parallel arrays
+advertisementSchema.index({ "targeting.countries": 1 });
+advertisementSchema.index({ "targeting.sports": 1 });
+advertisementSchema.index({ clicks: -1 });
+advertisementSchema.index({ views: -1 });
 
 advertisementSchema.virtual("isCurrentlyActive").get(function () {
   const now = new Date();
@@ -110,7 +118,6 @@ advertisementSchema.virtual("isCurrentlyActive").get(function () {
     this.displayPeriod.endDate >= now
   );
 });
-
 
 advertisementSchema.methods.registerClick = async function () {
   this.clicks += 1;
@@ -123,25 +130,30 @@ advertisementSchema.methods.registerView = async function () {
   return this.save();
 };
 
-// دالة للحصول على الإعلانات النشطة حالياً
+// Method to get active ads for frontend
 advertisementSchema.statics.getActiveAds = async function (
-  position = null,
-  limit = 5
+  position,
+  limit = 5,
+  source = "internal"
 ) {
   const now = new Date();
   const query = {
+    position: { $in: [position, "all"] },
     isActive: true,
     "displayPeriod.startDate": { $lte: now },
     "displayPeriod.endDate": { $gte: now },
+    source: source,
   };
 
-  if (position) {
-    query.position = { $in: [position, "all"] };
+  try {
+    const ads = await this.find(query)
+      .sort({ priority: -1, createdAt: -1 })
+      .limit(limit);
+    return ads;
+  } catch (error) {
+    console.error("Error fetching active ads:", error);
+    return [];
   }
-
-  return this.find(query)
-    .sort({ priority: -1, "displayPeriod.startDate": 1 })
-    .limit(limit);
 };
 
 export default mongoose.model("Advertisement", advertisementSchema);

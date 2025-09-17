@@ -175,11 +175,8 @@ export default function CreatePromotionForm({ onSuccess }) {
         formData.append("media", values.image[0]);
       }
 
-      await api.post("/promotional-offers", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await api.post("/promotions", formData);
+      // Note: Don't set Content-Type manually for FormData - browser will set it automatically with boundary
 
       form.reset();
       setImagePreview(null);

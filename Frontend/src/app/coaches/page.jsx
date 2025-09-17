@@ -1,6 +1,8 @@
 "use client";
 import PlayerCard from "@/app/component/PlayerCard";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSettings } from "@/contexts/SettingsContext";
+import { useAdvertisements } from "@/hooks/useAdvertisements";
 import axios from "axios";
 import {
   Filter,
@@ -14,6 +16,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../component/LoadingSpinner";
+import AdBanner from "../component/advertisements/AdBanner";
+import AdvertisementRenderer from "../component/advertisements/AdvertisementRenderer";
 import CTA from "./CTA";
 
 const transformApiDataToPlayer = (apiPlayer) => ({
@@ -54,6 +58,11 @@ export default function CoachesPage() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { settings, loading: settingsLoading } = useSettings();
+  const { ads: coachAds, loading: adsLoading } = useAdvertisements(
+    "coaches",
+    settings
+  );
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -348,6 +357,15 @@ export default function CoachesPage() {
               </button>
             </Link>
           </div>
+        </div>
+
+        {/* Ads Section */}
+        <div className="my-8">
+          {adsLoading || settingsLoading ? (
+            <AdBanner loading={true} />
+          ) : coachAds.length > 0 ? (
+            coachAds.map((ad) => <AdvertisementRenderer key={ad._id} ad={ad} />)
+          ) : null}
         </div>
 
         {/* Results Summary */}

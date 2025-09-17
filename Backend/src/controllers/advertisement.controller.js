@@ -35,7 +35,7 @@ export const getAllAdvertisements = asyncHandler(async (req, res) => {
     filter.position = position;
   }
 
-  if (isActive !== undefined) {
+  if (isActive !== undefined && isActive !== "") {
     filter.isActive = isActive === "true";
   }
 
@@ -97,6 +97,8 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
   const {
     title,
     description,
+    source,
+    googleAd,
     type,
     position,
     link,
@@ -104,51 +106,76 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     isActive,
     priority,
     advertiser,
-    pricing,
-    targeting,
   } = req.body;
 
   if (!title || !type || !position || !displayPeriod || !advertiser) {
     throw new ApiError(400, "يرجى توفير جميع البيانات المطلوبة");
   }
 
-  if (!req.files || !req.files.desktop) {
-    throw new ApiError(400, "يرجى تحميل صورة الإعلان للنسخة المكتبية");
-  }
-
-  // رفع صورة الإعلان للنسخة المكتبية
-  const desktopImageUploadResult = await handleMediaUpload(
-    req.files.desktop[0],
-    req,
-    "image"
-  );
-
-  if (!desktopImageUploadResult.url) {
-    throw new ApiError(500, "فشل في تحميل صورة الإعلان للنسخة المكتبية");
-  }
-
-  // رفع صورة الإعلان للنسخة المحمولة (إذا وجدت)
-  let mobileImageUploadResult = null;
-
-  if (req.files.mobile && req.files.mobile[0]) {
-    mobileImageUploadResult = await handleMediaUpload(
-      req.files.mobile[0],
-      req,
-      "image"
-    );
-
-    if (!mobileImageUploadResult.url) {
-      throw new ApiError(500, "فشل في تحميل صورة الإعلان للنسخة المحمولة");
-    }
-  }
-
-  // إنشاء إعلان جديد
-  const newAdvertisement = await Advertisement.create({
+  let advertisementData = {
     title,
     description,
     type,
     position,
-    media: {
+    displayPeriod,
+    isActive: isActive !== undefined ? isActive : true,
+    priority: priority || 0,
+    advertiser,
+    pricing: { cost: 0, currency: "SAR" },
+    targeting: {},
+    source: source || "internal",
+  };
+
+  // Handle Google Ads
+  if (advertisementData.source === "google") {
+    if (!googleAd || !googleAd.adSlotId) {
+      throw new ApiError(
+        400,
+        "يرجى توفير معرف الوحدة الإعلانية لإعلانات Google"
+      );
+    }
+    advertisementData.googleAd = {
+      adSlotId: googleAd.adSlotId,
+      adFormat: googleAd.adFormat || "auto",
+    };
+    // For Google ads, we don't need media or link
+    advertisementData.media = {
+      desktop: { url: "", publicId: "", width: 0, height: 0 },
+    };
+    advertisementData.link = {};
+  } else {
+    // Handle Internal Ads - require media upload
+    if (!req.files || !req.files.desktop) {
+      throw new ApiError(400, "يرجى تحميل صورة الإعلان للنسخة المكتبية");
+    }
+
+    // رفع صورة الإعلان للنسخة المكتبية
+    const desktopImageUploadResult = await handleMediaUpload(
+      req.files.desktop[0],
+      req,
+      "image"
+    );
+
+    if (!desktopImageUploadResult.url) {
+      throw new ApiError(500, "فشل في تحميل صورة الإعلان للنسخة المكتبية");
+    }
+
+    // رفع صورة الإعلان للنسخة المحمولة (إذا وجدت)
+    let mobileImageUploadResult = null;
+
+    if (req.files.mobile && req.files.mobile[0]) {
+      mobileImageUploadResult = await handleMediaUpload(
+        req.files.mobile[0],
+        req,
+        "image"
+      );
+
+      if (!mobileImageUploadResult.url) {
+        throw new ApiError(500, "فشل في تحميل صورة الإعلان للنسخة المحمولة");
+      }
+    }
+
+    advertisementData.media = {
       desktop: {
         url: desktopImageUploadResult.url,
         publicId: desktopImageUploadResult.publicId,
@@ -163,15 +190,12 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
             height: mobileImageUploadResult.height || 0,
           }
         : undefined,
-    },
-    link,
-    displayPeriod,
-    isActive: isActive !== undefined ? isActive : true,
-    priority: priority || 0,
-    advertiser,
-    pricing: pricing || { cost: 0, currency: "SAR" },
-    targeting: targeting || {},
-  });
+    };
+    advertisementData.link = link;
+  }
+
+  // إنشاء إعلان جديد
+  const newAdvertisement = await Advertisement.create(advertisementData);
 
   return res
     .status(201)
@@ -184,6 +208,8 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
   const {
     title,
     description,
+    source,
+    googleAd,
     type,
     position,
     link,
@@ -192,7 +218,6 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
     priority,
     advertiser,
     pricing,
-    targeting,
   } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -260,10 +285,14 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
     };
   }
 
-  if (targeting) {
-    advertisement.targeting = {
-      ...advertisement.targeting,
-      ...targeting,
+  if (source) {
+    advertisement.source = source;
+  }
+
+  if (googleAd) {
+    advertisement.googleAd = {
+      ...advertisement.googleAd,
+      ...googleAd,
     };
   }
 
@@ -391,14 +420,21 @@ export const registerAdvertisementClick = asyncHandler(async (req, res) => {
 
   await advertisement.registerClick();
 
+  // Redirect the user to the ad's link
+  if (advertisement.link && advertisement.link.url) {
+    let url = advertisement.link.url;
+    // Ensure the URL has a protocol, otherwise the redirect will be relative
+    if (!/^https/i.test(url) && !/^http/i.test(url)) {
+      url = `https://${url}`;
+    }
+    return res.redirect(302, url);
+  }
+
+  // Fallback if no link is available
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        { url: advertisement.link.url },
-        "تم تسجيل النقرة بنجاح"
-      )
+      new ApiResponse(200, {}, "تم تسجيل النقرة بنجاح، ولكن لا يوجد رابط.")
     );
 });
 
@@ -406,16 +442,19 @@ export const registerAdvertisementClick = asyncHandler(async (req, res) => {
 export const getActiveAdvertisementsByPosition = asyncHandler(
   async (req, res) => {
     const { position } = req.params;
-    const { limit = 5 } = req.query;
+    const { limit = 5, source = "internal" } = req.query;
 
     const advertisements = await Advertisement.getActiveAds(
       position,
-      parseInt(limit, 10)
+      parseInt(limit, 10),
+      source
     );
 
-    // تسجيل مشاهدة للإعلانات
-    for (const ad of advertisements) {
-      await ad.registerView();
+    // تسجيل مشاهدة للإعلانات (فقط للإعلانات الداخلية)
+    if (source === "internal") {
+      for (const ad of advertisements) {
+        await ad.registerView();
+      }
     }
 
     return res
