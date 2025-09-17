@@ -77,7 +77,8 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://muta7markt.com"),
+  // Use environment-provided site URL when available (helps local/dev vs prod)
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"),
   alternates: {
     canonical: "/",
     languages: {
@@ -89,7 +90,7 @@ export const metadata: Metadata = {
     title: "Muta7Market - منصة الرياضة الرائدة | Leading Sports Marketplace",
     description:
       "اكتشف أفضل اللاعبين والمدربين الرياضيين. منصة شاملة تربط المواهب الرياضية في جميع أنحاء المنطقة. Discover the best athletes and coaches on our comprehensive sports platform.",
-    url: "https://muta7markt.com",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com",
     siteName: "Muta7Market",
     locale: "ar_SA",
     alternateLocale: "en_US",
@@ -176,7 +177,7 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "Muta7Market",
               alternateName: "متاح ماركت",
-              url: "https://muta7markt.com",
+              url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com",
               description:
                 "The leading sports marketplace connecting players and coaches across all sports in the Middle East region.",
               inLanguage: ["ar-SA", "en-US"],
@@ -195,7 +196,7 @@ export default function RootLayout({
                 name: "Muta7Market",
                 alternateName: "متاح ماركت",
                 url: "https://muta7markt.com",
-                logo: "https://muta7markt.com/trophy.png",
+                logo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"}/trophy.png`,
                 description:
                   "Sports marketplace platform connecting athletes and coaches",
                 sameAs: [
@@ -220,7 +221,7 @@ export default function RootLayout({
 
         <meta
           property="og:url"
-          content="https://www.muta7markt.com/players/68aa1bbc93105c57fe2704af"
+          content={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"}/players/68aa1bbc93105c57fe2704af`}
         />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Muta7market" />
@@ -231,10 +232,13 @@ export default function RootLayout({
         <meta property="og:image" content="" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="muta7markt.com" />
+        <meta
+          property="twitter:domain"
+          content={(process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com").replace(/^https?:\/\//, "")}
+        />
         <meta
           property="twitter:url"
-          content="https://www.muta7markt.com/players/68aa1bbc93105c57fe2704af"
+          content={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"}/players/68aa1bbc93105c57fe2704af`}
         />
         <meta name="twitter:title" content="Muta7market" />
         <meta
