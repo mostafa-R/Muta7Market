@@ -46,7 +46,6 @@ const getFileParams = (file) => {
   return { folder };
 };
 
-// Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const { folder } = getFileParams(file);
@@ -74,12 +73,12 @@ const fileFilter = (req, file, cb) => {
     "video/mpeg",
     "video/quicktime",
     "video/x-msvideo",
-    "video/x-ms-wmv", 
-    "video/x-matroska", 
+    "video/x-ms-wmv",
+    "video/x-matroska",
     "video/webm",
     "video/3gpp",
     "video/x-flv",
-    "application/octet-stream", 
+    "application/octet-stream",
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -115,8 +114,7 @@ const fileFilter = (req, file, cb) => {
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
-  }
-  else if (
+  } else if (
     file.mimetype === "application/octet-stream" &&
     allowedExtensions.includes(fileExtension)
   ) {
@@ -124,8 +122,7 @@ const fileFilter = (req, file, cb) => {
       `⚠️  Accepting file based on extension: ${fileExtension} (MIME: ${file.mimetype})`
     );
     cb(null, true);
-  }
-  else {
+  } else {
     cb(
       new ApiError(
         400,
@@ -140,7 +137,7 @@ export const uploadLocal = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB
+    fileSize: 100 * 1024 * 1024,
   },
 });
 
@@ -169,7 +166,7 @@ export const generatePublicUrl = (req, filePath) => {
       host = baseUrl;
     }
 
-    const relativePath = filePath.replace(/\\/g, "/"); 
+    const relativePath = filePath.replace(/\\/g, "/");
     const urlPath = relativePath.replace(uploadDir.replace(/\\/g, "/"), "");
 
     const fullUrl = `${protocol}://${host}/uploads${urlPath}`;

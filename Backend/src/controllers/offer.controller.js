@@ -1,11 +1,11 @@
 import { OFFER_STATUS } from "../config/constants.js";
-import { getPricingSettings } from "../utils/pricingUtils.js";
 import Offer from "../models/offer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
 import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
 const updateExpiredOffers = async () => {
@@ -20,7 +20,7 @@ const updateExpiredOffers = async () => {
 
 export const createOffer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const requirePayment = req.user.role !== "admin"; // Admin can create free offers
+  const requirePayment = req.user.role !== "admin";
 
   if (requirePayment) {
     const pricing = await getPricingSettings();

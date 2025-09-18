@@ -78,7 +78,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   // Use environment-provided site URL when available (helps local/dev vs prod)
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"
+  ),
   alternates: {
     canonical: "/",
     languages: {
@@ -90,7 +92,7 @@ export const metadata: Metadata = {
     title: "Muta7Market - منصة الرياضة الرائدة | Leading Sports Marketplace",
     description:
       "اكتشف أفضل اللاعبين والمدربين الرياضيين. منصة شاملة تربط المواهب الرياضية في جميع أنحاء المنطقة. Discover the best athletes and coaches on our comprehensive sports platform.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com",
     siteName: "Muta7Market",
     locale: "ar_SA",
     alternateLocale: "en_US",
@@ -177,7 +179,9 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "Muta7Market",
               alternateName: "متاح ماركت",
-              url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com",
+              url:
+                process.env.NEXT_PUBLIC_SITE_URL ||
+                "https://www.muta7markt.com",
               description:
                 "The leading sports marketplace connecting players and coaches across all sports in the Middle East region.",
               inLanguage: ["ar-SA", "en-US"],
@@ -196,7 +200,10 @@ export default function RootLayout({
                 name: "Muta7Market",
                 alternateName: "متاح ماركت",
                 url: "https://muta7markt.com",
-                logo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"}/trophy.png`,
+                logo: `${
+                  process.env.NEXT_PUBLIC_SITE_URL ||
+                  "https://www.muta7markt.com"
+                }/trophy.png`,
                 description:
                   "Sports marketplace platform connecting athletes and coaches",
                 sameAs: [
@@ -221,7 +228,9 @@ export default function RootLayout({
 
         <meta
           property="og:url"
-          content={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"}/players/68aa1bbc93105c57fe2704af`}
+          content={`${
+            process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"
+          }/players/68aa1bbc93105c57fe2704af`}
         />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Muta7market" />
@@ -234,11 +243,15 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           property="twitter:domain"
-          content={(process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com").replace(/^https?:\/\//, "")}
+          content={(
+            process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"
+          ).replace(/^https?:\/\//, "")}
         />
         <meta
           property="twitter:url"
-          content={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"}/players/68aa1bbc93105c57fe2704af`}
+          content={`${
+            process.env.NEXT_PUBLIC_SITE_URL || "https://www.muta7markt.com"
+          }/players/68aa1bbc93105c57fe2704af`}
         />
         <meta name="twitter:title" content="Muta7market" />
         <meta
@@ -305,6 +318,20 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+
+        {/* Google Analytics Script */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+          `}
+        </Script>
         <Providers>
           <SettingsProvider>
             <Navbar />

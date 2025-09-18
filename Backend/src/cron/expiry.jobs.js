@@ -38,9 +38,7 @@ export async function runExpirySweep(now = new Date()) {
       { active: true, expiresAt: { $ne: null, $lte: n } },
       { $set: { active: false } }
     );
-  } catch {
-    /* Entitlement might not be critical — ignore if not present */
-  }
+  } catch {}
 
   return {
     users: users.modifiedCount,

@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 export const generateAccessToken = (user) => {
   return jwt.sign(
@@ -11,12 +11,10 @@ export const generateAccessToken = (user) => {
       profileImage: user.profileImage,
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN } // e.g., 15m
+    { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 };
-
 
 export const verifyAccessToken = (token) => {
   return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 };
-

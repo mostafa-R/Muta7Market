@@ -16,13 +16,11 @@ import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Public routes - accessible without authentication
 router.get("/", getAllTranslations);
 router.get("/groups", getTranslationGroups);
 router.get("/group/:group", getTranslationsByGroup);
 router.get("/export", exportTranslations);
 
-// Protected routes - require authentication and admin privileges
 router.use(authMiddleware, authorize("admin", "super_admin"));
 
 router.post("/", createTranslation);

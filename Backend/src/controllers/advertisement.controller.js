@@ -6,7 +6,6 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { handleMediaUpload } from "../utils/localMediaUtils.js";
 
-// الحصول على قائمة الإعلانات
 export const getAllAdvertisements = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -73,7 +72,6 @@ export const getAllAdvertisements = asyncHandler(async (req, res) => {
     );
 });
 
-// الحصول على إعلان محدد
 export const getAdvertisementById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -92,7 +90,6 @@ export const getAdvertisementById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, advertisement, "تم الحصول على الإعلان بنجاح"));
 });
 
-// إنشاء إعلان جديد
 export const createAdvertisement = asyncHandler(async (req, res) => {
   const {
     title,
@@ -126,7 +123,6 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     source: source || "internal",
   };
 
-  // Handle Google Ads
   if (advertisementData.source === "google") {
     if (!googleAd || !googleAd.adSlotId) {
       throw new ApiError(
@@ -138,18 +134,15 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
       adSlotId: googleAd.adSlotId,
       adFormat: googleAd.adFormat || "auto",
     };
-    // For Google ads, we don't need media or link
     advertisementData.media = {
       desktop: { url: "", publicId: "", width: 0, height: 0 },
     };
     advertisementData.link = {};
   } else {
-    // Handle Internal Ads - require media upload
     if (!req.files || !req.files.desktop) {
       throw new ApiError(400, "يرجى تحميل صورة الإعلان للنسخة المكتبية");
     }
 
-    // رفع صورة الإعلان للنسخة المكتبية
     const desktopImageUploadResult = await handleMediaUpload(
       req.files.desktop[0],
       req,
@@ -160,7 +153,6 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
       throw new ApiError(500, "فشل في تحميل صورة الإعلان للنسخة المكتبية");
     }
 
-    // رفع صورة الإعلان للنسخة المحمولة (إذا وجدت)
     let mobileImageUploadResult = null;
 
     if (req.files.mobile && req.files.mobile[0]) {
@@ -194,7 +186,6 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     advertisementData.link = link;
   }
 
-  // إنشاء إعلان جديد
   const newAdvertisement = await Advertisement.create(advertisementData);
 
   return res
@@ -202,7 +193,6 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newAdvertisement, "تم إنشاء الإعلان بنجاح"));
 });
 
-// تحديث إعلان
 export const updateAdvertisement = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const {
@@ -230,7 +220,6 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
     throw new ApiError(404, "الإعلان غير موجود");
   }
 
-  // تحديث بيانات الإعلان
   if (title) {
     if (title.ar) advertisement.title.ar = title.ar;
     if (title.en) advertisement.title.en = title.en;
@@ -303,7 +292,6 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, advertisement, "تم تحديث الإعلان بنجاح"));
 });
 
-// تحديث صور الإعلان
 export const updateAdvertisementMedia = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -317,14 +305,11 @@ export const updateAdvertisementMedia = asyncHandler(async (req, res) => {
     throw new ApiError(404, "الإعلان غير موجود");
   }
 
-  // تحديث صورة الإعلان للنسخة المكتبية
   if (req.files && req.files.desktop && req.files.desktop[0]) {
-    // حذف الصورة القديمة
     if (advertisement.media.desktop && advertisement.media.desktop.publicId) {
       await deleteFromCloudinary(advertisement.media.desktop.publicId);
     }
 
-    // رفع الصورة الجديدة
     const desktopImageUploadResult = await handleMediaUpload(
       req.files.desktop[0],
       req,
@@ -343,14 +328,11 @@ export const updateAdvertisementMedia = asyncHandler(async (req, res) => {
     };
   }
 
-  // تحديث صورة الإعلان للنسخة المحمولة
   if (req.files && req.files.mobile && req.files.mobile[0]) {
-    // حذف الصورة القديمة
     if (advertisement.media.mobile && advertisement.media.mobile.publicId) {
       await deleteFromCloudinary(advertisement.media.mobile.publicId);
     }
 
-    // رفع الصورة الجديدة
     const mobileImageUploadResult = await handleMediaUpload(
       req.files.mobile[0],
       req,
@@ -376,7 +358,6 @@ export const updateAdvertisementMedia = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, advertisement, "تم تحديث صور الإعلان بنجاح"));
 });
 
-// حذف إعلان
 export const deleteAdvertisement = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -390,7 +371,6 @@ export const deleteAdvertisement = asyncHandler(async (req, res) => {
     throw new ApiError(404, "الإعلان غير موجود");
   }
 
-  // حذف صور الإعلان
   if (advertisement.media.desktop && advertisement.media.desktop.publicId) {
     await deleteFromCloudinary(advertisement.media.desktop.publicId);
   }
@@ -404,7 +384,6 @@ export const deleteAdvertisement = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {}, "تم حذف الإعلان بنجاح"));
 });
 
-// تسجيل نقرة على الإعلان
 export const registerAdvertisementClick = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -420,17 +399,14 @@ export const registerAdvertisementClick = asyncHandler(async (req, res) => {
 
   await advertisement.registerClick();
 
-  // Redirect the user to the ad's link
   if (advertisement.link && advertisement.link.url) {
     let url = advertisement.link.url;
-    // Ensure the URL has a protocol, otherwise the redirect will be relative
     if (!/^https/i.test(url) && !/^http/i.test(url)) {
       url = `https://${url}`;
     }
     return res.redirect(302, url);
   }
 
-  // Fallback if no link is available
   return res
     .status(200)
     .json(
@@ -438,7 +414,6 @@ export const registerAdvertisementClick = asyncHandler(async (req, res) => {
     );
 });
 
-// الحصول على الإعلانات النشطة حسب الموقع (للواجهة الأمامية)
 export const getActiveAdvertisementsByPosition = asyncHandler(
   async (req, res) => {
     const { position } = req.params;
@@ -450,7 +425,6 @@ export const getActiveAdvertisementsByPosition = asyncHandler(
       source
     );
 
-    // تسجيل مشاهدة للإعلانات (فقط للإعلانات الداخلية)
     if (source === "internal") {
       for (const ad of advertisements) {
         await ad.registerView();

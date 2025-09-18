@@ -3,7 +3,7 @@ const Invoice = require("../models/invoice.model");
 async function listMyInvoices(req, res) {
   const userId = req.user._id;
 
-  const status = req.query.status; 
+  const status = req.query.status;
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.max(1, Number(req.query.pageSize || 20));
   const skip = (page - 1) * pageSize;
@@ -13,11 +13,13 @@ async function listMyInvoices(req, res) {
 
   const [items, total] = await Promise.all([
     Invoice.find(q).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
-    Invoice.countDocuments(q)
+    Invoice.countDocuments(q),
   ]);
   res.json({
-    total, page, pageSize,
-    items: items.map(inv => ({
+    total,
+    page,
+    pageSize,
+    items: items.map((inv) => ({
       id: String(inv._id),
       createdAt: inv.createdAt,
       product: inv.product,
@@ -28,8 +30,8 @@ async function listMyInvoices(req, res) {
       receiptUrl: inv.paymentReceiptUrl || null,
       orderNumber: inv.orderNumber,
       playerProfileId: inv.playerProfileId,
-      paidAt: inv.paidAt
-    }))
+      paidAt: inv.paidAt,
+    })),
   });
 }
 
@@ -49,7 +51,7 @@ async function getInvoice(req, res) {
     receiptUrl: inv.paymentReceiptUrl || null,
     orderNumber: inv.orderNumber,
     playerProfileId: inv.playerProfileId,
-    paidAt: inv.paidAt
+    paidAt: inv.paidAt,
   });
 }
 

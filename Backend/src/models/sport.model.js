@@ -11,7 +11,6 @@ const sportSchema = new mongoose.Schema(
       required: true,
       lowercase: true,
       trim: true,
-      unique: true,
     },
     icon: {
       url: { type: String, default: null },

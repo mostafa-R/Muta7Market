@@ -7,7 +7,6 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { handleMediaUpload } from "../utils/localMediaUtils.js";
 
-// الحصول على قائمة العروض الترويجية
 export const getAllPromotionalOffers = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -71,7 +70,6 @@ export const getAllPromotionalOffers = asyncHandler(async (req, res) => {
     );
 });
 
-// الحصول على عرض ترويجي محدد
 export const getPromotionalOfferById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -92,7 +90,6 @@ export const getPromotionalOfferById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, offer, "تم الحصول على العرض الترويجي بنجاح"));
 });
 
-// إنشاء عرض ترويجي جديد
 export const createPromotionalOffer = asyncHandler(async (req, res) => {
   const {
     name,
@@ -120,7 +117,6 @@ export const createPromotionalOffer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "يرجى توفير جميع البيانات المطلوبة");
   }
 
-  // التحقق من عدم وجود عرض بنفس الرمز
   const existingOffer = await PromotionalOffer.findOne({
     code: code.toUpperCase(),
   });
@@ -129,7 +125,6 @@ export const createPromotionalOffer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "يوجد عرض ترويجي بنفس الرمز بالفعل");
   }
 
-  // إنشاء عرض جديد
   const newOffer = await PromotionalOffer.create({
     name,
     description,
@@ -151,7 +146,6 @@ export const createPromotionalOffer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newOffer, "تم إنشاء العرض الترويجي بنجاح"));
 });
 
-// تحديث عرض ترويجي
 export const updatePromotionalOffer = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const {
@@ -178,7 +172,6 @@ export const updatePromotionalOffer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "العرض الترويجي غير موجود");
   }
 
-  // تحديث بيانات العرض
   if (name) {
     if (name.ar) offer.name.ar = name.ar;
     if (name.en) offer.name.en = name.en;
@@ -240,7 +233,6 @@ export const updatePromotionalOffer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, offer, "تم تحديث العرض الترويجي بنجاح"));
 });
 
-// تحديث صورة العرض الترويجي
 export const updatePromotionalOfferImage = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -258,19 +250,16 @@ export const updatePromotionalOfferImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "يرجى تحميل صورة العرض");
   }
 
-  // حذف الصورة القديمة إذا كانت موجودة
   if (offer.media && offer.media.image && offer.media.image.publicId) {
     await deleteFromCloudinary(offer.media.image.publicId);
   }
 
-  // رفع الصورة الجديدة
   const imageUploadResult = await handleMediaUpload(req.file, req, "image");
 
   if (!imageUploadResult.url) {
     throw new ApiError(500, "فشل في تحميل صورة العرض");
   }
 
-  // تحديث معلومات الصورة
   offer.media = {
     image: {
       url: imageUploadResult.url,
@@ -287,7 +276,6 @@ export const updatePromotionalOfferImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, offer, "تم تحديث صورة العرض الترويجي بنجاح"));
 });
 
-// حذف عرض ترويجي
 export const deletePromotionalOffer = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -301,7 +289,6 @@ export const deletePromotionalOffer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "العرض الترويجي غير موجود");
   }
 
-  // حذف الصورة إذا كانت موجودة
   if (offer.media && offer.media.image && offer.media.image.publicId) {
     await deleteFromCloudinary(offer.media.image.publicId);
   }
@@ -313,7 +300,6 @@ export const deletePromotionalOffer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "تم حذف العرض الترويجي بنجاح"));
 });
 
-// التحقق من صلاحية رمز العرض الترويجي (للواجهة الأمامية)
 export const validatePromotionalOfferCode = asyncHandler(async (req, res) => {
   const { code, serviceType, price } = req.body;
 
@@ -350,7 +336,6 @@ export const validatePromotionalOfferCode = asyncHandler(async (req, res) => {
   );
 });
 
-// استخدام رمز العرض الترويجي
 export const usePromotionalOfferCode = asyncHandler(async (req, res) => {
   const { code, serviceType, price } = req.body;
 
@@ -369,7 +354,6 @@ export const usePromotionalOfferCode = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiResponse(400, null, result.message));
   }
 
-  // تسجيل استخدام العرض
   await result.offer.recordUsage(req.user._id);
 
   return res.status(200).json(

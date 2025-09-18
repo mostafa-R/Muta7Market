@@ -12,17 +12,31 @@ import swaggerUi from "swagger-ui-express";
 import { fileURLToPath } from "url";
 import swaggerDocument from "./docs/swagger.js";
 import errorMiddleware from "./middleware/error.middleware.js";
+import healthMonitoring, {
+  healthMetricsMiddleware,
+} from "./middleware/healthMonitoring.middleware.js";
 import localizationMiddleware from "./middleware/localization.middleware.js";
+import {
+  errorMonitoring,
+  metricsMiddleware,
+  requestTimer,
+} from "./middleware/monitoring.middleware.js";
 import rateLimiter from "./middleware/rateLimiter.middleware.js";
 import routes from "./routes/index.js";
+import monitoringRoutes from "./routes/monitoring.routes.js";
 import { initializeEmailService } from "./services/email.service.js";
+import memoryOptimizer from "./utils/memoryOptimizer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 
-// تم نقل runExpirySweep() إلى index.js من خلال createCronJobs()
+if (process.env.NODE_ENV === "production") {
+  memoryOptimizer.initialize();
+  healthMonitoring.initialize();
+}
+
 app.set("trust proxy", 1);
 
 app.use(
@@ -73,6 +87,10 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
 app.use(compression());
+
+app.use(requestTimer);
+app.use(metricsMiddleware);
+app.use(healthMetricsMiddleware);
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -129,6 +147,7 @@ app.use(
 app.use("/api/", rateLimiter);
 
 app.use("/api/v1", routes);
+app.use("/api/v1/monitoring", monitoringRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -140,25 +159,49 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/health", (req, res) => {
-  const uploadsDir = join(__dirname, "../uploads");
-  let uploadsStatus = "accessible";
+app.get("/health", async (req, res) => {
   try {
-    fs.accessSync(uploadsDir, fs.constants.R_OK | fs.constants.W_OK);
-  } catch (error) {
-    uploadsStatus = "error: " + error.message;
-  }
+    const healthStatus = await healthMonitoring.getHealthStatus();
 
-  const healthcheck = {
-    uptime: process.uptime(),
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    baseUrl: process.env.BASE_URL || "not set",
-    uploadsDirectory: uploadsStatus,
-    memory: process.memoryUsage(),
-  };
-  res.status(200).json(healthcheck);
+    let statusCode = 200;
+    if (
+      healthStatus.overall === "critical" ||
+      healthStatus.overall === "unhealthy"
+    ) {
+      statusCode = 503;
+    } else if (healthStatus.overall === "warning") {
+      statusCode = 200;
+    }
+
+    res.status(statusCode).json({
+      status: healthStatus.overall.toUpperCase(),
+      timestamp: healthStatus.timestamp,
+      uptime: `${Math.floor(process.uptime())}s`,
+      environment: process.env.NODE_ENV,
+      version: "1.0.0",
+      ...healthStatus,
+    });
+  } catch (error) {
+    const uploadsDir = join(__dirname, "../uploads");
+    let uploadsStatus = "accessible";
+    try {
+      fs.accessSync(uploadsDir, fs.constants.R_OK | fs.constants.W_OK);
+    } catch (err) {
+      uploadsStatus = "error: " + err.message;
+    }
+
+    const healthcheck = {
+      uptime: process.uptime(),
+      status: "OK",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      baseUrl: process.env.BASE_URL || "not set",
+      uploadsDirectory: uploadsStatus,
+      memory: process.memoryUsage(),
+      error: "Health monitoring unavailable: " + error.message,
+    };
+    res.status(200).json(healthcheck);
+  }
 });
 
 app.use((req, res) => {
@@ -172,6 +215,7 @@ app.use((req, res) => {
   });
 });
 
+app.use(errorMonitoring);
 app.use(errorMiddleware);
 
 export default app;

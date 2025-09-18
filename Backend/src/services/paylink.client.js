@@ -1,6 +1,4 @@
-let tokenCache = { token: null, expAt: 0 }; // epoch ms
-
-
+let tokenCache = { token: null, expAt: 0 };
 
 const baseUrl = process.env.PAYLINK_BASE_URL;
 
@@ -39,7 +37,7 @@ export async function paylinkCreateInvoice(payload) {
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`addInvoice ${r.status}: ${JSON.stringify(j)}`);
-  return j; // { url, transactionNo, invoiceId, ... }
+  return j;
 }
 
 export async function paylinkGetInvoice(transactionNo) {

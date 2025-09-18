@@ -148,7 +148,7 @@ const playerSchema = new mongoose.Schema(
     },
     contractEndDate: {
       type: Date,
-      default: null, // Explicit default for clarity
+      default: null,
     },
     transferredTo: {
       club: { type: String, default: null },
@@ -290,7 +290,6 @@ const playerSchema = new mongoose.Schema(
           ret.position = ret.customPosition;
         }
 
-        // Handle game field which can be string or object
         if (
           typeof ret.game === "string" &&
           (ret.game === "other" || ret.game === "") &&
@@ -318,7 +317,6 @@ playerSchema.index({ nationality: 1, jop: 1, status: 1 });
 playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
 playerSchema.index({ game: 1 });
 
-// Virtual for checking if promoted
 playerSchema.virtual("isCurrentlyPromoted").get(function () {
   return (
     this.isPromoted.status &&
@@ -327,7 +325,6 @@ playerSchema.virtual("isCurrentlyPromoted").get(function () {
   );
 });
 
-// Method to promote player
 playerSchema.methods.promote = async function (days, type = "featured") {
   this.isPromoted = {
     status: true,
@@ -338,7 +335,6 @@ playerSchema.methods.promote = async function (days, type = "featured") {
   return this.save();
 };
 
-// Method to transfer player
 playerSchema.methods.transfer = async function (clubName, amount) {
   this.status = PROFILE_STATUS.TRANSFERRED;
   this.transferredTo = {

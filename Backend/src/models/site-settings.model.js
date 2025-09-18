@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 const siteSettingsSchema = new mongoose.Schema(
   {
-    // معلومات الموقع الأساسية
     siteName: {
       ar: { type: String, required: true, default: "متاح ماركت" },
       en: { type: String, required: true, default: "Muta7Market" },
@@ -16,7 +15,6 @@ const siteSettingsSchema = new mongoose.Schema(
       publicId: { type: String, default: null },
     },
 
-    // معلومات الاتصال
     contactInfo: {
       email: { type: String, default: null },
       phone: { type: String, default: null },
@@ -33,7 +31,6 @@ const siteSettingsSchema = new mongoose.Schema(
       },
     },
 
-    // الشروط والأحكام وسياسة الخصوصية
     termsAndConditions: {
       ar: { type: String, default: null },
       en: { type: String, default: null },
@@ -45,7 +42,6 @@ const siteSettingsSchema = new mongoose.Schema(
       lastUpdated: { type: Date, default: Date.now },
     },
 
-    // إعدادات SEO
     seo: {
       metaTitle: {
         ar: { type: String, default: null },
@@ -59,29 +55,23 @@ const siteSettingsSchema = new mongoose.Schema(
       googleAnalyticsId: { type: String, default: null },
     },
 
-    // إعدادات الرسوم والاشتراكات (تستخدم بدلاً من القيم الثابتة في ملف constants.js)
     pricing: {
-      // إعدادات مشاهدة الملفات والتواصل
       contacts_access: {
         price: { type: Number, default: 190 },
         days: { type: Number, default: 365 },
       },
-      // إعدادات نشر الملفات للاعبين
       listing_player: {
         price: { type: Number, default: 140 },
         days: { type: Number, default: 365 },
       },
-      // إعدادات نشر الملفات للمدربين
       listing_coach: {
         price: { type: Number, default: 190 },
         days: { type: Number, default: 365 },
       },
-      // إعدادات تثبيت الملفات للاعبين
       promotion_player: {
         price: { type: Number, default: 100 },
         days: { type: Number, default: 15 },
       },
-      // إعدادات تثبيت الملفات للمدربين
       promotion_coach: {
         price: { type: Number, default: 100 },
         days: { type: Number, default: 15 },
@@ -106,7 +96,6 @@ const siteSettingsSchema = new mongoose.Schema(
       custom: { type: mongoose.Schema.Types.Mixed, default: {} },
     },
 
-    // إعدادات الإعلانات
     ads: {
       googleAds: {
         enabled: {
@@ -127,7 +116,6 @@ const siteSettingsSchema = new mongoose.Schema(
   }
 );
 
-// نضمن وجود سجل واحد فقط للإعدادات
 siteSettingsSchema.statics.findOneOrCreate = async function () {
   const settings = await this.findOne();
   if (settings) {

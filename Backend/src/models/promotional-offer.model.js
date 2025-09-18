@@ -99,7 +99,6 @@ const promotionalOfferSchema = new mongoose.Schema(
   }
 );
 
-// إنشاء فهارس للبحث والتصفية
 promotionalOfferSchema.index({ code: 1 }, { unique: true });
 promotionalOfferSchema.index({ isActive: 1, status: 1 });
 promotionalOfferSchema.index({
@@ -107,7 +106,6 @@ promotionalOfferSchema.index({
   "validityPeriod.endDate": 1,
 });
 
-// دالة للتحقق من صلاحية العرض
 promotionalOfferSchema.virtual("isCurrentlyValid").get(function () {
   const now = new Date();
   return (
@@ -120,7 +118,6 @@ promotionalOfferSchema.virtual("isCurrentlyValid").get(function () {
   );
 });
 
-// دالة للتحقق من إمكانية استخدام العرض من قبل مستخدم معين
 promotionalOfferSchema.methods.canBeUsedBy = function (userId) {
   if (!this.isCurrentlyValid) {
     return false;
@@ -133,7 +130,6 @@ promotionalOfferSchema.methods.canBeUsedBy = function (userId) {
   return !userUsage || userUsage.count < this.usageLimit.perUser;
 };
 
-// دالة لتطبيق العرض على سعر معين
 promotionalOfferSchema.methods.applyDiscount = function (originalPrice) {
   if (this.type === "percentage") {
     const discountAmount = (originalPrice * this.value) / 100;
@@ -149,7 +145,6 @@ promotionalOfferSchema.methods.applyDiscount = function (originalPrice) {
   return originalPrice;
 };
 
-// دالة لتسجيل استخدام العرض
 promotionalOfferSchema.methods.recordUsage = async function (userId) {
   const userUsageIndex = this.currentUsage.byUsers.findIndex(
     (usage) => usage.userId.toString() === userId.toString()
@@ -168,7 +163,6 @@ promotionalOfferSchema.methods.recordUsage = async function (userId) {
 
   this.currentUsage.total += 1;
 
-  // تحديث حالة العرض إذا وصل للحد الأقصى
   if (
     this.usageLimit.total !== null &&
     this.currentUsage.total >= this.usageLimit.total
@@ -179,7 +173,6 @@ promotionalOfferSchema.methods.recordUsage = async function (userId) {
   return this.save();
 };
 
-// دالة للحصول على العروض الترويجية النشطة
 promotionalOfferSchema.statics.getActiveOffers = async function () {
   const now = new Date();
   return this.find({
@@ -190,7 +183,6 @@ promotionalOfferSchema.statics.getActiveOffers = async function () {
   }).sort({ "validityPeriod.endDate": 1 });
 };
 
-// دالة للتحقق من صلاحية رمز العرض
 promotionalOfferSchema.statics.validateCode = async function (
   code,
   userId,

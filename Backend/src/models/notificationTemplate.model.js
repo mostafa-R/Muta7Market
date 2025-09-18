@@ -37,7 +37,7 @@ const notificationTemplateSchema = new mongoose.Schema(
           },
           ar: String,
         },
-        template: String, // HTML template name or ID
+        template: String,
         attachments: [
           {
             filename: String,
@@ -50,7 +50,7 @@ const notificationTemplateSchema = new mongoose.Schema(
         body: {
           en: {
             type: String,
-            maxlength: 160, // SMS character limit
+            maxlength: 160,
             required() {
               return this.content.sms !== undefined;
             },

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
@@ -375,9 +375,8 @@ export default function AboutSettingsForm() {
       {loading ? (
         <div className="h-40 flex items-center justify-center">جاري التحميل...</div>
       ) : (
-        <form onSubmit={handleSave} className="space-y-4">
-          <p className="text-sm text-gray-600">يمكنك تعديل المستند كاملاً كـ JSON أو تحرير الأقسام والقوائم أدناه.</p>
-
+          <form onSubmit={handleSave} className="space-y-4">
+            
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700">العنوان (AR)</label>
@@ -423,14 +422,14 @@ export default function AboutSettingsForm() {
                   <div className="flex justify-between items-start mb-3">
                     <strong className="text-gray-800">القائمة #{lIdx + 1}</strong>
                     <div className="flex gap-2">
-                      <Button type="button" onClick={() => addItemWithKey(lIdx)} size="sm">
+                      <Button type="button" onClick={() => addItemWithKey(lIdx)} size="sm" className="bg-blue-950 text-slate-100">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                         </svg>
                         إضافة بند
                       </Button>
-                      <Button type="button" onClick={() => removeList(lIdx)} variant="destructive" size="sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <Button type="button" onClick={() => removeList(lIdx)} variant="destructive" size="sm" className="bg-red-800 text-slate-100">
+                        <svg className="w-4 h-4 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                         حذف القائمة
@@ -464,7 +463,7 @@ export default function AboutSettingsForm() {
             <div key={itemKeysRef.current[lIdx]?.[itIdx] || itIdx} className="p-3 border rounded">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-medium text-gray-800">بند #{itIdx + 1}</span>
-                          <Button type="button" onClick={() => removeItem(lIdx, itIdx)} variant="destructive" size="sm">
+                          <Button type="button" onClick={() => removeItem(lIdx, itIdx)} variant="destructive" size="sm" className="bg-red-800 text-slate-100">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -504,11 +503,11 @@ export default function AboutSettingsForm() {
           </div>
           
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving} size="sm">
+            <Button type="submit" disabled={saving} size="sm" className="bg-blue-950 text-slate-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              {saving ? "جاري الحفظ..." : "حفظ صفحة من نحن"}
+              {saving ? "جاري الحفظ..." : "حفظ"}
             </Button>
           </div>
         </form>

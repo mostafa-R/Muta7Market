@@ -1,25 +1,24 @@
-// routes/term.routes.js
 import express from "express";
 
 import {
   createTerm,
-  getTerms,
-  getTermById,
-  updateTermById,
-  patchTermById,
   deleteTermById,
+  getTerms,
+  patchTermById,
+  updateTermById,
 } from "../controllers/term.controller.js";
 
 import {
   createTermSchema,
-  putTermSchema,
-  patchTermSchema,
-  listQuerySchema,
   idParamSchema,
+  listQuerySchema,
+  patchTermSchema,
+  putTermSchema,
 } from "../validators/term.validation.js";
 
-// ⬇️ use YOUR middlewares and response/error classes
-import validate, { validateQuery } from "../middleware/validation.middleware.js";
+import validate, {
+  validateQuery,
+} from "../middleware/validation.middleware.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
@@ -60,24 +59,17 @@ termsRouter.get("/", validateQuery(listQuerySchema), async (req, res, next) => {
   }
 });
 
-
-// POST /terms
-termsRouter.post(
-  "/",
-  validate(createTermSchema), // uses YOUR body validator
-  async (req, res, next) => {
-    try {
-      const created = await createTerm(req.body);
-      return res
-        .status(201)
-        .json(new ApiResponse(201, created, "Term created successfully"));
-    } catch (err) {
-      next(err);
-    }
+termsRouter.post("/", validate(createTermSchema), async (req, res, next) => {
+  try {
+    const created = await createTerm(req.body);
+    return res
+      .status(201)
+      .json(new ApiResponse(201, created, "Term created successfully"));
+  } catch (err) {
+    next(err);
   }
-);
+});
 
-// PUT /terms/:id
 termsRouter.put(
   "/:id",
   validateParams(idParamSchema),
@@ -95,7 +87,6 @@ termsRouter.put(
   }
 );
 
-// PATCH /terms/:id
 termsRouter.patch(
   "/:id",
   validateParams(idParamSchema),
@@ -113,7 +104,6 @@ termsRouter.patch(
   }
 );
 
-// DELETE /terms/:id
 termsRouter.delete(
   "/:id",
   validateParams(idParamSchema),

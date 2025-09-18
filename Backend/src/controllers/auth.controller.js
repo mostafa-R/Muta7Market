@@ -1,36 +1,33 @@
 import crypto from "crypto";
+import { isEmailEnabled, sendEmail } from "../config/email.js";
+import Invoice from "../models/invoice.model.js";
 import userModel from "../models/user.model.js";
-import { sendEmail } from "../config/email.js";
-import { isEmailEnabled } from "../config/email.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
 import { generateAccessToken } from "../utils/jwt.js";
-import { getPricingSettings } from "../utils/pricingUtils.js";
-import Invoice from "../models/invoice.model.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 
 export const register = asyncHandler(async (req, res) => {
   const { name, phone, password, confirmPassword, email } = req.body;
 
-
   if (password !== confirmPassword) {
-    return res.status(400).json({ error: "Passwords do not match." });
+    throw new ApiError(400, "Passwords do not match.");
   }
 
   const existEmail = await userModel.findOne({ email });
   if (existEmail) {
-    return res.status(400).json({ error: "Email already exists." });
+    throw new ApiError(400, "Email already exists.");
   }
 
   const existPhone = await userModel.findOne({ phone });
   if (existPhone) {
-    return res.status(400).json({ error: "Phone number already exists." });
+    throw new ApiError(400, "Phone number already exists.");
   }
 
- 
   const emailToken = generateRandomString();
   const phoneOTP = generateOTP();
 
@@ -44,7 +41,6 @@ export const register = asyncHandler(async (req, res) => {
     .update(phoneOTP)
     .digest("hex");
 
-
   const user = new userModel({
     name,
     profileImage: "",
@@ -52,13 +48,12 @@ export const register = asyncHandler(async (req, res) => {
     email,
     password,
     emailVerificationToken,
-    emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000, 
+    emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
     phoneVerificationOTP: phoneVerificationHashedOTP,
-    phoneVerificationExpires: Date.now() + 10 * 60 * 1000, 
+    phoneVerificationExpires: Date.now() + 10 * 60 * 1000,
   });
 
   await user.save();
-
 
   try {
     const exists = await Invoice.findOne({
@@ -77,17 +72,17 @@ export const register = asyncHandler(async (req, res) => {
         product: "contacts_access",
         targetType: null,
         profileId: null,
-        durationDays: pricing.contacts_access_days || pricing.ONE_YEAR_DAYS || 365,
+        durationDays:
+          pricing.contacts_access_days || pricing.ONE_YEAR_DAYS || 365,
         featureType: null,
         amount: pricing.contacts_access_price || pricing.contacts_access_year,
         currency: "SAR",
         status: "pending",
-        
+
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       });
     }
   } catch (e) {
-   
     console.error("seed contacts_access draft failed", e);
   }
 
@@ -175,7 +170,6 @@ export const login = asyncHandler(async (req, res) => {
     isActive: user.isActive,
   };
 
- 
   res
     .status(200)
     .json(
@@ -301,21 +295,17 @@ export const changePassword = asyncHandler(async (req, res) => {
     );
 });
 
-export const getProfile = async (req, res) => {
-  try {
-    const user = await userModel.findById(req.user.id).select("-password");
-    if (!user) {
-      throw new ApiError(404, "User not found");
-    }
-    res.status(200).json({
-      success: true,
-      user,
-      message: "Profile retrieved successfully",
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+export const getProfile = asyncHandler(async (req, res) => {
+  const user = await userModel.findById(req.user.id).select("-password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
   }
-};
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "Profile retrieved successfully"));
+});
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;

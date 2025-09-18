@@ -11,14 +11,25 @@ async function paylinkWebhook(req, res) {
   });
   // Authenticate webhook with static header configured in Paylink
   if (req.headers.authorization !== process.env.PAYLINK_WEBHOOK_AUTH) {
-    console.log("[PaymentsWebhook(cjs)][webhook] unauthorized header", req.headers.authorization ? req.headers.authorization.slice(0, 12) + "..." : null);
+    console.log(
+      "[PaymentsWebhook(cjs)][webhook] unauthorized header",
+      req.headers.authorization
+        ? req.headers.authorization.slice(0, 12) + "..."
+        : null
+    );
     return res.status(401).send("unauthorized");
   }
 
   const payload = req.body || {};
   const transactionNo = String(payload.transactionNo || "");
-  const orderNumber = String(payload.merchantOrderNumber || payload.orderNumber || "");
-  console.log("[PaymentsWebhook(cjs)][webhook] payload", { transactionNo, orderNumber, keys: Object.keys(payload || {}) });
+  const orderNumber = String(
+    payload.merchantOrderNumber || payload.orderNumber || ""
+  );
+  console.log("[PaymentsWebhook(cjs)][webhook] payload", {
+    transactionNo,
+    orderNumber,
+    keys: Object.keys(payload || {}),
+  });
 
   // Verify status with Paylink
   let verify;
@@ -33,7 +44,9 @@ async function paylinkWebhook(req, res) {
     isPaid,
     orderStatus: verify?.orderStatus || null,
     amount: verify?.amount || null,
-    paymentErrorsCount: Array.isArray(verify?.paymentErrors) ? verify.paymentErrors.length : 0,
+    paymentErrorsCount: Array.isArray(verify?.paymentErrors)
+      ? verify.paymentErrors.length
+      : 0,
   });
   if (!isPaid) return res.status(200).json({ ok: true, verified: false });
 
@@ -44,11 +57,15 @@ async function paylinkWebhook(req, res) {
       providerEventId: transactionNo,
       orderNumber,
       type: "invoice.paid",
-      raw: payload
+      raw: payload,
     });
-    console.log("[PaymentsWebhook(cjs)][webhook] event stored", { transactionNo });
+    console.log("[PaymentsWebhook(cjs)][webhook] event stored", {
+      transactionNo,
+    });
   } catch (e) {
-    console.log("[PaymentsWebhook(cjs)][webhook] duplicate event", { transactionNo });
+    console.log("[PaymentsWebhook(cjs)][webhook] duplicate event", {
+      transactionNo,
+    });
     return res.status(200).json({ ok: true, duplicate: true }); // already processed
   }
 
@@ -58,7 +75,10 @@ async function paylinkWebhook(req, res) {
     await session.withTransaction(async () => {
       const invoice = await Invoice.findOne({ orderNumber }).session(session);
       if (!invoice) {
-        console.log("[PaymentsWebhook(cjs)][webhook] invoice not found for orderNumber", { orderNumber });
+        console.log(
+          "[PaymentsWebhook(cjs)][webhook] invoice not found for orderNumber",
+          { orderNumber }
+        );
         return;
       }
 
@@ -69,7 +89,7 @@ async function paylinkWebhook(req, res) {
         if (verify.paymentReceipt && verify.paymentReceipt.url) {
           invoice.paymentReceiptUrl = verify.paymentReceipt.url;
         }
-        
+
         // Update invoice expiresAt to reflect service expiration
         const ONE_DAY_MS = 24 * 60 * 60 * 1000;
         if (invoice.product === "contacts_access") {
@@ -79,7 +99,7 @@ async function paylinkWebhook(req, res) {
           const durDays = Number(invoice.durationDays || 365);
           invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
         }
-        
+
         await invoice.save({ session });
         console.log("[PaymentsWebhook(cjs)][webhook] invoice marked paid", {
           invoiceId: String(invoice._id),
@@ -93,47 +113,63 @@ async function paylinkWebhook(req, res) {
         // Calculate expiration date based on durationDays
         const durDays = Number(invoice.durationDays || 365);
         const expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-        
+
         await Entitlement.updateOne(
-          { userId: invoice.userId, type: "contacts_access", playerProfileId: null },
-          { 
-            $set: { 
-              active: true, 
-              grantedAt: new Date(), 
+          {
+            userId: invoice.userId,
+            type: "contacts_access",
+            playerProfileId: null,
+          },
+          {
+            $set: {
+              active: true,
+              grantedAt: new Date(),
               expiresAt: expiresAt,
-              sourceInvoice: invoice._id 
-            } 
+              sourceInvoice: invoice._id,
+            },
           },
           { upsert: true, session }
         );
-        console.log("[PaymentsWebhook(cjs)][webhook] contacts_access entitlement ensured", { 
-          userId: String(invoice.userId),
-          expiresAt: expiresAt,
-          durationDays: durDays
-        });
+        console.log(
+          "[PaymentsWebhook(cjs)][webhook] contacts_access entitlement ensured",
+          {
+            userId: String(invoice.userId),
+            expiresAt: expiresAt,
+            durationDays: durDays,
+          }
+        );
       } else if (invoice.product === "listing") {
         // Calculate expiration date based on durationDays
         const durDays = Number(invoice.durationDays || 365);
         const expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-        
+
         await Entitlement.updateOne(
-          { userId: invoice.userId, type: "player_listed", playerProfileId: invoice.playerProfileId },
-          { 
-            $set: { 
-              active: true, 
-              grantedAt: new Date(), 
+          {
+            userId: invoice.userId,
+            type: "player_listed",
+            playerProfileId: invoice.playerProfileId,
+          },
+          {
+            $set: {
+              active: true,
+              grantedAt: new Date(),
               expiresAt: expiresAt,
-              sourceInvoice: invoice._id 
-            } 
+              sourceInvoice: invoice._id,
+            },
           },
           { upsert: true, session }
         );
-        console.log("[PaymentsWebhook(cjs)][webhook] player_listed entitlement ensured", { 
-          userId: String(invoice.userId), 
-          playerProfileId: invoice.playerProfileId ? String(invoice.playerProfileId) : null,
-          expiresAt: expiresAt,
-          durationDays: durDays
-        });
+        console.log(
+          "[PaymentsWebhook(cjs)][webhook] player_listed entitlement ensured",
+          {
+            userId: String(invoice.userId),
+            playerProfileId: invoice.playerProfileId
+              ? String(invoice.playerProfileId)
+              : null,
+            expiresAt: expiresAt,
+            durationDays: durDays,
+          }
+        );
         // Optionally flip PlayerProfile visibility if you store it:
         // await PlayerProfile.updateOne({ _id: invoice.playerProfileId, userId: invoice.userId }, { $set: { is_listed: true } }, { session });
       }

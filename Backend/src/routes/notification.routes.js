@@ -1,77 +1,73 @@
-import express from 'express';
+import express from "express";
 import {
-  sendNotification,
+  createTemplate,
+  deleteTemplate,
+  getAllTemplates,
+  getNotificationAnalytics,
+  getTemplateById,
+  getUnreadCount,
   getUserNotifications,
   markAsRead,
-  getUnreadCount,
   sendBulkNotifications,
-  createTemplate,
-  getAllTemplates,
-  getTemplateById,
+  sendNotification,
   updateTemplate,
-  deleteTemplate,
-  getNotificationAnalytics
-} from '../controllers/notification.controller.js';
+} from "../controllers/notification.controller.js";
 import {
   authMiddleware,
   authorize,
-  verifiedOnly
-} from '../middleware/auth.middleware.js';
+  verifiedOnly,
+} from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Notification operations
 router.post(
-  '/send',
+  "/send",
   authMiddleware,
   verifiedOnly,
-  authorize('admin', 'moderator'),
+  authorize("admin", "moderator"),
   sendNotification
 );
-router.post('/bulk', authMiddleware, authorize('admin'), sendBulkNotifications);
+router.post("/bulk", authMiddleware, authorize("admin"), sendBulkNotifications);
 
-// User notifications
-router.get('/my', authMiddleware, getUserNotifications);
-router.patch('/read', authMiddleware, markAsRead);
-router.get('/unread-count', authMiddleware, getUnreadCount);
+router.get("/my", authMiddleware, getUserNotifications);
+router.patch("/read", authMiddleware, markAsRead);
+router.get("/unread-count", authMiddleware, getUnreadCount);
 
-// Template management
 router.post(
-  '/templates',
+  "/templates",
   authMiddleware,
-  authorize('admin', 'moderator'),
+  authorize("admin", "moderator"),
   createTemplate
 );
 router.get(
-  '/templates',
+  "/templates",
   authMiddleware,
-  authorize('admin', 'moderator'),
+  authorize("admin", "moderator"),
   getAllTemplates
 );
 router.get(
-  '/templates/:id',
+  "/templates/:id",
   authMiddleware,
-  authorize('admin', 'moderator'),
+  authorize("admin", "moderator"),
   getTemplateById
 );
 router.put(
-  '/templates/:id',
+  "/templates/:id",
   authMiddleware,
-  authorize('admin', 'moderator'),
+  authorize("admin", "moderator"),
   updateTemplate
 );
 router.delete(
-  '/templates/:id',
+  "/templates/:id",
   authMiddleware,
-  authorize('admin'),
+  authorize("admin"),
   deleteTemplate
 );
 
-// Analytics
 router.get(
-  '/analytics',
+  "/analytics",
   authMiddleware,
-  authorize('admin', 'moderator'),
+  authorize("admin", "moderator"),
   getNotificationAnalytics
 );
 

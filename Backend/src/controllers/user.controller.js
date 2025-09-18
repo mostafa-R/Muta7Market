@@ -99,7 +99,6 @@ export const update = async (req, res) => {
         }
       }
 
-      // Generate the full public URL for the uploaded file
       const publicUrl = generatePublicUrl(req, imageFile.path);
 
       updates.profileImage = {

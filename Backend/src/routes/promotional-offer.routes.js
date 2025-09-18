@@ -20,10 +20,8 @@ import {
 
 const router = express.Router();
 
-// مسارات تتطلب مصادقة للمستخدمين العاديين
 router.use(authMiddleware);
 
-// مسارات للمستخدمين العاديين
 router.post(
   "/validate",
   validate(validatePromotionalOfferCodeSchema),
@@ -35,7 +33,6 @@ router.post(
   usePromotionalOfferCode
 );
 
-// مسارات تتطلب دور مسؤول
 router.use(authorize("admin", "super_admin"));
 
 router.get("/", getAllPromotionalOffers);

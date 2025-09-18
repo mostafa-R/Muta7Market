@@ -26,17 +26,19 @@ const getFileParams = (file) => {
     resource_type = "video";
   } else if (isDocument(file.mimetype)) {
     folder += "documents";
-   
+
     resource_type = "auto";
-   
+
     format = file.originalname.split(".").pop().toLowerCase();
-    
-    
+
     if (!format || format.length > 4) {
-     
       if (file.mimetype === "application/pdf") format = "pdf";
       else if (file.mimetype === "application/msword") format = "doc";
-      else if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") format = "docx";
+      else if (
+        file.mimetype ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      )
+        format = "docx";
       else if (file.mimetype === "text/plain") format = "txt";
     }
   } else {
@@ -46,7 +48,6 @@ const getFileParams = (file) => {
 
   return { folder, resource_type, format };
 };
-
 
 const storage = new CloudinaryStorage({
   cloudinary,
@@ -95,7 +96,6 @@ const storage = new CloudinaryStorage({
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
-    
     "image/jpeg",
     "image/jpg",
     "image/png",
@@ -129,7 +129,7 @@ export const uploadMixed = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, 
+    fileSize: 100 * 1024 * 1024,
   },
 });
 

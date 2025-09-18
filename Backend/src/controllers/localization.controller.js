@@ -11,13 +11,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const LOCALES_DIR = join(__dirname, "../locales");
 
-// Helper function to validate translation key
 const validateTranslationKey = (key) => {
-  // Key should be alphanumeric with underscores, periods, or hyphens
   return /^[a-z0-9_.-]+$/i.test(key);
 };
 
-// Get all translations
 export const getAllTranslations = asyncHandler(async (req, res) => {
   const { group, language, page = 1, limit = 10, search } = req.query;
   let query = {};
@@ -29,7 +26,6 @@ export const getAllTranslations = asyncHandler(async (req, res) => {
     query.group = group;
   }
 
-  // Add search functionality
   if (search) {
     const searchRegex = new RegExp(search, "i");
     query.$or = [
@@ -39,7 +35,6 @@ export const getAllTranslations = asyncHandler(async (req, res) => {
     ];
   }
 
-  // If a specific language is requested, format the response accordingly
   if (language && (language === "ar" || language === "en")) {
     const translations = await Localization.find(query).sort({
       group: 1,
@@ -64,14 +59,12 @@ export const getAllTranslations = asyncHandler(async (req, res) => {
       );
   }
 
-  // For admin dashboard, implement pagination
   const total = await Localization.countDocuments(query);
   const translations = await Localization.find(query)
     .sort({ group: 1, key: 1 })
     .skip(skip)
     .limit(limitNumber);
 
-  // Return paginated results
   return res.status(200).json(
     new ApiResponse(
       200,
@@ -89,7 +82,6 @@ export const getAllTranslations = asyncHandler(async (req, res) => {
   );
 });
 
-// Get translation groups
 export const getTranslationGroups = asyncHandler(async (req, res) => {
   const groups = await Localization.distinct("group");
 
@@ -100,7 +92,6 @@ export const getTranslationGroups = asyncHandler(async (req, res) => {
     );
 });
 
-// Get translations by group
 export const getTranslationsByGroup = asyncHandler(async (req, res) => {
   const { group } = req.params;
 
@@ -117,7 +108,6 @@ export const getTranslationsByGroup = asyncHandler(async (req, res) => {
     );
 });
 
-// Create a new translation
 export const createTranslation = asyncHandler(async (req, res) => {
   const {
     key,
@@ -127,7 +117,6 @@ export const createTranslation = asyncHandler(async (req, res) => {
     metadata,
   } = req.body;
 
-  // Validate required fields
   if (!key || !translations || !translations.ar || !translations.en) {
     throw new ApiError(
       400,
@@ -135,10 +124,8 @@ export const createTranslation = asyncHandler(async (req, res) => {
     );
   }
 
-  // Format key (lowercase, replace spaces with underscores)
   const formattedKey = key.toLowerCase().replace(/\s+/g, "_");
 
-  // Validate key format
   if (!validateTranslationKey(formattedKey)) {
     throw new ApiError(
       400,
@@ -146,7 +133,6 @@ export const createTranslation = asyncHandler(async (req, res) => {
     );
   }
 
-  // Check if translation already exists
   const existingTranslation = await Localization.findOne({
     key: formattedKey,
     group,
@@ -159,7 +145,6 @@ export const createTranslation = asyncHandler(async (req, res) => {
     );
   }
 
-  // Create new translation
   const newTranslation = await Localization.create({
     key: formattedKey,
     group,
@@ -175,19 +160,16 @@ export const createTranslation = asyncHandler(async (req, res) => {
     );
 });
 
-// Update an existing translation
 export const updateTranslation = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { translations, metadata } = req.body;
 
-  // Find the translation
   const translation = await Localization.findById(id);
 
   if (!translation) {
     throw new ApiError(404, "Translation not found");
   }
 
-  // Update fields
   if (translations) {
     if (translations.ar) translation.translations.ar = translations.ar;
     if (translations.en) translation.translations.en = translations.en;
@@ -197,7 +179,6 @@ export const updateTranslation = asyncHandler(async (req, res) => {
     translation.metadata = { ...translation.metadata, ...metadata };
   }
 
-  // Save changes
   await translation.save();
 
   return res
@@ -207,23 +188,19 @@ export const updateTranslation = asyncHandler(async (req, res) => {
     );
 });
 
-// Delete a translation
 export const deleteTranslation = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  // Find the translation
   const translation = await Localization.findById(id);
 
   if (!translation) {
     throw new ApiError(404, "Translation not found");
   }
 
-  // Prevent deletion of system translations
   if (translation.isSystem) {
     throw new ApiError(403, "Cannot delete system translations");
   }
 
-  // Delete the translation
   await translation.deleteOne();
 
   return res
@@ -231,7 +208,6 @@ export const deleteTranslation = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { id }, "Translation deleted successfully"));
 });
 
-// Bulk update translations
 export const bulkUpdateTranslations = asyncHandler(async (req, res) => {
   const { translations } = req.body;
 
@@ -244,7 +220,6 @@ export const bulkUpdateTranslations = asyncHandler(async (req, res) => {
     failed: [],
   };
 
-  // Process each translation
   for (const item of translations) {
     try {
       if (!item._id) {
@@ -297,7 +272,6 @@ export const bulkUpdateTranslations = asyncHandler(async (req, res) => {
     );
 });
 
-// Import translations from JSON
 export const importTranslations = asyncHandler(async (req, res) => {
   const { translations, overwrite = false } = req.body;
 
@@ -312,7 +286,6 @@ export const importTranslations = asyncHandler(async (req, res) => {
     failed: [],
   };
 
-  // Process translations
   for (const group in translations) {
     const groupTranslations = translations[group];
 
@@ -320,7 +293,6 @@ export const importTranslations = asyncHandler(async (req, res) => {
       try {
         const translationValue = groupTranslations[key];
 
-        // Skip if not in correct format
         if (!translationValue || !translationValue.ar || !translationValue.en) {
           results.skipped.push({
             group,
@@ -330,12 +302,10 @@ export const importTranslations = asyncHandler(async (req, res) => {
           continue;
         }
 
-        // Check if translation exists
         const existingTranslation = await Localization.findOne({ group, key });
 
         if (existingTranslation) {
           if (overwrite) {
-            // Update existing translation
             existingTranslation.translations = translationValue;
             await existingTranslation.save();
             results.updated.push(existingTranslation);
@@ -343,7 +313,6 @@ export const importTranslations = asyncHandler(async (req, res) => {
             results.skipped.push({ group, key, reason: "Already exists" });
           }
         } else {
-          // Create new translation
           const newTranslation = await Localization.create({
             key,
             group,
@@ -372,7 +341,6 @@ export const importTranslations = asyncHandler(async (req, res) => {
     );
 });
 
-// Export translations to JSON
 export const exportTranslations = asyncHandler(async (req, res) => {
   const { group } = req.query;
 
@@ -383,7 +351,6 @@ export const exportTranslations = asyncHandler(async (req, res) => {
 
   const translations = await Localization.find(query);
 
-  // Format translations as structured object
   const formattedTranslations = {};
 
   translations.forEach((item) => {
@@ -404,10 +371,8 @@ export const exportTranslations = asyncHandler(async (req, res) => {
     );
 });
 
-// Sync with i18n locale files
 export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
   try {
-    // Read locale files
     const enLocale = JSON.parse(
       await fs.readFile(join(LOCALES_DIR, "en.json"), "utf8")
     );
@@ -421,12 +386,10 @@ export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
       skipped: [],
     };
 
-    // Process each key in the English locale file
     const processObject = async (obj, arObj, prefix = "") => {
       for (const key in obj) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
 
-        // If value is an object, recurse
         if (
           obj[key] !== null &&
           typeof obj[key] === "object" &&
@@ -434,11 +397,9 @@ export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
         ) {
           await processObject(obj[key], arObj[key] || {}, fullKey);
         } else {
-          // It's a leaf node, create/update translation
           const group = prefix || "general";
           const translationKey = prefix ? key : fullKey;
 
-          // Check if translation exists
           const existingTranslation = await Localization.findOne({
             group,
             key: translationKey,
@@ -457,7 +418,6 @@ export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
           }
 
           if (existingTranslation) {
-            // Update if values are different
             if (
               existingTranslation.translations.en !== enValue ||
               existingTranslation.translations.ar !== arValue
@@ -476,7 +436,6 @@ export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
               });
             }
           } else {
-            // Create new translation
             const newTranslation = await Localization.create({
               key: translationKey,
               group,
@@ -484,7 +443,7 @@ export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
                 en: enValue,
                 ar: arValue,
               },
-              isSystem: true, // Mark as system translation
+              isSystem: true,
             });
             results.created.push(newTranslation);
           }
@@ -511,23 +470,18 @@ export const syncWithLocaleFiles = asyncHandler(async (req, res) => {
   }
 });
 
-// Export to i18n locale files
 export const exportToLocaleFiles = asyncHandler(async (req, res) => {
   try {
-    // Get all translations
     const translations = await Localization.find({});
 
-    // Create structured objects for each language
     const enTranslations = {};
     const arTranslations = {};
 
     translations.forEach((item) => {
-      // Handle nested keys (using dot notation)
       const keyParts = item.key.split(".");
       let enCurrent = enTranslations;
       let arCurrent = arTranslations;
 
-      // If the translation has a group other than "general", add it as a top-level key
       if (item.group !== "general") {
         if (!enCurrent[item.group]) enCurrent[item.group] = {};
         if (!arCurrent[item.group]) arCurrent[item.group] = {};
@@ -536,7 +490,6 @@ export const exportToLocaleFiles = asyncHandler(async (req, res) => {
         arCurrent = arCurrent[item.group];
       }
 
-      // Handle nested keys
       for (let i = 0; i < keyParts.length - 1; i++) {
         const part = keyParts[i];
         if (!enCurrent[part]) enCurrent[part] = {};
@@ -546,13 +499,11 @@ export const exportToLocaleFiles = asyncHandler(async (req, res) => {
         arCurrent = arCurrent[part];
       }
 
-      // Set the values
       const lastKey = keyParts[keyParts.length - 1];
       enCurrent[lastKey] = item.translations.en;
       arCurrent[lastKey] = item.translations.ar;
     });
 
-    // Write to locale files
     await fs.writeFile(
       join(LOCALES_DIR, "en.json"),
       JSON.stringify(enTranslations, null, 2),
@@ -565,7 +516,6 @@ export const exportToLocaleFiles = asyncHandler(async (req, res) => {
       "utf8"
     );
 
-    // Reload i18n
     i18n.init();
 
     return res

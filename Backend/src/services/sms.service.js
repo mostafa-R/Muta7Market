@@ -12,7 +12,6 @@ class SMSService {
   }
 
   async loadTemplates() {
-    // Load SMS templates from database or configuration
     this.templates.set("otp", {
       en: "Your verification code is: {{otp}}. Valid for {{minutes}} minutes.",
       ar: "رمز التحقق الخاص بك هو: {{otp}}. صالح لمدة {{minutes}} دقيقة.",
@@ -35,17 +34,14 @@ class SMSService {
   }
 
   /**
-   * Send SMS to a phone number
-   * @param {string} phone - Phone number (should include country code)
-   * @param {string} message - Message content
-   * @param {Object} options - Additional options
+   * @param {string} phone
+   * @param {string} message
+   * @param {Object} options
    */
   async sendSMS(phone, message, options = {}) {
     try {
-      // Format phone number
       const formattedPhone = this.formatPhoneNumber(phone);
 
-      // Check message length
       if (message.length > 160) {
         logger.warn(`SMS message exceeds 160 characters: ${message.length}`);
       }
@@ -63,7 +59,7 @@ class SMSService {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        timeout: 10000, // 10 seconds timeout
+        timeout: 10000,
       });
 
       if (response.data.status === "success") {
@@ -90,10 +86,9 @@ class SMSService {
   }
 
   /**
-   * Send OTP via SMS
-   * @param {string} phone - Phone number
-   * @param {string} otp - OTP code
-   * @param {number} validityMinutes - OTP validity in minutes
+   * @param {string} phone
+   * @param {string} otp
+   * @param {number} validityMinutes
    */
   async sendOTP(phone, otp, validityMinutes = 10) {
     const template = this.templates.get("otp");
@@ -108,11 +103,10 @@ class SMSService {
   }
 
   /**
-   * Send templated SMS
-   * @param {string} phone - Phone number
-   * @param {string} templateName - Template name
-   * @param {Object} variables - Template variables
-   * @param {string} language - Language code
+   * @param {string} phone
+   * @param {string} templateName
+   * @param {Object} variables
+   * @param {string} language
    */
   async sendTemplatedSMS(phone, templateName, variables = {}, language = "en") {
     const template = this.templates.get(templateName);
@@ -130,9 +124,8 @@ class SMSService {
   }
 
   /**
-   * Send bulk SMS
-   * @param {Array} recipients - Array of {phone, message} or {phone, template, variables}
-   * @param {Object} options - Bulk sending options
+   * @param {Array} recipients
+   * @param {Object} options
    */
   async sendBulkSMS(recipients, options = {}) {
     const { batchSize = 100, delayMs = 1000 } = options;
@@ -142,7 +135,6 @@ class SMSService {
       errors: [],
     };
 
-    // Process in batches
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
 
@@ -179,7 +171,6 @@ class SMSService {
 
       await Promise.all(promises);
 
-      // Add delay between batches
       if (i + batchSize < recipients.length) {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
@@ -189,9 +180,8 @@ class SMSService {
   }
 
   /**
-   * Render template with variables
-   * @param {string} template - Template string
-   * @param {Object} variables - Variables to replace
+   * @param {string} template
+   * @param {Object} variables
    */
   renderTemplate(template, variables) {
     let rendered = template;
@@ -205,14 +195,11 @@ class SMSService {
   }
 
   /**
-   * Format phone number to Saudi format
-   * @param {string} phone - Phone number
+   * @param {string} phone
    */
   formatPhoneNumber(phone) {
-    // Remove all non-digits
     const cleaned = phone.replace(/\D/g, "");
 
-    // Handle Saudi phone numbers
     if (cleaned.startsWith("966")) {
       return cleaned;
     } else if (cleaned.startsWith("5") && cleaned.length === 9) {
@@ -223,13 +210,11 @@ class SMSService {
       return cleaned.substring(1);
     }
 
-    // Return as is if format is unclear
     return cleaned;
   }
 
   /**
-   * Validate Saudi phone number
-   * @param {string} phone - Phone number to validate
+   * @param {string} phone
    */
   validatePhoneNumber(phone) {
     const formatted = this.formatPhoneNumber(phone);
@@ -239,8 +224,7 @@ class SMSService {
   }
 
   /**
-   * Get SMS delivery status
-   * @param {string} messageId - Message ID from sending response
+   * @param {string} messageId
    */
   async getDeliveryStatus(messageId) {
     try {
@@ -262,9 +246,6 @@ class SMSService {
     }
   }
 
-  /**
-   * Get SMS balance/credits
-   */
   async getBalance() {
     try {
       const response = await axios.get(`${this.apiUrl}/balance`, {

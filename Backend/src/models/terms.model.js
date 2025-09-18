@@ -35,7 +35,6 @@ const termSchema = new Schema(
       en: { type: String, required: true },
     },
     terms: [termItemSchema],
-
   },
   { timestamps: true }
 );

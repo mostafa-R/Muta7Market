@@ -3,16 +3,13 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-// Simple in-memory cache for settings
 let settingsCache = null;
 let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Get the current ad settings
 export const getAdSettings = asyncHandler(async (req, res) => {
   const now = Date.now();
 
-  // Check cache first
   if (settingsCache && now - cacheTimestamp < CACHE_DURATION) {
     return res
       .status(200)
@@ -25,7 +22,6 @@ export const getAdSettings = asyncHandler(async (req, res) => {
       );
   }
 
-  // Fetch from database
   const settings = await SiteSettings.findOneOrCreate();
   settingsCache = settings.ads;
   cacheTimestamp = now;
@@ -41,7 +37,6 @@ export const getAdSettings = asyncHandler(async (req, res) => {
     );
 });
 
-// Update ad settings
 export const updateAdSettings = asyncHandler(async (req, res) => {
   const { googleAds, internalAdsRatio } = req.body;
 
@@ -67,7 +62,6 @@ export const updateAdSettings = asyncHandler(async (req, res) => {
 
   await settings.save();
 
-  // Clear cache when settings are updated
   settingsCache = settings.ads;
   cacheTimestamp = Date.now();
 

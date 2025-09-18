@@ -167,12 +167,10 @@ const coachSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
 coachSchema.index({ "name.en": "text", "name.ar": "text" });
 coachSchema.index({ nationality: 1, category: 1, status: 1 });
 coachSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
 
-// Virtual for checking if promoted
 coachSchema.virtual("isCurrentlyPromoted").get(function () {
   return (
     this.isPromoted.status &&
@@ -181,7 +179,6 @@ coachSchema.virtual("isCurrentlyPromoted").get(function () {
   );
 });
 
-// Method to promote coach
 coachSchema.methods.promote = async function (days, type = "featured") {
   this.isPromoted = {
     status: true,
@@ -192,7 +189,6 @@ coachSchema.methods.promote = async function (days, type = "featured") {
   return this.save();
 };
 
-// Method to transfer coach
 coachSchema.methods.transfer = async function (clubName, amount) {
   this.status = PROFILE_STATUS.TRANSFERRED;
   this.transferredTo = {

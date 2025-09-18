@@ -1,5 +1,3 @@
-// services/about.service.js
-
 import { About } from "../models/about.model.js";
 
 export const createAbout = async (payload) => {
@@ -11,11 +9,7 @@ export const getAbouts = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    About.find({})
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
+    About.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     About.countDocuments({}),
   ]);
 
@@ -42,13 +36,17 @@ export const updateAboutById = async (id, payload) => {
 };
 
 export const patchAboutById = async (id, payload) => {
-  return About.findByIdAndUpdate(id, { $set: payload }, {
-    new: true,
-    runValidators: true,
-  }).lean();
+  return About.findByIdAndUpdate(
+    id,
+    { $set: payload },
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).lean();
 };
 
 export const deleteAboutById = async (id) => {
   const res = await About.findByIdAndDelete(id).lean();
-  return res; // null if not found
+  return res;
 };

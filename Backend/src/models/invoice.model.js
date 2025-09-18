@@ -72,7 +72,6 @@ InvoiceSchema.index(
   { unique: true, partialFilterExpression: { status: "pending" } }
 );
 
-// إضافة فهارس فريدة
 InvoiceSchema.index({ orderNumber: 1 }, { unique: true });
 InvoiceSchema.index(
   { providerTransactionNo: 1 },

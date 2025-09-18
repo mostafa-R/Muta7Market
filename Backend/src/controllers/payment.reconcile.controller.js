@@ -5,13 +5,12 @@ import PlayerProfile from "../models/player.model.js";
 import User from "../models/user.model.js";
 import {
   paylinkGetInvoice,
-  paylinkGetOrderByNumber, 
-  paylinkGetTransactionsOfOrder, 
+  paylinkGetOrderByNumber,
+  paylinkGetTransactionsOfOrder,
 } from "../services/paylink.client.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { applyPaidEffects } from "./payments.controller.js";
-
 
 export const getPaymentStatusByOrderNumber = async (req, res) => {
   const userId = req.user?._id;
@@ -54,7 +53,7 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
       await session.withTransaction(async () => {
         const doc = await Invoice.findById(inv._id).session(session);
         if (!doc) return;
-        await applyPaidEffects(doc, verify, session); 
+        await applyPaidEffects(doc, verify, session);
       });
     } finally {
       session.endSession();

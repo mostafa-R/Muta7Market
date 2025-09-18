@@ -90,7 +90,6 @@ const advertisementSchema = new mongoose.Schema(
   }
 );
 
-// Performance-optimized indexes
 advertisementSchema.index({
   isActive: 1,
   "displayPeriod.startDate": 1,
@@ -104,7 +103,6 @@ advertisementSchema.index({
   "title.ar": "text",
   "title.en": "text",
 });
-// advertisementSchema.index({ "targeting.countries": 1, "targeting.sports": 1 }); // This causes an error on parallel arrays
 advertisementSchema.index({ "targeting.countries": 1 });
 advertisementSchema.index({ "targeting.sports": 1 });
 advertisementSchema.index({ clicks: -1 });
@@ -124,13 +122,11 @@ advertisementSchema.methods.registerClick = async function () {
   return this.save();
 };
 
-// دالة لتسجيل مشاهدة
 advertisementSchema.methods.registerView = async function () {
   this.views += 1;
   return this.save();
 };
 
-// Method to get active ads for frontend
 advertisementSchema.statics.getActiveAds = async function (
   position,
   limit = 5,

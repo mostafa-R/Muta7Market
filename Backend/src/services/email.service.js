@@ -19,18 +19,17 @@ async function initializeEmailService() {
 
 function createTransporter() {
   const config = {
-    host: process.env.SMTP_HOST || "mail.muta7markt.com",
-    port: parseInt(process.env.SMTP_PORT || "465"),
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT),
     secure: (process.env.SMTP_PORT || "465") === "465",
     auth: {
-      user: process.env.SMTP_USER || "otp@muta7markt.com",
-      pass: process.env.SMTP_PASS || "0080FaHb#",
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   };
 
   const transporter = nodemailer.createTransport(config);
 
-  // Verify transporter configuration
   transporter.verify((error, _success) => {
     if (error) {
       logger.error("Email transporter error:", error);
@@ -57,7 +56,6 @@ async function loadTemplates() {
       }
     }
 
-    // Register handlebars helpers
     registerHelpers();
   } catch (error) {
     logger.error("Failed to load email templates:", error);
@@ -103,12 +101,10 @@ async function sendEmail(options) {
     let htmlContent = html;
     let textContent = text;
 
-    // Use template if provided
     if (template && templates.has(template)) {
       const compiledTemplate = templates.get(template);
       htmlContent = compiledTemplate(context);
 
-      // Generate text version from HTML
       if (!textContent) {
         textContent = htmlContent.replace(/<[^>]*>?/gm, "");
       }
@@ -141,7 +137,6 @@ async function sendEmail(options) {
   }
 }
 
-// Email sending functions
 async function sendVerificationEmail(email, token) {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
@@ -245,7 +240,6 @@ async function sendNewsletter(recipients, subject, content, _segment) {
     errors: [],
   };
 
-  // Send in batches to avoid overwhelming the server
   const batchSize = 50;
   for (let i = 0; i < recipients.length; i += batchSize) {
     const batch = recipients.slice(i, i + batchSize);
@@ -276,7 +270,6 @@ async function sendNewsletter(recipients, subject, content, _segment) {
 
     await Promise.all(promises);
 
-    // Add delay between batches
     if (i + batchSize < recipients.length) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
@@ -319,7 +312,6 @@ async function testEmailConnection() {
   }
 }
 
-// Export functions
 export {
   initializeEmailService,
   sendInvoiceEmail,

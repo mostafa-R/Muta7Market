@@ -4,19 +4,18 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext.jsx";
 import {
-    AdIcon,
-    ChevronDownIcon,
-    DocumentIcon,
-    GameIcon,
-    GlobeIcon,
-    GridIcon,
-    HorizontaLDots,
-    PageIcon,
-    PlugInIcon,
-    SettingsIcon,
-    TagIcon,
-    UserCircleIcon
+  AdIcon,
+  ChevronDownIcon,
+  GameIcon,
+  GlobeIcon,
+  GridIcon,
+  HorizontaLDots,
+  PageIcon,
+  PlugInIcon,
+  SettingsIcon,
+  UserCircleIcon
 } from "../icons/index";
+import { ChartBarIcon } from "lucide-react";
 
 const navItems = [
   {
@@ -67,20 +66,15 @@ const navItems = [
     icon: <GameIcon />,
     path: "/sports",
   },
-  // {
-  //   name: "الشروط والسياسات",
-  //   icon: <DocumentIcon />,
-  //   path: "/legal",
-  // },
-  {
-    name: "العروض الترويجية",
-    icon: <TagIcon />,
-    path: "/promotions",
-  },
   {
     name: "الإعلانات",
     icon: <AdIcon />,
     path: "/advertisements",
+  },
+  {
+    name: "الإحصائيات",
+    icon: <ChartBarIcon />,
+    path: "/analytics",
   },
   {
     name: "إدارة اللغات",

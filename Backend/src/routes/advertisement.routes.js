@@ -19,11 +19,9 @@ import {
 
 const router = express.Router();
 
-// مسارات عامة (لا تتطلب مصادقة)
 router.get("/active/:position", getActiveAdvertisementsByPosition);
 router.get("/click/:id", registerAdvertisementClick);
 
-// مسارات تتطلب مصادقة ودور مسؤول
 router.use(authMiddleware, authorize("admin", "super_admin"));
 
 router.get("/", getAllAdvertisements);

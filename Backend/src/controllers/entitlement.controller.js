@@ -1,6 +1,5 @@
 import Entitlement from "../models/entitlement.model.js";
 
-
 export const checkEntitlement = async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
@@ -26,7 +25,6 @@ export const checkEntitlement = async (req, res) => {
   const ent = await Entitlement.findOne(q).lean();
   return res.status(200).json({ success: true, data: { active: !!ent } });
 };
-
 
 export const getMyEntitlements = async (req, res) => {
   const userId = req.user?._id;

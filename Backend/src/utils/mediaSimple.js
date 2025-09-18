@@ -161,7 +161,6 @@ export const safelyUpdatePlayerMedia = async (
         mediaData.document = null;
       }
 
-      // التعامل مع الصور بشكل خاص - قد يكون العميل قد حذف بعضها
       if (Array.isArray(parsedMedia.images)) {
         mediaData.images = [...parsedMedia.images];
       }

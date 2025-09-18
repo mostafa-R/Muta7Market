@@ -1,5 +1,4 @@
-// services/term.service.js
-import { Term } from "../models/terms.model.js"; // <- adjust to your actual path
+import { Term } from "../models/terms.model.js";
 
 export const createTerm = async (payload) => {
   const doc = await Term.create(payload);
@@ -10,12 +9,8 @@ export const getTerms = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Term.find({})
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Term.countDocuments({})
+    Term.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Term.countDocuments({}),
   ]);
 
   return {
@@ -34,7 +29,6 @@ export const getTermById = async (id) => {
 };
 
 export const updateTermById = async (id, payload) => {
-  // Full update (PUT) – validated in route layer to include required fields
   return Term.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
@@ -42,14 +36,17 @@ export const updateTermById = async (id, payload) => {
 };
 
 export const patchTermById = async (id, payload) => {
-  // Partial update (PATCH)
-  return Term.findByIdAndUpdate(id, { $set: payload }, {
-    new: true,
-    runValidators: true,
-  }).lean();
+  return Term.findByIdAndUpdate(
+    id,
+    { $set: payload },
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).lean();
 };
 
 export const deleteTermById = async (id) => {
   const res = await Term.findByIdAndDelete(id).lean();
-  return res; // null when not found
+  return res;
 };

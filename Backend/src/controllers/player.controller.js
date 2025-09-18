@@ -66,7 +66,6 @@ export const createPlayer = asyncHandler(async (req, res) => {
       contactInfo: req.body.contactInfo,
       game: (() => {
         try {
-          // If it's a JSON string (from form-data), parse it
           if (
             typeof req.body.game === "string" &&
             req.body.game.startsWith("{")
@@ -76,7 +75,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
           return req.body.game;
         } catch (error) {
           console.error("Error parsing game field:", error);
-          return req.body.game; // Fallback to original value
+          return req.body.game;
         }
       })(),
       customSport: req.body.customSport,
@@ -183,7 +182,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 20,
-    sortBy, // optional override
+    sortBy,
     search,
     nationality,
     jop,
@@ -193,16 +192,14 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     ageMax,
     salaryMin,
     salaryMax,
-    isPromoted, // optional filter: "true" or "false"
+    isPromoted,
     game,
   } = req.query;
 
   const now = new Date();
 
-  // base: only active + confirmed
   const and = [{ isActive: true }, { isConfirmed: true }];
 
-  // search
   if (search) {
     and.push({
       $or: [
@@ -214,7 +211,6 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     });
   }
 
-  // filters
   if (nationality)
     and.push({ nationality: { $regex: nationality, $options: "i" } });
   if (jop) and.push({ jop });
@@ -223,10 +219,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   if (game) {
     and.push({
       $or: [
-        { game: { $regex: game, $options: "i" } }, // String search
-        { "game.ar": { $regex: game, $options: "i" } }, // Object search - Arabic
-        { "game.en": { $regex: game, $options: "i" } }, // Object search - English
-        { "game.slug": { $regex: game, $options: "i" } }, // Object search - Slug
+        { game: { $regex: game, $options: "i" } },
+        { "game.ar": { $regex: game, $options: "i" } },
+        { "game.en": { $regex: game, $options: "i" } },
+        { "game.slug": { $regex: game, $options: "i" } },
       ],
     });
   }
@@ -245,11 +241,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     and.push({ "monthlySalary.amount": sal });
   }
 
-  // optional explicit promotion filter (kept for compatibility)
   if (typeof isPromoted !== "undefined") {
     if (isPromoted === "true") {
       and.push({ "isPromoted.status": true });
-      // keep the endDate check if your "active promo" means not expired:
       and.push({ "isPromoted.endDate": { $gt: now } });
     } else if (isPromoted === "false") {
       and.push({
@@ -264,13 +258,12 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 
   const query = and.length ? { $and: and } : {};
 
-  // sorting: promoted first, then newest first in each group
   const { skip, limit: limitNum } = paginate(page, limit);
   let sort = buildSortQuery(sortBy);
   if (!sortBy) {
     sort = {
-      "isPromoted.status": -1, // group 1 (true) first
-      createdAt: -1, // latest first in both groups
+      "isPromoted.status": -1,
+      createdAt: -1,
     };
   }
 
@@ -392,9 +385,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     player.customBirthCountry = req.body.customBirthCountry;
   if (req.body.jop !== undefined) player.jop = req.body.jop;
   if (req.body.roleType !== undefined) {
-    // Handle roleType field which can be string or object
     try {
-      // If it's a JSON string (from form-data), parse it
       if (
         typeof req.body.roleType === "string" &&
         req.body.roleType.startsWith("{")
@@ -405,15 +396,13 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       }
     } catch (error) {
       console.error("Error parsing roleType field:", error);
-      player.roleType = req.body.roleType; // Fallback to original value
+      player.roleType = req.body.roleType;
     }
   }
   if (req.body.customRoleType !== undefined)
     player.customRoleType = req.body.customRoleType;
   if (req.body.position !== undefined) {
-    // Handle position field which can be string or object
     try {
-      // If it's a JSON string (from form-data), parse it
       if (
         typeof req.body.position === "string" &&
         req.body.position.startsWith("{")
@@ -424,7 +413,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       }
     } catch (error) {
       console.error("Error parsing position field:", error);
-      player.position = req.body.position; // Fallback to original value
+      player.position = req.body.position;
     }
   }
   if (req.body.customPosition !== undefined)
@@ -433,9 +422,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (req.body.experience !== undefined)
     player.experience = req.body.experience;
   if (req.body.game !== undefined) {
-    // Handle game field which can be string or object
     try {
-      // If it's a JSON string (from form-data), parse it
       if (typeof req.body.game === "string" && req.body.game.startsWith("{")) {
         player.game = JSON.parse(req.body.game);
       } else {
@@ -443,7 +430,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       }
     } catch (error) {
       console.error("Error parsing game field:", error);
-      player.game = req.body.game; // Fallback to original value
+      player.game = req.body.game;
     }
   }
   if (req.body.customSport !== undefined)

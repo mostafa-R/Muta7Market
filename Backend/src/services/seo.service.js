@@ -1,11 +1,10 @@
-import { SitemapStream, streamToPromise } from "sitemap";
-import { createReadStream, createWriteStream } from "fs";
-import { Readable } from "stream";
 import path from "path";
-import Player from "../models/player.model.js";
+import { SitemapStream, streamToPromise } from "sitemap";
+import { Readable } from "stream";
 import Coach from "../models/coach.model.js";
-import Offer from "../models/offer.model.js";
 import MetaTag from "../models/metaTag.model.js";
+import Offer from "../models/offer.model.js";
+import Player from "../models/player.model.js";
 import logger from "../utils/logger.js";
 
 class SEOService {
@@ -32,15 +31,11 @@ class SEOService {
     };
   }
 
-  /**
-   * Generate complete sitemap
-   */
   async generateSitemap() {
     try {
       const sitemap = new SitemapStream({ hostname: this.baseUrl });
       const links = [];
 
-      // Static pages
       links.push(
         { url: "/", changefreq: "daily", priority: 1.0 },
         { url: "/players", changefreq: "daily", priority: 0.9 },
@@ -50,7 +45,6 @@ class SEOService {
         { url: "/contact", changefreq: "monthly", priority: 0.5 }
       );
 
-      // Dynamic pages - Players
       const players = await Player.find({ isActive: true })
         .select("_id updatedAt")
         .lean();
@@ -70,7 +64,6 @@ class SEOService {
         });
       });
 
-      // Dynamic pages - Coaches
       const coaches = await Coach.find({ isActive: true })
         .select("_id updatedAt")
         .lean();
@@ -84,7 +77,6 @@ class SEOService {
         });
       });
 
-      // Dynamic pages - Offers
       const offers = await Offer.find({
         isActive: true,
         "payment.isPaid": true,
@@ -101,11 +93,9 @@ class SEOService {
         });
       });
 
-      // Write links to sitemap
       const stream = Readable.from(links).pipe(sitemap);
       const data = await streamToPromise(stream);
 
-      // Save sitemap to file
       const sitemapPath = path.join(process.cwd(), "public", "sitemap.xml");
       await fs.writeFile(sitemapPath, data.toString());
 
@@ -122,9 +112,6 @@ class SEOService {
     }
   }
 
-  /**
-   * Get meta tags for a specific page/entity
-   */
   async getMetaTags(type, id, language = "en") {
     try {
       let entity;
@@ -218,7 +205,6 @@ class SEOService {
           break;
 
         case "custom":
-          // Get custom meta tags from database
           const customMeta = await MetaTag.findOne({
             pageId: id,
             isActive: true,
@@ -229,7 +215,6 @@ class SEOService {
           break;
       }
 
-      // Add structured data
       const structuredData = this.generateStructuredData(
         type,
         entity,
@@ -258,9 +243,6 @@ class SEOService {
     }
   }
 
-  /**
-   * Generate structured data (JSON-LD)
-   */
   generateStructuredData(type, entity, language = "en") {
     if (!entity) return null;
 
@@ -318,9 +300,6 @@ class SEOService {
     }
   }
 
-  /**
-   * Update meta tags for a page
-   */
   async updateMetaTags(pageId, type, tags, userId) {
     try {
       const metaTag = await MetaTag.findOneAndUpdate(
@@ -342,9 +321,6 @@ class SEOService {
     }
   }
 
-  /**
-   * Generate robots.txt content
-   */
   generateRobotsTxt() {
     const content = `# Sports Platform Robots.txt
 User-agent: *
@@ -369,9 +345,6 @@ Crawl-delay: 1
     return content;
   }
 
-  /**
-   * Submit sitemap to search engines
-   */
   async submitSitemap() {
     const sitemapUrl = `${this.baseUrl}/sitemap.xml`;
     const searchEngines = [
@@ -392,7 +365,6 @@ Crawl-delay: 1
   }
 }
 
-// Meta Tag Model
 const metaTagSchema = new mongoose.Schema(
   {
     pageId: {

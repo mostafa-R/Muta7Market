@@ -1,5 +1,5 @@
-import ApiError from '../utils/ApiError.js';
-import logger from '../utils/logger.js';
+import ApiError from "../utils/ApiError.js";
+import logger from "../utils/logger.js";
 
 const errorHandler = (err, req, res, _next) => {
   let error = { ...err };
@@ -7,8 +7,8 @@ const errorHandler = (err, req, res, _next) => {
 
   logger.error(err);
 
-  if (err.name === 'CastError') {
-    const message = 'Resource not found';
+  if (err.name === "CastError") {
+    const message = "Resource not found";
     error = new ApiError(404, message);
   }
 
@@ -18,39 +18,39 @@ const errorHandler = (err, req, res, _next) => {
     error = new ApiError(400, message);
   }
 
-  if (err.name === 'ValidationError') {
+  if (err.name === "ValidationError") {
     const errors = Object.values(err.errors).map((e) => e.message);
-    const message = errors.join(', ');
+    const message = errors.join(", ");
     error = new ApiError(400, message);
   }
 
-  if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
+  if (err.name === "JsonWebTokenError") {
+    const message = "Invalid token";
     error = new ApiError(401, message);
   }
 
-  if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
+  if (err.name === "TokenExpiredError") {
+    const message = "Token expired";
     error = new ApiError(401, message);
   }
 
-  if (err.name === 'MulterError') {
+  if (err.name === "MulterError") {
     const message =
-      err.code === 'LIMIT_FILE_SIZE'
-        ? 'File size too large'
-        : 'File upload error';
+      err.code === "LIMIT_FILE_SIZE"
+        ? "File size too large"
+        : "File upload error";
     error = new ApiError(400, message);
   }
 
   res.status(error.statusCode || 500).json({
     success: false,
     error: {
-      message: error.message || 'Server Error',
-      ...(process.env.NODE_ENV === 'development' && {
+      message: error.message || "Server Error",
+      ...(process.env.NODE_ENV === "development" && {
         stack: err.stack,
-        details: err
-      })
-    }
+        details: err,
+      }),
+    },
   });
 };
 

@@ -39,5 +39,5 @@ const aboutSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-
-export const About = mongoose.models.About || mongoose.model("About", aboutSchema);
+export const About =
+  mongoose.models.About || mongoose.model("About", aboutSchema);

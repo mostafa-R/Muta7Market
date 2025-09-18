@@ -1,4 +1,3 @@
-// routes/about.routes.js
 import express from "express";
 
 import {
@@ -18,7 +17,6 @@ import {
   idParamSchema,
 } from "../validators/about.validation.js";
 
-// ⬇️ Use YOUR middlewares and response/error classes exactly as they are
 import validate, {
   validateQuery,
 } from "../middleware/validation.middleware.js";
@@ -29,7 +27,6 @@ import sportModel from "../models/sport.model.js";
 
 const aboutsRouter = express.Router();
 
-/** Validate params helper (mirrors your validate behavior, no changes to your code) */
 const validateParams = (schema) => {
   return (req, _res, next) => {
     const { value, error } = schema.validate(req.params, {
@@ -53,7 +50,6 @@ const validateParams = (schema) => {
   };
 };
 
-// GET /abouts?page=&limit=
 aboutsRouter.get(
   "/",
   validateQuery(listQuerySchema),
@@ -68,14 +64,20 @@ aboutsRouter.get(
       ];
       return res
         .status(200)
-        .json(new ApiResponse(200, result , { totalPlayers, totalCoach, totalSports}, "About docs fetched successfully"));
+        .json(
+          new ApiResponse(
+            200,
+            result,
+            { totalPlayers, totalCoach, totalSports },
+            "About docs fetched successfully"
+          )
+        );
     } catch (err) {
       next(err);
     }
   }
 );
 
-// POST /abouts
 aboutsRouter.post("/", validate(createAboutSchema), async (req, res, next) => {
   try {
     const created = await createAbout(req.body);
@@ -87,7 +89,6 @@ aboutsRouter.post("/", validate(createAboutSchema), async (req, res, next) => {
   }
 });
 
-// PUT /abouts/:id
 aboutsRouter.put(
   "/:id",
   validateParams(idParamSchema),
@@ -105,7 +106,6 @@ aboutsRouter.put(
   }
 );
 
-// PATCH /abouts/:id
 aboutsRouter.patch(
   "/:id",
   validateParams(idParamSchema),
@@ -123,7 +123,6 @@ aboutsRouter.patch(
   }
 );
 
-// DELETE /abouts/:id
 aboutsRouter.delete(
   "/:id",
   validateParams(idParamSchema),

@@ -25,7 +25,6 @@ const userSchema = new mongoose.Schema(
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         "Please provide a valid email",
       ],
-      index: true,
     },
     phone: {
       type: String,
@@ -42,7 +41,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(USER_ROLES),
       default: USER_ROLES.USER,
-      index: true,
     },
     isEmailVerified: {
       type: Boolean,
@@ -64,7 +62,7 @@ const userSchema = new mongoose.Schema(
         createdAt: {
           type: Date,
           default: Date.now,
-          expires: 604800, // 7 days
+          expires: 604800,
         },
       },
     ],
@@ -89,6 +87,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ isActive: 1, activeExpireAt: 1 });
+userSchema.index({ role: 1 });
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {

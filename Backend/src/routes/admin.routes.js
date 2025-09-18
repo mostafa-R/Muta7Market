@@ -31,11 +31,8 @@ import validate, {
 } from "../middleware/validation.middleware.js";
 import {
   bulkUpdatePlayersSchema,
-  // Bulk Operations Schemas
   bulkUpdateUsersSchema,
-  // Player Validation Schemas
   createPlayerSchema,
-  // User Validation Schemas
   createUserSchema,
   getPlayersQuerySchema,
   getRecentPeopleQuerySchema,

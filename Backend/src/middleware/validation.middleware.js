@@ -5,20 +5,20 @@ const validate = (schema) => {
     const { value, error } = schema.validate(req.body, {
       abortEarly: false,
       stripUnknown: true,
-      convert: true, 
+      convert: true,
     });
 
     if (error) {
       const errors = {};
       for (const err of error.details) {
-        const key = err.path.join("."); 
+        const key = err.path.join(".");
         if (!errors[key]) errors[key] = [];
         errors[key].push(err.message);
       }
       return next(new ApiError(400, "Validation Error", true, errors));
     }
 
-    req.body = value; 
+    req.body = value;
     next();
   };
 };
