@@ -641,7 +641,7 @@ export default function PlayersDashboardTable() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+      <div className="bg-[#1e293b] rounded-xl p-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold mb-2">إدارة اللاعبين</h1>
