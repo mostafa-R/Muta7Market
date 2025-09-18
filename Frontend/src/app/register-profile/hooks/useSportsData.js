@@ -117,7 +117,6 @@ export const useSportsData = () => {
       },
       value: "other",
     });
-
     return roleTypes;
   };
 
