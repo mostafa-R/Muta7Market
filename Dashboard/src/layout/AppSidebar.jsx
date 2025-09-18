@@ -1,4 +1,5 @@
 "use client";
+import { ChartBarIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,7 +16,6 @@ import {
   SettingsIcon,
   UserCircleIcon
 } from "../icons/index";
-import { ChartBarIcon } from "lucide-react";
 
 const navItems = [
   {
@@ -156,20 +156,20 @@ const AppSidebar = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group relative rounded-lg p-3 flex items-center gap-3 w-full text-right ${
+              className={`menu-item group relative rounded-xl p-3 flex items-center gap-3 w-full text-right ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active bg-[#1e293b] text-white shadow-sm dark:bg-[#1e293b]"
-                  : "menu-item-inactive hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
-              } transition-all duration-300 ${
+                  ? "menu-item-active bg-gradient-to-r from-[#1e293b] to-[#334155] text-white shadow-lg dark:from-[#1e293b] dark:to-[#334155] transform scale-[1.02]"
+                  : "menu-item-inactive hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-600 dark:text-gray-300 hover:shadow-md hover:transform hover:scale-[1.01]"
+              } transition-all duration-500 ease-out ${
                 !isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
               }`}
             >
               <span
                 className={`${
                   openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active text-white"
-                    : "menu-item-icon-inactive text-gray-600 dark:text-gray-400 group-hover:text-[#1e293b] dark:group-hover:text-gray-200"
-                } transition-all duration-300`}
+                    ? "menu-item-icon-active text-white transform scale-110"
+                    : "menu-item-icon-inactive text-gray-600 dark:text-gray-400 group-hover:text-[#1e293b] dark:group-hover:text-gray-200 group-hover:scale-110"
+                } transition-all duration-500 ease-out`}
               >
                 {nav.icon}
               </span>
@@ -193,18 +193,18 @@ const AppSidebar = () => {
             nav.path && (
               <Link
                 href={nav.path}
-                className={`menu-item group relative rounded-lg p-3 flex items-center gap-3 text-right ${
+                className={`menu-item group relative rounded-xl p-3 flex items-center gap-3 text-right ${
                   isActive(nav.path)
-                    ? "menu-item-active bg-[#1e293b] text-white shadow-sm dark:bg-[#1e293b]"
-                    : "menu-item-inactive hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
-                } transition-all duration-300`}
+                    ? "menu-item-active bg-gradient-to-r from-[#1e293b] to-[#334155] text-white shadow-lg dark:from-[#1e293b] dark:to-[#334155] transform scale-[1.02]"
+                    : "menu-item-inactive hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-600 dark:text-gray-300 hover:shadow-md hover:transform hover:scale-[1.01]"
+                } transition-all duration-500 ease-out`}
               >
                 <span
                   className={`${
                     isActive(nav.path)
-                      ? "menu-item-icon-active text-white"
-                      : "menu-item-icon-inactive text-gray-600 dark:text-gray-400 group-hover:text-[#1e293b] dark:group-hover:text-gray-200"
-                  } transition-all duration-300`}
+                      ? "menu-item-icon-active text-white transform scale-110"
+                      : "menu-item-icon-inactive text-gray-600 dark:text-gray-400 group-hover:text-[#1e293b] dark:group-hover:text-gray-200 group-hover:scale-110"
+                  } transition-all duration-500 ease-out`}
                 >
                   {nav.icon}
                 </span>
@@ -221,7 +221,7 @@ const AppSidebar = () => {
               ref={(el) => {
                 subMenuRefs.current[`${menuType}-${index}`] = el;
               }}
-              className="overflow-hidden transition-all duration-500 ease-out"
+              className="overflow-hidden transition-all duration-700 ease-out"
               style={{
                 height:
                   openSubmenu?.type === menuType &&
@@ -230,18 +230,18 @@ const AppSidebar = () => {
                     : "0px",
               }}
             >
-              <ul className="mt-3 space-y-1 mr-9 relative" dir="rtl">
-                <div className="absolute right-0 top-0 bottom-0 w-px bg-gray-300 dark:bg-gray-600"></div>
+              <ul className="mt-3 space-y-2 mr-9 relative" dir="rtl">
+                <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-[#1e293b]/20 via-[#1e293b]/40 to-[#1e293b]/20 dark:from-gray-500/20 dark:via-gray-500/40 dark:to-gray-500/20"></div>
                 {nav.subItems.map((subItem, subIndex) => (
-                  <li key={subItem.name} className="relative">
-                    <div className="absolute right-0 top-1/2 w-3 h-px bg-gray-300 dark:bg-gray-600"></div>
+                  <li key={subItem.name} className="relative transform transition-all duration-500" style={{ animationDelay: `${subIndex * 50}ms` }}>
+                    <div className="absolute right-0 top-1/2 w-4 h-px bg-gradient-to-l from-[#1e293b]/40 to-transparent dark:from-gray-500/40"></div>
                     <Link
                       href={subItem.path}
-                      className={`menu-dropdown-item relative pr-4 group ${
+                      className={`menu-dropdown-item relative pr-6 py-2 group block ${
                         isActive(subItem.path)
-                          ? "menu-dropdown-item-active bg-gray-100 text-[#1e293b] dark:bg-gray-700 dark:text-white border-r-2 border-[#1e293b] dark:border-gray-300"
-                          : "menu-dropdown-item-inactive hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#1e293b] dark:hover:text-white hover:border-r-2 hover:border-gray-300 dark:hover:border-gray-400"
-                      } transition-all duration-300 rounded-l-lg border-r-2 border-transparent`}
+                          ? "menu-dropdown-item-active bg-gradient-to-l from-[#1e293b]/10 to-transparent text-[#1e293b] dark:from-white/10 dark:text-white border-r-3 border-[#1e293b] dark:border-white shadow-md"
+                          : "menu-dropdown-item-inactive hover:bg-gradient-to-l hover:from-[#1e293b]/5 hover:to-transparent hover:text-[#1e293b] dark:hover:from-white/5 dark:hover:text-white hover:border-r-3 hover:border-[#1e293b]/30 dark:hover:border-white/30 hover:shadow-sm"
+                      } transition-all duration-500 ease-out rounded-l-xl border-r-3 border-transparent transform hover:translate-x-1`}
                     >
                       <span className="font-medium">{subItem.name}</span>
                       <span className="flex items-center gap-1 ml-auto">
@@ -281,9 +281,9 @@ const AppSidebar = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-6 left-0 bg-white dark:bg-[#1e293b] border-r border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-screen transition-all duration-300 ease-in-out z-50 shadow-sm
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-6 right-0 bg-white dark:bg-[#1e293b] border-l border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-screen transition-all duration-500 ease-in-out z-50 shadow-2xl backdrop-blur-sm
         ${isExpanded || isMobileOpen ? "w-[300px]" : isHovered ? "w-[300px]" : "w-[90px]"}
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+        ${isMobileOpen ? "translate-x-0" : "translate-x-full"}
         lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -291,22 +291,22 @@ const AppSidebar = () => {
     >
       {/* Logo Section */}
       <div
-        className={`py-8 flex items-center ${
+        className={`py-8 flex items-center transition-all duration-500 ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
         <Link href="/" className="group">
           {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#1e293b] dark:bg:white rounded-lg flex items-center justify-center text-white dark:text-[#1e293b] font-bold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#1e293b] to-[#334155] dark:from-white dark:to-gray-100 rounded-xl flex items-center justify-center text-white dark:text-[#1e293b] font-bold shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-500 transform hover:rotate-3">
                 م
               </div>
-              <h1 className="text-2xl font-bold text-[#1e293b] dark:text-white">
+              <h1 className="text-2xl font-bold text-[#1e293b] dark:text-white transition-all duration-500 transform group-hover:scale-105 bg-gradient-to-r from-[#1e293b] to-[#334155] bg-clip-text text-transparent dark:from-white dark:to-gray-300">
                 Muta7Market
               </h1>
             </div>
           ) : (
-            <div className="w-8 h-8 bg-[#1e293b] dark:bg:white rounded-lg flex items-center justify-center text-white dark:text-[#1e293b] font-bold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#1e293b] to-[#334155] dark:from-white dark:to-gray-100 rounded-xl flex items-center justify-center text-white dark:text-[#1e293b] font-bold shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-500 transform hover:rotate-3">
               م
             </div>
           )}

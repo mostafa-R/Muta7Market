@@ -478,8 +478,8 @@ export default function UsersDashboardTable() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full" dir="rtl">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[900px]" dir="rtl">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('name')}>

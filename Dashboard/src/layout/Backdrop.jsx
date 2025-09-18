@@ -1,5 +1,4 @@
 import { useSidebar } from "@/context/SidebarContext";
-import React from "react";
 
 const Backdrop = () => {
   const { isMobileOpen, toggleMobileSidebar } = useSidebar();
@@ -8,7 +7,7 @@ const Backdrop = () => {
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+      className="fixed inset-0 z-40 bg-gray-900/60 backdrop-blur-sm lg:hidden transition-all duration-500 ease-out"
       onClick={toggleMobileSidebar}
     />
   );

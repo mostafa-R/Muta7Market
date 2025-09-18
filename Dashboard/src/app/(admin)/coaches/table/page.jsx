@@ -2,19 +2,19 @@
 'use client';
 
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  CheckCircle,
-  ChevronLeft, ChevronRight,
-  Download,
-  Edit3,
-  Eye,
-  Search,
-  Star,
-  Trash2,
-  Users,
-  XCircle
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    CheckCircle,
+    ChevronLeft, ChevronRight,
+    Download,
+    Edit3,
+    Eye,
+    Search,
+    Star,
+    Trash2,
+    Users,
+    XCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -475,8 +475,8 @@ if (typeof window !== 'undefined') {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 w-80" onClick={() => toggleSort('name')}>
