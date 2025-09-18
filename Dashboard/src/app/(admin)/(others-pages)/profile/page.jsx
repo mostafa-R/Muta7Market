@@ -84,8 +84,8 @@ const AdminProfilePage = () => {
       }
 
       const data = await response.json();
-      if (data.success && data.user) {
-        const userData = data.user;
+      if (data.success && data.data.user) {
+        const userData = data.data.user;
         setProfileData({
           name: userData.name || '',
           email: userData.email || '',
@@ -100,6 +100,7 @@ const AdminProfilePage = () => {
             public_id: userData.profileImage?.public_id || ''
           }
         });
+        
         setOriginalData(data.user);
       }
     } catch (error) {

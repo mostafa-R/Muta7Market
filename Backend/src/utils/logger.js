@@ -97,7 +97,7 @@ logger.logRequest = (req, res, duration) => {
     duration: `${duration}ms`,
     userAgent: req.get("User-Agent"),
     ip: req.ip,
-    userId: req.user?.id || null,
+    userId: req.user?.id || "anonymous",
     contentLength: res.get("content-length") || 0,
   });
 };

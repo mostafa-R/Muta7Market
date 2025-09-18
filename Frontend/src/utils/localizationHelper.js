@@ -57,7 +57,7 @@ export const useLocalizedText = () => {
   ) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
 
       console.log(
         `🔄 ${
@@ -121,7 +121,7 @@ export const useLocalizedText = () => {
 export const initDynamicTranslations = async (preferredLanguage = null) => {
   try {
     const API_BASE_URL =
-      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
 
     // Fetch translations for both languages, but prioritize the preferred language
     const languages = preferredLanguage

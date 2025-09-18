@@ -69,7 +69,9 @@ const UserProfile = () => {
     setIsLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("accessToken");
+
       if (!token) {
         router.push("/signin");
         return;
@@ -77,13 +79,14 @@ const UserProfile = () => {
 
       const response = await axios.get(`${API_URL}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
 
-      if (!response.data?.user) {
+      if (!response.data.data.user) {
         throw new Error(t("profile.userDataUnavailable"));
       }
 
-      const userData = response.data.user;
+      const userData = response.data.data.user;
       setUser(userData);
 
       reset({
@@ -120,7 +123,7 @@ const UserProfile = () => {
 
       const pendingRes = await axios.get(
         `${API_URL}/payments/invoices?status=pending`,
-        { headers }
+        { headers, withCredentials: true }
       );
       const pendingItems = (pendingRes.data?.data?.items || []).map((inv) => ({
         _id: inv.id,
@@ -141,7 +144,7 @@ const UserProfile = () => {
 
       const paidRes = await axios.get(
         `${API_URL}/payments/invoices?status=paid`,
-        { headers }
+        { headers, withCredentials: true }
       );
       setInvoices(paidRes.data?.data?.items || []);
     } catch (err) {
@@ -175,6 +178,7 @@ const UserProfile = () => {
 
       const response = await axios.get(`${API_URL}/players/playerprofile`, {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
 
       if (response.data && response.data.data) {
@@ -293,7 +297,7 @@ const UserProfile = () => {
               orderNumber
             )}`,
             {},
-            { headers }
+            { headers, withCredentials: true }
           );
           const status = String(res.data?.data?.status || "").toLowerCase();
           const paid = Boolean(res.data?.data?.paid);
@@ -323,7 +327,7 @@ const UserProfile = () => {
         try {
           const res = await axios.get(
             `${API_URL}/payments/status/${invoiceId}`,
-            { headers }
+            { headers, withCredentials: true }
           );
           const status = String(res.data?.data?.status || "").toLowerCase();
           if (status === "paid") {
@@ -359,7 +363,11 @@ const UserProfile = () => {
 
       try {
         axios
-          .post(`${API_URL}/payments/reconcile`, {}, { headers })
+          .post(
+            `${API_URL}/payments/reconcile`,
+            {},
+            { headers, withCredentials: true }
+          )
           .catch(() => {});
       } catch {}
     };
@@ -407,6 +415,7 @@ const UserProfile = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          withCredentials: true,
         });
 
         if (response.data.user) {
