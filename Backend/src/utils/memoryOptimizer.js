@@ -3,7 +3,7 @@ import logger from "./logger.js";
 class MemoryOptimizer {
   constructor() {
     this.gcInterval = null;
-    this.memoryThreshold = 150 * 1024 * 1024;
+    this.memoryThreshold = 600 * 1024 * 1024;
     this.isMonitoring = false;
   }
 
