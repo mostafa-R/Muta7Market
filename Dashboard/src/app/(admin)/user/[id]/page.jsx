@@ -114,7 +114,7 @@ if (typeof window !== 'undefined') {
     if (!user?._id) return;
     setBusy(true);
     const nextValue = !user.isEmailVerified;
-    setUser((u) => ({ ...u, isEmailVerified: nextValue })); // optimistic
+    setUser((u) => ({ ...u, isEmailVerified: nextValue })); 
     try {
       const res = await fetch(endpointVerify(user._id), {
         method: 'PATCH',
@@ -131,7 +131,7 @@ if (typeof window !== 'undefined') {
       });
     } catch (e) {
       console.error('verify email toggle error =>', e);
-      setUser((u) => (u ? { ...u, isEmailVerified: !u.isEmailVerified } : u)); // revert
+      setUser((u) => (u ? { ...u, isEmailVerified: !u.isEmailVerified } : u)); 
       await Swal.fire({ title: 'خطأ', text: 'تعذر تعديل حالة تحقق الإيميل.', icon: 'error' });
     } finally {
       setBusy(false);
@@ -159,7 +159,7 @@ if (typeof window !== 'undefined') {
       const res = await fetch(endpointDel(user._id), { method: 'DELETE', headers: headers() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await Swal.fire({ title: 'تم الحذف!', icon: 'success' });
-      router.push('/user/table'); // غيّرها لمسار جدولك الفعلي إن لزم
+      router.push('/user/table'); 
     } catch (e) {
       console.error(e);
       await Swal.fire({ title: 'خطأ', text: 'تعذر حذف المستخدم. حاول مرة أخرى.', icon: 'error' });
@@ -168,7 +168,6 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  // ===== UI =====
   if (loading) {
     return (
       <div className="p-6" dir="rtl">
@@ -243,7 +242,7 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
 
-      {/* أعلى الصفحة: صورة وبيانات سريعة */}
+      
       <div className="bg-white rounded-xl p-5 border border-gray-100 mb-6">
         <div className="flex items-center gap-5">
           <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 flex items-center justify-center ring-2 ring-white shadow-sm">
@@ -279,9 +278,9 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
 
-      {/* تفاصيل */}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 1 */}
+  
         <div className="bg-white rounded-xl p-5 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4">معلومات التواصل</h2>
           <div className="space-y-3">
@@ -290,7 +289,7 @@ if (typeof window !== 'undefined') {
           </div>
         </div>
 
-        {/* 2 */}
+       
         <div className="bg-white rounded-xl p-5 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4">التحقق</h2>
           <div className="space-y-3">
@@ -307,7 +306,6 @@ if (typeof window !== 'undefined') {
           </div>
         </div>
 
-        {/* 3 */}
         <div className="bg-white rounded-xl p-5 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4">تفاصيل إضافية</h2>
           <div className="space-y-3">

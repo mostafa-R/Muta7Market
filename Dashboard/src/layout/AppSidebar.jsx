@@ -1,5 +1,5 @@
 "use client";
-import { ChartBarIcon } from "lucide-react";
+import { ChartBarIcon, Medal, Users, Volleyball } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -30,7 +30,8 @@ const navItems = [
   },
   {
     name: "المستخدمون",
-    icon: <UserCircleIcon />,
+   
+     icon: <Users />,
     subItems: [
       { name: "جدول المستخدمين", path: "/user/table", pro: false },
       { name: "إضافة مستخدم جديد", path: "/user/add", pro: false },
@@ -38,14 +39,14 @@ const navItems = [
   },
   {
     name: "اللاعبون",
-    icon: <UserCircleIcon />,
+    icon: <Volleyball />,
     subItems: [{ name: "جدول اللاعبين", path: "/players/table", pro: false },
       { name: "إضافة لاعب جديد", path: "/players/create-with-player", pro: false },
     ],
   },
   {
     name: "المدربون",
-    icon: <UserCircleIcon />,
+    icon: <Medal />,
     subItems: [{ name: "جدول المدربين", path: "/coaches/table", pro: false }],
   },
   {

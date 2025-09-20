@@ -10,12 +10,11 @@ export default function Ecommerce() {
   return (
        <>
       <div className="space-y-6">
-        {/* EcommerceMetrics تاخد العرض كامل */}
+     
         <div className="w-full">
           <EcommerceMetrics />
         </div>
-
-        {/* باقي المكونات */}
+        
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           <div className="col-span-12">
             <StatisticsChart />

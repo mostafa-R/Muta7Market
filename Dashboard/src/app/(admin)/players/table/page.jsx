@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Download,
   Edit3,
+  Eye,
+  Image as ImageIcon,
   Loader2,
   RefreshCw,
   Search,
@@ -18,7 +20,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import Swal from 'sweetalert2';
 
 function apiBase() {
@@ -33,178 +35,7 @@ const ENDPOINTS = {
   delete: (id) => `${BASE}/players/${id}`,
 };
 
-// Optimized Components for better performance
-const SortIcon = React.memo(({ column, sortBy, sortDir }) => {
-  if (sortBy !== column) {
-    return <ArrowUpDown className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />;
-  }
-  return sortDir === 'asc' ? 
-    <ArrowUp className="w-4 h-4 text-blue-600" /> : 
-    <ArrowDown className="w-4 h-4 text-blue-600" />;
-});
 
-const Avatar = React.memo(({ name, src, promoted }) => (
-  <div className="flex items-center gap-3">
-    <div className="relative">
-      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white shadow-md bg-gray-100 flex items-center justify-center">
-        {src ? (
-          <img 
-            src={src} 
-            alt={name || 'صورة اللاعب'} 
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <Users className="w-5 h-5 text-gray-400" />
-        )}
-      </div>
-      {promoted && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-          <Star className="w-2.5 h-2.5 text-yellow-800" />
-        </div>
-      )}
-    </div>
-  </div>
-));
-
-const StatusBadge = React.memo(({ status, label }) => {
-  const statusClass = useMemo(() => ({
-    available: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    contracted: 'bg-purple-100 text-purple-700 border-purple-200',
-    transferred: 'bg-amber-100 text-amber-700 border-amber-200',
-    recently_transferred: 'bg-blue-100 text-blue-700 border-blue-200',
-  }[status] || 'bg-gray-100 text-gray-700 border-gray-200'), [status]);
-
-  return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusClass}`}>
-      {label}
-    </span>
-  );
-});
-
-const BooleanBadge = React.memo(({ value, trueText = 'نعم', falseText = 'لا' }) => (
-  <div className="flex justify-center">
-    {value ? (
-      <CheckCircle className="w-5 h-5 text-green-600" title={trueText} />
-    ) : (
-      <XCircle className="w-5 h-5 text-red-500" title={falseText} />
-    )}
-  </div>
-));
-
-const TableActions = React.memo(({ player, onEdit, onDelete, deletingId }) => (
-  <div className="flex items-center justify-center gap-2">
-    <button
-      onClick={() => onEdit(player._id)}
-      className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
-      title="تعديل اللاعب"
-    >
-      <Edit3 className="w-4 h-4" />
-    </button>
-    <button
-      onClick={() => onDelete(player._id)}
-      disabled={deletingId === player._id}
-      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200 disabled:opacity-50"
-      title="حذف اللاعب"
-    >
-      {deletingId === player._id ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <Trash2 className="w-4 h-4" />
-      )}
-    </button>
-  </div>
-));
-
-const GenderBadge = React.memo(({ gender }) => {
-  const genderInfo = useMemo(() => {
-    switch (gender?.toLowerCase()) {
-      case 'male': return { text: 'ذكر', class: 'bg-blue-50 text-blue-700 border-blue-200' };
-      case 'female': return { text: 'أنثى', class: 'bg-pink-50 text-pink-700 border-pink-200' };
-      default: return { text: '-', class: 'bg-gray-50 text-gray-600 border-gray-200' };
-    }
-  }, [gender]);
-
-  return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${genderInfo.class}`}>
-      {genderInfo.text}
-    </span>
-  );
-});
-
-const PlayerRow = React.memo(({ player, onEdit, onDelete, deletingId, statusClass }) => (
-  <tr className="transition-colors duration-150 hover:bg-gray-50">
-    <td className="px-6 py-4">
-      <div className="flex items-center gap-4">
-        <Avatar name={player.name} src={player.image} promoted={player.isPromoted} />
-        <div className="min-w-20 flex-1">
-          <div className="text-sm font-semibold text-gray-900 flex items-center gap-1">
-            <span className="line-clamp-1 min-w-28" title={player.name}>
-              {player.name}
-            </span>
-            {player.isPromoted && <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" title="مروّج" />}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">انضم في {player.joinDate}</div>
-        </div>
-      </div>
-    </td>
-
-    <td className="px-6 py-4">
-      <div className="text-sm text-gray-900 font-mono truncate">
-        <span className="truncate" title={player.email}>
-          {player.email}
-        </span>
-      </div>
-    </td>
-
-    <td className="px-6 py-4">
-      <GenderBadge gender={player.gender} />
-    </td>
-
-    <td className="px-6 py-4">
-      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200" title={player.nationality}>
-        <span className="truncate">{player.nationality}</span>
-      </span>
-    </td>
-
-    <td className="px-6 py-4">
-      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 max-w-28" title={player.game}>
-        <span className="truncate max-w-28">{player.game}</span>
-      </span>
-    </td>
-
-    <td className="px-6 py-4">
-      <div className="text-sm text-gray-600 font-medium">{player.age}</div>
-    </td>
-
-    <td className="px-6 py-4">
-      <StatusBadge status={player.status} label={player.statusLabel} />
-    </td>
-
-    <td className="px-6 py-4 text-center">
-      <BooleanBadge value={player.isPromoted} trueText="مروّج" falseText="عادي" />
-    </td>
-
-    <td className="px-6 py-4 text-center">
-      <BooleanBadge value={player.isConfirmed} />
-    </td>
-
-    <td className="px-6 py-4 text-center">
-      <BooleanBadge value={player.isActive} trueText="نشط" falseText="غير نشط" />
-    </td>
-
-    <td className="px-6 py-4 text-center">
-      <TableActions 
-        player={player} 
-        onEdit={onEdit} 
-        onDelete={onDelete} 
-        deletingId={deletingId} 
-      />
-    </td>
-  </tr>
-));
-
-// Helper functions to extract Arabic names from sports object format
 const getSportsDisplayValue = (sportsData) => {
   if (!sportsData) return '-';
   
@@ -223,36 +54,66 @@ const getSportsDisplayValue = (sportsData) => {
   return '-';
 };
 
-function RECENT_PROMO_VALID(promoData) {
-  if (!promoData) return false;
-  if (typeof promoData === 'boolean') return promoData;
-  if (typeof promoData === 'object' && promoData.isPromoted) {
-    const promoDate = promoData.promotedAt ? new Date(promoData.promotedAt) : null;
-    if (!promoDate) return !!promoData.isPromoted;
-    const now = new Date();
-    const diffTime = now.getTime() - promoDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && !!promoData.isPromoted;
+const lineClampStyles = `
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  return false;
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+`;
+
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  customClass: { container: 'my-toast-under-navbar' },
+  showConfirmButton: false,
+  timer: 2200,
+  timerProgressBar: true,
+});
+async function extractBackendError(res) {
+  const ct = res.headers.get('content-type') || '';
+  try {
+    const body = ct.includes('application/json') ? await res.json() : await res.text();
+    const data =
+      typeof body === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(body);
+            } catch {
+              return { message: body };
+            }
+          })()
+        : body;
+    if (Array.isArray(data?.errors))
+      return data.errors.map((e) => e?.message || e?.msg || JSON.stringify(e)).join('<br/>');
+    if (data?.errors && typeof data.errors === 'object')
+      return Object.values(data.errors).map((e) => e?.message || JSON.stringify(e)).join('<br/>');
+    return data?.message || data?.error?.message || data?.error || data?.msg || `HTTP ${res.status} ${res.statusText}`;
+  } catch {
+    return `HTTP ${res.status} ${res.statusText}`;
+  }
 }
 
+const RECENT_PROMO_VALID = (promo) => {
+  if (!promo || typeof promo !== 'object') return false;
+  if (!promo.status) return false;
+  const end = promo.endDate ? new Date(promo.endDate) : null;
+  if (!end) return true;
+  return end > new Date();
+};
+
 function deriveStatus(p) {
-  const raw = p.status;
-  if (p.transferHistory && Array.isArray(p.transferHistory) && p.transferHistory.length > 0) {
-    const lastTransfer = p.transferHistory[p.transferHistory.length - 1];
-    if (lastTransfer && lastTransfer.transferDate) {
-      const transferDate = new Date(lastTransfer.transferDate);
-      const now = new Date();
-      const days = Math.ceil((now.getTime() - transferDate.getTime()) / (1000 * 60 * 60 * 24));
-      return days <= 30 ? 'recently_transferred' : 'transferred';
-    }
-  }
-  
-  if (p.lastTransferDate) {
-    const transferDate = new Date(p.lastTransferDate);
-    const now = new Date();
-    const days = Math.ceil((now.getTime() - transferDate.getTime()) / (1000 * 60 * 60 * 24));
+  const raw = (p.status || '').toLowerCase();
+  const tStart = p?.transferredTo?.startDate ? new Date(p.transferredTo.startDate) : null;
+  if (tStart) {
+    const days = (Date.now() - tStart.getTime()) / 86400000;
     return days <= 30 ? 'recently_transferred' : 'transferred';
   }
   if (raw) return raw;
@@ -279,72 +140,41 @@ const statusClass = (s) =>
     recently_transferred: 'bg-blue-100 text-blue-700 border-blue-200',
   }[s] || 'bg-gray-100 text-gray-700 border-gray-200');
 
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-});
-
-async function extractBackendError(res) {
-  const ct = res.headers.get('content-type') || '';
-  try {
-    if (ct.includes('application/json')) {
-      const json = await res.json();
-      return json?.message || json?.error || `خطأ ${res.status}`;
-    } else {
-      const text = await res.text();
-      return text || `خطأ ${res.status}`;
-    }
-  } catch {
-    return `خطأ ${res.status}`;
-  }
-}
-
 export default function PlayersDashboardTable() {
   const router = useRouter();
 
-  // State management with proper hooks
-  const [rows, setRows] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [serverTotalPages, setServerTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
-  const [deletingId, setDeletingId] = useState(null);
+  const [rows, setRows] = React.useState([]);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const [serverTotalPages, setServerTotalPages] = React.useState(1);
+  const [loading, setLoading] = React.useState(false);
+  const [initialLoading, setInitialLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [deletingId, setDeletingId] = React.useState(null);
 
-  // Search and filter state
-  const [query, setQuery] = useState('');
-  const [sortBy, setSortBy] = useState('');
-  const [sortDir, setSortDir] = useState('asc');
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [filterMode, setFilterMode] = useState('all');
-  const [confirmFilter, setConfirmFilter] = useState('all');
+  const [query, setQuery] = React.useState('');
+  const [sortBy, setSortBy] = React.useState('');
+  const [sortDir, setSortDir] = React.useState('asc');
+  const [page, setPage] = React.useState(1);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
-  // Refs for optimization
-  const fetchTimeoutRef = useRef(null);
-  const abortControllerRef = useRef(null);
+  const [filterMode, setFilterMode] = React.useState('all');
+  const [confirmFilter, setConfirmFilter] = React.useState('all');
 
-  // Optimized callbacks
-  const authHeaders = useCallback(() => {
-    if (typeof window === 'undefined') return { 'Content-Type': 'application/json' };
-    
-    const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
-    return { 
-      'Content-Type': 'application/json', 
-      ...(token ? { Authorization: `Bearer ${token}` } : {}) 
-    };
+  const authHeaders = React.useCallback(() => {
+   let token = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
 
-  const mapPlayers = useCallback((players = []) => {
+  const mapPlayers = React.useCallback((players = []) => {
     return players.map((p) => {
       const promoted = RECENT_PROMO_VALID(p?.isPromoted);
       const st = deriveStatus(p);
-      const createdAt = p.createdAt ? new Date(p.createdAt) : null;
-      
       return {
         _id: p._id,
         name: p.name || p.user?.name || '-',
@@ -356,8 +186,8 @@ export default function PlayersDashboardTable() {
         image: p.media?.profileImage?.url || '',
         status: st,
         statusLabel: statusLabel(st),
-        joinDate: createdAt ? createdAt.toLocaleDateString('ar-EG') : '-',
-        createdAt: createdAt ? createdAt.getTime() : 0,
+        joinDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('ar-EG') : '-',
+        createdAt: p.createdAt ? new Date(p.createdAt).getTime() : 0,
         isActive: !!p.isActive,
         isPromoted: promoted,
         isConfirmed: !!p.isConfirmed, 
@@ -365,19 +195,16 @@ export default function PlayersDashboardTable() {
     });
   }, []);
 
-  const buildQueryParams = useCallback(() => {
+  const buildQueryParams = React.useCallback(() => {
     const params = new URLSearchParams();
     params.set('page', String(page));
     params.set('limit', String(rowsPerPage));
     params.set('jop', 'player');
+    if (query.trim()) params.set('search', query.trim());
     
-    const trimmedQuery = query.trim();
-    if (trimmedQuery) params.set('search', trimmedQuery);
-    
-    // Filter parameters
     if (filterMode === 'active') params.set('isActive', 'true');
     else if (filterMode === 'inactive') params.set('isActive', 'false');
-    else if (filterMode === 'promoted') params.set('isPromoted', 'true');
+    if (filterMode === 'promoted') params.set('isPromoted', 'true');
     
     if (confirmFilter === 'confirmed') params.set('isConfirmed', 'true');
     else if (confirmFilter === 'unconfirmed') params.set('isConfirmed', 'false');
@@ -385,15 +212,7 @@ export default function PlayersDashboardTable() {
     return params;
   }, [page, rowsPerPage, query, filterMode, confirmFilter]);
 
-  const fetchPlayers = useCallback(async (isRefresh = false) => {
-    // Cancel previous request if it exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-    
+  const fetchPlayers = React.useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -403,11 +222,7 @@ export default function PlayersDashboardTable() {
 
     try {
       const params = buildQueryParams();
-      const res = await fetch(ENDPOINTS.list(params), { 
-        headers: authHeaders(), 
-        cache: 'no-store',
-        signal 
-      });
+      const res = await fetch(ENDPOINTS.list(params), { headers: authHeaders(), cache: 'no-store' });
       if (!res.ok) {
         const msg = await extractBackendError(res);
         await Toast.fire({ icon: 'error', html: msg });
@@ -417,10 +232,6 @@ export default function PlayersDashboardTable() {
         return;
       }
       const json = await res.json();
-      
-      // Check if request was cancelled
-      if (signal.aborted) return;
-      
       const players = json?.data?.players ?? [];
       let mapped = mapPlayers(players);
 
@@ -449,8 +260,6 @@ export default function PlayersDashboardTable() {
         setServerTotalPages(1);
       }
     } catch (e) {
-      if (e.name === 'AbortError') return; // Request was cancelled
-      
       console.error(e);
       setError('فشل في جلب اللاعبين. تأكد من الاتصال بالإنترنت والصلاحيات.');
       await Toast.fire({ icon: 'error', title: 'تعذر جلب اللاعبين' });
@@ -458,99 +267,77 @@ export default function PlayersDashboardTable() {
       setTotalCount(0);
       setServerTotalPages(1);
     } finally {
-      if (!signal.aborted) {
-        setLoading(false);
-        setRefreshing(false);
-        if (initialLoading) setInitialLoading(false);
-      }
+      setLoading(false);
+      setRefreshing(false);
+      if (initialLoading) setInitialLoading(false);
     }
   }, [authHeaders, buildQueryParams, mapPlayers, filterMode, confirmFilter, initialLoading, page]);
 
-  // Optimized effect for fetching players
-  useEffect(() => {
+  React.useEffect(() => {
     fetchPlayers();
   }, [fetchPlayers]);
 
-  // Debounced search effect
-  useEffect(() => {
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-    }
-    
-    fetchTimeoutRef.current = setTimeout(() => {
+  React.useEffect(() => {
+    const t = setTimeout(() => {
       if (page !== 1) {
         setPage(1);
       } else {
         fetchPlayers();
       }
     }, 400);
-    
-    return () => {
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-    };
-  }, [query, filterMode, confirmFilter, fetchPlayers, page]);
+    return () => clearTimeout(t);
+  }, [query]);  
 
-  // Reset page and fetch when filters/sorting change
-  useEffect(() => {
+  React.useEffect(() => {
     if (page !== 1) {
       setPage(1);
     } else {
       fetchPlayers();
     }
-  }, [rowsPerPage, sortBy, sortDir, filterMode, confirmFilter, fetchPlayers]);
+  }, [rowsPerPage, sortBy, sortDir, filterMode, confirmFilter]);
 
-  // Optimized row ranking function
-  const rankRow = useCallback((r) => {
+  function rankRow(r) {
     if (r.isPromoted) return 0;
     if (r.isActive && r.isConfirmed) return 1;
     if (r.isActive && !r.isConfirmed) return 2;
     return 3;
-  }, []);
+  }
 
-  // Memoized sorted data
-  const sorted = useMemo(() => {
+  const sorted = React.useMemo(() => {
     const copy = [...rows];
     if (!sortBy) {
       copy.sort((a, b) => {
-        const ra = rankRow(a);
-        const rb = rankRow(b);
+        const ra = rankRow(a),
+          rb = rankRow(b);
         if (ra !== rb) return ra - rb;
         return b.createdAt - a.createdAt;
       });
       return copy;
     }
-    
     copy.sort((a, b) => {
       const A = a[sortBy] ?? '';
       const B = b[sortBy] ?? '';
       if (typeof A === 'string' && typeof B === 'string') {
-        return sortDir === 'asc' ? A.localeCompare(B, 'ar') : B.localeCompare(A, 'ar');
+        return sortDir === 'asc' ? A.localeCompare(B) : B.localeCompare(A);
       }
       return sortDir === 'asc' ? (A > B ? 1 : -1) : (A > B ? -1 : 1);
     });
     return copy;
-  }, [rows, sortBy, sortDir, rankRow]);
+  }, [rows, sortBy, sortDir]);
 
-  // Memoized pagination calculations
-  const paginationInfo = useMemo(() => ({
-    totalPages: Math.max(1, serverTotalPages),
-    pageStart: (page - 1) * rowsPerPage + 1,
-    pageEnd: Math.min(page * rowsPerPage, totalCount)
-  }), [serverTotalPages, page, rowsPerPage, totalCount]);
+  const totalPages = Math.max(1, serverTotalPages);
+  const pageStart = (page - 1) * rowsPerPage + 1;
+  const pageEnd = Math.min(page * rowsPerPage, totalCount);
 
-  // Optimized sort toggle function
-  const toggleSort = useCallback((col) => {
-    if (sortBy === col) {
-      setSortDir(prevDir => prevDir === 'asc' ? 'desc' : 'asc');
-    } else {
+  const toggleSort = (col) => {
+    if (sortBy === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
       setSortBy(col);
       setSortDir('asc');
     }
-  }, [sortBy]);
+  };
 
-  const handleDelete = useCallback(async (id) => {
+  const handleDelete = React.useCallback(async (id) => {
     const ask = await Swal.fire({
       title: 'هل أنت متأكد؟',
       text: 'لن يمكنك التراجع بعد الحذف!',
@@ -580,9 +367,7 @@ export default function PlayersDashboardTable() {
     }
   }, [authHeaders, fetchPlayers]);
 
-  const handleEdit = useCallback((id) => {
-    router.push(`/players/update/${encodeURIComponent(id)}`);
-  }, [router]);
+  const handleEdit = (id) => router.push(`/players/update/${encodeURIComponent(id)}`);
 
   const exportCSV = () => {
     const headers = [
@@ -595,7 +380,7 @@ export default function PlayersDashboardTable() {
       'السن',
       'الحالة',
       'مروّج',
-      'مؤكَّد',
+      'مؤكَّد',
       'نشط',
       'تاريخ الانضمام',
     ];
@@ -613,89 +398,199 @@ export default function PlayersDashboardTable() {
       r.isActive ? 'نعم' : 'لا',
       r.joinDate,
     ]);
-    const csvContent = [headers, ...rowsCsv].map(row => row.join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `players_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    const csv = [headers, ...rowsCsv]
+      .map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `اللاعبين_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const Avatar = React.memo(({ name, src }) => {
+    if (src) {
+      return (
+        <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white shadow-md bg-gray-100 flex items-center justify-center">
+          <img 
+            src={src} 
+            alt={name || 'صورة اللاعب'} 
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling?.style.setProperty('display', 'flex');
+            }}
+          />
+          <div className="w-full h-full hidden items-center justify-center text-gray-500 text-xs bg-gray-100">
+            <ImageIcon className="w-4 h-4" />
+          </div>
+        </div>
+      );
     }
+
+    const initials = (name || '')
+      .split(' ')
+      .slice(0, 2)
+      .map((s) => s?.[0] || '')
+      .join('')
+      .toUpperCase();
+    const colors = [
+      'from-blue-500 to-purple-600', 
+      'from-green-500 to-teal-600', 
+      'from-orange-500 to-red-600', 
+      'from-pink-500 to-rose-600'
+    ];
+    const colorIndex = (name || '').length % colors.length;
+    
+    return (
+      <div
+        className={`w-10 h-10 rounded-full bg-gradient-to-br ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-sm shadow-md`}
+        title={name || 'لاعب'}
+        role="img"
+        aria-label={`صورة ${name || 'اللاعب'}`}
+      >
+        {initials || 'PL'}
+      </div>
+    );
+  });
+
+  const GenderBadge = ({ gender }) => {
+    const g = (gender || '').toLowerCase();
+    const isMale = g === 'male' || g === 'ذكر';
+    const cls = isMale ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-pink-100 text-pink-700 border-pink-200';
+    const symbol = isMale ? '♂' : '♀';
+    const label = isMale ? 'ذكر' : 'أنثى';
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${cls}`}>
+        <span className="leading-none">{symbol}</span>
+        {label}
+      </span>
+    );
+  };
+
+  const SortIcon = ({ column }) => {
+    if (sortBy !== column)
+      return <ArrowUpDown className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />;
+    return sortDir === 'asc' ? <ArrowUp className="w-4 h-4 text-blue-600" /> : <ArrowDown className="w-4 h-4 text-blue-600" />;
   };
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">جارٍ تحميل اللاعبين...</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">جارٍ تحميل اللاعبين</h2>
+          <p className="text-sm text-gray-500">يرجى الانتظار...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="bg-[#1e293b] rounded-xl p-6 text-white">
+    <>
+      <style dangerouslySetInnerHTML={{ __html: lineClampStyles }} />
+      <div className="min-h-screen p-4 sm:p-6 bg-gray-50" dir="rtl">
+   <div className="bg-[#1e293b] rounded-xl p-6 text-white mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold mb-2">إدارة اللاعبين</h1>
             <p className="text-blue-100">إدارة وعرض جميع اللاعبين المسجلين في النظام</p>
-          </div>
+            </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="text-center">
               <p className="text-3xl font-bold">{totalCount}</p>
               <p className="text-blue-200">إجمالي اللاعبين</p>
-            </div>
+          </div>
             <div className="text-center">
+              <p className="text-xl font-bold text-indigo-400">{new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+            </div>
+
+            </div>
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 flex items-center gap-2">
+                  <XCircle className="w-4 h-4" />
+                  {error}
+                </p>
+              </div>
+            )}
+          </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-blue-100">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">إجمالي اللاعبين</p>
+              <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-yellow-100">
+              <Star className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">المروّجون (هذه الصفحة)</p>
+              <p className="text-2xl font-bold text-yellow-600">{rows.filter((r) => r.isPromoted).length}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-emerald-100">
+              <CheckCircle className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">المؤكَّدون (هذه الصفحة)</p>
+              <p className="text-2xl font-bold text-emerald-600">{rows.filter((r) => r.isConfirmed).length}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="p-3 rounded-lg bg-indigo-100">
+              <RefreshCw className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">آخر تحديث</p>
               <p className="text-xl font-bold text-indigo-600">{new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Controls */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 flex-1 min-w-0">
-              <div className="relative flex-shrink-0">
-                <Search className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
-                <input
-                  value={query}
+        {/* Controls */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                <div className="relative">
+                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none ">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                  <input
+                  type="text"
+                  placeholder="ابحث بالاسم ..."
+                    value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="البحث في الاسم والبريد الإلكتروني..."
-                  className="pr-10 pl-4 py-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white dark:bg-gray-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 w-full md:w-64 lg:w-72"
-                  disabled={loading}
-                  aria-label="البحث في اللاعبين"
-                />
-                {query && (
-                  <button
-                    onClick={() => setQuery('')}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    title="مسح البحث"
-                  >
-                    <XCircle className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+                  className="w-full md:w-48 lg:w-56 pr-10 pl-4 py-2 border border-gray-200 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 dark:bg-gray-800 "
+                  />
+                </div>
+                
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
                 {/* Filter: promoted/active/inactive */}
-                <div className="flex items-center gap-2 text-sm text-gray-600 flex-shrink-0">
-                  <span className="whitespace-nowrap">عرض:</span>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>عرض:</span>
                   <select
                     value={filterMode}
                     onChange={(e) => {
                       setFilterMode(e.target.value);
                       setPage(1);
                     }}
-                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-w-0"
+                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                     disabled={loading}
                   >
                     <option value="all">الكل</option>
@@ -706,244 +601,445 @@ export default function PlayersDashboardTable() {
                 </div>
 
                 {/* Filter: isConfirmed */}
-                <div className="flex items-center gap-2 text-sm text-gray-600 flex-shrink-0">
-                  <span className="whitespace-nowrap">التأكيد:</span>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>التأكيد:</span>
                   <select
                     value={confirmFilter}
                     onChange={(e) => {
                       setConfirmFilter(e.target.value);
                       setPage(1);
                     }}
-                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-w-0"
+                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                     disabled={loading}
                   >
                     <option value="all">الكل</option>
-                    <option value="confirmed">مؤكَّد فقط</option>
+                    <option value="confirmed">مؤكَّد فقط</option>
                     <option value="unconfirmed">غير مؤكد فقط</option>
                   </select>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-shrink-0">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>عدد الصفوف:</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
-                >
-                  {[5, 10, 20, 50].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>عدد الصفوف:</span>
+                  <select
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      setRowsPerPage(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  >
+                    {[5, 10, 20, 50].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0 justify-end">
+                  {/* <button
+                    onClick={() => router.push('/')}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <Home className="w-4 h-4" />
+                    <span className="hidden sm:inline">الرئيسية</span>
+                  </button> */}
+
+                  <button
+                    onClick={exportCSV}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading || sorted.length === 0}
+                    title="تصدير البيانات إلى ملف CSV"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">تصدير CSV</span>
+                  </button>
+
+                  <button 
+                    onClick={() => fetchPlayers(true)} 
+                    disabled={loading || refreshing} 
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="تحديث البيانات"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">تحديث</span>
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={exportCSV}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading || sorted.length === 0}
-                title="تصدير البيانات إلى ملف CSV"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">تصدير CSV</span>
-              </button>
-
-              <button 
-                onClick={() => fetchPlayers(true)} 
-                disabled={loading || refreshing} 
-                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="تحديث البيانات"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">تحديث</span>
-              </button>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[900px]" dir="rtl">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('name')}>
-                    <div className="flex items-center gap-2">
-                      <span>اللاعب</span>
-                      <SortIcon column="name" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('email')}>
-                    <div className="flex items-center gap-2">
-                      <span>البريد الإلكتروني</span>
-                      <SortIcon column="email" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('gender')}>
-                    <div className="flex items-center gap-2">
-                      <span>الجنس</span>
-                      <SortIcon column="gender" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nationality')}>
-                    <div className="flex items-center gap-2">
-                      <span>الجنسية</span>
-                      <SortIcon column="nationality" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('game')}>
-                    <div className="flex items-center gap-2">
-                      <span>اللعبة</span>
-                      <SortIcon column="game" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('age')}>
-                    <div className="flex items-center gap-2">
-                      <span>السن</span>
-                      <SortIcon column="age" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('status')}>
-                    <div className="flex items-center gap-2">
-                      <span>الحالة</span>
-                      <SortIcon column="status" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">مروّج</th>
-                  
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => toggleSort('isConfirmed')}>
-                    <div className="flex items-center justify-center gap-2">
-                      <span>مؤكَّد</span>
-                      <SortIcon column="isConfirmed" sortBy={sortBy} sortDir={sortDir} />
-                    </div>
-                  </th>
-                  
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">نشط</th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">الإجراءات</th>
-                </tr>
-              </thead>
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-fixed" dir="rtl">
+                <thead className="bg-gray-100 border-b-2 border-gray-200">
+                  <tr>
+                    <th
+                      className="w-72 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('name')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>اللاعب</span>
+                        <SortIcon column="name" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-64 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('email')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>البريد الإلكتروني</span>
+                        <SortIcon column="email" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-32 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('gender')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>الجنس</span>
+                        <SortIcon column="gender" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-40 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('nationality')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>الجنسية</span>
+                        <SortIcon column="nationality" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-32 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('game')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>اللعبة</span>
+                        <SortIcon column="game" />
+                      </div>
+                    </th>
+                    <th
+                      className="w-20 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('age')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>السن</span>
+                        <SortIcon column="age" />
+                      </div>
+                    </th>
+                    {/* Status */}
+                    <th
+                      className="w-40 px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('status')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>الحالة</span>
+                        <SortIcon column="status" />
+                      </div>
+                    </th>
+                    {/* Promoted */}
+                    <th className="w-24 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">مروّج</th>
+                    {/* Confirmed */}
+                    <th
+                      className="w-24 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer group hover:bg-gray-200 transition-colors"
+                      onClick={() => toggleSort('isConfirmed')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span>مؤكَّد</span>
+                        <SortIcon column="isConfirmed" />
+                      </div>
+                    </th>
+                    {/* Active */}
+                    <th className="w-24 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">نشط</th>
+                    <th className="w-32 px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">الإجراءات</th>
+                  </tr>
+                </thead>
 
-              <tbody className="bg-white divide-y divide-gray-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={11} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900 mb-1">جارٍ تحميل اللاعبين</h3>
-                          <p className="text-sm text-gray-500">يرجى الانتظار...</p>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={11} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900 mb-1">جارٍ تحميل اللاعبين</h3>
+                            <p className="text-sm text-gray-500">يرجى الانتظار...</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={11} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <XCircle className="w-12 h-12 text-red-500" />
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900 mb-1">خطأ في تحميل البيانات</h3>
-                          <p className="text-sm text-gray-500 mb-3">{error}</p>
-                          <button
-                            onClick={() => fetchPlayers()}
-                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                          >
-                            إعادة المحاولة
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : sorted.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <Users className="w-12 h-12 text-gray-400" />
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900 mb-1">لا توجد بيانات</h3>
-                          <p className="text-sm text-gray-500">لم يتم العثور على أي لاعبين</p>
-                          {query && (
-                            <button
-                              onClick={() => setQuery('')}
-                              className="text-sm text-blue-600 hover:text-blue-700 underline"
-                            >
-                              مسح البحث
-                            </button>
-                          )}
-                          {(filterMode !== 'all' || confirmFilter !== 'all') && (
-                            <button
-                              onClick={() => {
-                                setFilterMode('all');
-                                setConfirmFilter('all');
-                                setPage(1);
-                              }}
-                              className="text-sm text-blue-600 hover:text-blue-700 underline"
-                            >
-                              مسح الفلاتر
-                            </button>
+                      </td>
+                    </tr>
+                  ) : sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Users className="w-12 h-12 text-gray-300" />
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900 mb-1">لا توجد لاعبين</h3>
+                            <p className="text-sm text-gray-500">
+                              {query || filterMode !== 'all' || confirmFilter !== 'all' 
+                                ? 'لا توجد نتائج مطابقة لبحثك أو الفلاتر المحددة' 
+                                : 'لم يتم العثور على أي لاعبين في النظام'
+                              }
+                            </p>
+                          </div>
+                          {(query || filterMode !== 'all' || confirmFilter !== 'all') && (
+                            <div className="flex gap-2">
+                              {query && (
+                                <button
+                                  onClick={() => setQuery('')}
+                                  className="text-sm text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  مسح البحث
+                                </button>
+                              )}
+                              {(filterMode !== 'all' || confirmFilter !== 'all') && (
+                                <button
+                                  onClick={() => {
+                                    setFilterMode('all');
+                                    setConfirmFilter('all');
+                                    setPage(1);
+                                  }}
+                                  className="text-sm text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  مسح الفلاتر
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
                   ) : (
-                    sorted.map((player) => (
-                      <PlayerRow
-                        key={player._id}
-                        player={player}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        deletingId={deletingId}
-                        statusClass={statusClass}
-                      />
+                    sorted.map((r, index) => (
+                      <tr
+                        key={r._id}
+                        className="transition-colors duration-150 hover:bg-gray-50"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <Avatar name={r.name} src={r.image} />
+                            <div className="min-w-20 flex-1">
+                              <div className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                                <span className="line-clamp-1 min-w-28" title={r.name}>
+                                  {r.name}
+                                </span>
+                                {r.isPromoted && <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" title="مروّج" />}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">انضم في {r.joinDate}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 font-mono truncate">
+                            <span className="truncate" title={r.email}>
+                              {r.email}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* الجنس */}
+                        <td className="px-6 py-4">
+                          <GenderBadge gender={r.gender} />
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200" title={r.nationality}>
+                            <span className="truncate">{r.nationality}</span>
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 max-w-28 " title={r.game}>
+                            <span className="truncatemax-w-28 ">{r.game}</span>
+                          </span>
+                        </td>
+
+                        {/* السن */}
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-600 font-medium">{r.age}</div>
+                        </td>
+
+                        {/* الحالة */}
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusClass(r.status)}`}>
+                            {r.statusLabel}
+                          </span>
+                        </td>
+
+                        {/* مروّج */}
+                        <td className="px-6 py-4 text-center">
+                          {r.isPromoted ? <Star className="w-4 h-4 text-yellow-500 inline" /> : <span className="text-gray-400 text-xs">—</span>}
+                        </td>
+
+                        {/* مؤكد */}
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                              r.isConfirmed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-600 border-gray-200'
+                            }`}
+                          >
+                            {r.isConfirmed ? 'نعم' : 'لا'}
+                          </span>
+                        </td>
+
+                        {/* نشط */}
+                        <td className="px-6 py-4 text-center">
+                          <div
+                            className={`w-2 h-2 rounded-full ${r.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}
+                            title={r.isActive ? 'نشط' : 'غير نشط'}
+                          />
+                        </td>
+
+                        {/* Actions - Always visible */}
+                        <td className="px-3 py-4 w-24">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => router.push(`/players/${r._id}`)}
+                              className="p-2 rounded-lg hover:bg-sky-100 text-sky-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-sky-200"
+                              title="عرض ملف اللاعب"
+                              aria-label={`عرض ملف اللاعب ${r.name}`}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(r._id)}
+                              className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-yellow-200"
+                              title="تحرير اللاعب"
+                              aria-label={`تحرير اللاعب ${r.name}`}
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(r._id)}
+                              disabled={deletingId === r._id}
+                              className={`p-2 rounded-lg hover:bg-red-100 text-red-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-red-200 ${
+                                deletingId === r._id ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                              title={deletingId === r._id ? 'جارٍ الحذف…' : 'حذف اللاعب'}
+                              aria-label={`حذف اللاعب ${r.name}`}
+                            >
+                              {deletingId === r._id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     ))
                   )}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
 
-          {/* Pagination improved */}
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="text-sm text-gray-700">
-                عرض <span className="font-medium">{paginationInfo.pageStart}</span> إلى{' '}
-                <span className="font-medium">{paginationInfo.pageEnd}</span> من{' '}
-                <span className="font-medium">{totalCount}</span> لاعب
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
-                  className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="الصفحة السابقة"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-                
-                <span className="px-3 py-2 text-sm font-medium text-gray-700">
-                  {page} من {paginationInfo.totalPages}
-                </span>
-                
-                <button
-                  onClick={() => setPage(Math.min(paginationInfo.totalPages, page + 1))}
-                  disabled={page >= paginationInfo.totalPages}
-                  className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="الصفحة التالية"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-sm text-gray-600">
+                  عرض <span className="font-semibold text-gray-900">{totalCount ? pageStart : 0}</span>
+                  {' '}–{' '}
+                  <span className="font-semibold text-gray-900">{totalCount ? pageEnd : 0}</span>
+                  {' '}من{' '}
+                  <span className="font-semibold text-gray-900">{totalCount}</span> لاعب
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                    disabled={page <= 1}
+                    title="السابق"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const pages = [];
+                      const maxVisible = 5;
+                      let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                      
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+
+                      if (startPage > 1) {
+                        pages.push(
+                          <button
+                            key="1"
+                            onClick={() => setPage(1)}
+                            className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm"
+                          >
+                            1
+                          </button>
+                        );
+                        
+                        if (startPage > 2) {
+                          pages.push(
+                            <span key="start-ellipsis" className="px-2 text-gray-400">...</span>
+                          );
+                        }
+                      }
+
+                      for (let p = startPage; p <= endPage; p++) {
+                        const isActive = p === page;
+                        pages.push(
+                          <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              isActive
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                                : 'hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      }
+
+                      if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                          pages.push(
+                            <span key="end-ellipsis" className="px-2 text-gray-400">...</span>
+                          );
+                        }
+                        
+                        pages.push(
+                          <button
+                            key={totalPages}
+                            onClick={() => setPage(totalPages)}
+                            className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm"
+                          >
+                            {totalPages}
+                          </button>
+                        );
+                      }
+
+                      return pages;
+                    })()}
+                  </div>
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                    disabled={page >= totalPages}
+                    title="التالي"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

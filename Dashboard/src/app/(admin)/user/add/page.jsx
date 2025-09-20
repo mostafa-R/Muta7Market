@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
 const BASE = `${process.env.NEXT_PUBLIC_BASE_URL}/admin`;
 const CREATE_ENDPOINT = `${BASE}/users`;
 
-// ------ Joi Schema ------
+
 const schema = Joi.object({
   name: Joi.string().trim().min(3).max(100).required().messages({
     'string.empty': 'الاسم مطلوب',
@@ -41,7 +41,6 @@ const schema = Joi.object({
     'any.required': 'تأكيد كلمة المرور مطلوب',
   }),
   isActive: Joi.boolean().default(true),
-  // visual only; backend auto-sets email/phone verification true
   isVerified: Joi.boolean().default(true),
 });
 
@@ -61,7 +60,6 @@ async function extractBackendError(res) {
     return `HTTP ${res.status} ${res.statusText}`;
   }
 
-  // Common message locations
   const direct =
     body?.message ||
     body?.error?.message ||
@@ -69,7 +67,6 @@ async function extractBackendError(res) {
     body?.msg ||
     body?.title;
 
-  // Array style: [{ msg/message, path }]
   if (Array.isArray(body?.errors)) {
     const lines = body.errors.map(e =>
       e?.message || e?.msg || (e?.path ? `${e.path}: ${e?.message || 'Invalid'}` : JSON.stringify(e))
@@ -77,7 +74,6 @@ async function extractBackendError(res) {
     return lines.join('<br/>');
   }
 
-  // Mongoose validation object: { errors: { field: { message } } }
   if (body?.errors && typeof body.errors === 'object') {
     const lines = Object.values(body.errors).map(e => e?.message || JSON.stringify(e));
     if (lines.length) return lines.join('<br/>');
@@ -85,7 +81,6 @@ async function extractBackendError(res) {
 
   return direct || `HTTP ${res.status} ${res.statusText}`;
 }
-// convert Joi errors -> Formik { field: message }
 function validateWithJoi(values) {
   const { error } = schema.validate(values, { abortEarly: false });
   if (!error) return {};
@@ -139,19 +134,16 @@ export default function CreateUserPage() {
         body: JSON.stringify(payload),
       });
   
-      // If the request failed, read and show the backend error
       if (!res.ok) {
         const msg = await extractBackendError(res);
-        await Toast.fire({ icon: 'error', html: msg }); // html -> supports multi-line errors
+        await Toast.fire({ icon: 'error', html: msg });
         return;
       }
   
-      // Success: now it's safe to parse once
       const data = await res.json().catch(() => null);
       const created = data?.data ?? data;
       const title = data?.message || 'تم إنشاء المستخدم بنجاح';
   
-      // Optional: append useful detail (email) if present
       const detail = created?.email ? ` (${created.email})` : '';
       await Toast.fire({ icon: 'success', title: `${title}${detail}` });
   
@@ -186,7 +178,7 @@ export default function CreateUserPage() {
             password: '',
             confirmPassword: '',
             isActive: true,
-            isVerified: true, // visual only
+            isVerified: true,
           }}
           validate={validateWithJoi}
           onSubmit={onSubmit}

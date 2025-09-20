@@ -1,26 +1,22 @@
 'use client';
 
-import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Formik, Form, Field } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import Joi from 'joi';
+import { useParams, useRouter } from 'next/navigation';
+import React from 'react';
 import Swal from 'sweetalert2';
 
-// ------------------------
-// API helpers (unify BASE)
-// ------------------------
+
 function apiBase() {
   const root = (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
   return `${root}/admin`;
 }
 const BASE = apiBase();
 
-const endpointOne = (id) => `${BASE}/users/${id}`;     // GET by id
-const endpointUpdate = (id) => `${BASE}/users/${id}`;   // PUT same path
+const endpointOne = (id) => `${BASE}/users/${id}`;    
+const endpointUpdate = (id) => `${BASE}/users/${id}`;   
 
-// ------------------------
-// Toast (under navbar)
-// ------------------------
+
 const Toast = Swal.mixin({
   toast: true,
   position: 'top-end',
@@ -31,9 +27,7 @@ const Toast = Swal.mixin({
   zIndex: 999999,
 });
 
-// ------------------------
-// Joi schema
-// ------------------------
+
 const schema = Joi.object({
   name: Joi.string().trim().min(3).max(100).required().messages({
     'string.empty': 'الاسم مطلوب',
@@ -206,8 +200,8 @@ if (typeof window !== 'undefined') {
             isPhoneVerified: !!user?.isPhoneVerified,
           }}
           validate={validateWithJoi}
-          validateOnChange={false}   // ❗ لا تظهر أخطاء أثناء الكتابة
-          validateOnBlur={true}      // ✅ تظهر الأخطاء عند الخروج من الحقل فقط
+          validateOnChange={false}   
+          validateOnBlur={true}    
           onSubmit={onSubmit}
         >
           {({ values, errors, touched, handleChange, handleBlur, isSubmitting, setFieldValue }) => (
@@ -314,9 +308,7 @@ if (typeof window !== 'undefined') {
   );
 }
 
-// ------------------------
-// Toggle (Tailwind-safe colors)
-// ------------------------
+
 function Toggle({ label, subtitle, checked, onChange, color }) {
   const colorClass =
     color === 'emerald' ? 'peer-checked:bg-emerald-500'
