@@ -1,28 +1,24 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-// Money/Revenue Icon Component
 const RevenueIcon = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
-// Players & Coaches Combined Revenue Icon Component  
 const PlayersCoachesRevenueIcon = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
   </svg>
 );
 
-// Users Revenue Icon Component
 const UsersRevenueIcon = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
   </svg>
 );
 
-// IsPromoted Icon Component
 const IsPromotedIcon = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -38,12 +34,11 @@ export const PaymentMetrics = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Function to fetch financial data
   const fetchFinancialData = async () => {
     try {
       setLoading(true);
       
-      const API_BASE_URL = "http://localhost:5000";
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
       
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/dashboard/financial`, {
         method: "GET",
@@ -71,12 +66,13 @@ export const PaymentMetrics = () => {
         throw new Error(result.message || "Invalid response format");
       }
     } catch (err) {
-      // Demo data for display when there's an error
+      console.error("Error fetching financial data:", err.message);
+      // Set fallback values instead of keeping previous state
       setFinancialStats({
-        playersCoachesRevenue: 168750, // 45000 * 3.75 (تحويل من دولار لريال)
-        usersRevenue: 106875, // 28500 * 3.75
-        totalRevenue: 275625, // 73500 * 3.75
-        isPromoted: 120
+        playersCoachesRevenue: 0,
+        usersRevenue: 0,
+        totalRevenue: 0,
+        isPromoted: 0
       });
     } finally {
       setLoading(false);

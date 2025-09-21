@@ -1,6 +1,7 @@
 "use client";
 import PlayerCard from "@/app/component/PlayerCard";
 import { useLanguage } from "@/contexts/LanguageContext";
+import useSportsStore from "@/stores/sportsStore";
 import axios from "axios";
 import { ArrowRight, Filter, Search, Trophy, Users } from "lucide-react";
 import Link from "next/link";
@@ -43,8 +44,30 @@ const SportDetailPage = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isRTL } = useLanguage();
+
+  const {
+    sports,
+    fetchSports,
+    getSportBySlug,
+    isLoading: sportsLoading,
+  } = useSportsStore();
+
+  // Helper function to get current language
+  const getCurrentLanguage = () => {
+    return i18n.language || "en";
+  };
+
+  // Helper function to get sport name in current language
+  const getSportName = (sportData) => {
+    if (!sportData || !sportData.name) return "";
+    const currentLang = getCurrentLanguage();
+    return currentLang === "ar" ? sportData.name.ar : sportData.name.en;
+  };
+
+  // Get sport data from store
+  const sport = getSportBySlug(sportId);
 
   const statusOptions = [
     { value: "all", label: t("sports.statusOptions.all") },
@@ -59,15 +82,26 @@ const SportDetailPage = () => {
     { value: "coach", label: t("sports.categoryOptions.coach") },
   ];
 
-  const sportName = sportId ? t(`sports.${sportId.toLowerCase()}`) : "";
-  const apiSportName = sportId?.toLowerCase() || "";
+  useEffect(() => {
+    // Fetch sports if not already loaded
+    if (sports.length === 0 && !sportsLoading) {
+      fetchSports();
+    }
+  }, [sports.length, sportsLoading, fetchSports]);
 
   useEffect(() => {
     const fetchPlayers = async () => {
+      if (!sport) {
+        setLoading(false);
+        setError("الرياضة غير موجودة");
+        return;
+      }
+
       try {
         setLoading(true);
+        // Use the English name from the sport data
         const response = await axios.get(
-          `${API_BASE_URL}/players?game=${apiSportName}`
+          `${API_BASE_URL}/players?game=${sport.slug || sport.name.en}`
         );
 
         if (!response.data?.data?.players) {
@@ -80,7 +114,6 @@ const SportDetailPage = () => {
         );
 
         setPlayers(fetchedPlayers);
-
         setLoading(false);
       } catch (err) {
         console.error("Error fetching players");
@@ -92,13 +125,15 @@ const SportDetailPage = () => {
       }
     };
 
-    if (apiSportName) {
+    // Only fetch players when sport data is available and sports are loaded
+    if (sport && sports.length > 0) {
       fetchPlayers();
-    } else {
+    } else if (sports.length > 0 && !sport) {
+      // Sports are loaded but sport not found
       setLoading(false);
       setError("الرياضة غير موجودة");
     }
-  }, [apiSportName]);
+  }, [sport, sports.length]);
 
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.trim().toLowerCase();
@@ -112,14 +147,14 @@ const SportDetailPage = () => {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  if (loading) {
+  if (loading || sportsLoading) {
     return (
       <div className="min-h-screen ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--foreground))] mb-4">
               {t("sports.loadingTitle", {
-                sportName: sportName || t("sports.notFoundTitle"),
+                sportName: getSportName(sport) || t("sports.notFoundTitle"),
               })}
             </h1>
             <p className="text-[hsl(var(--muted-foreground))]">
@@ -131,7 +166,7 @@ const SportDetailPage = () => {
     );
   }
 
-  if (error || !sportName) {
+  if (error || (!sport && sports.length > 0)) {
     return (
       <div className="min-h-screen  flex items-center justify-center">
         <div className="text-center">
@@ -165,14 +200,14 @@ const SportDetailPage = () => {
           </Link>
           <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
           <span className="text-[hsl(var(--foreground))] font-medium">
-            {sportName}
+            {getSportName(sport)}
           </span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--foreground))] mb-4">
-            {t("sports.explorePlayers")} {sportName}
+            {t("sports.explorePlayers")} {getSportName(sport)}
           </h1>
           <div
             className={`flex items-center space-x-4 ${
@@ -185,7 +220,7 @@ const SportDetailPage = () => {
             </span>
             <span className="inline-flex items-center border border-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-full px-3 py-1 text-sm font-semibold">
               <Trophy className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />
-              {sportName}
+              {getSportName(sport)}
             </span>
           </div>
         </div>
@@ -300,7 +335,7 @@ const SportDetailPage = () => {
           </div>
         )}
 
-        <CTA sportName={sportName} />
+        <CTA sportName={getSportName(sport)} />
       </div>
     </div>
   );

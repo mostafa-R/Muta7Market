@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("general");
 
-  // استرجاع الإعدادات من API
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -51,38 +51,38 @@ export default function SettingsPage() {
        
         setError(err.message);
         
-        // بيانات تجريبية للعرض عند وجود خطأ
+      
         setSettings({
-          siteName: { ar: "متاح ماركت", en: "Muta7Market" },
-          logo: { url: "/images/logo/logo-dark.svg" },
-          favicon: { url: "/images/logo/logo-icon.svg" },
+          siteName: { ar: "", en: "" },
+          logo: { url: "" },
+          favicon: { url: "" },
           contactInfo: {
-            email: "info@muta7market.com",
-            phone: "+966512345678",
-            address: { ar: "الرياض، المملكة العربية السعودية", en: "Riyadh, Saudi Arabia" },
+            email: "",
+            phone: "",
+            address: { ar: "", en: "" },
             socialMedia: {
-              facebook: "https://facebook.com/muta7market",
-              twitter: "https://twitter.com/muta7market",
-              instagram: "https://instagram.com/muta7market",
+              facebook: "",
+              twitter: "",
+              instagram: "",
               youtube: "",
               linkedin: ""
             }
           },
           seo: {
-            metaTitle: { ar: "متاح ماركت - منصة رياضية", en: "Muta7Market - Sports Platform" },
+            metaTitle: { ar: "", en: "" },
             metaDescription: { 
-              ar: "منصة متاح ماركت تربط بين اللاعبين والمدربين", 
-              en: "Muta7Market platform connects players and coaches" 
+              ar: "", 
+              en: "" 
             },
-            keywords: ["رياضة", "كرة قدم", "تدريب", "sports", "football", "coaching"],
-            googleAnalyticsId: "UA-XXXXXXXXX"
+            keywords: [],
+            googleAnalyticsId: ""
           },
           pricing: {
-            contacts_access_year: 190,
-            listing_year: { player: 140, coach: 190 },
-            promotion_year: { player: 100, coach: 100 },
-            promotion_per_day: { player: 15, coach: 15 },
-            promotion_default_days: 15
+            contacts_access_year: 0,
+            listing_year: { player: 0, coach: 0 },
+            promotion_year: { player: 0, coach: 0 },
+            promotion_per_day: { player: 0, coach: 0 },
+            promotion_default_days: 0
           },
           translations: {
             custom: {}

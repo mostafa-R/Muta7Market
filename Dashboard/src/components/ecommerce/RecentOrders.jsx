@@ -1,4 +1,4 @@
-// app/recent/page.jsx
+// components/ecommerce/RecentOrders.jsx
 'use client';
 
 import {
@@ -6,8 +6,12 @@ import {
   ArrowUp,
   ArrowUpDown,
   CheckCircle,
-  ChevronLeft, ChevronRight,
-  Mail, Phone,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Mail,
+  Phone,
+  RefreshCcw,
   Search,
   Star,
   Users,
@@ -20,7 +24,7 @@ import Swal from 'sweetalert2';
 const API_ROOT  = (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
 const ADMIN_BASE = `${API_ROOT}/admin`;
 
-// ===== Endpoints =====
+
 const ENDPOINTS = {
   listRecent: (queryObj = {}) => {
     const qs = new URLSearchParams(
@@ -43,7 +47,7 @@ const Toast = Swal.mixin({
   timerProgressBar: true,
 });
 
-// ---- helpers ----
+
 async function extractBackendError(res) {
   const ct = res.headers.get('content-type') || '';
   try {
@@ -85,21 +89,18 @@ const statusClass = (s) => ({
 export default function RecentUnconfirmedTable() {
   const router = useRouter();
 
-  // server-side pagination & filters
   const [page, setPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
   const [query, setQuery] = React.useState('');
-  const [jopFilter, setJopFilter] = React.useState('all');          // all | player | coach
-  const [activeFilter, setActiveFilter] = React.useState('all');     // all | true | false
-  const [promotedFilter, setPromotedFilter] = React.useState('all'); // all | true | false
-  const [days, setDays] = React.useState(RECENT_DAYS_DEFAULT);       // recent window
+  const [jopFilter, setJopFilter] = React.useState('all');          
+  const [activeFilter, setActiveFilter] = React.useState('all');    
+  const [promotedFilter, setPromotedFilter] = React.useState('all'); 
+  const [days, setDays] = React.useState(RECENT_DAYS_DEFAULT);       
 
-  // client-side sort
-  const [sortBy, setSortBy] = React.useState('createdAt'); // createdAt | name | email | nationality | game | age | status | isActive | isPromoted
+  const [sortBy, setSortBy] = React.useState('createdAt'); 
   const [sortDir, setSortDir] = React.useState('desc');
 
-  // server response
   const [rows, setRows] = React.useState([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -117,20 +118,21 @@ if (typeof window !== 'undefined') {
 
 
   const buildQuery = React.useCallback(() => ({
-    page, limit: rowsPerPage,
+    page, 
+    limit: rowsPerPage,
     search: query || undefined,
-    jop: jopFilter,
+    jop: jopFilter !== 'all' ? jopFilter : undefined,
     isActive: activeFilter !== 'all' ? activeFilter : undefined,
     isPromoted: promotedFilter !== 'all' ? promotedFilter : undefined,
     days,
-  }), [page, rowsPerPage, query, jopFilter, activeFilter, promotedFilter, days]);
+    sortBy: sortBy !== 'createdAt' ? sortBy : undefined,
+    sortDir: sortDir !== 'desc' ? sortDir : undefined,
+  }), [page, rowsPerPage, query, jopFilter, activeFilter, promotedFilter, days, sortBy, sortDir]);
 
-  // Helper function to extract string value from multilingual objects or strings
   const getStringValue = React.useCallback((value) => {
     if (!value) return '-';
     if (typeof value === 'string') return value;
     if (typeof value === 'object') {
-      // For multilingual objects, prefer Arabic then English then slug
       if (value.ar) return value.ar;
       if (value.en) return value.en;
       if (value.slug) return value.slug;
@@ -149,13 +151,13 @@ if (typeof window !== 'undefined') {
         name: p.name || p?.user?.name || '-',
         email,
         phone,
-        jop: p.jop || '-', // player | coach
+        jop: p.jop || '-', 
         image: img,
         date: p.createdAt ? new Date(p.createdAt) : null,
         dateLabel: p.createdAt ? new Date(p.createdAt).toLocaleString('ar-EG') : '—',
         isActive: Boolean(p.isActive),
         isPromoted: Boolean(p?.isPromoted?.status),
-        isConfirmed: Boolean(p.isConfirmed), // سيكون false هنا حسب API
+        isConfirmed: Boolean(p.isConfirmed), 
         status: st,
         statusLabel: statusLabel(st),
         age: Number(p.age ?? 0),
@@ -170,7 +172,11 @@ if (typeof window !== 'undefined') {
     setLoading(true);
     try {
       const url = ENDPOINTS.listRecent(buildQuery());
-      const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
+      const res = await fetch(url, { 
+        headers: authHeaders(), 
+        cache: 'no-store',
+        signal: AbortSignal.timeout(30000) 
+      });
       if (!res.ok) {
         const msg = await extractBackendError(res);
         await Toast.fire({ icon: 'error', html: msg });
@@ -184,8 +190,14 @@ if (typeof window !== 'undefined') {
       const total = json?.data?.pagination?.totalPlayers ?? mapped.length;
       setTotalCount(Number(total));
     } catch (e) {
-      console.error(e);
-      await Toast.fire({ icon: 'error', title: 'تعذر جلب البيانات' });
+      console.error('Fetch error:', e);
+      if (e.name === 'TimeoutError') {
+        await Toast.fire({ icon: 'error', title: 'انتهت مهلة الطلب - يرجى المحاولة مرة أخرى' });
+      } else if (e.name === 'AbortError') {
+        return;
+      } else {
+        await Toast.fire({ icon: 'error', title: 'تعذر جلب البيانات' });
+      }
       setRows([]); setTotalCount(0);
     } finally {
       setLoading(false);
@@ -194,7 +206,6 @@ if (typeof window !== 'undefined') {
 
   React.useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  // ===== Column click behavior: filter-by-header (للأعمدة الثنائية/التصنيفية) أو فرز للباقي =====
   const cycle = (val, order) => order[(order.indexOf(val) + 1) % order.length];
 
   const handleHeaderClick = (col) => {
@@ -212,18 +223,15 @@ if (typeof window !== 'undefined') {
         setPage(1);
         break;
       case 'date':
-        // يدوّر نافذة الأيام: 7 -> 30 -> 90 -> 7
         setDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 7));
         setPage(1);
         break;
       default:
-        // فرز
         if (sortBy === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
         else { setSortBy(col); setSortDir('asc'); }
     }
   };
 
-  // client-side sort for the current page
   const sorted = React.useMemo(() => {
     const copy = [...rows];
     copy.sort((a, b) => {
@@ -282,10 +290,8 @@ if (typeof window !== 'undefined') {
         throw new Error(msg);
       }
       await Toast.fire({ icon: 'success', title: 'تم التأكيد' });
-      // أزل السطر من القائمة الحالية (الـ API يعيد غير المؤكدين فقط)
       setRows((prev) => prev.filter(r => r._id !== id));
       setTotalCount((t) => Math.max(0, t - 1));
-      // لو الصفحة أصبحت فارغة ومعك صفحات سابقة — ارجع صفحة ثم اجلب
       if (rows.length === 1 && page > 1) setPage((p) => p - 1);
       else fetchRows();
     } catch (e) {
@@ -297,7 +303,7 @@ if (typeof window !== 'undefined') {
 
   return (
     <div className="min-h-screen p-4 sm:p-6" dir="rtl">
-      <div className="mx-auto">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -310,8 +316,8 @@ if (typeof window !== 'undefined') {
         </div>
 
         {/* Controls */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-          <div className="p-4 border-b border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+          <div className="p-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="relative">
@@ -319,39 +325,36 @@ if (typeof window !== 'undefined') {
                   <input
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-                    placeholder="ابحث بالاسم أو البريد أو الهاتف أو الجنسية أو اللعبة…"
-                    className="pr-10 pl-4 py-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 w-80"
+                    placeholder="ابحث بالاسم…"
+                    className="pr-10 pl-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:bg-white dark:focus:bg-gray-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 w-80"
                   />
-                </div>
-
-                {/* Quick chips showing header-based filters */}
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 rounded-full bg-gray-100 border text-gray-700">
-                    الفئة: {jopFilter === 'all' ? 'الكل' : (jopFilter === 'player' ? 'لاعب' : 'مدرب')}
-                  </span>
-                  <span className="px-2 py-1 rounded-full bg-gray-100 border text-gray-700">
-                    نشط؟ {activeFilter === 'all' ? 'الكل' : (activeFilter === 'true' ? 'نعم' : 'لا')}
-                  </span>
-                  <span className="px-2 py-1 rounded-full bg-gray-100 border text-gray-700">
-                    مروّج؟ {promotedFilter === 'all' ? 'الكل' : (promotedFilter === 'true' ? 'نعم' : 'لا')}
-                  </span>
-                  <span className="px-2 py-1 rounded-full bg-gray-100 border text-gray-700">
-                    خلال: {days} يومًا
-                  </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <span>عدد الصفوف:</span>
                   <select
                     value={rowsPerPage}
                     onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}
-                    className="px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                    className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
                   >
                     {[5,10,20,50].map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
+                <button
+                  onClick={fetchRows}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="تحديث البيانات"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="w-4 h-4" />
+                  )}
+                  تحديث
+                </button>
               </div>
             </div>
           </div>
@@ -359,7 +362,7 @@ if (typeof window !== 'undefined') {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
                 <tr>
                   <Th label="الشخص" onClick={() => handleHeaderClick('name')} sort={<SortIcon column="name" />} />
                   <Th label="الفئة" onClick={() => handleHeaderClick('jop')} hint={`(اضغط للتبديل: الكل/لاعب/مدرب)`} />
@@ -371,33 +374,55 @@ if (typeof window !== 'undefined') {
                   <Th label="الحالة" onClick={() => handleHeaderClick('status')} sort={<SortIcon column="status" />} />
                   <Th label="نشط؟" onClick={() => handleHeaderClick('isActive')} hint="(اضغط: الكل/نعم/لا)" />
                   <Th label="مروّج؟" onClick={() => handleHeaderClick('isPromoted')} hint="(اضغط: الكل/نعم/لا)" />
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">إجراء</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">إجراء</th>
                 </tr>
               </thead>
 
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                 {loading ? (
-                  <tr><td colSpan={12} className="px-6 py-10 text-center text-gray-500">جارٍ التحميل…</td></tr>
+                  <tr>
+                    <td colSpan={11} className="px-6 py-16">
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                        <div className="text-center">
+                          <p className="text-gray-600 dark:text-gray-400 font-medium">جارٍ تحميل البيانات...</p>
+                          <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">يرجى الانتظار</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 ) : sorted.length === 0 ? (
-                  <tr><td colSpan={12} className="px-6 py-10 text-center text-gray-500">لا توجد نتائج</td></tr>
+                  <tr>
+                    <td colSpan={11} className="px-6 py-16">
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700">
+                          <Users className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-600 dark:text-gray-400 font-medium">لا توجد نتائج</p>
+                          <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">جرب تغيير المرشحات أو البحث</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 ) : (
                   sorted.map((r, index) => (
                     <tr key={r._id}
-                        className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                        className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/30 dark:bg-gray-700/30'}`}>
                       {/* الشخص */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
                           <Avatar name={r.name} src={r.image} promoted={r.isPromoted} />
                           <div>
-                            <div className="text-sm font-semibold text-gray-900">{r.name}</div>
-                            <div className="text-xs text-gray-500">{r.dateLabel}</div>
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{r.name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{r.dateLabel}</div>
                           </div>
                         </div>
                       </td>
 
                       {/* الفئة */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 border border-gray-200 text-gray-700">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300">
                           {r.jop === 'coach' ? 'مدرب' : 'لاعب'}
                         </span>
                       </td>
@@ -405,35 +430,35 @@ if (typeof window !== 'undefined') {
 
                       {/* البريد */}
                       <td className="px-6 py-4">
-                        <div className="text-xs text-gray-900 inline-flex items-center gap-1">
+                        <div className="text-xs text-gray-900 dark:text-white inline-flex items-center gap-1">
                           <Mail className="w-4 h-4 text-indigo-600" /> {r.email || '—'}
                         </div>
                       </td>
 
                       {/* الهاتف */}
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 inline-flex items-center gap-1">
+                        <div className="text-sm text-gray-900 dark:text-white inline-flex items-center gap-1">
                           <Phone className="w-4 h-4 text-emerald-600" /> {r.phone || '—'}
                         </div>
                       </td>
 
                       {/* الجنسية */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-200">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
                           {r.nationality}
                         </span>
                       </td>
 
                       {/* اللعبة */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-200">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
                           {r.game}
                         </span>
                       </td>
 
                       {/* العمر */}
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-700">{r.age || '—'}</div>
+                        <div className="text-sm text-gray-700 dark:text-gray-300">{r.age || '—'}</div>
                       </td>
 
                       {/* الحالة */}
@@ -466,7 +491,7 @@ if (typeof window !== 'undefined') {
                         <button
                           onClick={() => confirmOne(r._id)}
                           disabled={confirmingId === r._id}
-                          className={`px-3 py-2 text-sm rounded-lg text-white ${confirmingId === r._id ? 'bg-gray-400' : 'bg-teal-600 hover:bg-teal-700'}`}
+                          className={`px-4 py-2 text-sm rounded-lg text-white font-medium transition-all duration-200 shadow-sm ${confirmingId === r._id ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700 hover:shadow-md active:scale-95'}`}
                           title="تأكيد هذا المستخدم"
                         >
                           {confirmingId === r._id ? 'جارٍ التأكيد…' : 'تأكيد'}
@@ -479,22 +504,22 @@ if (typeof window !== 'undefined') {
             </table>
           </div>
 
-          {/* Pagination (نمط المستخدمين) */}
-          <div className="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
+          {/* Pagination */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 عرض
-                <span className="font-semibold text-gray-900"> {sorted.length ? (page - 1) * rowsPerPage + 1 : 0}</span>
+                <span className="font-semibold text-gray-900 dark:text-white"> {sorted.length ? (page - 1) * rowsPerPage + 1 : 0}</span>
                 -
-                <span className="font-semibold text-gray-900"> {Math.min(page * rowsPerPage, totalCount)}</span>
+                <span className="font-semibold text-gray-900 dark:text-white"> {Math.min(page * rowsPerPage, totalCount)}</span>
                 من
-                <span className="font-semibold text-gray-900"> {totalCount}</span> عنصر
+                <span className="font-semibold text-gray-900 dark:text-white"> {totalCount}</span> عنصر
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                  className="p-2 rounded-lg hover:bg-white dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
                   disabled={page === 1}
                   title="السابق"
                 >
@@ -517,7 +542,7 @@ if (typeof window !== 'undefined') {
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                           isActive
                             ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                            : 'hover:bg-white border border-gray-200 text-gray-700 hover:shadow-sm'
+                            : 'hover:bg-white dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:shadow-sm'
                         }`}
                       >
                         {p}
@@ -528,7 +553,7 @@ if (typeof window !== 'undefined') {
 
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                  className="p-2 rounded-lg hover:bg-white dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
                   disabled={page === totalPages}
                   title="التالي"
                 >
@@ -548,7 +573,7 @@ if (typeof window !== 'undefined') {
 function Th({ label, onClick, sort, hint }) {
   return (
     <th
-      className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors"
+      className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
       onClick={onClick}
       title={hint || 'اضغط للفرز/التبديل'}
     >

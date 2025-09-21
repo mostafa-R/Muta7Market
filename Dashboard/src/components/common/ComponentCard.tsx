@@ -3,8 +3,8 @@ import React from "react";
 interface ComponentCardProps {
   title: string;
   children: React.ReactNode;
-  className?: string; // Additional custom classes for styling
-  desc?: string; // Description text
+  className?: string;
+  desc?: string;
 }
 
 const ComponentCard: React.FC<ComponentCardProps> = ({

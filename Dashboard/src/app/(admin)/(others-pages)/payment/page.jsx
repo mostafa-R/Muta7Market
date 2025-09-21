@@ -416,13 +416,6 @@ export default function PaymentsPage() {
         totalRevenue: totalRevenue
       });
 
-      console.log('Analytics calculated:', {
-        totalInvoices,
-        paidInvoices: paidCount,
-        unpaidInvoices: totalInvoices - paidCount,
-        totalRevenue
-      });
-
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
     }
@@ -492,7 +485,7 @@ export default function PaymentsPage() {
       } catch (e) {
       if (e.name === 'AbortError') return;  
       
-          console.error(e);
+          // Error occurred
           await Toast.fire({ icon: 'error', title: 'تعذر جلب الفواتير' });
             setRows([]);
             setTotal(0);
@@ -528,7 +521,7 @@ export default function PaymentsPage() {
         }
       }
     } catch (e) {
-      console.error('Error loading user:', e);
+      // Error loading user
       } finally {
       inFlightUsersRef.current.delete(userId);
           setLoadingUsers(prev => {
@@ -612,7 +605,7 @@ export default function PaymentsPage() {
       await navigator.clipboard.writeText(invoiceId);
       await Toast.fire({ icon: 'success', title: 'تم نسخ رقم الفاتورة' });
     } catch (e) {
-      console.error('Failed to copy:', e);
+      // Failed to copy
       await Toast.fire({ icon: 'error', title: 'فشل في نسخ رقم الفاتورة' });
     }
   }, []);

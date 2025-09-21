@@ -17,9 +17,13 @@ export default function UserStatsLineChart() {
   const [error, setError] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+  const getToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+    }
+    return null;
+  };
 
-  // دالة لجلب البيانات من الباك اند
   const fetchStatsData = async () => {
     try {
       setLoading(true);
@@ -32,7 +36,7 @@ export default function UserStatsLineChart() {
         method: "GET",
         credentials: "include",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${getToken()}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
@@ -54,11 +58,11 @@ export default function UserStatsLineChart() {
       console.error("Error fetching stats data:", err);
       setError(err.message);
       
-      // بيانات تجريبية للعرض عند وجود خطأ
+      // Set empty stats on error
       setStats({
-        users: { total: 1542, active: 1245, inactive: 297 },
-        players: { total: 876, active: 654, inactive: 222, confirmed: 500 },
-        coaches: { total: 42, active: 35, inactive: 7, confirmed: 30 }
+        users: { total: 0, active: 0, inactive: 0 },
+        players: { total: 0, active: 0, inactive: 0, confirmed: 0 },
+        coaches: { total: 0, active: 0, inactive: 0, confirmed: 0 }
       });
     } finally {
       setLoading(false);

@@ -7,7 +7,7 @@ import AdvertisementForm from "./AdvertisementForm";
 const buildFormData = (data) => {
   const formData = new FormData();
 
-  // A more direct way to build FormData based on schema
+
   formData.append("title[ar]", data.titleAr);
   formData.append("title[en]", data.titleEn);
   if (data.descriptionAr) formData.append("description[ar]", data.descriptionAr);
@@ -51,7 +51,7 @@ export default function CreateAdvertisementForm({ onSuccess }) {
   const handleCreateAdvertisement = async (data) => {
     setIsLoading(true);
     
-    // التحقق من الحقول المطلوبة
+ 
     const errors = [];
 
     
@@ -88,7 +88,7 @@ export default function CreateAdvertisementForm({ onSuccess }) {
       setIsLoading(false);
       toast.error("يرجى ملء جميع الحقول المطلوبة: " + errors.join(", "));
       
-      // Find first empty field and navigate to its tab, then focus
+      
       const firstEmptyField = (() => {
         if (!data.titleAr || data.titleAr.trim() === "") return 'titleAr';
         if (!data.titleEn || data.titleEn.trim() === "") return 'titleEn';
@@ -100,14 +100,11 @@ export default function CreateAdvertisementForm({ onSuccess }) {
       })();
 
       if (firstEmptyField) {
-        // Trigger tab navigation in AdvertisementForm component
         setTimeout(() => {
-          // Dispatch custom event that AdvertisementForm can listen to
           window.dispatchEvent(new CustomEvent('navigateToField', { 
             detail: { fieldName: firstEmptyField } 
           }));
           
-          // Focus the field after a small delay to ensure tab change is complete
           setTimeout(() => {
             const field = document.querySelector(`input[name="${firstEmptyField}"]`);
             if (field) {
@@ -124,13 +121,11 @@ export default function CreateAdvertisementForm({ onSuccess }) {
     try {
       const formData = buildFormData(data);
       await api.post("/advertisements", formData);
-      // Note: Don't set Content-Type manually for FormData - browser will set it automatically with boundary
       toast.success("تم إنشاء الإعلان بنجاح! 🎉");
       onSuccess();
     } catch (error) {
       console.error("Error creating advertisement:", error);
       
-      // Handle specific validation errors from server
       if (error.response?.status === 400 && error.response?.data?.message) {
         toast.error(`خطأ في البيانات: ${error.response.data.message}`);
       } else if (error.response?.status === 422 && error.response?.data?.errors) {

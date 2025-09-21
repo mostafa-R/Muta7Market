@@ -34,29 +34,23 @@ function SportCard({ searchTerm }: SportCardProps) {
   const { classes } = useDirection();
   const { sports, isLoading, error, fetchSports } = useSportsStore();
 
-  // Fetch sports data on component mount
   useEffect(() => {
     fetchSports();
   }, [fetchSports]);
 
-  // Helper function to get sport name based on language
   const getSportName = (sport: Sport) => {
     return language === "ar" ? sport.name?.ar : sport.name?.en;
   };
 
-  // Helper function to get sport icon
   const getSportIcon = (sport: Sport) => {
-    // If sport has an uploaded icon, use it
     return sport.icon?.url || null;
   };
 
-  // Filter sports based on search term
   const filteredSports = sports.filter((sport: Sport) => {
     const sportName = getSportName(sport) || "";
     return sportName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -68,7 +62,6 @@ function SportCard({ searchTerm }: SportCardProps) {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="text-center py-16">
@@ -94,7 +87,10 @@ function SportCard({ searchTerm }: SportCardProps) {
           const sportIcon = getSportIcon(sport);
 
           return (
-            <Link key={sport._id} href={`/sports/${sport.slug || sportName} `}>
+            <Link
+              key={sport._id}
+              href={`/sports/${sport.slug || sport.name.en.toLowerCase()} `}
+            >
               <div className="h-full relative overflow-hidden group transition-all duration-300 ease-in-out border border-gray-200 rounded-2xl bg-[hsl(var(--card))] shadow-sm hover:shadow-lg hover:border-[hsl(var(--primary))] transform hover:-translate-y-1">
                 <div className="p-6">
                   <div className="w-16 h-16 mx-auto mb-4 bg-[hsl(var(--primary))] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">

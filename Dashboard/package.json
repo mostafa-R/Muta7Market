@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/helper-define-polyfill-provider": "^0.6.5",
+    "@babel/preset-env": "^7.28.3",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/interaction": "^6.1.15",
@@ -59,20 +62,20 @@
     "input-otp": "^1.4.2",
     "joi": "^18.0.0",
     "lucide-react": "^0.539.0",
-    "next": "15.2.3",
+    "next": "^15.5.3",
     "next-themes": "^0.4.6",
-    "react": "^19.0.0",
+    "react": "^18.3.1",
     "react-apexcharts": "^1.7.0",
     "react-day-picker": "^9.9.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
-    "react-dom": "^19.0.0",
+    "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.62.0",
     "react-hook-toast": "^0.0.3",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
-    "react-quill": "^2.0.0",
+    "react-quill": "^0.0.2",
     "react-resizable-panels": "^3.0.4",
     "react-toastify": "^11.0.5",
     "recharts": "^3.1.2",
@@ -91,8 +94,8 @@
     "@svgr/webpack": "^8.1.0",
     "@types/lodash": "^4.17.20",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@types/react-transition-group": "^4.4.12",
     "eslint": "^9",
     "eslint-config-next": "15.1.3",
@@ -102,16 +105,16 @@
   },
   "overrides": {
     "@react-jvectormap/core": {
-      "react": "^16.8.0 || ^17 || ^18 || ^19",
-      "react-dom": "^16.8.0 || ^17 || ^18 || ^19"
+      "react": "^16.8.0 || ^17 || ^18",
+      "react-dom": "^16.8.0 || ^17 || ^18"
     },
     "@react-jvectormap/world": {
-      "react": "^16.8.0 || ^17 || ^18 || ^19",
-      "react-dom": "^16.8.0 || ^17 || ^18 || ^19"
+      "react": "^16.8.0 || ^17 || ^18",
+      "react-dom": "^16.8.0 || ^17 || ^18"
     },
     "react-quill": {
-      "react": "^16.8.0 || ^17 || ^18 || ^19",
-      "react-dom": "^16.8.0 || ^17 || ^18 || ^19"
+      "react": "^16.8.0 || ^17 || ^18",
+      "react-dom": "^16.8.0 || ^17 || ^18"
     }
   }
 }

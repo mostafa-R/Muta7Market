@@ -1,6 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/app/component/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/component/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/app/component/ui/tabs';
 import { fetchAnalyticsData, fetchRealTimeAnalytics } from '@/lib/analytics';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -25,7 +24,7 @@ const AnalyticsOverview = () => {
         const data = await fetchAnalyticsData(timeRange);
         setAnalyticsData(data);
       } catch (err) {
-        console.error('Error loading analytics data:', err);
+        // Error loading analytics data
         setError('حدث خطأ أثناء جلب بيانات التحليلات. يرجى التحقق من اتصالك بالإنترنت أو إعدادات Google Analytics.');
       } finally {
         setIsLoading(false);
@@ -42,7 +41,7 @@ const AnalyticsOverview = () => {
         const rtData = await fetchRealTimeAnalytics();
         setRealTimeData(rtData);
       } catch (err) {
-        console.error('Error loading real-time data:', err);
+        // Error loading real-time data
       }
     };
     
@@ -56,11 +55,16 @@ const AnalyticsOverview = () => {
         const rtData = await fetchRealTimeAnalytics();
         setRealTimeData(rtData);
       } catch (err) {
-        console.error('Error updating real-time data:', err);
+        // Error updating real-time data
       }
     }, 60000); // تحديث كل دقيقة
 
-    return () => clearInterval(realTimeInterval);
+    // Cleanup intervals on unmount
+    return () => {
+      if (realTimeInterval) {
+        clearInterval(realTimeInterval);
+      }
+    };
   }, []);
 
   if (isLoading) {

@@ -8,9 +8,6 @@ const breadcrumbItems = [
   { title: 'تحليلات الموقع', link: '/analytics' },
 ];
 
-// لا يمكن تصدير metadata من مكون يستخدم "use client"
-// يجب نقل metadata إلى ملف منفصل مثل layout.js أو metadata.js
-
 const AnalyticsPage = () => {
   return (
     <>

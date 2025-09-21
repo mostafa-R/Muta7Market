@@ -1,17 +1,17 @@
 "use client";
+import Image from "next/image";
 import React from "react";
 import { useModal } from "../../hooks/useModal";
-import { Modal } from "../ui/modal";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import Image from "next/image";
+import { Modal } from "../ui/modal";
 
 
 export default function UserMetaCard() {
   const { isOpen, openModal, closeModal } = useModal();
   const handleSave = () => {
     // Handle save logic here
-    console.log("Saving changes...");
+    // Saving changes...
     closeModal();
   };
   return (

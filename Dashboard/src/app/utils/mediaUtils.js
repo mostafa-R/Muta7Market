@@ -1,15 +1,10 @@
-/**
- * Helper functions for handling media in forms
- */
 
 /**
- * Process form media files and prepare them for submission
- * @param {Object} values - Form values
- * @param {Object} existingMedia - Existing media data (from profile)
- * @param {Object} formData - FormData instance to append files to
+ * @param {Object} values 
+ * @param {Object} existingMedia
+ * @param {Object} formData
  */
 export const prepareMediaFormData = (values, existingMedia, formData) => {
-  // Handle profile image
   if (values.profilePictureFile) {
     if (existingMedia?.profileImage?.url) {
       console.info("Replacing existing profile image");
@@ -17,14 +12,12 @@ export const prepareMediaFormData = (values, existingMedia, formData) => {
     formData.append("profileImage", values.profilePictureFile);
   }
 
-  // Handle document file - only send if there's a new file
   const documentFile =
     values.media?.document?.file || values.documentFile || null;
   if (documentFile) {
     formData.append("document", documentFile);
   }
 
-  // Handle video file - only send if there's a new file
   const videoFile = values.media?.video?.file || null;
   if (videoFile) {
     formData.append("playerVideo", videoFile);
@@ -34,9 +27,8 @@ export const prepareMediaFormData = (values, existingMedia, formData) => {
 };
 
 /**
- * Process media response data from API
- * @param {Object} mediaData - Media data from API response
- * @returns {Object} - Formatted media object for frontend state
+ * @param {Object} mediaData 
+ * @returns {Object} 
  */
 export const processMediaResponse = (mediaData) => {
   if (!mediaData)
@@ -64,7 +56,6 @@ export const processMediaResponse = (mediaData) => {
     video: mediaData.video
       ? {
           ...mediaData.video,
-          // Add any frontend-specific properties
           isLoading: false,
           error: null,
         }
@@ -78,10 +69,8 @@ export const processMediaResponse = (mediaData) => {
     document: mediaData.document
       ? {
           ...mediaData.document,
-          // Add any frontend-specific properties
           isLoading: false,
           error: null,
-          // Extract file extension from document title or URL
           extension:
             mediaData.document.type?.split("/")[1] ||
             mediaData.document.title?.split(".").pop() ||
@@ -100,9 +89,8 @@ export const processMediaResponse = (mediaData) => {
 };
 
 /**
- * Create preview URL for a file
- * @param {File} file - File object
- * @returns {string} - Object URL for preview
+ * @param {File} file 
+ * @returns {string} w
  */
 export const createFilePreview = (file) => {
   if (!file) return null;
@@ -110,20 +98,17 @@ export const createFilePreview = (file) => {
 };
 
 /**
- * Clean up media previews
- * @param {Object} media - Media object with previews
+ * @param {Object} media 
  */
 export const cleanupMediaPreviews = (media) => {
   if (!media) return;
 
-  // Cleanup video preview
   if (media.video && media.video.file && media.video.url?.startsWith("blob:")) {
     try {
       URL.revokeObjectURL(media.video.url);
     } catch {}
   }
 
-  // Cleanup document preview
   if (
     media.document &&
     media.document.file &&

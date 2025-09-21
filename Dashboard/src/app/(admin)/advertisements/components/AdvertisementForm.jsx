@@ -25,11 +25,9 @@ const ImagePreview = ({ file, existingUrl }) => {
       setPreview(newPreview);
       return () => URL.revokeObjectURL(newPreview);
     }
-    // If file is cleared or not present, but we have an existing URL
     if (!file && existingUrl) {
       setPreview(existingUrl);
     }
-    // If no file and no existing URL (e.g., in create mode from scratch)
     if (!file && !existingUrl) {
       setPreview(null);
     }
@@ -83,7 +81,6 @@ export default function AdvertisementForm({ advertisement, onSubmit, isLoading }
     setAdSource(watchedSource);
   }, [watchedSource]);
 
-  // Function to determine which tab contains the missing field and navigate to it
   const navigateToFieldTab = useCallback((fieldName) => {
     const fieldTabMap = {
       titleAr: "basic",
@@ -98,22 +95,19 @@ export default function AdvertisementForm({ advertisement, onSubmit, isLoading }
     if (targetTab && targetTab !== activeTab) {
       setActiveTab(targetTab);
       
-      // Show toast notification about tab change
       toast.info(`تم الانتقال إلى تبويب "${targetTab === 'basic' ? 'المعلومات الأساسية' : targetTab === 'advertiser' ? 'معلومات المعلن' : 'الوسائط'}" للوصول للحقل المطلوب`);
       
-      return true; // Tab was changed
+      return true; 
     }
-    return false; // Tab was not changed
+    return false; 
   }, [activeTab]);
 
-  // Listen for navigation events from parent components
   useEffect(() => {
     const handleNavigateToField = (event) => {
       const { fieldName } = event.detail;
       const tabChanged = navigateToFieldTab(fieldName);
       
       if (tabChanged) {
-        // If tab was changed, focus the field after tab animation
         setTimeout(() => {
           const field = document.querySelector(`input[name="${fieldName}"]`);
           if (field) {
@@ -534,7 +528,8 @@ export default function AdvertisementForm({ advertisement, onSubmit, isLoading }
               type="submit" 
               disabled={isLoading} 
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:opacity-50"
+              className="bg-[#273346] hover:bg-[#334155]
+             text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:opacity-50"
             >
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">

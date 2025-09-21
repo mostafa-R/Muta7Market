@@ -3,10 +3,30 @@
 import { Badge } from "@/app/component/ui/badge";
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Calendar,
+  ChevronDown,
+  Edit3,
+  Eye,
+  Filter,
+  Hash,
+  Image as ImageIcon,
+  List,
+  Loader2,
+  RefreshCw,
+  Search,
+  SortAsc,
+  SortDesc,
+  Trash2,
+  Users
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-/* ----------------- helpers ----------------- */
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const RETRY_DELAY = 3000;
+const MAX_RETRIES = 2;
+
 const dualLabel = (val) => {
   if (!val) return "—";
   if (typeof val === "string") return `${val} / ${val}`;
@@ -15,45 +35,57 @@ const dualLabel = (val) => {
   return `${ar} / ${en}`;
 };
 
-const renderBadgesDual = (items = []) => {
+const renderBadgesDual = (items = [], maxShow = 3) => {
   if (!Array.isArray(items) || items.length === 0) {
-    return <span className="text-xs text-muted-foreground">—</span>;
+    return <span className="text-xs text-gray-400">لا يوجد</span>;
   }
-  const shown = items.slice(0, 3);
+  
+  const shown = items.slice(0, maxShow);
   const rest = items.length - shown.length;
 
   return (
     <div className="flex flex-wrap gap-1 max-w-full">
       {shown.map((item, idx) => (
-        <Badge key={item?._id ?? idx} variant="outline" className="text-xs">
+        <Badge 
+          key={item?._id ?? idx} 
+          variant="outline" 
+          className="text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+        >
           {dualLabel(item)}
         </Badge>
       ))}
-      {rest > 0 && <span className="text-xs text-muted-foreground">+{rest}</span>}
+      {rest > 0 && (
+        <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">
+          +{rest} أخرى
+        </Badge>
+      )}
     </div>
   );
 };
 
 const splitRoleTypes = (roleTypes = []) => {
-  const out = { player: [], coach: [] };
-  for (const rt of roleTypes || []) {
-    if (rt?.jop === "player") out.player.push(rt);
-    else if (rt?.jop === "coach") out.coach.push(rt);
+  const result = { player: [], coach: [] };
+  for (const roleType of roleTypes || []) {
+    if (roleType?.jop === "player") result.player.push(roleType);
+    else if (roleType?.jop === "coach") result.coach.push(roleType);
   }
-  return out;
+  return result;
 };
 
-/* ----------------- component ----------------- */
 export default function SportsTable({ onEdit, onDelete }) {
   const [sports, setSports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [showFilters, setShowFilters] = useState(false);
 
+ 
   const [pagination, setPagination] = useState({
     totalDocs: 0,
     totalPages: 1,
@@ -61,6 +93,11 @@ export default function SportsTable({ onEdit, onDelete }) {
     hasNextPage: false,
     hasPrevPage: false,
   });
+
+  
+  const getToken = useCallback(() =>
+    localStorage.getItem("token") || sessionStorage.getItem("accessToken"), []);
+
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -72,16 +109,20 @@ export default function SportsTable({ onEdit, onDelete }) {
     return params.toString();
   }, [page, limit, search, sortBy, sortOrder]);
 
-  const fetchSports = async () => {
-    setLoading(true);
+  
+  const fetchSports = useCallback(async (isRetry = false) => {
     try {
-      const token =
-        localStorage.getItem("token") ||
-        sessionStorage.getItem("accessToken");
-      const API_BASE_URL =
-        process.env.NEXT_PUBLIC_BASE_URL ;
+      if (!isRetry) {
+        setLoading(true);
+        setError(null);
+      }
 
-      const res = await fetch(`${API_BASE_URL}/sports?${queryString}`, {
+      const token = getToken();
+      if (!token) {
+        throw new Error("لم يتم العثور على رمز المصادقة. يرجى تسجيل الدخول مرة أخرى.");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/sports?${queryString}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -89,28 +130,30 @@ export default function SportsTable({ onEdit, onDelete }) {
         credentials: "include",
       });
 
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg =
-          json?.message || json?.error?.message || `HTTP ${res.status}`;
-        throw new Error(msg);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || errorData?.error?.message || `خطأ في الخادم (${response.status})`;
+        throw new Error(errorMessage);
       }
 
-      if (json?.data?.sports) {
-        setSports(json.data.sports);
-        setPagination(json.data.pagination || pagination);
-      } else if (Array.isArray(json)) {
-        setSports(json);
+      const result = await response.json();
+
+     
+      if (result?.data?.sports) {
+        setSports(result.data.sports);
+        setPagination(result.data.pagination || pagination);
+      } else if (Array.isArray(result)) {
+        setSports(result);
         setPagination({
-          totalDocs: json.length,
+          totalDocs: result.length,
           totalPages: 1,
           currentPage: 1,
           hasNextPage: false,
           hasPrevPage: false,
         });
-      } else if (json?.sports) {
-        setSports(json.sports);
-        setPagination(json.pagination || pagination);
+      } else if (result?.sports) {
+        setSports(result.sports);
+        setPagination(result.pagination || pagination);
       } else {
         setSports([]);
         setPagination({
@@ -121,373 +164,535 @@ export default function SportsTable({ onEdit, onDelete }) {
           hasPrevPage: false,
         });
       }
-    } catch (e) {
-      console.error(e);
-      toast.error(`فشل جلب الألعاب: ${e.message}`);
+
+      setError(null);
+      setRetryCount(0);
+      
+      if (isRetry) {
+        toast.success("تم تحميل البيانات بنجاح");
+      }
+    } catch (err) {
+      console.error("Error fetching sports:", err);
+      setError(err.message);
+      
+      if (retryCount < MAX_RETRIES && !isRetry) {
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          fetchSports(true);
+        }, RETRY_DELAY);
+      } else {
+        toast.error(`فشل جلب الألعاب: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [queryString, getToken, retryCount, pagination]);
 
   useEffect(() => {
     fetchSports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString]);
 
-  const formatDate = (iso) => {
+  const handleSearch = useCallback((e) => {
+    setSearch(e.target.value);
+    setPage(1); 
+  }, []);
+
+  const handleSort = useCallback((field) => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+    setPage(1);
+  }, [sortBy]);
+
+  const handleLimitChange = useCallback((newLimit) => {
+    setLimit(Number(newLimit));
+    setPage(1);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setSortBy("createdAt");
+    setSortOrder("desc");
+    setPage(1);
+  }, []);
+
+  const formatDate = useCallback((isoString) => {
     try {
-      return iso ? new Date(iso).toLocaleDateString() : "—";
+      return isoString ? new Date(isoString).toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      }) : "—";
     } catch {
       return "—";
     }
-  };
+  }, []);
+
+  
+  const getSortIcon = useCallback((field) => {
+    if (sortBy !== field) return null;
+    return sortOrder === "asc" ? 
+      <SortAsc className="w-4 h-4 text-blue-600" /> : 
+      <SortDesc className="w-4 h-4 text-blue-600" />;
+  }, [sortBy, sortOrder]);
 
   return (
-    <div className="w-full space-y-4" dir="rtl">
-      {/* controls */}
-      <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative">
-              <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <Input
-                placeholder="ابحث بالاسم..."
-                value={search}
-                onChange={(e) => {
-                  setPage(1);
-                  setSearch(e.target.value);
-                }}
-                className="w-64 pr-10"
-              />
+    <div className="w-full space-y-6" dir="rtl">
+      {/* Enhanced Header */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+        {/* Controls Header */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <List className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">جدول الألعاب الرياضية</h3>
+                <p className="text-sm text-gray-600">
+                  عرض وإدارة جميع الألعاب الرياضية ({pagination.totalDocs} لعبة)
+                </p>
+              </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={fetchSports}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                <svg className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                بحث
-              </Button>
-              {/* <Button
+            <div className="flex items-center gap-3">
+              <Button
                 variant="outline"
-                onClick={() => {
-                  setSearch("");
-                  setPage(1);
-                }}
-                className="border-gray-300"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`${showFilters ? 'bg-blue-50 border-blue-200' : ''}`}
               >
-                <svg className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                مسح
-              </Button> */}
+                <Filter className="w-4 h-4 ml-2" />
+                الفلاتر
+                <ChevronDown className={`w-4 h-4 mr-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </Button>
               
+              <Button
+                variant="outline"
+                onClick={fetchSports}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 ml-2" />
+                )}
+                تحديث
+              </Button>
             </div>
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 rounded-md p-1.5 px-3">
-              <label className="text-sm text-gray-600 dark:text-gray-300">الترتيب:</label>
+        {/* Filters Section */}
+        {showFilters && (
+          <div className="p-6 bg-gray-50 border-b border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="ابحث بالاسم..."
+                  value={search}
+                  onChange={handleSearch}
+                  className="pr-10"
+                />
+              </div>
+
+              {/* Sort Field */}
               <select
-                className="bg-transparent text-sm focus:outline-none"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={sortBy}
                 onChange={(e) => {
-                  setPage(1);
                   setSortBy(e.target.value);
+                  setPage(1);
                 }}
               >
                 <option value="createdAt">تاريخ الإنشاء</option>
                 <option value="updatedAt">تاريخ التحديث</option>
-                <option value="name.en">الاسم (EN)</option>
-                <option value="name.ar">الاسم (AR)</option>
+                <option value="name.ar">الاسم (عربي)</option>
+                <option value="name.en">الاسم (إنجليزي)</option>
               </select>
 
+              {/* Sort Order */}
               <select
-                className="bg-transparent text-sm focus:outline-none mr-2 border-r border-gray-300 dark:border-gray-600 pr-2"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={sortOrder}
                 onChange={(e) => {
-                  setPage(1);
                   setSortOrder(e.target.value);
-                }}
-              >
-                <option value="asc">تصاعدي</option>
-                <option value="desc">تنازلي</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 rounded-md p-1.5 px-3">
-              <label className="text-sm text-gray-600 dark:text-gray-300">عرض:</label>
-              <select
-                className="bg-transparent text-sm focus:outline-none"
-                value={limit}
-                onChange={(e) => {
                   setPage(1);
-                  setLimit(Number(e.target.value));
                 }}
               >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
+                <option value="desc">تنازلي</option>
+                <option value="asc">تصاعدي</option>
+              </select>
+
+              {/* Items per page */}
+              <select
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={limit}
+                onChange={(e) => handleLimitChange(e.target.value)}
+              >
+                <option value={5}>5 عناصر</option>
+                <option value={10}>10 عناصر</option>
+                <option value={25}>25 عنصر</option>
+                <option value={50}>50 عنصر</option>
               </select>
             </div>
 
-            <Button variant="outline" onClick={fetchSports} size="sm" className="border-gray-300">
-              <svg className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              تحديث
-            </Button>
+            {/* Active Filters & Clear */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-2">
+                {search && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    البحث: {search}
+                    <button onClick={() => setSearch("")} className="ml-1 hover:text-red-600">
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {(sortBy !== "createdAt" || sortOrder !== "desc") && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    الترتيب: {sortBy === "createdAt" ? "تاريخ الإنشاء" : 
+                              sortBy === "updatedAt" ? "تاريخ التحديث" :
+                              sortBy === "name.ar" ? "الاسم (عربي)" : "الاسم (إنجليزي)"}
+                    ({sortOrder === "desc" ? "تنازلي" : "تصاعدي"})
+                  </Badge>
+                )}
+              </div>
+              
+              {(search || sortBy !== "createdAt" || sortOrder !== "desc") && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  مسح الفلاتر
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="w-full overflow-x-auto">
-        <table className="w-full border-collapse">
-          <colgroup>
-            <col className="w-10" />
-            <col className="w-14" />
-            <col className="w-[15%]" />
-            <col className="w-[40%]" />
-            <col className="w-[40%]" />
-            <col className="w-[10%]" />
-            <col className="w-[7rem]" />
-          </colgroup>
+        {/* Connection Error Warning */}
+        {error && (
+          <div className="p-4 bg-yellow-50 border-b border-yellow-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <RefreshCw className="w-4 h-4 text-yellow-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-yellow-800 font-medium">تحذير الاتصال</p>
+                <p className="text-yellow-700 text-sm">
+                  تعذر الاتصال بالخادم. يتم عرض آخر البيانات المحفوظة.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchSports}
+                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+              >
+                <RefreshCw className="w-4 h-4 ml-1" />
+                إعادة المحاولة
+              </Button>
+            </div>
+          </div>
+        )}
 
-          <thead className="bg-gray-50 dark:bg-slate-800 sticky top-0 z-10">
-            <tr className="text-right">
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                #
-              </th>
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                أيقونة
-              </th>
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                الاسم
-              </th>
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                المراكز (عربي / إنجليزي)
-              </th>
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                أنواع الأدوار (لاعب / مدرب)
-              </th>
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                تاريخ الإنشاء
-              </th>
-              <th className="p-3 text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                الإجراءات
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {loading ? (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="p-10 text-center"
-                >
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-3"></div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">جاري تحميل البيانات...</p>
+        {/* Enhanced Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr className="text-right">
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider w-16">
+                  #
+                </th>
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider w-20">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    أيقونة
                   </div>
-                </td>
-              </tr>
-            ) : sports.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="p-10 text-center"
-                >
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">لا توجد بيانات لعرضها</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">يمكنك إضافة لعبة جديدة من خلال تبويب "إضافة لعبة جديدة"</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              sports.map((sport, i) => {
-                const iconUrl = sport?.icon?.url;
-                const { player, coach } = splitRoleTypes(sport?.roleTypes);
-
-                return (
-                  <tr
-                    key={sport?._id ?? i}
-                    className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
+                </th>
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <button
+                    onClick={() => handleSort("name.ar")}
+                    className="flex items-center gap-2 hover:text-blue-600 transition-colors"
                   >
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300">
-                      {(pagination.currentPage - 1) * limit + (i + 1)}
-                    </td>
+                    الاسم
+                    {getSortIcon("name.ar")}
+                  </button>
+                </th>
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    المراكز
+                  </div>
+                </th>
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    أنواع الأدوار
+                  </div>
+                </th>
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <button
+                    onClick={() => handleSort("createdAt")}
+                    className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    تاريخ الإنشاء
+                    {getSortIcon("createdAt")}
+                  </button>
+                </th>
+                <th className="p-4 text-xs font-medium text-gray-600 uppercase tracking-wider w-32">
+                  الإجراءات
+                </th>
+              </tr>
+            </thead>
 
-                    <td className="p-3">
-                      {iconUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={iconUrl}
-                          alt="icon"
-                          className="h-10 w-10 object-contain rounded bg-gray-50 dark:bg-slate-800 p-1"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
+            <tbody className="divide-y divide-gray-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                      <p className="text-sm text-gray-500">جاري تحميل البيانات...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : sports.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="p-4 bg-gray-100 rounded-full">
+                        <List className="w-12 h-12 text-gray-400" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-medium text-gray-900">لا توجد ألعاب رياضية</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {search ? `لا توجد نتائج للبحث "${search}"` : "لم يتم إنشاء أي ألعاب رياضية بعد"}
+                        </p>
+                      </div>
+                      {search && (
+                        <Button variant="outline" onClick={() => setSearch("")}>
+                          مسح البحث
+                        </Button>
                       )}
-                    </td>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                sports.map((sport, index) => {
+                  const iconUrl = sport?.icon?.url;
+                  const { player, coach } = splitRoleTypes(sport?.roleTypes);
+                  const rowNumber = (pagination.currentPage - 1) * limit + (index + 1);
 
-                    {/* Name: AR on top, EN below */}
-                    <td className="p-3">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {sport?.name?.ar ?? "—"}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {sport?.name?.en ?? "—"}
-                        </span>
-                      </div>
-                    </td>
+                  return (
+                    <tr
+                      key={sport?._id ?? index}
+                      className="hover:bg-gray-50 transition-colors group"
+                    >
+                      {/* Row Number */}
+                      <td className="p-4 text-sm text-gray-600 font-medium">
+                        {rowNumber}
+                      </td>
 
-                    {/* Positions */}
-                    <td className="p-3">
-                      <div className="max-w-full min-w-0">
-                        {renderBadgesDual(sport?.positions)}
-                      </div>
-                    </td>
-
-                    {/* Role Types */}
-                    <td className="p-3">
-                      <div className="flex flex-col gap-2 max-w-full min-w-0">
-                        <div className="flex items-start gap-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                            لاعب
-                          </span>
-                          {renderBadgesDual(player)}
+                      {/* Icon */}
+                      <td className="p-4">
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                          {iconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={iconUrl}
+                              alt={sport?.name?.ar || "أيقونة اللعبة"}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className={`${iconUrl ? 'hidden' : 'flex'} items-center justify-center w-full h-full`}>
+                            <ImageIcon className="w-5 h-5 text-gray-400" />
+                          </div>
                         </div>
-                        <div className="flex items-start gap-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                            مدرب
-                          </span>
-                          {renderBadgesDual(coach)}
+                      </td>
+
+                      {/* Name */}
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          <p className="font-medium text-gray-900 leading-tight">
+                            {sport?.name?.ar || "—"}
+                          </p>
+                          <p className="text-sm text-gray-500 leading-tight">
+                            {sport?.name?.en || "—"}
+                          </p>
+                          {sport?.slug && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Hash className="w-3 h-3 text-gray-400" />
+                              <code className="text-xs text-gray-400 font-mono">{sport.slug}</code>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300">{formatDate(sport?.createdAt)}</td>
+                      {/* Positions */}
+                      <td className="p-4">
+                        <div className="max-w-xs">
+                          {sport?.positions?.length > 0 ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200">
+                                  {sport.positions.length} موقع
+                                </Badge>
+                              </div>
+                              {renderBadgesDual(sport.positions)}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">لا توجد مراكز</span>
+                          )}
+                        </div>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="p-3">
-                      <div className="flex flex-col gap-2 items-stretch">
-                        <Button
-                          variant="outline"
-                          onClick={() => onEdit?.(sport)}
-                          className="h-8 w-full border-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-primary"
-                        >
-                          <svg className="h-4 w-4 ml-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          تعديل
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => onDelete?.(sport)}
-                          className="h-8 w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-                        >
-                          <svg className="h-4 w-4 ml-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          حذف
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                      {/* Role Types */}
+                      <td className="p-4">
+                        <div className="max-w-xs space-y-3">
+                          {/* Player Roles */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                                <Users className="w-3 h-3 ml-1" />
+                                لاعب ({player.length})
+                              </Badge>
+                            </div>
+                            {player.length > 0 ? renderBadgesDual(player, 2) : 
+                              <span className="text-xs text-gray-400">لا يوجد</span>}
+                          </div>
+                          
+                          {/* Coach Roles */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
+                                <Users className="w-3 h-3 ml-1" />
+                                مدرب ({coach.length})
+                              </Badge>
+                            </div>
+                            {coach.length > 0 ? renderBadgesDual(coach, 2) : 
+                              <span className="text-xs text-gray-400">لا يوجد</span>}
+                          </div>
+                        </div>
+                      </td>
 
-      {/* pagination footer */}
-      <div className="bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800 p-4 rounded-b-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-            <div className="flex items-center bg-white dark:bg-slate-800 rounded-md px-3 py-1 shadow-sm">
-              <svg className="h-4 w-4 text-gray-400 dark:text-gray-500 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span>إجمالي السجلات: <span className="font-medium text-gray-900 dark:text-gray-100">{pagination.totalDocs}</span></span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between sm:justify-end gap-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              صفحة <span className="font-medium text-gray-900 dark:text-gray-100">{pagination.currentPage}</span> من <span className="font-medium text-gray-900 dark:text-gray-100">{pagination.totalPages}</span>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.hasPrevPage}
-                onClick={() => setPage(1)}
-                className="border-gray-300 dark:border-gray-700"
-                title="الصفحة الأولى"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                </svg>
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.hasPrevPage}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="border-gray-300 dark:border-gray-700"
-              >
-                <svg className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                السابق
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.hasNextPage}
-                onClick={() => setPage((p) => p + 1)}
-                className="border-gray-300 dark:border-gray-700"
-              >
-                التالي
-                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.hasNextPage}
-                onClick={() => setPage(pagination.totalPages)}
-                className="border-gray-300 dark:border-gray-700"
-                title="الصفحة الأخيرة"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              </Button>
-            </div>
-          </div>
+                      {/* Created Date */}
+                      <td className="p-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          {formatDate(sport.createdAt )}
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit?.(sport)}
+                            className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                            title="تعديل اللعبة"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete?.(sport)}
+                            className="hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors"
+                            title="حذف اللعبة"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
+
+        {/* Enhanced Pagination */}
+        {!loading && sports.length > 0 && (
+          <div className="bg-gray-50 border-t border-gray-100 p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Results Info */}
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm border">
+                  <List className="w-4 h-4 text-gray-400" />
+                  <span>
+                    إجمالي النتائج: <span className="font-medium text-gray-900">{pagination.totalDocs}</span>
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm border">
+                  <Eye className="w-4 h-4 text-gray-400" />
+                  <span>
+                    عرض {((pagination.currentPage - 1) * limit) + 1} - {Math.min(pagination.currentPage * limit, pagination.totalDocs)} من {pagination.totalDocs}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-600">
+                  صفحة <span className="font-medium text-gray-900">{pagination.currentPage}</span> من <span className="font-medium text-gray-900">{pagination.totalPages}</span>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!pagination.hasPrevPage}
+                    onClick={() => setPage(1)}
+                    title="الصفحة الأولى"
+                  >
+                    الأولى
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!pagination.hasPrevPage}
+                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                    title="الصفحة السابقة"
+                  >
+                    السابق
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!pagination.hasNextPage}
+                    onClick={() => setPage(prev => prev + 1)}
+                    title="الصفحة التالية"
+                  >
+                    التالي
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!pagination.hasNextPage}
+                    onClick={() => setPage(pagination.totalPages)}
+                    title="الصفحة الأخيرة"
+                  >
+                    الأخيرة
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

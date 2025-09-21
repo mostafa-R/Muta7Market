@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  console.log('here')
+  // Middleware executing
   const protectedPaths = ['/dashboard', '/admin'];
   const currentPath = request.nextUrl.pathname;
 
@@ -28,14 +28,12 @@ export function middleware(request) {
         return NextResponse.redirect(signinUrl);
       }
 
-      // التعديل الرئيسي هنا: رفض المستخدمين غير الأدمن تماماً
       if (decoded.role !== 'admin' && decoded.role !== 'super_admin') {
         const signinUrl = new URL('/signin', request.url);
         signinUrl.searchParams.set('error', 'unauthorized');
         return NextResponse.redirect(signinUrl);
       }
 
-      // السماح فقط للأدمن والسوبر أدمن
       return NextResponse.next();
     } catch (err) {
       const signinUrl = new URL('/signin', request.url);

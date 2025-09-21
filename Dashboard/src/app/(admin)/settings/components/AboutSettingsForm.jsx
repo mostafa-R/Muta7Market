@@ -2,10 +2,28 @@
 
 import { Button } from "@/app/component/ui/button";
 import { Input } from "@/app/component/ui/input";
-import { useEffect, useRef, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  FileText,
+  Globe,
+  Languages,
+  List,
+  Loader2,
+  Plus,
+  Save,
+  Trash2
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+
+// Production constants
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_LISTS = 10;
+const MAX_ITEMS_PER_LIST = 20;
 
 function emptyLang() {
   return { ar: "", en: "" };
@@ -19,17 +37,15 @@ function makeEmptyList() {
   return { title: emptyLang(), description: emptyLang(), items: [makeEmptyItem()] };
 }
 
-// Inline subcomponent: small editor for mission/values sections
+
 function MissionValuesEditor({ labelAr, labelEn, doc, updateDoc, makeEmptyList, makeEmptyItem }) {
-  const langKey = 'ar'; // show Arabic inputs primarily; both languages handled below
+  const langKey = 'ar';
 
   const findSectionIndex = () => (doc?.list || []).findIndex(s => s?.title?.ar === labelAr || s?.title?.en === labelEn);
 
-  // ensureSection: create a section with the expected title if missing and return its index
   const ensureSection = () => {
     const idx = findSectionIndex();
     if (idx !== -1) return idx;
-    // create a new section object with title set so frontend finds it immediately
     const newSec = { title: { ar: labelAr, en: labelEn }, description: { ar: '', en: '' }, items: [makeEmptyItem()] };
     let newIndex = -1;
     updateDoc(d => {
@@ -89,26 +105,61 @@ function MissionValuesEditor({ labelAr, labelEn, doc, updateDoc, makeEmptyList, 
   );
 }
 
-// lightweight client-side validation mirroring backend Joi schemas
-function validateAboutPayload(payload) {
+// Enhanced validation with production-ready error messages
+const validateAboutPayload = (payload) => {
   const errors = [];
-  if (!payload) return ["payload missing"];
-  if (!payload.title || !payload.title.ar || !payload.title.en) errors.push("title.ar or title.en required");
-  if (!payload.description || !payload.description.ar || !payload.description.en) errors.push("description.ar or description.en required");
+  
+  if (!payload) return ["البيانات مفقودة"];
+  
+  // Validate main title
+  if (!payload.title?.ar?.trim()) errors.push("العنوان بالعربية مطلوب");
+  if (!payload.title?.en?.trim()) errors.push("العنوان بالإنجليزية مطلوب");
+  if (payload.title?.ar && payload.title.ar.length > MAX_TITLE_LENGTH) {
+    errors.push(`العنوان العربي يجب أن يكون أقل من ${MAX_TITLE_LENGTH} حرف`);
+  }
+  if (payload.title?.en && payload.title.en.length > MAX_TITLE_LENGTH) {
+    errors.push(`العنوان الإنجليزي يجب أن يكون أقل من ${MAX_TITLE_LENGTH} حرف`);
+  }
+  
+  // Validate main description
+  if (!payload.description?.ar?.trim()) errors.push("الوصف بالعربية مطلوب");
+  if (!payload.description?.en?.trim()) errors.push("الوصف بالإنجليزية مطلوب");
+  if (payload.description?.ar && payload.description.ar.length > MAX_DESCRIPTION_LENGTH) {
+    errors.push(`الوصف العربي يجب أن يكون أقل من ${MAX_DESCRIPTION_LENGTH} حرف`);
+  }
+  if (payload.description?.en && payload.description.en.length > MAX_DESCRIPTION_LENGTH) {
+    errors.push(`الوصف الإنجليزي يجب أن يكون أقل من ${MAX_DESCRIPTION_LENGTH} حرف`);
+  }
+  
+  // Validate lists
   if (payload.list && Array.isArray(payload.list)) {
+    if (payload.list.length > MAX_LISTS) {
+      errors.push(`لا يمكن أن يكون هناك أكثر من ${MAX_LISTS} قوائم`);
+    }
+    
     payload.list.forEach((sec, sIdx) => {
-      if (!sec.title || !sec.title.ar || !sec.title.en) errors.push(`list[${sIdx}].title missing`);
-      if (!sec.description || !sec.description.ar || !sec.description.en) errors.push(`list[${sIdx}].description missing`);
+      if (!sec.title?.ar?.trim()) errors.push(`عنوان القائمة ${sIdx + 1} بالعربية مطلوب`);
+      if (!sec.title?.en?.trim()) errors.push(`عنوان القائمة ${sIdx + 1} بالإنجليزية مطلوب`);
+      if (!sec.description?.ar?.trim()) errors.push(`وصف القائمة ${sIdx + 1} بالعربية مطلوب`);
+      if (!sec.description?.en?.trim()) errors.push(`وصف القائمة ${sIdx + 1} بالإنجليزية مطلوب`);
+      
       if (sec.items && Array.isArray(sec.items)) {
+        if (sec.items.length > MAX_ITEMS_PER_LIST) {
+          errors.push(`القائمة ${sIdx + 1} لا يمكن أن تحتوي على أكثر من ${MAX_ITEMS_PER_LIST} بند`);
+        }
+        
         sec.items.forEach((it, iIdx) => {
-          if (!it.name || !it.name.ar || !it.name.en) errors.push(`list[${sIdx}].items[${iIdx}].name missing`);
-          if (!it.description || !it.description.ar || !it.description.en) errors.push(`list[${sIdx}].items[${iIdx}].description missing`);
+          if (!it.name?.ar?.trim()) errors.push(`اسم البند ${iIdx + 1} في القائمة ${sIdx + 1} بالعربية مطلوب`);
+          if (!it.name?.en?.trim()) errors.push(`اسم البند ${iIdx + 1} في القائمة ${sIdx + 1} بالإنجليزية مطلوب`);
+          if (!it.description?.ar?.trim()) errors.push(`وصف البند ${iIdx + 1} في القائمة ${sIdx + 1} بالعربية مطلوب`);
+          if (!it.description?.en?.trim()) errors.push(`وصف البند ${iIdx + 1} في القائمة ${sIdx + 1} بالإنجليزية مطلوب`);
         });
       }
     });
   }
+  
   return errors;
-}
+};
 
 export default function AboutSettingsForm() {
   const [doc, setDoc] = useState(null);
@@ -117,24 +168,24 @@ export default function AboutSettingsForm() {
   const [rawJson, setRawJson] = useState("");
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  // stable keys for lists/items to avoid React re-using DOM nodes when adding new items
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
+  
   const listKeysRef = useRef([]);
   const itemKeysRef = useRef([]);
+  const abortControllerRef = useRef(null);
 
-  const makeKey = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+  const makeKey = useCallback(() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`, []);
 
-  // keep keysRef in sync with doc structure
   useEffect(() => {
     const lists = doc?.list || [];
 
-    // ensure outer list keys
     if (listKeysRef.current.length < lists.length) {
       for (let i = listKeysRef.current.length; i < lists.length; i++) listKeysRef.current[i] = makeKey();
     } else if (listKeysRef.current.length > lists.length) {
       listKeysRef.current.length = lists.length;
     }
 
-    // ensure item keys per list
     for (let i = 0; i < lists.length; i++) {
       const items = (lists[i] && lists[i].items) || [];
       itemKeysRef.current[i] = itemKeysRef.current[i] || [];
@@ -194,23 +245,33 @@ export default function AboutSettingsForm() {
     return () => controller.abort();
   }, []);
 
-  const updateDoc = (updater) => {
+  const updateDoc = useCallback((updater) => {
     setDoc((prev) => {
       const next = updater(typeof prev === "object" && prev ? { ...prev } : {});
       setRawJson(JSON.stringify(next, null, 2));
+      setHasUnsavedChanges(true);
+      
+      // Real-time validation
+      const errors = validateAboutPayload(next);
+      setValidationErrors(errors);
+      
       return next;
     });
-  };
+  }, []);
 
-  // list operations
+
   const addList = () => updateDoc((d) => ({ ...d, list: [...(d.list || []), makeEmptyList()] }));
-  // keep key refs in sync when adding a list
-  const addListWithKey = () => {
+ 
+  const addListWithKey = useCallback(() => {
+    if ((doc?.list || []).length >= MAX_LISTS) {
+      toast.error(`لا يمكن إضافة أكثر من ${MAX_LISTS} قوائم`);
+      return;
+    }
+    
     updateDoc((d) => ({ ...d, list: [...(d.list || []), makeEmptyList()] }));
-    // push a key for the new list
     listKeysRef.current.push(makeKey());
     itemKeysRef.current.push([makeKey()]);
-  };
+  }, [doc?.list, updateDoc, makeKey]);
   const removeList = (idx) => updateDoc((d) => ({ ...d, list: (d.list || []).filter((_, i) => i !== idx) }));
 
   const updateListField = (idx, field, lang, value) => {
@@ -223,7 +284,7 @@ export default function AboutSettingsForm() {
     });
   };
 
-  // item operations
+ 
   const addItem = (listIdx) => updateDoc((d) => {
     const list = d.list ? [...d.list] : [];
     const l = { ...(list[listIdx] || makeEmptyList()) };
@@ -232,7 +293,13 @@ export default function AboutSettingsForm() {
     return { ...d, list };
   });
 
-  const addItemWithKey = (listIdx) => {
+  const addItemWithKey = useCallback((listIdx) => {
+    const currentItems = doc?.list?.[listIdx]?.items || [];
+    if (currentItems.length >= MAX_ITEMS_PER_LIST) {
+      toast.error(`لا يمكن إضافة أكثر من ${MAX_ITEMS_PER_LIST} بند في القائمة الواحدة`);
+      return;
+    }
+    
     updateDoc((d) => {
       const list = d.list ? [...d.list] : [];
       const l = { ...(list[listIdx] || makeEmptyList()) };
@@ -242,7 +309,7 @@ export default function AboutSettingsForm() {
     });
     itemKeysRef.current[listIdx] = itemKeysRef.current[listIdx] || [];
     itemKeysRef.current[listIdx].push(makeKey());
-  };
+  }, [doc?.list, updateDoc, makeKey]);
 
   const removeItem = (listIdx, itemIdx) => updateDoc((d) => {
     const list = d.list ? [...d.list] : [];
@@ -275,7 +342,6 @@ export default function AboutSettingsForm() {
       return;
     }
 
-    // client-side validation to avoid server 400 from Joi validators
     const errors = validateAboutPayload(payload);
     if (errors.length) {
       toast.error("هناك حقول مطلوبة ناقصة، أكملها قبل الحفظ:\n" + errors.slice(0,5).join("; "));
@@ -309,20 +375,17 @@ export default function AboutSettingsForm() {
           setDoc(result.data || result);
           setRawJson(JSON.stringify(result.data || result, null, 2));
           toast.success("تم حفظ بيانات صفحة من نحن بنجاح");
-          // show inline success message instead of opening a new tab
           setSuccessMessage("تم حفظ بيانات صفحة من نحن بنجاح");
-          // notify other tabs/clients to reload About data without full page reload
           try {
             if (typeof BroadcastChannel !== 'undefined') {
               const bc = new BroadcastChannel('site-settings');
               bc.postMessage({ type: 'about-updated', timestamp: Date.now() });
               bc.close();
             } else if (typeof window !== 'undefined') {
-              // fallback: use localStorage event
               localStorage.setItem('site-settings-about-updated', Date.now().toString());
             }
           } catch (e) {
-            // ignore broadcast errors
+           
           }
         } else throw new Error(result.message || "فشل الحفظ");
       } else {
@@ -347,7 +410,6 @@ export default function AboutSettingsForm() {
           setDoc(result.data || result);
           setRawJson(JSON.stringify(result.data || result, null, 2));
           toast.success("تم إنشاء وثيقة من نحن وحفظها");
-          // show inline success message instead of opening a new tab
           setSuccessMessage("تم إنشاء وثيقة من نحن وحفظها");
           try {
             if (typeof BroadcastChannel !== 'undefined') {
@@ -369,120 +431,365 @@ export default function AboutSettingsForm() {
   };
 
   return (
-    <div dir="rtl">
-      <h2 className="text-xl font-semibold mb-4">صفحة من نحن</h2>
+    <div dir="rtl" className="space-y-6">
+      {/* Page Header */}
+      <div className="bg-[#1e293b] rounded-xl p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold mb-2 flex items-center gap-3">
+              <FileText className="w-7 h-7" />
+              إدارة صفحة من نحن
+            </h1>
+            <p className="text-blue-100">إدارة محتوى صفحة من نحن والمعلومات التفصيلية للموقع</p>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="text-center">
+              <div className="flex items-center gap-2 text-indigo-400">
+                <Globe className="w-5 h-5" />
+                <span className="text-xl font-bold">متعدد اللغات</span>
+              </div>
+              <p className="text-blue-200">عربي + إنجليزي</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Validation Status Bar */}
+      {validationErrors.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-orange-200">
+          <div className="p-4 bg-orange-50 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-orange-900 mb-2">يرجى إكمال الحقول المطلوبة</h3>
+                <div className="space-y-1">
+                  {validationErrors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-orange-700 text-sm">• {error}</p>
+                  ))}
+                  {validationErrors.length > 5 && (
+                    <p className="text-orange-600 text-sm font-medium">
+                      و {validationErrors.length - 5} أخطاء أخرى...
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="text-orange-600 font-bold text-lg">
+                {validationErrors.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unsaved Changes Indicator */}
+      {hasUnsavedChanges && (
+        <div className="bg-white rounded-xl shadow-sm border border-yellow-200">
+          <div className="p-3 bg-yellow-50 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-yellow-100 rounded-lg">
+                <Save className="w-4 h-4 text-yellow-600" />
+              </div>
+              <p className="text-yellow-800 text-sm font-medium">
+                لديك تغييرات غير محفوظة. تذكر حفظ التغييرات.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
-        <div className="h-40 flex items-center justify-center">جاري التحميل...</div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-1">جاري تحميل البيانات</h3>
+              <p className="text-gray-500">يرجى الانتظار...</p>
+            </div>
+          </div>
+        </div>
       ) : (
-          <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-6">
+          {/* Main Content Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Languages className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">المحتوى الأساسي</h3>
+              </div>
+              <p className="text-gray-600 text-sm">عنوان ووصف صفحة من نحن الرئيسية</p>
+            </div>
             
+            <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">العنوان (AR)</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span>العنوان (عربي)</span>
+                    <span className="text-red-500">*</span>
+                  </label>
               <Input
                 value={(doc && doc.title && doc.title.ar) || ""}
-                onChange={(e) => updateDoc(d => ({ ...d, title: { ...(d.title||{}), ar: e.target.value } }))}
-              />
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value.length <= MAX_TITLE_LENGTH) {
+                          updateDoc(d => ({ ...d, title: { ...(d.title||{}), ar: value } }));
+                        }
+                      }}
+                      placeholder="أدخل العنوان بالعربية"
+                      className="focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      maxLength={MAX_TITLE_LENGTH}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {MAX_TITLE_LENGTH - (doc?.title?.ar?.length || 0)} حرف متبقي
+                    </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">العنوان (EN)</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span>العنوان (إنجليزي)</span>
+                    <span className="text-red-500">*</span>
+                  </label>
               <Input
                 value={(doc && doc.title && doc.title.en) || ""}
-                onChange={(e) => updateDoc(d => ({ ...d, title: { ...(d.title||{}), en: e.target.value } }))}
-              />
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value.length <= MAX_TITLE_LENGTH) {
+                          updateDoc(d => ({ ...d, title: { ...(d.title||{}), en: value } }));
+                        }
+                      }}
+                      placeholder="Enter title in English"
+                      className="focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      maxLength={MAX_TITLE_LENGTH}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {MAX_TITLE_LENGTH - (doc?.title?.en?.length || 0)} characters remaining
+                    </p>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">الوصف (AR)</label>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span>الوصف (عربي)</span>
+                    <span className="text-red-500">*</span>
+                  </label>
             <textarea
-              className="w-full border p-2 rounded-md min-h-[100px]"
+                    className="w-full border border-gray-200 p-3 rounded-lg min-h-[120px] focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
               value={(doc && doc.description && doc.description.ar) || ""}
               onChange={(e) => updateDoc(d => ({ ...d, description: { ...(d.description||{}), ar: e.target.value } }))}
+                    placeholder="أدخل وصف مفصل بالعربية"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">الوصف (EN)</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span>الوصف (إنجليزي)</span>
+                    <span className="text-red-500">*</span>
+                  </label>
             <textarea
-              className="w-full border p-2 rounded-md min-h-[100px]"
+                    className="w-full border border-gray-200 p-3 rounded-lg min-h-[120px] focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
               value={(doc && doc.description && doc.description.en) || ""}
               onChange={(e) => updateDoc(d => ({ ...d, description: { ...(d.description||{}), en: e.target.value } }))}
-            />
+                    placeholder="Enter detailed description in English"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Lists Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <List className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold">القوائم التفصيلية (مثال: مميزات، خدمات، فرق العمل)</h3>
-            <p className="text-sm text-gray-600 mb-3">أضف/حرّر/احذف قوائم وبنود داخل كل قائمة.</p>
-
-            <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">القوائم التفصيلية</h3>
+                    <p className="text-gray-600 text-sm">مميزات، خدمات، فرق العمل وغيرها</p>
+                  </div>
+                </div>
+                <Button 
+                  type="button" 
+                  onClick={addListWithKey} 
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  إضافة قائمة جديدة
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
               {(doc?.list || []).map((lst, lIdx) => (
-                <div key={listKeysRef.current[lIdx] || lIdx} className="border rounded-lg p-4 bg-white">
-                  <div className="flex justify-between items-start mb-3">
-                    <strong className="text-gray-800">القائمة #{lIdx + 1}</strong>
+                <div key={listKeysRef.current[lIdx] || lIdx} className="border border-gray-200 rounded-xl bg-gray-50">
+                  <div className="p-4 bg-white rounded-t-xl border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-sm font-bold text-blue-600">#{lIdx + 1}</span>
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900">القائمة رقم {lIdx + 1}</h4>
+                      </div>
                     <div className="flex gap-2">
-                      <Button type="button" onClick={() => addItemWithKey(lIdx)} size="sm" className="bg-blue-950 text-slate-100">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Button 
+                          type="button" 
+                          onClick={() => addItemWithKey(lIdx)} 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
                         إضافة بند
                       </Button>
-                      <Button type="button" onClick={() => removeList(lIdx)} variant="destructive" size="sm" className="bg-red-800 text-slate-100">
-                        <svg className="w-4 h-4 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Button 
+                          type="button" 
+                          onClick={() => removeList(lIdx)} 
+                          variant="destructive" 
+                          size="sm" 
+                          className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         حذف القائمة
                       </Button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-sm">عنوان القائمة (AR)</label>
-                      <Input value={lst.title?.ar || ""} onChange={(e) => updateListField(lIdx, 'title', 'ar', e.target.value)} />
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <span>عنوان القائمة (عربي)</span>
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <Input 
+                          value={lst.title?.ar || ""} 
+                          onChange={(e) => updateListField(lIdx, 'title', 'ar', e.target.value)}
+                          placeholder="أدخل عنوان القائمة بالعربية"
+                          className="focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                        />
                     </div>
-                    <div>
-                      <label className="block text-sm">عنوان القائمة (EN)</label>
-                      <Input value={lst.title?.en || ""} onChange={(e) => updateListField(lIdx, 'title', 'en', e.target.value)} />
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <span>عنوان القائمة (إنجليزي)</span>
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <Input 
+                          value={lst.title?.en || ""} 
+                          onChange={(e) => updateListField(lIdx, 'title', 'en', e.target.value)}
+                          placeholder="Enter list title in English"
+                          className="focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                        />
                     </div>
                   </div>
 
-                  <div className="mb-3">
-                    <label className="block text-sm">وصف القائمة (AR)</label>
-                    <textarea className="w-full border p-2 rounded-md" value={lst.description?.ar || ""} onChange={(e) => updateListField(lIdx, 'description', 'ar', e.target.value)} />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">وصف القائمة (عربي)</label>
+                        <textarea 
+                          className="w-full border border-gray-200 p-3 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200" 
+                          value={lst.description?.ar || ""} 
+                          onChange={(e) => updateListField(lIdx, 'description', 'ar', e.target.value)}
+                          placeholder="وصف مختصر للقائمة بالعربية"
+                          rows="3"
+                        />
                   </div>
 
-                  <div className="mb-3">
-                    <label className="block text-sm">وصف القائمة (EN)</label>
-                    <textarea className="w-full border p-2 rounded-md" value={lst.description?.en || ""} onChange={(e) => updateListField(lIdx, 'description', 'en', e.target.value)} />
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">وصف القائمة (إنجليزي)</label>
+                        <textarea 
+                          className="w-full border border-gray-200 p-3 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200" 
+                          value={lst.description?.en || ""} 
+                          onChange={(e) => updateListField(lIdx, 'description', 'en', e.target.value)}
+                          placeholder="Brief description of the list in English"
+                          rows="3"
+                        />
+                      </div>
                   </div>
 
+                    {/* Items Section */}
                   <div className="space-y-3">
+                      <div className="flex items-center justify-between border-t pt-4">
+                        <h5 className="text-md font-semibold text-gray-800">بنود القائمة</h5>
+                        <span className="text-sm text-gray-500">{(lst.items || []).length} بند</span>
+                      </div>
+                      
               {(lst.items || []).map((it, itIdx) => (
-            <div key={itemKeysRef.current[lIdx]?.[itIdx] || itIdx} className="p-3 border rounded">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium text-gray-800">بند #{itIdx + 1}</span>
-                          <Button type="button" onClick={() => removeItem(lIdx, itIdx)} variant="destructive" size="sm" className="bg-red-800 text-slate-100">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            حذف البند
+                        <div key={itemKeysRef.current[lIdx]?.[itIdx] || itIdx} className="bg-white border border-gray-200 rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-medium text-gray-600">{itIdx + 1}</span>
+                              </div>
+                              <span className="font-medium text-gray-800">بند رقم {itIdx + 1}</span>
+                            </div>
+                            <Button 
+                              type="button" 
+                              onClick={() => removeItem(lIdx, itIdx)} 
+                              variant="destructive" 
+                              size="sm" 
+                              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              حذف
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                          <Input placeholder="اسم (AR)" value={it.name?.ar || ""} onChange={(e) => updateItemField(lIdx, itIdx, 'name', 'ar', e.target.value)} />
-                          <Input placeholder="اسم (EN)" value={it.name?.en || ""} onChange={(e) => updateItemField(lIdx, itIdx, 'name', 'en', e.target.value)} />
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="block text-xs font-medium text-gray-600">الاسم (عربي)</label>
+                                <Input 
+                                  placeholder="أدخل اسم البند بالعربية" 
+                                  value={it.name?.ar || ""} 
+                                  onChange={(e) => updateItemField(lIdx, itIdx, 'name', 'ar', e.target.value)}
+                                  className="focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="block text-xs font-medium text-gray-600">الاسم (إنجليزي)</label>
+                                <Input 
+                                  placeholder="Enter item name in English" 
+                                  value={it.name?.en || ""} 
+                                  onChange={(e) => updateItemField(lIdx, itIdx, 'name', 'en', e.target.value)}
+                                  className="focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                                />
+                              </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          <textarea placeholder="وصف (AR)" className="w-full border p-2 rounded" value={it.description?.ar || ""} onChange={(e) => updateItemField(lIdx, itIdx, 'description', 'ar', e.target.value)} />
-                          <textarea placeholder="وصف (EN)" className="w-full border p-2 rounded" value={it.description?.en || ""} onChange={(e) => updateItemField(lIdx, itIdx, 'description', 'en', e.target.value)} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="block text-xs font-medium text-gray-600">الوصف (عربي)</label>
+                                <textarea 
+                                  placeholder="وصف البند بالعربية" 
+                                  className="w-full border border-gray-200 p-2 rounded-lg focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all duration-200" 
+                                  value={it.description?.ar || ""} 
+                                  onChange={(e) => updateItemField(lIdx, itIdx, 'description', 'ar', e.target.value)}
+                                  rows="2"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="block text-xs font-medium text-gray-600">الوصف (إنجليزي)</label>
+                                <textarea 
+                                  placeholder="Item description in English" 
+                                  className="w-full border border-gray-200 p-2 rounded-lg focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all duration-200" 
+                                  value={it.description?.en || ""} 
+                                  onChange={(e) => updateItemField(lIdx, itIdx, 'description', 'en', e.target.value)}
+                                  rows="2"
+                                />
+                              </div>
                         </div>
 
-                        <div className="mt-2">
-                          <Input placeholder="رمز أيقونة SVG أو رابط" value={it.icon || ""} onChange={(e) => updateDoc(d => {
+                            <div className="space-y-1">
+                              <label className="block text-xs font-medium text-gray-600">الأيقونة</label>
+                              <Input 
+                                placeholder="رمز أيقونة SVG أو رابط الصورة" 
+                                value={it.icon || ""} 
+                                onChange={(e) => updateDoc(d => {
                             const list = d.list ? [...d.list] : [];
                             const l = { ...(list[lIdx] || makeEmptyList()) };
                             const items = l.items ? [...l.items] : [];
@@ -492,36 +799,106 @@ export default function AboutSettingsForm() {
                             l.items = items;
                             list[lIdx] = l;
                             return { ...d, list };
-                          })} />
+                                })}
+                                className="focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                              />
+                            </div>
                         </div>
                       </div>
                     ))}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+          {/* Save Button */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">حفظ التغييرات</h3>
+                  {validationErrors.length === 0 ? (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">جاهز للحفظ</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-orange-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">{validationErrors.length} خطأ</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-gray-600 text-sm">
+                  {hasUnsavedChanges 
+                    ? "لديك تغييرات غير محفوظة" 
+                    : "جميع التغييرات محفوظة"}
+                </p>
+          </div>
           
-          <div className="flex justify-end">
-            <Button type="submit" disabled={saving} size="sm" className="bg-blue-950 text-slate-100">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              {saving ? "جاري الحفظ..." : "حفظ"}
+              <Button 
+                type="submit" 
+                disabled={saving || validationErrors.length > 0} 
+                className="bg-[#1e293b] hover:bg-[#334155] text-white px-8 py-3 text-lg flex items-center gap-3 transition-all duration-200 disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    حفظ التغييرات
+                  </>
+                )}
             </Button>
+            </div>
           </div>
         </form>
       )}
 
-      {/* inline success banner (dismissible) */}
+      {/* Success Message */}
       {successMessage && (
-        <div className="mt-4 rounded-md bg-green-50 p-3 border border-green-200 flex items-start justify-between">
-          <div className="text-sm text-green-800">{successMessage}</div>
-          <button type="button" onClick={() => setSuccessMessage(null)} className="text-green-600 font-medium ml-4">إغلاق</button>
+        <div className="bg-white rounded-xl shadow-sm border border-green-200">
+          <div className="p-4 bg-green-50 rounded-t-xl border-b border-green-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-green-900">تم الحفظ بنجاح</h3>
+                <p className="text-green-700 text-sm">{successMessage}</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setSuccessMessage(null)} 
+                className="text-green-600 hover:text-green-800 font-medium px-3 py-1 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {/* Error Message */}
+      {error && (
+        <div className="bg-white rounded-xl shadow-sm border border-red-200">
+          <div className="p-4 bg-red-50 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-red-900">حدث خطأ</h3>
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

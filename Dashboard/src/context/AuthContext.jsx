@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
           document.cookie = `accessToken=${token}; path=/; SameSite=Strict`;
         }
       } else {
-        console.log('No valid auth data found');
+        // No valid auth data found
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    console.log('Logout called');
+    // Logout called
     clearAuthData();
     setUser(null);
     router.push('/signin');
@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
   const checkAuth = () => {
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     const hasAuth = !!token && !!user;
-    console.log('CheckAuth result:', hasAuth, { token: !!token, user: !!user });
+    // CheckAuth result logged
     return hasAuth;
   };
 

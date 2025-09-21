@@ -1,13 +1,12 @@
 "use client";
-  import { BoxIconLine, GroupIcon } from "@/icons";
+import { BoxIconLine, GroupIcon } from "@/icons";
 import React, { useEffect, useState } from "react";
 
-  // Coach/Trainer Icon Component
-  const CoachIcon = ({ className }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-    </svg>
-  );
+const CoachIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+  </svg>
+);
 
   export const EcommerceMetrics = () => {
     const [stats, setStats] = useState({
@@ -20,9 +19,13 @@ import React, { useEffect, useState } from "react";
     const [error, setError] = useState(null);
 
     
-    const token = localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+    const getToken = () => {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('token') || sessionStorage.getItem('accessToken');
+      }
+      return null;
+    };
 
-     // Function to fetch dashboard stats
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
@@ -34,7 +37,7 @@ import React, { useEffect, useState } from "react";
           method: "GET",
           credentials: "include",
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${getToken()}`,
             'Accept': 'application/json',
             'Content-Type': 'application/json',
           },
@@ -56,11 +59,10 @@ import React, { useEffect, useState } from "react";
         console.error("Error fetching dashboard stats:", err);
         setError(err.message);
         
-        // بيانات تجريبية للعرض عند وجود خطأ
         setStats({
-          users: { total: 1542, active: 1245, inactive: 297 },
-          players: { total: 876, active: 654, inactive: 222, Confirmed:500 },
-          coaches: { total: 42, active: 35, inactive: 7,Confirmed:500 },
+          users: { total: 0, active: 0, inactive: 0 },
+          players: { total: 0, active: 0, inactive: 0, Confirmed: 0 },
+          coaches: { total: 0, active: 0, inactive: 0, Confirmed: 0 },
           recent: { users: [], players: [], coaches: [] }
         });
       } finally {

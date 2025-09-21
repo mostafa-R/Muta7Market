@@ -62,7 +62,6 @@ export default function EditAdvertisementDialog({ open, onOpenChange, advertisem
   const handleUpdateAdvertisement = async (data) => {
     setIsLoading(true);
     
-    // التحقق من الحقول المطلوبة
     const errors = [];
     
     if (!data.titleAr || data.titleAr.trim() === "") {
@@ -96,7 +95,6 @@ export default function EditAdvertisementDialog({ open, onOpenChange, advertisem
       setIsLoading(false);
       toast.error("يرجى ملء جميع الحقول المطلوبة: " + errors.join(", "));
       
-      // Find first empty field and navigate to its tab, then focus
       const firstEmptyField = (() => {
         if (!data.titleAr || data.titleAr.trim() === "") return 'titleAr';
         if (!data.titleEn || data.titleEn.trim() === "") return 'titleEn';
@@ -108,14 +106,11 @@ export default function EditAdvertisementDialog({ open, onOpenChange, advertisem
       })();
 
       if (firstEmptyField) {
-        // Trigger tab navigation in AdvertisementForm component
         setTimeout(() => {
-          // Dispatch custom event that AdvertisementForm can listen to
           window.dispatchEvent(new CustomEvent('navigateToField', { 
             detail: { fieldName: firstEmptyField } 
           }));
           
-          // Focus the field after a small delay to ensure tab change is complete
           setTimeout(() => {
             const field = document.querySelector(`input[name="${firstEmptyField}"]`);
             if (field) {
@@ -136,7 +131,7 @@ export default function EditAdvertisementDialog({ open, onOpenChange, advertisem
       
       if (hasMedia) {
         await api.patch(`/advertisements/${advertisement._id}/media`, mediaFormData);
-        // Note: Don't set Content-Type manually for FormData - browser will set it automatically with boundary
+      
       }
       toast.success("تم تحديث الإعلان بنجاح! ✅");
 
@@ -145,7 +140,6 @@ export default function EditAdvertisementDialog({ open, onOpenChange, advertisem
     } catch (error) {
       console.error("Error updating advertisement:", error);
       
-      // Handle specific validation errors from server
       if (error.response?.status === 400 && error.response?.data?.message) {
         toast.error(`خطأ في البيانات: ${error.response.data.message}`);
       } else if (error.response?.status === 422 && error.response?.data?.errors) {
@@ -165,7 +159,7 @@ export default function EditAdvertisementDialog({ open, onOpenChange, advertisem
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[95vh] flex flex-col p-0 gap-0">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-white flex-shrink-0">
+        <div className="bg-[#273346] px-6 py-4 text-white flex-shrink-0">
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

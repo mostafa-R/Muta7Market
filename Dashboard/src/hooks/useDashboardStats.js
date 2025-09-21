@@ -75,7 +75,9 @@ export const useDashboardStats = () => {
       auth: { token: getAuthToken() },
     });
 
-    socket.on('connect_error', (err) => console.error('Socket connection error:', err));
+    socket.on('connect_error', () => {
+      setError('Real-time connection failed');
+    });
 
     // Event من السيرفر كل ما تتغير البيانات
     socket.on('dashboardUpdate', (updatedStats) => {
@@ -84,6 +86,8 @@ export const useDashboardStats = () => {
     });
 
     return () => {
+      socket.off('connect_error');
+      socket.off('dashboardUpdate');
       socket.disconnect();
     };
   }, []);

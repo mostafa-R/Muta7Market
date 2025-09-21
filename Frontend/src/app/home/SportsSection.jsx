@@ -134,7 +134,7 @@ const SportsSection = () => {
                 return (
                   <Link
                     key={sport._id}
-                    href={`/sports/${sport.slug || sportName}`}
+                    href={`/sports/${sport.slug || sport.name.en.toLowerCase() }`}
                     className="group flex-shrink-0"
                   >
                     <div className="flex flex-col items-center justify-center min-w-[70px] md:min-w-[80px] lg:min-w-[90px] p-2 md:p-3 rounded-lg transition-all duration-300 ease-in-out hover:bg-gray-50">
