@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-import ApiError from "../utils/ApiError.js";
 import logger from "../utils/logger.js";
 import cacheService from "./cache.service.js";
 
@@ -48,14 +47,18 @@ class AnalyticsService {
 
   async authorize() {
     if (!this.jwt || !this.isInitialized) {
-      throw new ApiError(500, "Google Analytics not properly configured");
+      logger.warn(
+        "Google Analytics not properly configured, returning fallback data"
+      );
+      return false;
     }
 
     try {
       await this.jwt.authorize();
+      return true;
     } catch (error) {
       logger.error("Google Analytics authorization failed:", error);
-      throw new ApiError(500, "Failed to authorize Google Analytics");
+      return false;
     }
   }
 
@@ -87,13 +90,19 @@ class AnalyticsService {
   }
 
   async runReports(requests) {
-    await this.authorize();
+    const isAuthorized = await this.authorize();
+
+    if (!isAuthorized) {
+      logger.warn("Google Analytics not authorized, returning empty results");
+      return requests.map(() => ({ data: { rows: [] } }));
+    }
 
     try {
       return await Promise.all(requests);
     } catch (error) {
       logger.error("Google Analytics API error:", error);
-      throw new ApiError(500, "Failed to fetch analytics data");
+      // Return empty results instead of throwing
+      return requests.map(() => ({ data: { rows: [] } }));
     }
   }
 
@@ -115,148 +124,175 @@ class AnalyticsService {
     }));
   }
 
-  async getOverviewData(timeRange = "7d") {
-    // Check cache first
-    const cachedData = await cacheService.getAnalyticsData("overview", {
-      timeRange,
-    });
-    if (cachedData) {
-      logger.info(
-        `Analytics overview data served from cache for timeRange: ${timeRange}`
-      );
-      return cachedData;
-    }
-
-    const { startDate, endDate, previousStartDate, previousEndDate } =
-      this.calculateDateRange(timeRange);
-
-    const reportRequests = [
-      // Main metrics
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate, endDate }],
-          dimensions: [{ name: "date" }],
-          metrics: [
-            { name: "totalUsers" },
-            { name: "screenPageViews" },
-            { name: "averageSessionDuration" },
-            { name: "bounceRate" },
-          ],
-        },
-      }),
-
-      // Device breakdown
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate, endDate }],
-          dimensions: [{ name: "deviceCategory" }],
-          metrics: [{ name: "totalUsers" }],
-        },
-      }),
-
-      // Traffic sources
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate, endDate }],
-          dimensions: [{ name: "sessionSource" }],
-          metrics: [{ name: "totalUsers" }],
-          orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
-          limit: 5,
-        },
-      }),
-
-      // Top pages
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate, endDate }],
-          dimensions: [{ name: "pagePath" }],
-          metrics: [{ name: "screenPageViews" }],
-          orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-          limit: 5,
-        },
-      }),
-
-      // Daily trends
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate, endDate }],
-          dimensions: [{ name: "date" }],
-          metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }],
-          orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
-        },
-      }),
-
-      // Previous period comparison
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [
-            { startDate: previousStartDate, endDate: previousEndDate },
-          ],
-          metrics: [
-            { name: "totalUsers" },
-            { name: "screenPageViews" },
-            { name: "averageSessionDuration" },
-            { name: "bounceRate" },
-          ],
-        },
-      }),
-
-      // Countries
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate, endDate }],
-          dimensions: [{ name: "country" }],
-          metrics: [{ name: "totalUsers" }],
-          orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
-          limit: 5,
-        },
-      }),
-    ];
-
-    const [
-      visitorsResponse,
-      devicesResponse,
-      sourcesResponse,
-      topPagesResponse,
-      dailyTrendsResponse,
-      previousPeriodResponse,
-      countryResponse,
-    ] = await this.runReports(reportRequests);
-
-    // Process data
-    const processedData = this.processOverviewData({
-      visitorsResponse,
-      devicesResponse,
-      sourcesResponse,
-      topPagesResponse,
-      dailyTrendsResponse,
-      previousPeriodResponse,
-      countryResponse,
-    });
-
-    // Cache the result for 5 minutes
-    await cacheService.setAnalyticsData(
-      "overview",
-      { timeRange },
-      processedData,
-      300
+  getUnavailableAnalyticsResponse() {
+    logger.warn(
+      "Google Analytics is not configured - returning unavailable response"
     );
+    return {
+      error: "Analytics service unavailable",
+      message: "Google Analytics is not properly configured",
+      configured: false,
+    };
+  }
 
-    return processedData;
+  async getOverviewData(timeRange = "7d") {
+    try {
+      // Check if Google Analytics is properly configured
+      if (!this.isInitialized || !process.env.GA_PROPERTY_ID) {
+        return this.getUnavailableAnalyticsResponse();
+      }
+
+      // Check cache first
+      const cachedData = await cacheService.getAnalyticsData("overview", {
+        timeRange,
+      });
+      if (cachedData) {
+        logger.info(
+          `Analytics overview data served from cache for timeRange: ${timeRange}`
+        );
+        return cachedData;
+      }
+
+      const { startDate, endDate, previousStartDate, previousEndDate } =
+        this.calculateDateRange(timeRange);
+
+      const reportRequests = [
+        // Main metrics
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: "date" }],
+            metrics: [
+              { name: "totalUsers" },
+              { name: "screenPageViews" },
+              { name: "averageSessionDuration" },
+              { name: "bounceRate" },
+            ],
+          },
+        }),
+
+        // Device breakdown
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: "deviceCategory" }],
+            metrics: [{ name: "totalUsers" }],
+          },
+        }),
+
+        // Traffic sources
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: "sessionSource" }],
+            metrics: [{ name: "totalUsers" }],
+            orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
+            limit: 5,
+          },
+        }),
+
+        // Top pages
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: "pagePath" }],
+            metrics: [{ name: "screenPageViews" }],
+            orderBys: [
+              { metric: { metricName: "screenPageViews" }, desc: true },
+            ],
+            limit: 5,
+          },
+        }),
+
+        // Daily trends
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: "date" }],
+            metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }],
+            orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
+          },
+        }),
+
+        // Previous period comparison
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [
+              { startDate: previousStartDate, endDate: previousEndDate },
+            ],
+            metrics: [
+              { name: "totalUsers" },
+              { name: "screenPageViews" },
+              { name: "averageSessionDuration" },
+              { name: "bounceRate" },
+            ],
+          },
+        }),
+
+        // Countries
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: "country" }],
+            metrics: [{ name: "totalUsers" }],
+            orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
+            limit: 5,
+          },
+        }),
+      ];
+
+      const [
+        visitorsResponse,
+        devicesResponse,
+        sourcesResponse,
+        topPagesResponse,
+        dailyTrendsResponse,
+        previousPeriodResponse,
+        countryResponse,
+      ] = await this.runReports(reportRequests);
+
+      // Process data
+      const processedData = this.processOverviewData({
+        visitorsResponse,
+        devicesResponse,
+        sourcesResponse,
+        topPagesResponse,
+        dailyTrendsResponse,
+        previousPeriodResponse,
+        countryResponse,
+      });
+
+      // Cache the result for 5 minutes
+      await cacheService.setAnalyticsData(
+        "overview",
+        { timeRange },
+        processedData,
+        300
+      );
+
+      return processedData;
+    } catch (error) {
+      logger.error("Failed to fetch analytics overview data:", error);
+      return {
+        error: "Failed to fetch analytics data",
+        message: error.message,
+        configured: true,
+      };
+    }
   }
 
   processOverviewData(responses) {
@@ -457,75 +493,81 @@ class AnalyticsService {
   }
 
   async getRealTimeData() {
-    // Check cache first (shorter TTL for real-time data)
-    const cachedData = await cacheService.getAnalyticsData("realtime", {});
-    if (cachedData) {
-      logger.info("Real-time analytics data served from cache");
-      return cachedData;
-    }
+    try {
+      // Check if Google Analytics is properly configured
+      if (!this.isInitialized || !process.env.GA_PROPERTY_ID) {
+        return this.getUnavailableAnalyticsResponse();
+      }
 
-    if (!process.env.GA_PROPERTY_ID) {
+      // Check cache first (shorter TTL for real-time data)
+      const cachedData = await cacheService.getAnalyticsData("realtime", {});
+      if (cachedData) {
+        logger.info("Real-time analytics data served from cache");
+        return cachedData;
+      }
+
+      const realtimeRequests = [
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate: "today", endDate: "today" }],
+            metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+          },
+        }),
+
+        this.analytics.properties.runReport({
+          auth: this.jwt,
+          property: `properties/${process.env.GA_PROPERTY_ID}`,
+          requestBody: {
+            dateRanges: [{ startDate: "today", endDate: "today" }],
+            dimensions: [{ name: "pagePath" }],
+            metrics: [{ name: "activeUsers" }],
+            orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+            limit: 1,
+          },
+        }),
+      ];
+
+      const [realtimeResponse, activePageResponse] = await this.runReports(
+        realtimeRequests
+      );
+
+      if (
+        !realtimeResponse.data.rows ||
+        realtimeResponse.data.rows.length === 0
+      ) {
+        return {
+          error: "No real-time data available",
+          message: "No active users or data found",
+          configured: true,
+        };
+      }
+
+      const realTimeData = {
+        activeUsers: parseInt(
+          realtimeResponse.data.rows[0]?.metricValues[0]?.value || 0
+        ),
+        pageViewsPerMinute: Math.round(
+          parseInt(realtimeResponse.data.rows[0]?.metricValues[1]?.value || 0) /
+            24
+        ),
+        topActivePage:
+          activePageResponse.data.rows[0]?.dimensionValues[0]?.value || "/",
+      };
+
+      // Cache for 1 minute for real-time data
+      await cacheService.setAnalyticsData("realtime", {}, realTimeData, 60);
+
+      return realTimeData;
+    } catch (error) {
+      logger.error("Failed to fetch real-time analytics data:", error);
       return {
-        activeUsers: 0,
-        pageViewsPerMinute: 0,
-        topActivePage: "/",
+        error: "Failed to fetch real-time analytics data",
+        message: error.message,
+        configured: true,
       };
     }
-
-    const realtimeRequests = [
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate: "today", endDate: "today" }],
-          metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
-        },
-      }),
-
-      this.analytics.properties.runReport({
-        auth: this.jwt,
-        property: `properties/${process.env.GA_PROPERTY_ID}`,
-        requestBody: {
-          dateRanges: [{ startDate: "today", endDate: "today" }],
-          dimensions: [{ name: "pagePath" }],
-          metrics: [{ name: "activeUsers" }],
-          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-          limit: 1,
-        },
-      }),
-    ];
-
-    const [realtimeResponse, activePageResponse] = await this.runReports(
-      realtimeRequests
-    );
-
-    if (
-      !realtimeResponse.data.rows ||
-      realtimeResponse.data.rows.length === 0
-    ) {
-      return {
-        activeUsers: 0,
-        pageViewsPerMinute: 0,
-        topActivePage: "/",
-      };
-    }
-
-    const realTimeData = {
-      activeUsers: parseInt(
-        realtimeResponse.data.rows[0]?.metricValues[0]?.value || 0
-      ),
-      pageViewsPerMinute: Math.round(
-        parseInt(realtimeResponse.data.rows[0]?.metricValues[1]?.value || 0) /
-          24
-      ),
-      topActivePage:
-        activePageResponse.data.rows[0]?.dimensionValues[0]?.value || "/",
-    };
-
-    // Cache for 1 minute for real-time data
-    await cacheService.setAnalyticsData("realtime", {}, realTimeData, 60);
-
-    return realTimeData;
   }
 }
 
