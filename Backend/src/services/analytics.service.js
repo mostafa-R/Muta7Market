@@ -494,12 +494,12 @@ class AnalyticsService {
 
   async getRealTimeData() {
     try {
-      // Check if Google Analytics is properly configured
+     
       if (!this.isInitialized || !process.env.GA_PROPERTY_ID) {
         return this.getUnavailableAnalyticsResponse();
       }
 
-      // Check cache first (shorter TTL for real-time data)
+     
       const cachedData = await cacheService.getAnalyticsData("realtime", {});
       if (cachedData) {
         logger.info("Real-time analytics data served from cache");
@@ -556,7 +556,6 @@ class AnalyticsService {
           activePageResponse.data.rows[0]?.dimensionValues[0]?.value || "/",
       };
 
-      // Cache for 1 minute for real-time data
       await cacheService.setAnalyticsData("realtime", {}, realTimeData, 60);
 
       return realTimeData;

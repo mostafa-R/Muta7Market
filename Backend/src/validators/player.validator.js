@@ -2,8 +2,7 @@ import Joi from "joi";
 import { GENDER, PROFILE_STATUS } from "../config/constants.js";
 
 export const createPlayerSchema = Joi.object({
-  // Core identity
-  user: Joi.any().forbidden(), // set by auth, not from client
+  user: Joi.any().forbidden(),
   name: Joi.string().trim().required(),
   age: Joi.number().min(15).max(50).required(),
   gender: Joi.string()
@@ -14,7 +13,6 @@ export const createPlayerSchema = Joi.object({
   birthCountry: Joi.string().trim().allow("", null).optional(),
   customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
-  // Role & position
   jop: Joi.string().valid("player", "coach").required(),
   roleType: Joi.alternatives()
     .try(
@@ -42,10 +40,8 @@ export const createPlayerSchema = Joi.object({
     .valid(...Object.values(PROFILE_STATUS))
     .optional(),
 
-  // Experience
   experience: Joi.number().min(0).optional(),
 
-  // Transfer info
   transferredTo: Joi.object({
     club: Joi.string().allow("", null),
     startDate: Joi.alternatives()
@@ -67,7 +63,6 @@ export const createPlayerSchema = Joi.object({
     currency: Joi.string().trim(),
   }).optional(),
 
-  // Dates (multipart often sends "" → allow it)
   contractEndDate: Joi.alternatives()
     .try(Joi.date().iso(), Joi.string().valid(""))
     .allow(null)
@@ -126,7 +121,7 @@ export const createPlayerSchema = Joi.object({
 }).prefs({
   abortEarly: false,
   stripUnknown: true,
-  convert: true, // coerce "25" -> 25, ISO date strings -> Date
+  convert: true,
 });
 
 export const updatePlayerSchema = Joi.object({

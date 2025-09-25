@@ -22,7 +22,6 @@ export const getAnalyticsOverview = asyncHandler(async (req, res) => {
   try {
     const analyticsData = await analyticsService.getOverviewData(timeRange);
 
-    // Check if the response contains an error
     if (analyticsData.error) {
       const statusCode = analyticsData.configured === false ? 503 : 500;
       return res.status(statusCode).json({
@@ -43,7 +42,6 @@ export const getAnalyticsOverview = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error("Analytics overview error:", error);
 
-    // Return a proper error response instead of throwing
     return res.status(500).json({
       success: false,
       error: {
@@ -64,7 +62,6 @@ export const getRealTimeAnalytics = asyncHandler(async (req, res) => {
   try {
     const realTimeData = await analyticsService.getRealTimeData();
 
-    // Check if the response contains an error
     if (realTimeData.error) {
       const statusCode = realTimeData.configured === false ? 503 : 500;
       return res.status(statusCode).json({
@@ -89,7 +86,6 @@ export const getRealTimeAnalytics = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error("Real-time analytics error:", error);
 
-    // Return a proper error response instead of throwing
     return res.status(500).json({
       success: false,
       error: {

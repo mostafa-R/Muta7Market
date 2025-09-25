@@ -1,7 +1,15 @@
 "use client";
 
 import { Button } from "@/app/component/ui/button";
-import { ArrowLeft, ChevronLeft, ChevronRight, Save, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+  Save,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -42,6 +50,9 @@ function RegisterProfileContent() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
   const isRTL = i18n.language === "ar";
+
+  // Authentication hook
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
   // Custom hooks
   const { formik, isLoading, canPay, player } = usePlayerForm(idParam, router);
@@ -94,6 +105,72 @@ function RegisterProfileContent() {
         return null;
     }
   };
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <LoadingSpinner />
+          <p className="mt-4 text-gray-600">
+            {t("auth.loading", { defaultValue: "Loading..." })}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login required message if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center"
+        dir={isRTL ? "rtl" : "ltr"}
+      >
+        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12 max-w-md w-full mx-4 text-center">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-10 h-10 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-[#00183D] mb-2">
+              {t("auth.loginRequired", { defaultValue: "Login Required" })}
+            </h1>
+            <p className="text-gray-600">
+              {t("auth.loginRequiredMessage", {
+                defaultValue:
+                  "You must be logged in to access this page. Please sign in to continue.",
+              })}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Link href="/signin">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium mb-3">
+                {t("auth.login")}
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button
+                variant="outline"
+                className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                {t("auth.signUpNow")}
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <Link
+              href="/"
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              {t("auth.backToHome", { defaultValue: "Back to Home" })}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

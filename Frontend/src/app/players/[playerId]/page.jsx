@@ -56,7 +56,6 @@ const getNationalityText = (nationality, t) => {
   return translateNationality(t, nationality);
 };
 
-// Helper function to extract string value from multilingual objects or strings
 const getStringValue = (value) => {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -69,10 +68,7 @@ const getStringValue = (value) => {
 const getPositionText = (position, sport, t) => {
   if (!position) return null;
 
-  // Check if position is already a multilingual object with display value
   if (typeof position === "object" && (position.ar || position.en)) {
-    // For multilingual objects, prefer current language
-    // Note: We don't have language context here, so we'll default to English then Arabic
     return position.en || position.ar;
   }
 
@@ -688,11 +684,11 @@ const PlayerProfile = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "available":
-        return "bg-green-500";
+        return "bg-green-900";
       case "contracted":
-        return "bg-blue-500";
+        return "bg-blue-900";
       case "transferred":
-        return "bg-orange-500";
+        return "bg-orange-900";
       default:
         return "bg-gray-500";
     }
@@ -713,7 +709,7 @@ const PlayerProfile = () => {
 
   return (
     <div
-      className="min-h-screen bg-gray-100"
+      className="min-h-screen bg-gray-100 "
       dir={language === "ar" ? "rtl" : "ltr"}
     >
       {/* Dynamic Social Media Meta Tags for Enhanced Sharing */}
@@ -798,7 +794,7 @@ const PlayerProfile = () => {
                           </div>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-3 mb-6">
+                      <div className="flex flex-wrap gap-3 mb-6 mt-6">
                         <Badge
                           className={`${getStatusColor(
                             player.status
@@ -864,7 +860,7 @@ const PlayerProfile = () => {
                       <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                         <div
                           className={`text-2xl font-bold ${
-                            player.isActive ? "text-green-500" : "text-red-500"
+                            player.isActive ? "text-green-900" : "text-red-900"
                           }`}
                         >
                           {player.isActive
@@ -929,7 +925,6 @@ const PlayerProfile = () => {
                             <div className="text-base font-semibold">
                               {player.game[language]}
                             </div>
-                            
                           </div>
                         ) : (
                           sportText
@@ -951,7 +946,6 @@ const PlayerProfile = () => {
                               <div className="text-base font-semibold">
                                 {player.position[language]}
                               </div>
-                              
                             </div>
                           ) : (
                             positionText
@@ -976,7 +970,6 @@ const PlayerProfile = () => {
                               <div className="text-base font-semibold">
                                 {player.roleType[language]}
                               </div>
-                             
                             </div>
                           ) : player.jop === "player" ? (
                             t(

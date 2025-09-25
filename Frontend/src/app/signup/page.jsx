@@ -40,19 +40,17 @@ const getRegisterSchema = (t) =>
         "string.empty": t("validation.emailRequired"),
       }),
     phone: Joi.string()
-      .pattern(/^\+?\d{8,15}$/)
+
       .required()
       .messages({
         "string.empty": t("validation.phoneRequired"),
-        "string.pattern.base": t("validation.phoneInvalid"),
       }),
     password: Joi.string()
       .min(8)
       .required()
-      .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/)
       .messages({
         "string.min": t("validation.passwordMinLength"),
-        "string.pattern.base": t("validation.passwordPattern"),
+        "string.empty": t("validation.passwordRequired"),
       }),
     confirmPassword: Joi.string()
       .valid(Joi.ref("password"))
@@ -148,13 +146,8 @@ export default function SignUp() {
     messageText.includes("successfully");
 
   const getPasswordStrength = (password) => {
-    const checks = [
-      /[a-z]/.test(password),
-      /[A-Z]/.test(password),
-      /\d/.test(password),
-      /[@$!%*?&]/.test(password),
-      password.length >= 8,
-    ];
+    const checks = [password.length >= 8];
+
     const score = checks.filter(Boolean).length;
     const percent = Math.min((score / 5) * 100, 100);
     let color = "bg-red-500";
