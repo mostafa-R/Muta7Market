@@ -62,7 +62,7 @@ const Avatar = React.memo(({ name, profilePicture }) => (
       <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white shadow-md bg-gray-100 flex items-center justify-center">
         {profilePicture ? (
           <img 
-            src={profilePicture} 
+            src={profilePicture.url} 
             alt={name || 'صورة المستخدم'} 
             className="w-full h-full object-cover"
             loading="lazy"
@@ -151,7 +151,7 @@ const TableActions = React.memo(({ user, onView, onEdit, onDelete, deletingId })
 const UserRow = React.memo(({ user, onView, onEdit, onDelete, deletingId }) => (
   <tr className="transition-colors duration-150 hover:bg-gray-50">
     <td className="px-6 py-4 whitespace-nowrap">
-      <Avatar name={user.name} profilePicture={user.profilePicture} />
+      <Avatar name={user.name} profilePicture={user.profileImage} />
     </td>
     <td className="px-6 py-4 text-sm text-gray-900 max-w-0">
       <div className="truncate" title={user.email}>

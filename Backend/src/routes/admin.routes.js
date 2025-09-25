@@ -111,6 +111,9 @@ router.post(
     "socialLinks",
     "isPromoted",
     "contactInfo",
+    "roleType",
+    "position",
+    "game",
   ]),
   validate(createPlayerSchema),
   createPlayer

@@ -64,20 +64,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
       transferredTo: req.body.transferredTo,
       socialLinks: req.body.socialLinks,
       contactInfo: req.body.contactInfo,
-      game: (() => {
-        try {
-          if (
-            typeof req.body.game === "string" &&
-            req.body.game.startsWith("{")
-          ) {
-            return JSON.parse(req.body.game);
-          }
-          return req.body.game;
-        } catch (error) {
-          console.error("Error parsing game field:", error);
-          return req.body.game;
-        }
-      })(),
+      game: req.body.game,
       customSport: req.body.customSport,
       media,
     });
