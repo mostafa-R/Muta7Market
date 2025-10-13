@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import useSiteSettingsStore from "@/stores/siteSettingsStore";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -17,13 +18,11 @@ const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "")) ||
   "";
 
-// ---- helpers for rendering raw SVG safely(ish)
+
 const isSvgMarkup = (s) => typeof s === "string" && s.trim().startsWith("<svg");
 
 function prepareSvg(svg) {
-  // add minimal sizing if author didn’t include classes/size (optional)
   if (!isSvgMarkup(svg)) return null;
-  // If there’s already a class/size, we don’t touch it.
   if (/\sclass=/.test(svg) || /\s(width|height)=/.test(svg)) return svg;
   return svg.replace("<svg", '<svg width="24" height="24"');
 }
@@ -33,7 +32,7 @@ function SvgIcon({ svg }) {
   const clean = prepareSvg(svg);
   return (
     <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white mb-6 overflow-hidden">
-      {/* If you want sanitization, install `isomorphic-dompurify` and sanitize `clean` before injecting. */}
+     
       <span
         className="inline-block"
         dangerouslySetInnerHTML={{ __html: clean }}
@@ -50,6 +49,9 @@ function PrivacyTermsPage() {
   const [term, setTerm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // Site settings store
+  const { fetchSettings, isLoading: settingsLoading, error: settingsError } = useSiteSettingsStore();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -99,7 +101,27 @@ function PrivacyTermsPage() {
     return () => controller.abort();
   }, []);
 
-  // ----- map API data -> UI
+  // Fetch site settings
+  useEffect(() => {
+    const fetchSiteSettings = async () => {
+      try {
+        await fetchSettings();
+      } catch (error) {
+        console.error("Error fetching site settings:", error);
+      }
+    };
+
+    fetchSiteSettings();
+  }, [fetchSettings]);
+
+  // Get site settings from store
+  const contactInfo = useSiteSettingsStore((state) => state.contactInfo);
+  const siteName = useSiteSettingsStore((state) => state.siteName);
+  const isLoadingSettings = useSiteSettingsStore((state) => state.isLoading);
+
+
+
+
   const apiSections = useMemo(() => {
     if (!term || !term.terms || !term.terms.length) return [];
     return term.terms.map((sec) => ({
@@ -107,99 +129,43 @@ function PrivacyTermsPage() {
       description: sec?.description?.[langKey],
       list:
         (sec?.list || []).map((it) => ({
-          iconSvg: it?.icon || null, // raw SVG string expected here
+          iconSvg: it?.icon || null, 
           title: it?.title?.[langKey],
           content: it?.description?.[langKey],
         })) || [],
     }));
   }, [term, langKey]);
 
-  // ----- fallbacks (no icons here to honor "only show if exists")
-  const fallbackPrivacy = [
-    {
-      iconSvg: null,
-      title: isRTL ? "الخدمة والمسؤولية" : "Service and Responsibility",
-      content: isRTL
-        ? "الموقع يقدم خدمة الربط بين المستفيد..."
-        : "The website provides a connection service...",
-    },
-    {
-      iconSvg: null,
-      title: isRTL ? "الرسوم والمدفوعات" : "Fees and Payments",
-      content: isRTL
-        ? "يدفع المستفيد (اللاعب أو المدرب...)"
-        : "The beneficiary pays a non-refundable fee...",
-    },
-    {
-      iconSvg: null,
-      title: isRTL ? "إخلاء المسؤولية" : "Disclaimer",
-      content: isRTL
-        ? 'يتم تقديم جميع المعلومات "كما هي"...'
-        : 'All information is provided "as is"...',
-    },
-    {
-      iconSvg: null,
-      title: isRTL ? "دقة المعلومات" : "Information Accuracy",
-      content: isRTL
-        ? "يبذل الموقع أقصى جهوده..."
-        : "The website makes every effort...",
-    },
-  ];
+  // Helper function to find section by title (supports both languages)
+  const findSectionByTitle = (englishTitle, arabicTitle) => {
+    return apiSections.find(section => 
+      section.title === englishTitle || 
+      section.title === arabicTitle ||
+      section.title === (isRTL ? arabicTitle : englishTitle)
+    );
+  };
 
-  const fallbackTerms = [
-    {
-      iconSvg: null,
-      title: isRTL ? "توفر الموقع" : "Website Availability",
-      content: isRTL
-        ? "تسعى الشركة لإتاحة موقعها..."
-        : "The company strives to make its website available...",
-    },
-    {
-      iconSvg: null,
-      title: isRTL ? "أمن البيانات" : "Data Security",
-      content: isRTL
-        ? "على الرغم من الوسائل المتقدمة..."
-        : "Despite advanced means to ensure protection...",
-    },
-    {
-      iconSvg: null,
-      title: isRTL ? "الانقطاع والأعطال" : "Interruptions and Malfunctions",
-      content: isRTL
-        ? "احتمال وقوع أخطاء تتعلق بالشبكة..."
-        : "Possibility of errors related to networks...",
-    },
-    {
-      iconSvg: null,
-      title: isRTL ? "الملكية الفكرية" : "Intellectual Property",
-      content: isRTL
-        ? "جميع أنواع المحتوى ملك حصري..."
-        : "All content is the exclusive property...",
-    },
-  ];
+  // Find sections dynamically by their titles
+  const serviceTermsSection = findSectionByTitle("Service Terms", "شروط الخدمة");
+  const termsConditionsSection = findSectionByTitle("Terms & Conditions", "الشروط والأحكام");
+  const additionalTermsSection = findSectionByTitle("Additional Terms", "أحكام إضافية");
 
-  const privacySections = apiSections[0]?.list?.length
-    ? apiSections[0].list
-    : fallbackPrivacy;
 
-  const termsSections = apiSections[1]?.list?.length
-    ? apiSections[1].list
-    : fallbackTerms;
+  const privacySections = serviceTermsSection?.list || [];
 
-  const heroTitle =
-    term?.headTitle?.[langKey] ||
-    (isRTL ? "الشروط والأحكام" : "Terms and Conditions");
+  const termsSections = termsConditionsSection?.list || [];
 
-  const heroDescription =
-    term?.headDescription?.[langKey] ||
-    (isRTL
-      ? "شروط وأحكام استخدام منصة متاح ماركت للاعبين والمدربين"
-      : "Terms and conditions for using Muta7Market platform for players and coaches");
+  const additionalTermsSections = additionalTermsSection?.list || [];
 
-  const serviceHeading =
-    apiSections[0]?.title || (isRTL ? "شروط الخدمة" : "Service Terms");
+  const heroTitle = term?.headTitle?.[langKey] || "";
 
-  const termsHeading =
-    apiSections[1]?.title || (isRTL ? "الشروط والأحكام" : "Terms & Conditions");
+  const heroDescription = term?.headDescription?.[langKey] || "";
+
+  const serviceHeading = serviceTermsSection?.title || "";
+
+  const termsHeading = termsConditionsSection?.title || "";
+
+  const additionalTermsHeading = additionalTermsSection?.title || "";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -214,9 +180,7 @@ function PrivacyTermsPage() {
             <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-4xl mx-auto leading-relaxed">
               {heroDescription}
             </p>
-            <p className="text-sm text-blue-200">
-              {isRTL ? "آخر تحديث: يناير 2024" : "Last updated: January 2024"}
-            </p>
+           
             {loading && (
               <p className="text-xs text-blue-200 mt-2">
                 {isRTL ? "جارٍ تحميل الشروط…" : "Loading terms…"}
@@ -240,10 +204,7 @@ function PrivacyTermsPage() {
               {serviceHeading}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {apiSections[0]?.description ||
-                (isRTL
-                  ? "الشروط الأساسية لاستخدام منصتنا والاستفادة من خدماتنا"
-                  : "Basic terms for using our platform and benefiting from our services")}
+              {serviceTermsSection?.description || ""}
             </p>
           </div>
 
@@ -253,7 +214,7 @@ function PrivacyTermsPage() {
                 key={index}
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100"
               >
-                {/* only render icon if SVG exists */}
+               
                 {section.iconSvg && isSvgMarkup(section.iconSvg) ? (
                   <SvgIcon svg={section.iconSvg} />
                 ) : null}
@@ -268,7 +229,7 @@ function PrivacyTermsPage() {
             ))}
           </div>
 
-          {/* Data Rights (static, kept) */}
+         
           <div className="bg-blue-50 rounded-xl p-8 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               {isRTL ? "حقوقك في البيانات" : "Your Data Rights"}
@@ -331,10 +292,7 @@ function PrivacyTermsPage() {
               {termsHeading}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {apiSections[1]?.description ||
-                (isRTL
-                  ? "القواعد والإرشادات لاستخدام منصتنا"
-                  : "Rules and guidelines for using our platform")}
+              {termsConditionsSection?.description || ""}
             </p>
           </div>
 
@@ -359,42 +317,33 @@ function PrivacyTermsPage() {
             ))}
           </div>
 
-          {/* Additional Terms (static) */}
+          {/* Additional Terms (dynamic) */}
           <div className="bg-gray-100 rounded-xl p-8 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              {isRTL ? "أحكام إضافية" : "Additional Terms"}
+              {additionalTermsHeading}
             </h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  {isRTL ? "حقوق النشر:" : "Copyright:"}
-                </h4>
-                <p className="text-gray-600">
-                  {isRTL
-                    ? "يشمل المحتوى المحمي النصوص والمعلومات ورسومات الجرافيكس..."
-                    : "Protected content includes text information, graphics, designs..."}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  {isRTL ? "الاستخدام المسموح:" : "Permitted Use:"}
-                </h4>
-                <p className="text-gray-600">
-                  {isRTL
-                    ? "يُسمح بالنسخ للاستخدام الشخصي فقط..."
-                    : "Copying for personal use is allowed only..."}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  {isRTL ? "طلبات الاستخدام:" : "Usage Requests:"}
-                </h4>
-                <p className="text-gray-600">
-                  {isRTL
-                    ? "يجب إرسال جميع طلبات التصاريح..."
-                    : "All permission requests must be sent to the official email."}
-                </p>
-              </div>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              {additionalTermsSection?.description || ""}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {additionalTermsSections.map((section, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100"
+                >
+                  {/* only render icon if SVG exists */}
+                  {section.iconSvg && isSvgMarkup(section.iconSvg) ? (
+                    <SvgIcon svg={section.iconSvg} />
+                  ) : null}
+
+                  <h4 className="text-xl font-bold text-gray-900 mb-4">
+                    {section.title}
+                  </h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    {section.content}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -422,8 +371,10 @@ function PrivacyTermsPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "البريد الإلكتروني" : "Email"}
               </h3>
-              <p className="text-gray-300">privacy@muta7market.com</p>
-              <p className="text-gray-300">info@muta7market.com</p>
+              <p className="text-gray-300">
+                {isLoadingSettings ? "Loading..." : (contactInfo?.email || "privacy@muta7market.com")}
+              </p>
+              
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -432,7 +383,9 @@ function PrivacyTermsPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "الهاتف" : "Phone"}
               </h3>
-              <p className="text-gray-300">+966 53 154 0229</p>
+              <p className="text-gray-300">
+                {isLoadingSettings ? "Loading..." : (contactInfo?.phone || "+966 53 154 0229")}
+              </p>
               <p className="text-sm text-gray-400 mt-2">
                 {isRTL ? "للاستفسارات والدعم" : "For inquiries and support"}
               </p>
@@ -441,7 +394,7 @@ function PrivacyTermsPage() {
 
           <div className="text-center">
             <a
-              href="mailto:privacy@muta7market.com"
+              href={"mailto:" + (contactInfo?.email || "privacy@muta7market.com")}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 inline-flex items-center"
             >
               <FiMail className="mr-2" />

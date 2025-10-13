@@ -1,0 +1,169 @@
+{
+  "headTitle": {
+    "ar": "الشروط والأحكام",
+    "en": "Terms and Conditions"
+  },
+  "headDescription": {
+    "ar": "شروط وأحكام استخدام منصة متاح ماركت للاعبين والمدربين",
+    "en": "Terms and conditions for using Muta7Market platform for players and coaches"
+  },
+  "terms": [
+    {
+      "title": {
+        "ar": "شروط الخدمة",
+        "en": "Service Terms"
+      },
+      "description": {
+        "ar": "الشروط الأساسية لاستخدام منصتنا والاستفادة من خدماتنا",
+        "en": "Basic terms for using our platform and benefiting from our services"
+      },
+      "list": [
+        {
+          "title": {
+            "ar": "الخدمة والمسؤولية",
+            "en": "Service and Responsibility"
+          },
+          "description": {
+            "ar": "الموقع يقدم خدمة الربط بين المستفيد (اللاعب أو المدرب) والطرف الآخر (المدرب أو اللاعب) ولا يتحمل أي مسؤولية عن النتائج أو الخدمات المقدمة من الطرف الآخر. المستفيد يتحمل المسؤولية الكاملة عن قراراته والتفاعل مع الأطراف الأخرى.",
+            "en": "The website provides a connection service between the beneficiary (player or coach) and the other party (coach or player) and bears no responsibility for the results or services provided by the other party. The beneficiary bears full responsibility for their decisions and interaction with other parties."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "الرسوم والمدفوعات",
+            "en": "Fees and Payments"
+          },
+          "description": {
+            "ar": "يدفع المستفيد (اللاعب أو المدرب) رسوم غير قابلة للاسترداد مقابل استخدام الخدمة. جميع المدفوعات تتم عبر وسائل الدفع المتاحة على الموقع. لا يتم استرداد الرسوم في حالة عدم التوافق بين الأطراف أو لأي سبب آخر.",
+            "en": "The beneficiary (player or coach) pays a non-refundable fee for using the service. All payments are made through the payment methods available on the website. Fees are not refunded in case of incompatibility between parties or for any other reason."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "إخلاء المسؤولية",
+            "en": "Disclaimer"
+          },
+          "description": {
+            "ar": "يتم تقديم جميع المعلومات \"كما هي\" دون ضمانات من أي نوع. الموقع لا يضمن دقة أو اكتمال أو موثوقية أي معلومات أو محتوى متاح على الموقع. استخدام الموقع يتم على مسؤولية المستخدم الخاصة.",
+            "en": "All information is provided \"as is\" without warranties of any kind. The website does not guarantee the accuracy, completeness, or reliability of any information or content available on the website. Use of the website is at the user's own risk."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "دقة المعلومات",
+            "en": "Information Accuracy"
+          },
+          "description": {
+            "ar": "يبذل الموقع أقصى جهوده لضمان دقة المعلومات المعروضة، لكنه لا يتحمل المسؤولية عن أي أخطاء أو عدم دقة في المعلومات. المستخدمون مسؤولون عن التحقق من صحة المعلومات قبل اتخاذ أي قرارات.",
+            "en": "The website makes every effort to ensure the accuracy of the information displayed, but it bears no responsibility for any errors or inaccuracies in the information. Users are responsible for verifying the accuracy of information before making any decisions."
+          },
+          "icon": null
+        }
+      ]
+    },
+    {
+      "title": {
+        "ar": "الشروط والأحكام",
+        "en": "Terms & Conditions"
+      },
+      "description": {
+        "ar": "القواعد والإرشادات لاستخدام منصتنا",
+        "en": "Rules and guidelines for using our platform"
+      },
+      "list": [
+        {
+          "title": {
+            "ar": "توفر الموقع",
+            "en": "Website Availability"
+          },
+          "description": {
+            "ar": "تسعى الشركة لإتاحة موقعها على مدار الساعة، لكنها لا تضمن عدم انقطاع الخدمة. قد تحدث انقطاعات مؤقتة للصيانة أو لأسباب تقنية خارجة عن سيطرة الشركة.",
+            "en": "The company strives to make its website available 24/7, but it does not guarantee uninterrupted service. Temporary interruptions may occur for maintenance or technical reasons beyond the company's control."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "أمن البيانات",
+            "en": "Data Security"
+          },
+          "description": {
+            "ar": "على الرغم من الوسائل المتقدمة المستخدمة لحماية البيانات، لا يمكن ضمان الأمان المطلق. المستخدمون مسؤولون عن الحفاظ على سرية معلوماتهم الشخصية وكلمات المرور الخاصة بهم.",
+            "en": "Despite advanced means used to protect data, absolute security cannot be guaranteed. Users are responsible for maintaining the confidentiality of their personal information and passwords."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "الانقطاع والأعطال",
+            "en": "Interruptions and Malfunctions"
+          },
+          "description": {
+            "ar": "احتمال وقوع أخطاء تتعلق بالشبكة أو الخادم أو البرمجيات. الشركة لا تتحمل المسؤولية عن أي خسائر أو أضرار ناتجة عن هذه الانقطاعات أو الأعطال التقنية.",
+            "en": "Possibility of errors related to networks, servers, or software. The company bears no responsibility for any losses or damages resulting from these interruptions or technical malfunctions."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "الملكية الفكرية",
+            "en": "Intellectual Property"
+          },
+          "description": {
+            "ar": "جميع أنواع المحتوى ملك حصري للشركة أو مرخص لها. يحظر نسخ أو توزيع أو تعديل أي محتوى دون إذن كتابي مسبق من الشركة. أي انتهاك لهذه الحقوق قد يؤدي إلى اتخاذ إجراءات قانونية.",
+            "en": "All content is the exclusive property of the company or licensed to it. Copying, distributing, or modifying any content without prior written permission from the company is prohibited. Any violation of these rights may result in legal action."
+          },
+          "icon": null
+        }
+      ]
+    },
+    {
+      "title": {
+        "ar": "أحكام إضافية",
+        "en": "Additional Terms"
+      },
+      "description": {
+        "ar": "أحكام إضافية تتعلق بحقوق النشر والاستخدام المسموح",
+        "en": "Additional terms related to copyright and permitted use"
+      },
+      "list": [
+        {
+          "title": {
+            "ar": "حقوق النشر",
+            "en": "Copyright"
+          },
+          "description": {
+            "ar": "يشمل المحتوى المحمي النصوص والمعلومات ورسومات الجرافيكس والتصاميم والصور والبرمجيات وجميع المحتويات الأخرى المتاحة على الموقع. جميع هذه المحتويات محمية بموجب قوانين حقوق النشر والعلامات التجارية.",
+            "en": "Protected content includes text information, graphics, designs, images, software, and all other content available on the website. All this content is protected under copyright and trademark laws."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "الاستخدام المسموح",
+            "en": "Permitted Use"
+          },
+          "description": {
+            "ar": "يُسمح بالنسخ للاستخدام الشخصي فقط. يحظر أي استخدام تجاري أو إعادة توزيع أو تعديل للمحتوى دون إذن كتابي مسبق من الشركة. أي استخدام غير مصرح به يعتبر انتهاكاً لحقوق النشر.",
+            "en": "Copying for personal use is allowed only. Any commercial use, redistribution, or modification of content without prior written permission from the company is prohibited. Any unauthorized use constitutes copyright infringement."
+          },
+          "icon": null
+        },
+        {
+          "title": {
+            "ar": "طلبات الاستخدام",
+            "en": "Usage Requests"
+          },
+          "description": {
+            "ar": "يجب إرسال جميع طلبات التصاريح للاستخدام التجاري أو إعادة التوزيع إلى البريد الإلكتروني الرسمي للشركة. سيتم النظر في الطلبات خلال فترة زمنية معقولة، وقد تكون هناك رسوم إضافية للاستخدامات التجارية.",
+            "en": "All permission requests for commercial use or redistribution must be sent to the company's official email. Requests will be considered within a reasonable time frame, and there may be additional fees for commercial uses."
+          },
+          "icon": null
+        }
+      ]
+    }
+  ]
+}

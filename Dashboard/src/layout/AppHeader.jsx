@@ -105,11 +105,19 @@ export default function AppHeader() {
             >
               <span className="sr-only">Open user menu</span>
               <div className="relative">
-                <div className="h-8 w-8 rounded-lg bg-[#1e293b] flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
-                  <span className="text-sm font-bold text-white">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                </div>
+                {user?.profileImage?.url ? (
+                  <img 
+                    src={user.profileImage.url} 
+                    alt={user?.name || 'User'}
+                    className="h-8 w-8 rounded-lg object-cover shadow-sm group-hover:shadow-md transition-all duration-300"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-lg bg-[#1e293b] flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                    <span className="text-sm font-bold text-white">
+                      {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                )}
                 {/* Online Status Indicator */}
                 <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-400 border-2 border-white dark:border-gray-800 rounded-full shadow-sm"></div>
               </div>
@@ -151,11 +159,19 @@ export default function AppHeader() {
                 {/* User Info Header */}
                 <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <div className="flex items-center space-x-3">
-                    <div className="h-12 w-12 rounded-lg bg-[#1e293b] flex items-center justify-center shadow-sm">
-                      <span className="text-lg font-bold text-white">
-                        {user?.name?.charAt(0).toUpperCase() || 'U'}
-                      </span>
-                    </div>
+                    {user?.profileImage?.url ? (
+                      <img 
+                        src={user.profileImage.url} 
+                        alt={user?.name || 'User'}
+                        className="h-12 w-12 rounded-lg object-cover shadow-sm"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-lg bg-[#1e293b] flex items-center justify-center shadow-sm">
+                        <span className="text-lg font-bold text-white">
+                          {user?.name?.charAt(0).toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                         {user?.name || 'User Name'}

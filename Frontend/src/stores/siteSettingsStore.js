@@ -7,6 +7,21 @@ const useSiteSettingsStore = create((set) => ({
   },
   logo: null,
   favicon: null,
+  contactInfo: {
+    email: "",
+    phone: "",
+    address: {
+      ar: "",
+      en: "",
+    },
+    socialMedia: {
+      facebook: "",
+      twitter: "",
+      instagram: "",
+      youtube: "",
+      linkedin: "",
+    },
+  },
   isLoading: false,
   error: null,
 
@@ -29,17 +44,35 @@ const useSiteSettingsStore = create((set) => ({
       }
 
       const data = await response.json();
+      
+  
 
       if (data.success && data.data) {
-        set({
+        const newState = {
           siteName: {
             ar: data.data.siteName?.ar || "متاح ماركت",
             en: data.data.siteName?.en || "Muta7Market",
           },
           logo: data.data.logo || null,
           favicon: data.data.favicon || null,
+          contactInfo: data.data.contactInfo || {
+            email: "",
+            phone: "",
+            address: { ar: "", en: "" },
+            socialMedia: {
+              facebook: "",
+              twitter: "",
+              instagram: "",
+              youtube: "",
+              linkedin: "",
+            },
+          },
           isLoading: false,
-        });
+        };
+        
+   
+        
+        set(newState);
       } else {
         set({ isLoading: false });
       }

@@ -12,13 +12,14 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { useLanguage } from "../../contexts/LanguageContext";
+import useSiteSettingsStore from "../../stores/siteSettingsStore";
 
-/** SVG helpers: render ONLY if icon is real <svg ...> markup */
+
 const isSvgMarkup = (s) => typeof s === "string" && s.trim().startsWith("<svg");
 const prepareSvg = (svg) => {
   if (!isSvgMarkup(svg)) return null;
-  // add default size if none specified
-  if (/\sclass=/.test(svg) || /\s(width|height)=/.test(svg)) return svg;
+  
+  if (svg.includes(' class=') || svg.includes(' width=') || svg.includes(' height=')) return svg;
   return svg.replace("<svg", '<svg width="24" height="24"');
 };
 function SvgIcon({ svg }) {
@@ -26,7 +27,7 @@ function SvgIcon({ svg }) {
   const clean = prepareSvg(svg);
   return (
     <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white mb-6 mx-auto overflow-hidden">
-      {/* If needed, sanitize with isomorphic-dompurify before injecting */}
+
       <span
         className="inline-block"
         dangerouslySetInnerHTML={{ __html: clean }}
@@ -40,10 +41,15 @@ function AboutPage() {
   const isRTL = language === "ar";
   const langKey = isRTL ? "ar" : "en";
 
-  const [about, setAbout] = useState(null); // the first doc from API
-  const [apiStats, setApiStats] = useState(null); // message totals (players/coaches/sports)
+  const [about, setAbout] = useState(null);
+  const [apiStats, setApiStats] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // Site settings store
+  const { fetchSettings } = useSiteSettingsStore();
+  const contactInfo = useSiteSettingsStore((state) => state.contactInfo);
+  const isLoadingSettings = useSiteSettingsStore((state) => state.isLoading);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,7 +58,7 @@ function AboutPage() {
         setLoading(true);
         setErrorMsg(null);
 
-        // Same-origin call to your API route
+    
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/about`,
           {
@@ -70,7 +76,7 @@ function AboutPage() {
           );
         }
 
-        // Expected shape: { data: { data: [ doc ] }, message: {...}, success: true }
+     
         const doc = Array.isArray(payload?.data?.data)
           ? payload.data.data[0]
           : Array.isArray(payload?.data)
@@ -92,7 +98,20 @@ function AboutPage() {
     return () => controller.abort();
   }, []);
 
-  /** Derived pieces */
+  // Fetch site settings
+  useEffect(() => {
+    const fetchSiteSettings = async () => {
+      try {
+        await fetchSettings();
+      } catch (error) {
+        console.error("Error fetching site settings:", error);
+      }
+    };
+
+    fetchSiteSettings();
+  }, [fetchSettings]);
+
+
   const heroTitle = about?.title?.[langKey] || (isRTL ? "من نحن" : "About Us");
   const heroDescription =
     about?.description?.[langKey] ||
@@ -100,7 +119,7 @@ function AboutPage() {
       ? "نوفّر منصة عصرية تُسهّل إدارة المحتوى وتمنح المستخدمين تجربة سريعة وآمنة."
       : "We provide a modern platform that simplifies content management and delivers a fast, secure experience.");
 
-  // Find the two sections by title
+ 
   const missionSection =
     about?.list?.find(
       (s) => s?.title?.ar === "رسالتنا" || s?.title?.en === "Our Mission"
@@ -116,7 +135,7 @@ function AboutPage() {
       (s) => s?.title?.ar === "رؤيتنا" || s?.title?.en === "Our Vision"
     ) || null;
 
-  // Stats (prefer API totals; fallback to nice defaults)
+
   const stats = [
     {
       number:
@@ -177,7 +196,7 @@ function AboutPage() {
         </div>
       </div>
 
-      {/* TWO-COLUMN: Vision (right) + Mission (left) */}
+      
        <div className="py-20 bg-white">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -290,31 +309,7 @@ function AboutPage() {
 </div>
 
 
-      {/* Stats */}
-      {/* <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              {isRTL ? "إنجازاتنا بالأرقام" : "Our Achievements in Numbers"}
-            </h2>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center min-w-[160px]">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
-                    {stat.icon}
-                  </div>
-                </div>
-                <div className="text-3xl font-bold text-white mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-blue-100 font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div> */}
+
 
       {/* Contact */}
       <div className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white">
@@ -338,8 +333,10 @@ function AboutPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "البريد الإلكتروني" : "Email"}
               </h3>
-              <p className="text-gray-300">info@muta7market.com</p>
-              <p className="text-gray-300">support@muta7market.com</p>
+              <p className="text-gray-300">
+                {isLoadingSettings ? "Loading..." : (contactInfo?.email || "info@muta7market.com")}
+              </p>
+          
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -348,7 +345,9 @@ function AboutPage() {
               <h3 className="text-xl font-bold mb-2">
                 {isRTL ? "الهاتف" : "Phone"}
               </h3>
-              <p className="text-gray-300">00966531540229</p>
+              <p className="text-gray-300">
+                {isLoadingSettings ? "Loading..." : (contactInfo?.phone || "+966 53 154 0229")}
+              </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -358,7 +357,7 @@ function AboutPage() {
                 {isRTL ? "العنوان" : "Address"}
               </h3>
               <p className="text-gray-300">
-                {isRTL ? "المملكة العربية السعودية" : "Saudi Arabia"}
+                {isLoadingSettings ? "Loading..." : (contactInfo?.address?.[langKey] || (isRTL ? "المملكة العربية السعودية" : "Saudi Arabia"))}
               </p>
             </div>
           </div>
@@ -366,7 +365,7 @@ function AboutPage() {
           <div className="text-center">
             <div className="flex flex-wrap justify-center gap-4">
               <a
-                href="mailto:info@muta7market.com"
+                href={"mailto:" + (contactInfo?.email || "info@muta7market.com")}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center"
               >
                 <FiMail className="mr-2" />

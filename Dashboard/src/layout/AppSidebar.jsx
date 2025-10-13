@@ -1,5 +1,5 @@
 "use client";
-import { ChartBarIcon, Medal, Users, Volleyball } from "lucide-react";
+import { Medal, Users, Volleyball } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -72,11 +72,11 @@ const navItems = [
     icon: <AdIcon />,
     path: "/advertisements",
   },
-  {
-    name: "الإحصائيات",
-    icon: <ChartBarIcon />,
-    path: "/analytics",
-  },
+  // {
+  //   name: "الإحصائيات",
+  //   icon: <ChartBarIcon />,
+  //   path: "/analytics",
+  // },
   {
     name: "إدارة اللغات",
     icon: <GlobeIcon />,
