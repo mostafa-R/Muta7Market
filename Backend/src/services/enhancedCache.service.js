@@ -218,6 +218,22 @@ class EnhancedCacheService {
     }
   }
 
+  async del(key) {
+    try {
+      let deleted = 0;
+      if (this.isConnected && this.client) {
+        deleted += await this.client.del(key);
+      }
+      if (this.localCache.delete(key)) {
+        deleted += 1;
+      }
+      return deleted;
+    } catch (error) {
+      logger.error(`Enhanced cache DEL error for key ${key}:`, error);
+      return 0;
+    }
+  }
+
   async invalidatePattern(pattern, options = {}) {
     const { includeLocal = true } = options;
 

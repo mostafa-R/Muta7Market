@@ -24,7 +24,15 @@ const InvoiceSchema = new mongoose.Schema(
 
     product: {
       type: String,
-      enum: ["contacts_access", "listing", "promotion"],
+      enum: [
+        "contacts_access",
+        "listing",
+        "promotion",
+        "add_offer",
+        "promote_offer",
+        "unlock_contact",
+        "transfer_offer",
+      ],
       required: true,
       index: true,
     },
@@ -61,6 +69,18 @@ const InvoiceSchema = new mongoose.Schema(
 
     paidAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
+
+    relatedOffer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Offer",
+      default: null,
+    },
+
+    relatedTransferOffer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TransferOffer",
+      default: null,
+    },
 
     lastPaymentErrors: { type: [PaymentErrorSchema], default: [] },
   },

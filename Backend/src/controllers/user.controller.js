@@ -6,7 +6,7 @@ import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
 
 export const update = async (req, res) => {
   try {
-    const { id } = req.user;
+    const id = req.user._id || req.user.id;
     if (!id) {
       return res.status(401).json({ message: "You must be logged in" });
     }
@@ -220,21 +220,21 @@ export const update = async (req, res) => {
 
 export const notPaied = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id || req.user.id;
 
-    const unpaidPayments = await Payment.find({
-      user: userId,
-      status: { $nin: ["completed", "refunded"] },
+    const invoices = await Invoice.find({
+      $or: [{ userId }, { user: userId }],
     })
       .sort({ createdAt: -1 })
-      .select("-gatewayResponse.raw")
       .lean();
 
-    const invoices = await Invoice.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .lean();
+    const unpaidInvoices = invoices.filter((inv) =>
+      ["pending", "failed", "expired"].includes(String(inv.status).toLowerCase())
+    );
 
-    return res.status(200).json({ unpaidPayments, invoices });
+    return res
+      .status(200)
+      .json({ unpaidInvoices, invoices });
   } catch (error) {
     res.status(500).json({ error, message: error.message });
   }

@@ -24,7 +24,7 @@ router.post(
   "/send",
   authMiddleware,
   verifiedOnly,
-  authorize("admin", "moderator"),
+  authorize("admin", "super_admin"),
   sendNotification
 );
 router.post("/bulk", authMiddleware, authorize("admin"), sendBulkNotifications);
@@ -36,25 +36,25 @@ router.get("/unread-count", authMiddleware, getUnreadCount);
 router.post(
   "/templates",
   authMiddleware,
-  authorize("admin", "moderator"),
+  authorize("admin", "super_admin"),
   createTemplate
 );
 router.get(
   "/templates",
   authMiddleware,
-  authorize("admin", "moderator"),
+  authorize("admin", "super_admin"),
   getAllTemplates
 );
 router.get(
   "/templates/:id",
   authMiddleware,
-  authorize("admin", "moderator"),
+  authorize("admin", "super_admin"),
   getTemplateById
 );
 router.put(
   "/templates/:id",
   authMiddleware,
-  authorize("admin", "moderator"),
+  authorize("admin", "super_admin"),
   updateTemplate
 );
 router.delete(
@@ -67,7 +67,7 @@ router.delete(
 router.get(
   "/analytics",
   authMiddleware,
-  authorize("admin", "moderator"),
+  authorize("admin", "super_admin"),
   getNotificationAnalytics
 );
 

@@ -6,8 +6,9 @@ import { createCronJobs } from "./src/cron/expiry.jobs.js";
 import { isOriginAllowed } from "./src/config/allowedOrigins.js";
 import app from "./src/server.js";
 import logger from "./src/utils/logger.js";
+import { setSocketServer } from "./src/services/socket.service.js";
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ;
 
 connectDB();
 
@@ -37,11 +38,15 @@ io.on("connection", (socket) => {
   logger.info(`Socket connected: ${socket.id}`);
 
   socket.on("join", (room) => {
+    if (typeof room !== "string" || !/^negotiation:[0-9a-f]{24}$/i.test(room)) {
+      return;
+    }
     socket.join(room);
     logger.info(`Socket ${socket.id} joined room: ${room}`);
   });
 
   socket.on("leave", (room) => {
+    if (typeof room !== "string") return;
     socket.leave(room);
     logger.info(`Socket ${socket.id} left room: ${room}`);
   });
@@ -50,6 +55,8 @@ io.on("connection", (socket) => {
     logger.info(`Socket disconnected: ${socket.id}`);
   });
 });
+
+setSocketServer(io);
 
 export { io };
 

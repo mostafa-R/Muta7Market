@@ -70,6 +70,11 @@ const coachSchema = new mongoose.Schema(
     contractEndDate: {
       type: Date,
     },
+    contractStatus: {
+      type: String,
+      enum: ["free_agent", "contracted", "loaned"],
+      default: "free_agent",
+    },
     status: {
       type: String,
       enum: Object.values(PROFILE_STATUS),

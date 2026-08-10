@@ -1,15 +1,6 @@
-import mongoose from "mongoose";
 import Invoice from "../models/invoice.model.js";
-import Entitlement from "../models/entitlement.model.js";
-import PlayerProfile from "../models/player.model.js";
-import User from "../models/user.model.js";
-import {
-  paylinkGetInvoice,
-  paylinkGetOrderByNumber,
-  paylinkGetTransactionsOfOrder,
-} from "../services/paylink.client.js";
-import { getPricingSettings } from "../utils/pricingUtils.js";
-import { makeOrderNumber } from "../utils/orderNumber.js";
+import { paylinkGetInvoice, paylinkGetOrderByNumber } from "../services/paylink.client.js";
+import { runInTransaction } from "../utils/transactions.js";
 import { applyPaidEffects } from "./payments.controller.js";
 
 export const getPaymentStatusByOrderNumber = async (req, res) => {
@@ -48,16 +39,11 @@ export const getPaymentStatusByOrderNumber = async (req, res) => {
   ).toLowerCase();
 
   if (paylinkStatus === "paid" && inv.status !== "paid") {
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(async () => {
-        const doc = await Invoice.findById(inv._id).session(session);
-        if (!doc) return;
-        await applyPaidEffects(doc, verify, session);
-      });
-    } finally {
-      session.endSession();
-    }
+    await runInTransaction(async (session) => {
+      const doc = await Invoice.findById(inv._id).session(session);
+      if (!doc) return;
+      await applyPaidEffects(doc, verify, session);
+    });
   }
 
   const fresh = await Invoice.findById(inv._id).lean();
@@ -117,17 +103,12 @@ export const reconcileInvoices = async (req, res) => {
         "paid";
       if (!isPaid) continue;
 
-      const session = await mongoose.startSession();
-      try {
-        await session.withTransaction(async () => {
-          const doc = await Invoice.findById(inv._id).session(session);
-          if (!doc) return;
-          await applyPaidEffects(doc, verify, session);
-        });
-        updated++;
-      } finally {
-        session.endSession();
-      }
+      await runInTransaction(async (session) => {
+        const doc = await Invoice.findById(inv._id).session(session);
+        if (!doc) return;
+        await applyPaidEffects(doc, verify, session);
+      });
+      updated++;
     } catch (e) {
       console.warn("reconcile failed for", inv._id, e?.message);
     }

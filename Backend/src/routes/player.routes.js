@@ -5,7 +5,6 @@ import {
   deletePlayerImages,
   deletePlayerProfile,
   deletePlayerVideo,
-  deleteSpecicImage,
   getAllPlayers,
   getMyProfile,
   getPlayerById,
@@ -90,7 +89,5 @@ router.patch(
 );
 
 router.delete("/delete-player-profile", verifiedOnly, deletePlayerProfile);
-
-router.delete("/:id/images", verifiedOnly, deleteSpecicImage);
 
 export default router;

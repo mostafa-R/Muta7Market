@@ -2,50 +2,75 @@ import cron from "node-cron";
 import Entitlement from "../models/entitlement.model.js";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
+import logger from "../utils/logger.js";
 
 const TZ = "Africa/Cairo";
 
+let running = false;
+
 export async function runExpirySweep(now = new Date()) {
-  const n = new Date(now);
-  const users = await User.updateMany(
-    { isActive: true, activeExpireAt: { $ne: null, $lte: n } },
-    { $set: { isActive: false }, $unset: { activeExpireAt: "" } }
-  );
+  if (running) {
+    logger.warn("[expiry-sweep] previous run still in progress, skipping");
+    return { skipped: true };
+  }
 
-  const playersActive = await Player.updateMany(
-    { isActive: true, activeExpireAt: { $ne: null, $lte: n } },
-    {
-      $set: { isActive: false, isListed: false },
-      $unset: { activeExpireAt: "" },
-    }
-  );
-
-  const playersPromo = await Player.updateMany(
-    { "isPromoted.status": true, "isPromoted.endDate": { $ne: null, $lte: n } },
-    {
-      $set: { "isPromoted.status": false },
-      $unset: {
-        "isPromoted.endDate": "",
-        "isPromoted.startDate": "",
-        "isPromoted.type": "",
-      },
-    }
-  );
-
-  let entitlements = { modifiedCount: 0 };
+  running = true;
   try {
-    entitlements = await Entitlement.updateMany(
-      { active: true, expiresAt: { $ne: null, $lte: n } },
-      { $set: { active: false } }
-    );
-  } catch {}
+    const n = new Date(now);
 
-  return {
-    users: users.modifiedCount,
-    playersActive: playersActive.modifiedCount,
-    playersPromo: playersPromo.modifiedCount,
-    entitlements: entitlements.modifiedCount,
-  };
+    const users = await User.updateMany(
+      { isActive: true, activeExpireAt: { $ne: null, $lte: n } },
+      { $set: { isActive: false }, $unset: { activeExpireAt: "" } }
+    );
+
+    const playersActive = await Player.updateMany(
+      { isActive: true, activeExpireAt: { $ne: null, $lte: n } },
+      {
+        $set: { isActive: false, isListed: false },
+        $unset: { activeExpireAt: "" },
+      }
+    );
+
+    const playersPromo = await Player.updateMany(
+      {
+        "isPromoted.status": true,
+        "isPromoted.endDate": { $ne: null, $lte: n },
+      },
+      {
+        $set: { "isPromoted.status": false },
+        $unset: {
+          "isPromoted.endDate": "",
+          "isPromoted.startDate": "",
+          "isPromoted.type": "",
+        },
+      }
+    );
+
+    let entitlements = { modifiedCount: 0 };
+    try {
+      entitlements = await Entitlement.updateMany(
+        { active: true, expiresAt: { $ne: null, $lte: n } },
+        { $set: { active: false } }
+      );
+    } catch (err) {
+      logger.error("[expiry-sweep] entitlement sweep failed", err);
+    }
+
+    const result = {
+      users: users.modifiedCount,
+      playersActive: playersActive.modifiedCount,
+      playersPromo: playersPromo.modifiedCount,
+      entitlements: entitlements.modifiedCount,
+    };
+
+    logger.info("[expiry-sweep] completed", result);
+    return result;
+  } catch (error) {
+    logger.error("[expiry-sweep] failed", error);
+    throw error;
+  } finally {
+    running = false;
+  }
 }
 
 export function startExpiryCron() {
@@ -53,8 +78,10 @@ export function startExpiryCron() {
     "0 0 * * *",
     async () => {
       try {
-        const res = await runExpirySweep();
-      } catch (e) {}
+        await runExpirySweep();
+      } catch (e) {
+        logger.error("[expiry-sweep] cron tick error", e);
+      }
     },
     { timezone: TZ }
   );

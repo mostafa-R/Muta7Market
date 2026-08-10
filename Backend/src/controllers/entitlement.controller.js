@@ -6,20 +6,27 @@ export const checkEntitlement = async (req, res) => {
     return res.status(401).json({ success: false, message: "unauthorized" });
 
   const { type, playerProfileId } = req.query || {};
-  if (!["contacts_access", "player_listed"].includes(type)) {
+  const ALLOWED_TYPES = [
+    "contacts_access",
+    "listed_player",
+    "listed_coach",
+    "promoted_player",
+    "promoted_coach",
+  ];
+  if (!ALLOWED_TYPES.includes(type)) {
     return res.status(400).json({ success: false, message: "invalid_type" });
   }
 
   const q = { userId, type, active: true };
-  if (type === "player_listed") {
+  if (type === "contacts_access") {
+    q.playerProfileId = null;
+  } else {
     if (!playerProfileId) {
       return res
         .status(400)
         .json({ success: false, message: "playerProfileId_required" });
     }
     q.playerProfileId = playerProfileId;
-  } else {
-    q.playerProfileId = null;
   }
 
   const ent = await Entitlement.findOne(q).lean();

@@ -1,12 +1,31 @@
 import { OFFER_STATUS } from "../config/constants.js";
+import Invoice from "../models/invoice.model.js";
 import Offer from "../models/offer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
 import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
+import { paylinkCreateInvoice, paylinkGetInvoice } from "../services/paylink.client.js";
+import { applyPaidEffects } from "./payments.controller.js";
 import { sendInternalNotification } from "./notification.controller.js";
+
+const STAFF_ROLES = ["admin", "super_admin"];
+
+const OFFER_ALLOWED_FIELDS = [
+  "title",
+  "description",
+  "category",
+  "targetProfile",
+  "offerDetails",
+  "media",
+  "contactInfo",
+  "pricing",
+  "seo",
+  "expiryDate",
+];
 
 const updateExpiredOffers = async () => {
   await Offer.updateMany(
@@ -18,64 +37,145 @@ const updateExpiredOffers = async () => {
   );
 };
 
+async function createOfferInvoice(
+  userId,
+  offerId,
+  product,
+  amount,
+  durationDays,
+  featureType
+) {
+  const orderNo = makeOrderNumber(product, String(userId));
+  return Invoice.create({
+    orderNumber: orderNo,
+    invoiceNumber: orderNo,
+    userId,
+    product,
+    targetType: null,
+    playerProfileId: null,
+    durationDays: durationDays || 1,
+    featureType: featureType || null,
+    amount,
+    currency: "SAR",
+    status: "pending",
+    relatedOffer: offerId,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+  });
+}
+
+async function initiateInvoicePayment(invoice, user, req) {
+  if (invoice.paymentUrl) {
+    return invoice.paymentUrl;
+  }
+
+  const title = (() => {
+    if (invoice.product === "add_offer") return "Add offer";
+    if (invoice.product === "promote_offer")
+      return `Promote offer (${invoice.durationDays || 15} days)`;
+    if (invoice.product === "unlock_contact") return "Unlock contact";
+    return invoice.product;
+  })();
+
+  const originFallback =
+    req.get && req.get("origin") ? req.get("origin") : null;
+  const frontUrl =
+    process.env.FRONTEND_URL ||
+    originFallback ||
+    process.env.APP_URL ||
+    "http://localhost:3000";
+  const callBackUrl = `${frontUrl.replace(
+    /\/$/,
+    ""
+  )}/profile?tab=payments&invoiceId=${String(invoice._id)}`;
+  const cancelUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments`;
+
+  const payload = {
+    orderNumber: invoice.orderNumber,
+    amount: invoice.amount,
+    currency: invoice.currency || "SAR",
+    clientName: user?.name || user?.email,
+    clientEmail: user?.email,
+    clientMobile: user?.phone || "0500000000",
+    products: [{ title, price: invoice.amount, qty: 1, isDigital: true }],
+    supportedCardBrands: ["mada", "visaMastercard", "stcpay"],
+    callBackUrl,
+    cancelUrl,
+    note: `userId=${invoice.userId};product=${invoice.product};relatedOffer=${
+      invoice.relatedOffer || ""
+    };durationDays=${invoice.durationDays || ""};feature=${
+      invoice.featureType || ""
+    }`,
+  };
+
+  const data = await paylinkCreateInvoice(payload);
+  invoice.provider = "paylink";
+  invoice.providerInvoiceId = data.transactionNo || data.invoiceId || undefined;
+  invoice.paymentUrl = data.url || null;
+  if (!invoice.invoiceNumber) invoice.invoiceNumber = invoice.orderNumber;
+  await invoice.save();
+  return invoice.paymentUrl;
+}
+
 export const createOffer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const requirePayment = req.user.role !== "admin";
 
+  const data = {};
+  for (const key of OFFER_ALLOWED_FIELDS) {
+    if (key in req.body) data[key] = req.body[key];
+  }
+
   if (requirePayment) {
     const pricing = await getPricingSettings();
-    const payment = await paymentService.createPayment({
-      user: userId,
-      type: "add_offer",
-      amount: req.body.pricing?.addOfferCost || pricing.ADD_OFFER,
-      description: "Payment for adding new offer",
-    });
+    const amount = data.pricing?.addOfferCost || pricing.ADD_OFFER;
 
     const offer = await Offer.create({
       user: userId,
-      ...req.body,
-      payment: {
-        isPaid: false,
-        paymentId: payment._id,
-      },
+      ...data,
+      payment: { isPaid: false },
       status: OFFER_STATUS.PENDING,
     });
+
+    const invoice = await createOfferInvoice(
+      userId,
+      offer._id,
+      "add_offer",
+      amount,
+      1,
+      null
+    );
+    const paymentUrl = await initiateInvoicePayment(invoice, req.user, req);
 
     await sendInternalNotification(
       userId,
       "Payment Required",
       "Please complete payment to activate your offer",
-      { offerId: offer._id, paymentId: payment._id }
+      { offerId: offer._id, invoiceId: String(invoice._id) }
     );
 
-    const paymentUrl = await paymentService.initiatePayment(payment._id);
-
-    res
-      .status(201)
-      .json(
-        new ApiResponse(
-          201,
-          { offer, paymentUrl },
-          "Please complete payment to activate your offer"
-        )
-      );
+    res.status(201).json(
+      new ApiResponse(
+        201,
+        {
+          offer,
+          paymentUrl,
+          invoiceId: String(invoice._id),
+        },
+        "Please complete payment to activate your offer"
+      )
+    );
   } else {
     const offer = await Offer.create({
       user: userId,
-      ...req.body,
-      payment: {
-        isPaid: true,
-        paidAt: new Date(),
-      },
+      ...data,
+      payment: { isPaid: true, paidAt: new Date() },
       status: OFFER_STATUS.ACTIVE,
     });
 
     await sendInternalNotification(
       userId,
       "Offer Created Successfully",
-      `Your offer "${
-        offer.title?.en || offer.title
-      }" has been created and is now live!`,
+      `Your offer "${offer.title?.en || offer.title}" has been created and is now live!`,
       { offerId: offer._id }
     );
 
@@ -141,10 +241,7 @@ export const getAllOffers = asyncHandler(async (req, res) => {
       query["promotion.isPromoted"] = true;
       query["promotion.endDate"] = { $gt: new Date() };
     } else {
-      query.$or = [
-        { "promotion.isPromoted": false },
-        { "promotion.endDate": { $lte: new Date() } },
-      ];
+      query["promotion.isPromoted"] = false;
     }
   }
 
@@ -255,16 +352,18 @@ export const updateOffer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please complete payment before updating offer");
   }
 
-  Object.assign(offer, req.body);
+  const updateData = {};
+  for (const key of OFFER_ALLOWED_FIELDS) {
+    if (key in req.body) updateData[key] = req.body[key];
+  }
+  Object.assign(offer, updateData);
   offer.updatedAt = new Date();
   await offer.save();
 
   await sendInternalNotification(
     offer.user,
     "Offer Updated",
-    `Your offer "${
-      offer.title?.en || offer.title
-    }" has been updated successfully`,
+    `Your offer "${offer.title?.en || offer.title}" has been updated successfully`,
     { offerId: offer._id }
   );
 
@@ -360,6 +459,7 @@ export const getMyOffers = asyncHandler(async (req, res) => {
 export const promoteOffer = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
+  const userRole = req.user.role;
   const { days, type = "featured" } = req.body;
 
   if (!days || days < 1) {
@@ -375,11 +475,11 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Offer not found");
   }
 
-  if (offer.user.toString() !== userId.toString()) {
+  if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only promote your own offers");
   }
 
-  if (!offer.payment.isPaid) {
+  if (!offer.payment.isPaid && userRole !== "admin") {
     throw new ApiError(400, "Please complete initial payment before promoting");
   }
 
@@ -392,22 +492,21 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     days *
     (offer.pricing?.promotionCost?.perDay || pricing.PROMOTE_OFFER_PER_DAY);
 
-  const payment = await paymentService.createPayment({
-    user: userId,
-    type: "promote_offer",
-    amount: promotionCost,
-    relatedOffer: offerId,
-    description: `Promote offer for ${days} days as ${type}`,
-    metadata: { promotionType: type, days },
-  });
-
-  const paymentUrl = await paymentService.initiatePayment(payment._id);
+  const invoice = await createOfferInvoice(
+    userId,
+    offer._id,
+    "promote_offer",
+    promotionCost,
+    days,
+    type
+  );
+  const paymentUrl = await initiateInvoicePayment(invoice, req.user, req);
 
   await sendInternalNotification(
     userId,
     "Promotion Payment Required",
     `Complete payment to promote your offer for ${days} days`,
-    { offerId: offer._id, paymentId: payment._id, promotionCost }
+    { offerId: offer._id, invoiceId: String(invoice._id), promotionCost }
   );
 
   res
@@ -415,7 +514,7 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { paymentUrl, promotionCost },
+        { paymentUrl, promotionCost, invoiceId: String(invoice._id) },
         "Please complete payment to promote your offer"
       )
     );
@@ -459,21 +558,22 @@ export const unlockContact = asyncHandler(async (req, res) => {
 
   const pricing = await getPricingSettings();
   const unlockCost = offer.pricing?.unlockContactCost || pricing.UNLOCK_CONTACT;
-  const payment = await paymentService.createPayment({
-    user: userId,
-    type: "unlock_contact",
-    amount: unlockCost,
-    relatedOffer: offerId,
-    description: `Unlock contact for offer: ${offer.title?.en || offer.title}`,
-  });
 
-  const paymentUrl = await paymentService.initiatePayment(payment._id);
+  const invoice = await createOfferInvoice(
+    userId,
+    offer._id,
+    "unlock_contact",
+    unlockCost,
+    1,
+    null
+  );
+  const paymentUrl = await initiateInvoicePayment(invoice, req.user, req);
 
   await sendInternalNotification(
     userId,
     "Contact Unlock Payment",
     "Complete payment to unlock contact information for this offer",
-    { offerId: offer._id, paymentId: payment._id, unlockCost }
+    { offerId: offer._id, invoiceId: String(invoice._id), unlockCost }
   );
 
   res
@@ -481,7 +581,7 @@ export const unlockContact = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { paymentUrl, unlockCost },
+        { paymentUrl, unlockCost, invoiceId: String(invoice._id) },
         "Please complete payment to unlock contact information"
       )
     );
@@ -520,27 +620,47 @@ export const getOfferStatistics = asyncHandler(async (req, res) => {
   );
 });
 
-export const handlePaymentSuccess = asyncHandler(async (req, res) => {
-  const { paymentId } = req.body;
+export const confirmOfferPayment = asyncHandler(async (req, res) => {
+  const { invoiceId } = req.params;
+  const userId = req.user._id;
+  const isStaff = STAFF_ROLES.includes(req.user.role);
 
-  const payment = await Payment.findById(paymentId).populate("relatedOffer");
+  const q = isStaff
+    ? { _id: invoiceId }
+    : { _id: invoiceId, $or: [{ userId }, { user: userId }] };
 
-  if (!payment) {
-    throw new ApiError(404, "Payment not found");
-  }
+  const invoice = await Invoice.findOne(q);
+  if (!invoice) throw new ApiError(404, "Invoice not found");
 
-  switch (payment.type) {
-    case "add_offer":
-    case "promote_offer":
-    case "unlock_contact": {
-      await paymentService.handlePaymentSuccess(payment._id);
-      break;
+  let verify = null;
+  if (invoice.providerInvoiceId) {
+    try {
+      verify = await paylinkGetInvoice(String(invoice.providerInvoiceId));
+    } catch (e) {
+      verify = null;
     }
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, null, "Payment processed successfully"));
+  const paid = verify
+    ? String(verify.orderStatus || "").toLowerCase() === "paid"
+    : false;
+
+  if (paid && invoice.status !== "paid") {
+    await applyPaidEffects(invoice, verify);
+  }
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        invoiceId: String(invoice._id),
+        orderNumber: invoice.orderNumber,
+        status: invoice.status,
+        paid,
+      },
+      "Payment status confirmed"
+    )
+  );
 });
 
 export const searchOffers = asyncHandler(async (req, res) => {
@@ -553,7 +673,7 @@ export const searchOffers = asyncHandler(async (req, res) => {
     nationality,
     page = 1,
     limit = 10,
-    sortBy = "relevance",
+    sortBy = "date",
   } = req.query;
 
   if (!search) {
@@ -568,8 +688,6 @@ export const searchOffers = asyncHandler(async (req, res) => {
       { "title.ar": { $regex: search, $options: "i" } },
       { "description.en": { $regex: search, $options: "i" } },
       { "description.ar": { $regex: search, $options: "i" } },
-      { skills: { $in: [new RegExp(search, "i")] } },
-      { keywords: { $in: [new RegExp(search, "i")] } },
     ],
   };
 
@@ -594,10 +712,7 @@ export const searchOffers = asyncHandler(async (req, res) => {
 
   const { skip } = paginate(page, limit);
 
-  let sort = { score: { $meta: "textScore" } };
-  if (sortBy === "date") {
-    sort = { createdAt: -1 };
-  }
+  let sort = { createdAt: -1 };
   if (sortBy === "salary") {
     sort = { "targetProfile.salaryRange.max": -1 };
   }
@@ -671,7 +786,7 @@ export const getSimilarOffers = asyncHandler(async (req, res) => {
     "payment.isPaid": true,
     $or: [
       { category: currentOffer.category },
-      { skills: { $in: currentOffer.skills || [] } },
+      { "seo.keywords": { $in: currentOffer.seo?.keywords || [] } },
       { "offerDetails.location": currentOffer.offerDetails?.location },
     ],
   };

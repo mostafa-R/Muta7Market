@@ -22,3 +22,9 @@ backend.zip
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# logs & uploads
+/logs
+/uploads
+*.log
+

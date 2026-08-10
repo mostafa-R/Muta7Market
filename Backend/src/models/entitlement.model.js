@@ -20,7 +20,7 @@ const EntitlementSchema = new mongoose.Schema(
     },
     playerProfileId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "PlayerProfile",
+      ref: "Player",
       default: null,
     },
     active: { type: Boolean, default: true },

@@ -75,6 +75,17 @@ class MetricsCollector {
 
     const endpoint = `${req.method} ${req.route?.path || req.originalUrl}`;
     if (!this.metrics.endpoints[endpoint]) {
+      if (Object.keys(this.metrics.endpoints).length >= 200) {
+        let leastUsedKey = null;
+        let leastCount = Infinity;
+        for (const [key, stats] of Object.entries(this.metrics.endpoints)) {
+          if (stats.count < leastCount) {
+            leastCount = stats.count;
+            leastUsedKey = key;
+          }
+        }
+        if (leastUsedKey) delete this.metrics.endpoints[leastUsedKey];
+      }
       this.metrics.endpoints[endpoint] = {
         count: 0,
         totalDuration: 0,

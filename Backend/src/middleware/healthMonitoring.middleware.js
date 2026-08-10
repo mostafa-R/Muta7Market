@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import enhancedCacheService from "../services/cache.service.js";
+import enhancedCacheService from "../services/enhancedCache.service.js";
 import logger from "../utils/logger.js";
 import memoryOptimizer from "../utils/memoryOptimizer.js";
 
@@ -73,6 +73,14 @@ class HealthMonitoringService {
     this.healthChecks.set("cache", async () => {
       try {
         const cacheHealth = enhancedCacheService.getCacheHealth();
+
+        if (!process.env.REDIS_URL) {
+          return {
+            status: "healthy",
+            message: "Local cache is active (Redis not configured)",
+            details: cacheHealth,
+          };
+        }
 
         if (cacheHealth.redis.connected) {
           const testKey = "health_check_" + Date.now();

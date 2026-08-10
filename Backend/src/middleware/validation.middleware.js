@@ -6,6 +6,7 @@ const validate = (schema) => {
       abortEarly: false,
       stripUnknown: true,
       convert: true,
+      context: { now: Date.now() },
     });
 
     if (error) {

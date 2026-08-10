@@ -26,6 +26,12 @@ export const verifyLimiter = createRateLimiter({
   message: "Too many verification attempts. Please try again later.",
 });
 
+export const uploadLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 60,
+  message: "Too many upload requests. Please try again later.",
+});
+
 export const generalLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 1000,
@@ -36,12 +42,6 @@ export const paymentLimiter = createRateLimiter({
   windowMs: 5 * 60 * 1000,
   max: 20,
   message: "Too many payment attempts. Please try again in a few minutes.",
-});
-
-export const uploadLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: "Too many upload requests. Please try again later.",
 });
 
 export default generalLimiter;

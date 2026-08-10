@@ -433,9 +433,6 @@ export const updateCustomTranslations = asyncHandler(async (req, res) => {
 });
 
 export const addTranslation = asyncHandler(async (req, res) => {
-  console.log("🚀 Backend: addTranslation called");
-  console.log("📝 Request body:", req.body);
-
   const settings = await SiteSettings.findOneOrCreate();
 
   const { key, ar, en } = req.body;

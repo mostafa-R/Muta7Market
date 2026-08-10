@@ -181,6 +181,15 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     salaryMax,
     isPromoted,
     game,
+    position,
+    roleType,
+    heightMin,
+    heightMax,
+    weightMin,
+    weightMax,
+    preferredFoot,
+    contractStatus,
+    physicalCondition,
   } = req.query;
 
   const now = new Date();
@@ -203,6 +212,12 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   if (jop) and.push({ jop });
   if (status) and.push({ status });
   if (gender) and.push({ gender });
+  if (position) and.push({ position: { $regex: position, $options: "i" } });
+  if (roleType) and.push({ roleType: { $regex: roleType, $options: "i" } });
+  if (preferredFoot)
+    and.push({ preferredFoot: { $regex: preferredFoot, $options: "i" } });
+  if (contractStatus) and.push({ contractStatus });
+  if (physicalCondition) and.push({ physicalCondition });
   if (game) {
     and.push({
       $or: [
@@ -219,6 +234,20 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     if (ageMin) age.$gte = parseInt(ageMin);
     if (ageMax) age.$lte = parseInt(ageMax);
     and.push({ age });
+  }
+
+  if (heightMin || heightMax) {
+    const height = {};
+    if (heightMin) height.$gte = parseInt(heightMin);
+    if (heightMax) height.$lte = parseInt(heightMax);
+    and.push({ height });
+  }
+
+  if (weightMin || weightMax) {
+    const weight = {};
+    if (weightMin) weight.$gte = parseInt(weightMin);
+    if (weightMax) weight.$lte = parseInt(weightMax);
+    and.push({ weight });
   }
 
   if (salaryMin || salaryMax) {
@@ -422,8 +451,22 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
   if (req.body.customSport !== undefined)
     player.customSport = req.body.customSport;
-  if (req.body.views !== undefined) player.views = req.body.views;
-  if (req.body.isActive !== undefined) player.isActive = req.body.isActive;
+  const isStaff = ["admin", "super_admin"].includes(userRole);
+  if (req.body.views !== undefined && isStaff) player.views = req.body.views;
+  if (req.body.isActive !== undefined && isStaff)
+    player.isActive = req.body.isActive;
+
+  if (req.body.height !== undefined) player.height = req.body.height;
+  if (req.body.weight !== undefined) player.weight = req.body.weight;
+  if (req.body.preferredFoot !== undefined)
+    player.preferredFoot = req.body.preferredFoot;
+  if (req.body.physicalCondition !== undefined)
+    player.physicalCondition = req.body.physicalCondition;
+  if (req.body.contractStatus !== undefined)
+    player.contractStatus = req.body.contractStatus;
+  if (Array.isArray(req.body.careerHistory)) {
+    player.careerHistory = req.body.careerHistory;
+  }
 
   if (req.body.contractEndDate !== undefined) {
     player.contractEndDate =
@@ -645,90 +688,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
 
   res.status(200).json(new ApiResponse(200, responseData, responseMessage));
 });
-
-export const deleteSpecicImage = async (req, res) => {
-  try {
-    const { id: playerId } = req.params;
-    const { publicIds } = req.body;
-
-    if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide publicIds array of images to delete",
-      });
-    }
-
-    const player = await Player.findById(playerId);
-    if (!player) {
-      return res.status(404).json({
-        success: false,
-        message: "Player not found",
-      });
-    }
-
-    if (player.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "You can only delete images from your own profile",
-      });
-    }
-
-    const deleteResults = [];
-
-    if (player.media?.images && Array.isArray(player.media.images)) {
-      const imagesToKeep = player.media.images.filter((image) => {
-        const shouldDelete = publicIds.includes(image.publicId);
-        if (shouldDelete) {
-          deleteResults.push({
-            publicId: image.publicId,
-            title: image.title,
-            status: "marked_for_deletion",
-          });
-        }
-        return !shouldDelete;
-      });
-
-      for (const publicId of publicIds) {
-        try {
-          await deleteMediaFromCloudinary(publicId, "image");
-          const result = deleteResults.find((r) => r.publicId === publicId);
-          if (result) result.status = "deleted_successfully";
-        } catch (error) {
-          const result = deleteResults.find((r) => r.publicId === publicId);
-          if (result) {
-            result.status = "deletion_failed";
-            result.error = error.message;
-          }
-        }
-      }
-
-      player.media.images = imagesToKeep;
-      await player.save();
-
-      res.json({
-        success: true,
-        message: `Successfully processed ${publicIds.length} image deletions`,
-        data: {
-          deleteResults,
-          remainingImagesCount: imagesToKeep.length,
-          player: player,
-        },
-      });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "No images found in player profile",
-      });
-    }
-  } catch (error) {
-    console.error("Error deleting player images:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while deleting images",
-      error: error.message,
-    });
-  }
-};
 
 export const deletePlayerDocument = async (req, res) => {
   try {
@@ -1361,9 +1320,16 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     salaryMin,
     salaryMax,
     skills,
+    heightMin,
+    heightMax,
+    weightMin,
+    weightMax,
+    preferredFoot,
+    contractStatus,
+    physicalCondition,
     page = 1,
     limit = 10,
-    sortBy = "relevance",
+    sortBy = "date",
   } = req.query;
 
   if (!search) {
@@ -1382,10 +1348,19 @@ export const searchPlayers = asyncHandler(async (req, res) => {
   };
 
   if (position) {
-    query.position = position;
+    query.position = { $regex: position, $options: "i" };
   }
   if (nationality) {
-    query.nationality = nationality;
+    query.nationality = { $regex: nationality, $options: "i" };
+  }
+  if (preferredFoot) {
+    query.preferredFoot = { $regex: preferredFoot, $options: "i" };
+  }
+  if (contractStatus) {
+    query.contractStatus = contractStatus;
+  }
+  if (physicalCondition) {
+    query.physicalCondition = physicalCondition;
   }
 
   if (ageMin || ageMax) {
@@ -1395,6 +1370,26 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     }
     if (ageMax) {
       query.age.$lte = parseInt(ageMax);
+    }
+  }
+
+  if (heightMin || heightMax) {
+    query.height = {};
+    if (heightMin) {
+      query.height.$gte = parseInt(heightMin);
+    }
+    if (heightMax) {
+      query.height.$lte = parseInt(heightMax);
+    }
+  }
+
+  if (weightMin || weightMax) {
+    query.weight = {};
+    if (weightMin) {
+      query.weight.$gte = parseInt(weightMin);
+    }
+    if (weightMax) {
+      query.weight.$lte = parseInt(weightMax);
     }
   }
 
@@ -1415,7 +1410,7 @@ export const searchPlayers = asyncHandler(async (req, res) => {
 
   const { skip } = paginate(page, limit);
 
-  let sort = { score: { $meta: "textScore" } };
+  let sort = { createdAt: -1 };
   if (sortBy === "date") {
     sort = { createdAt: -1 };
   }

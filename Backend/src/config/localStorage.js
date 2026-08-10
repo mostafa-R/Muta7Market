@@ -112,15 +112,10 @@ const fileFilter = (req, file, cb) => {
     "txt",
   ];
 
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else if (
-    file.mimetype === "application/octet-stream" &&
+  if (
+    allowedTypes.includes(file.mimetype) &&
     allowedExtensions.includes(fileExtension)
   ) {
-    console.log(
-      `⚠️  Accepting file based on extension: ${fileExtension} (MIME: ${file.mimetype})`
-    );
     cb(null, true);
   } else {
     cb(

@@ -150,6 +150,41 @@ const playerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    contractStatus: {
+      type: String,
+      enum: ["free_agent", "contracted", "loaned"],
+      default: "free_agent",
+    },
+    height: {
+      type: Number,
+      default: null,
+    },
+    weight: {
+      type: Number,
+      default: null,
+    },
+    preferredFoot: {
+      type: String,
+      enum: ["right", "left", "both", ""],
+      default: "",
+    },
+    physicalCondition: {
+      type: String,
+      enum: ["available", "injured"],
+      default: "available",
+    },
+    careerHistory: [
+      {
+        club: { type: String, default: null },
+        league: { type: String, default: null },
+        from: { type: Date, default: null },
+        to: { type: Date, default: null },
+        appearances: { type: Number, default: 0 },
+        goals: { type: Number, default: 0 },
+        assists: { type: Number, default: 0 },
+        titles: [String],
+      },
+    ],
     transferredTo: {
       club: { type: String, default: null },
       startDate: { type: Date, default: null },

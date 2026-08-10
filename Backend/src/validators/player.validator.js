@@ -42,6 +42,32 @@ export const createPlayerSchema = Joi.object({
 
   experience: Joi.number().min(0).optional(),
 
+  contractStatus: Joi.string()
+    .valid("free_agent", "contracted", "loaned")
+    .optional(),
+  height: Joi.number().min(100).max(230).optional(),
+  weight: Joi.number().min(30).max(250).optional(),
+  preferredFoot: Joi.string().valid("right", "left", "both", "").optional(),
+  physicalCondition: Joi.string().valid("available", "injured").optional(),
+  careerHistory: Joi.array()
+    .items(
+      Joi.object({
+        club: Joi.string().allow("", null),
+        league: Joi.string().allow("", null),
+        from: Joi.alternatives()
+          .try(Joi.date().iso(), Joi.string().valid(""))
+          .allow(null),
+        to: Joi.alternatives()
+          .try(Joi.date().iso(), Joi.string().valid(""))
+          .allow(null),
+        appearances: Joi.number().min(0),
+        goals: Joi.number().min(0),
+        assists: Joi.number().min(0),
+        titles: Joi.array().items(Joi.string()),
+      })
+    )
+    .optional(),
+
   transferredTo: Joi.object({
     club: Joi.string().allow("", null),
     startDate: Joi.alternatives()
@@ -162,6 +188,32 @@ export const updatePlayerSchema = Joi.object({
   status: Joi.string().valid(...Object.values(PROFILE_STATUS)),
 
   experience: Joi.number().min(0).optional(),
+
+  contractStatus: Joi.string()
+    .valid("free_agent", "contracted", "loaned")
+    .optional(),
+  height: Joi.number().min(100).max(230).optional(),
+  weight: Joi.number().min(30).max(250).optional(),
+  preferredFoot: Joi.string().valid("right", "left", "both", "").optional(),
+  physicalCondition: Joi.string().valid("available", "injured").optional(),
+  careerHistory: Joi.array()
+    .items(
+      Joi.object({
+        club: Joi.string().allow("", null),
+        league: Joi.string().allow("", null),
+        from: Joi.alternatives()
+          .try(Joi.date().iso(), Joi.string().valid(""))
+          .allow(null),
+        to: Joi.alternatives()
+          .try(Joi.date().iso(), Joi.string().valid(""))
+          .allow(null),
+        appearances: Joi.number().min(0),
+        goals: Joi.number().min(0),
+        assists: Joi.number().min(0),
+        titles: Joi.array().items(Joi.string()),
+      })
+    )
+    .optional(),
 
   monthlySalary: Joi.object({
     amount: Joi.number().min(0),

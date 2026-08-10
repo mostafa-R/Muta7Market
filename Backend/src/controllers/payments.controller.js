@@ -1,8 +1,10 @@
-import mongoose from "mongoose";
+import crypto from "crypto";
 import Entitlement from "../models/entitlement.model.js";
 import Invoice from "../models/invoice.model.js";
+import Offer from "../models/offer.model.js";
 import PaymentEvent from "../models/paymentEvent.model.js";
 import PlayerProfile from "../models/player.model.js";
+import TransferOffer from "../models/transferOffer.model.js";
 import User from "../models/user.model.js";
 import {
   paylinkCreateInvoice,
@@ -10,12 +12,190 @@ import {
 } from "../services/paylink.client.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
+import { runInTransaction } from "../utils/transactions.js";
+import { OFFER_STATUS } from "../config/constants.js";
 
-async function applyPaidEffects(invoice, verify, session) {
-  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-  // Get pricing settings from database
+const STAFF_ROLES = ["admin", "super_admin"];
+
+function entitlementDurationDays(invoice, PRICING) {
+  if (invoice.product === "contacts_access")
+    return Number(
+      invoice.durationDays ||
+        PRICING.contacts_access_days ||
+        PRICING.ONE_YEAR_DAYS ||
+        365
+    );
+  if (invoice.product === "listing")
+    return Number(invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365);
+  if (invoice.product === "promotion")
+    return Number(
+      invoice.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
+    );
+  return 0;
+}
+
+function entitlementKey(invoice) {
+  if (invoice.product === "contacts_access") {
+    return { type: "contacts_access", playerProfileId: null };
+  }
+  const prefix = invoice.product === "listing" ? "listed" : "promoted";
+  return {
+    type: `${prefix}_${invoice.targetType}`,
+    playerProfileId: invoice.playerProfileId || null,
+  };
+}
+
+async function grantPaidInvoiceEffects(invoice, PRICING, session) {
+  const key = entitlementKey(invoice);
+  const freshEnd = new Date(
+    Date.now() + entitlementDurationDays(invoice, PRICING) * ONE_DAY_MS
+  );
+
+  let end = freshEnd;
+  try {
+    const existing = await Entitlement.findOne({
+      userId: invoice.userId,
+      ...key,
+    })
+      .select("expiresAt")
+      .lean();
+    if (
+      existing?.expiresAt &&
+      new Date(existing.expiresAt).getTime() > end.getTime()
+    ) {
+      end = existing.expiresAt;
+    }
+  } catch {
+    // ignore lookup failure, fall back to fresh end
+  }
+
+  const opts = session ? { upsert: true, session } : { upsert: true };
+  const profileOpts = session ? { session } : {};
+
+  const entitlementSet = {
+    active: true,
+    grantedAt: new Date(),
+    expiresAt: end,
+    sourceInvoice: invoice._id,
+  };
+
+  if (invoice.product === "contacts_access") {
+    await Entitlement.updateOne(
+      { userId: invoice.userId, type: "contacts_access", playerProfileId: null },
+      entitlementSet,
+      opts
+    );
+    await User.updateOne(
+      { _id: invoice.userId },
+      { $set: { isActive: true, activeExpireAt: end } },
+      profileOpts
+    );
+  } else if (invoice.product === "listing") {
+    if (invoice.playerProfileId) {
+      await PlayerProfile.updateOne(
+        { _id: invoice.playerProfileId, user: invoice.userId },
+        {
+          $set: {
+            isListed: true,
+            isActive: true,
+            listingExpiresAt: end,
+            activeExpireAt: end,
+          },
+        },
+        profileOpts
+      );
+    }
+    await Entitlement.updateOne(
+      { userId: invoice.userId, ...key },
+      entitlementSet,
+      opts
+    );
+  } else if (invoice.product === "promotion") {
+    if (invoice.playerProfileId) {
+      await PlayerProfile.updateOne(
+        { _id: invoice.playerProfileId, user: invoice.userId },
+        {
+          $set: {
+            "isPromoted.status": true,
+            "isPromoted.type": invoice.featureType || "toplist",
+            "isPromoted.startDate": new Date(),
+            "isPromoted.endDate": end,
+          },
+        },
+        profileOpts
+      );
+    }
+    await Entitlement.updateOne(
+      { userId: invoice.userId, ...key },
+      entitlementSet,
+      opts
+    );
+  } else if (
+    ["add_offer", "promote_offer", "unlock_contact"].includes(
+      invoice.product
+    ) &&
+    invoice.relatedOffer
+  ) {    let offerQuery = Offer.findById(invoice.relatedOffer);
+    if (session) offerQuery = offerQuery.session(session);
+    const offer = await offerQuery;
+    if (offer) {
+      if (invoice.product === "add_offer") {
+        offer.payment.isPaid = true;
+        offer.payment.paymentId = String(invoice._id);
+        offer.payment.paidAmount = invoice.amount;
+        offer.payment.paidAt = new Date();
+        offer.payment.paymentMethod = "paylink";
+        offer.status = OFFER_STATUS.ACTIVE;
+        await offer.save({ session });
+      } else if (invoice.product === "promote_offer") {
+        const days = Number(invoice.durationDays || 15);
+        const type = invoice.featureType || "featured";
+        offer.promotion = {
+          isPromoted: true,
+          promotionType: type,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + days * ONE_DAY_MS),
+          position: type === "premium" ? 1 : type === "featured" ? 2 : 3,
+        };
+        offer.pricing.promotionCost.total =
+          invoice.amount || offer.pricing.promotionCost.total;
+        await offer.save({ session });
+      } else if (invoice.product === "unlock_contact") {
+        const already = offer.unlockedBy.some(
+          (u) => u.user && String(u.user) === String(invoice.userId)
+        );
+        if (!already) {
+          offer.unlockedBy.push({
+            user: invoice.userId,
+            unlockedAt: new Date(),
+            paymentId: String(invoice._id),
+          });
+          offer.statistics.contactUnlocks += 1;
+          await offer.save({ session });
+        }
+      }
+    }
+  } else if (invoice.product === "transfer_offer" && invoice.relatedTransferOffer) {
+    let offerQuery = TransferOffer.findById(invoice.relatedTransferOffer);
+    if (session) offerQuery = offerQuery.session(session);
+    const transfer = await offerQuery;
+    if (transfer) {
+      transfer.payment.isPaid = true;
+      transfer.payment.paidAt = new Date();
+      transfer.payment.paidAmount = invoice.amount;
+      transfer.payment.invoiceId = invoice._id;
+      await transfer.save({ session });
+    }
+  }
+
+  return end;
+}
+
+export async function applyPaidEffects(invoice, verify, session) {
   const PRICING = await getPricingSettings();
+  const saveOpts = session ? { session } : {};
 
   const transactionNo =
     String(verify?.transactionNo || "") ||
@@ -29,125 +209,10 @@ async function applyPaidEffects(invoice, verify, session) {
     if (verify?.paymentReceipt?.url) {
       invoice.paymentReceiptUrl = verify.paymentReceipt.url;
     }
-
-    if (invoice.product === "contacts_access") {
-      const durDays = Number(
-        invoice.durationDays ||
-          PRICING.contacts_access_days ||
-          PRICING.ONE_YEAR_DAYS ||
-          365
-      );
-      invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-    } else if (invoice.product === "listing") {
-      const durDays = Number(
-        invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365
-      );
-      invoice.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-    }
-
-    await invoice.save({ session });
+    await invoice.save(saveOpts);
   }
 
-  if (invoice.product === "contacts_access") {
-    const durDays = Number(
-      invoice.durationDays ||
-        PRICING.contacts_access_days ||
-        PRICING.ONE_YEAR_DAYS ||
-        365
-    );
-    const end = new Date(Date.now() + durDays * ONE_DAY_MS);
-    await Entitlement.updateOne(
-      {
-        userId: invoice.userId,
-        type: "contacts_access",
-        playerProfileId: null,
-      },
-      {
-        $set: {
-          active: true,
-          grantedAt: new Date(),
-          expiresAt: end,
-          sourceInvoice: invoice._id,
-        },
-      },
-      { upsert: true, session }
-    );
-    await User.updateOne(
-      { _id: invoice.userId },
-      { $set: { isActive: true, activeExpireAt: end } },
-      { session }
-    );
-  } else if (invoice.product === "listing") {
-    const durDays = Number(
-      invoice.durationDays || PRICING.ONE_YEAR_DAYS || 365
-    );
-    const end = new Date(Date.now() + durDays * ONE_DAY_MS);
-    if (invoice.playerProfileId) {
-      await PlayerProfile.updateOne(
-        { _id: invoice.playerProfileId, user: invoice.userId },
-        {
-          $set: {
-            isListed: true,
-            isActive: true,
-            listingExpiresAt: end,
-            activeExpireAt: end,
-          },
-        },
-        { session }
-      );
-    }
-    await Entitlement.updateOne(
-      {
-        userId: invoice.userId,
-        type: `listed_${invoice.targetType}`,
-        playerProfileId: invoice.playerProfileId,
-      },
-      {
-        $set: {
-          active: true,
-          grantedAt: new Date(),
-          expiresAt: end,
-          sourceInvoice: invoice._id,
-        },
-      },
-      { upsert: true, session }
-    );
-  } else if (invoice.product === "promotion") {
-    const promoDays = Number(
-      invoice.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
-    );
-    const end = new Date(Date.now() + promoDays * ONE_DAY_MS);
-    if (invoice.playerProfileId) {
-      await PlayerProfile.updateOne(
-        { _id: invoice.playerProfileId, user: invoice.userId },
-        {
-          $set: {
-            "isPromoted.status": true,
-            "isPromoted.type": invoice.featureType || "toplist",
-            "isPromoted.startDate": new Date(),
-            "isPromoted.endDate": end,
-          },
-        },
-        { session }
-      );
-    }
-    await Entitlement.updateOne(
-      {
-        userId: invoice.userId,
-        type: `promoted_${invoice.targetType}`,
-        playerProfileId: invoice.playerProfileId,
-      },
-      {
-        $set: {
-          active: true,
-          grantedAt: new Date(),
-          expiresAt: end,
-          sourceInvoice: invoice._id,
-        },
-      },
-      { upsert: true, session }
-    );
-  }
+  await grantPaidInvoiceEffects(invoice, PRICING, session);
 }
 
 export const reconcileMyInvoices = async (req, res) => {
@@ -172,47 +237,41 @@ export const reconcileMyInvoices = async (req, res) => {
       const providerStatus = String(verify?.orderStatus || "").toLowerCase();
       const isPaid = providerStatus === "paid";
 
-      const session = await mongoose.startSession();
-      try {
-        await session.withTransaction(async () => {
-          const inv = await Invoice.findById(p._id).session(session);
-          if (!inv) return;
+      await runInTransaction(async (session) => {
+        const inv = await Invoice.findById(p._id).session(session);
+        if (!inv) return;
 
-          inv.lastProviderStatus = providerStatus;
-          inv.lastVerifiedAt = new Date();
+        inv.lastProviderStatus = providerStatus;
+        inv.lastVerifiedAt = new Date();
 
-          if (isPaid) {
-            if (inv.status !== "paid") {
-              await inv.save({ session });
-              await applyPaidEffects(inv, verify, session);
-              updated += 1;
-              return;
-            }
-            await inv.save({ session });
+        if (isPaid) {
+          if (inv.status !== "paid") {
+            await applyPaidEffects(inv, verify, session);
+            updated += 1;
             return;
           }
-
-          if (inv.status === "paid") {
-            const hasPaidEvent = await PaymentEvent.exists({
-              orderNumber: inv.orderNumber,
-              type: "invoice.paid",
-            }).session(session);
-
-            if (!hasPaidEvent && !inv.providerTransactionNo) {
-              inv.status = "pending";
-              inv.paidAt = null;
-              inv.paymentReceiptUrl = null;
-              await inv.save({ session });
-              updated += 1;
-              return;
-            }
-          }
-
           await inv.save({ session });
-        });
-      } finally {
-        session.endSession();
-      }
+          return;
+        }
+
+        if (inv.status === "paid") {
+          const hasPaidEvent = await PaymentEvent.exists({
+            orderNumber: inv.orderNumber,
+            type: "invoice.paid",
+          }).session(session);
+
+          if (!hasPaidEvent && !inv.providerTransactionNo) {
+            inv.status = "pending";
+            inv.paidAt = null;
+            inv.paymentReceiptUrl = null;
+            await inv.save({ session });
+            updated += 1;
+            return;
+          }
+        }
+
+        await inv.save({ session });
+      });
     } catch (e) {
       try {
         await Invoice.updateOne(
@@ -241,10 +300,7 @@ export const reconcileMyInvoices = async (req, res) => {
     {
       $or: [{ userId }, { user: userId }],
       status: "paid",
-      $or: [
-        { providerInvoiceId: null },
-        { providerInvoiceId: { $exists: false } },
-      ],
+      providerInvoiceId: null,
     },
     { $set: { status: "pending", paidAt: null, paymentReceiptUrl: null } }
   );
@@ -429,6 +485,7 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
     }
 
     const user = req.user;
+    const PRICING = await getPricingSettings();
     const title = (() => {
       if (inv.product === "contacts_access") return "Contacts access (1 year)";
       if (inv.product === "listing")
@@ -497,8 +554,15 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
   }
 };
 
+function safeEqual(a, b) {
+  const hash = (v) => crypto.createHash("sha256").update(String(v)).digest();
+  return crypto.timingSafeEqual(hash(a), hash(b));
+}
+
 export const paymentWebhook = async (req, res) => {
-  if (req.headers.authorization !== process.env.PAYLINK_WEBHOOK_AUTH) {
+  const expectedAuth = process.env.PAYLINK_WEBHOOK_AUTH;
+  const suppliedAuth = req.headers.authorization || "";
+  if (!expectedAuth || !safeEqual(suppliedAuth, expectedAuth)) {
     return res.status(401).send("unauthorized");
   }
 
@@ -518,6 +582,13 @@ export const paymentWebhook = async (req, res) => {
     return res.status(200).json({ ok: false, verify: "failed" });
   }
 
+  const verifyOrder = String(
+    verify?.orderNumber || verify?.merchantOrderNumber || ""
+  );
+  if (verifyOrder && orderNumber && verifyOrder !== orderNumber) {
+    return res.status(200).json({ ok: false, mismatch: "orderNumber" });
+  }
+
   const isPaid = String(verify.orderStatus || "").toLowerCase() === "paid";
 
   try {
@@ -532,148 +603,56 @@ export const paymentWebhook = async (req, res) => {
     return res.status(200).json({ ok: true, duplicate: true });
   }
 
-  const session = await mongoose.startSession();
   try {
-    await session.withTransaction(async () => {
+    await runInTransaction(async (session) => {
       const inv = await Invoice.findOne({ orderNumber }).session(session);
       if (!inv) return;
 
-      if (!isPaid) {
-        mapPaymentErrors(inv, verify);
-        await inv.save({ session });
+      if (verifyOrder && inv.orderNumber && verifyOrder !== inv.orderNumber) {
         return;
       }
 
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+      if (isPaid && verify?.amount) {
+        const paidAmount = Number(verify.amount);
+        const expectedAmount = Number(inv.amount);
+        if (
+          !Number.isNaN(paidAmount) &&
+          !Number.isNaN(expectedAmount) &&
+          Math.abs(paidAmount - expectedAmount) > 0.01
+        ) {
+          mapPaymentErrors(inv, {
+            paymentErrors: [
+              { code: "AMOUNT_MISMATCH", title: "Amount mismatch", message: `expected ${expectedAmount}, got ${paidAmount}`, at: new Date() },
+            ],
+          });
+          inv.lastProviderStatus = String(verify.orderStatus || "");
+          await inv.save({ session });
+          return;
+        }
+      }
+
+      if (!isPaid) {
+        mapPaymentErrors(inv, verify);
+        inv.lastProviderStatus = String(verify.orderStatus || "");
+        await inv.save({ session });
+        return;
+      }
 
       if (inv.status !== "paid") {
         inv.status = "paid";
         inv.paidAt = new Date();
         inv.providerTransactionNo = transactionNo;
+        inv.lastProviderStatus = "paid";
+        inv.lastVerifiedAt = new Date();
         if (verify?.paymentReceipt?.url)
           inv.paymentReceiptUrl = verify.paymentReceipt.url;
-
-        if (inv.product === "contacts_access") {
-          const durDays = Number(
-            inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-          );
-          inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-        } else if (inv.product === "listing") {
-          const durDays = Number(
-            inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-          );
-          inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-        }
-
         await inv.save({ session });
       }
 
-      if (inv.product === "contacts_access") {
-        const durDays = Number(
-          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-        );
-        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
-        await Entitlement.updateOne(
-          {
-            userId: inv.userId,
-            type: "contacts_access",
-            playerProfileId: null,
-          },
-          {
-            $set: {
-              active: true,
-              grantedAt: new Date(),
-              expiresAt: end,
-              sourceInvoice: inv._id,
-            },
-          },
-          { upsert: true, session }
-        );
-        await User.updateOne(
-          { _id: inv.userId },
-          { $set: { isActive: true, activeExpireAt: end } },
-          { session }
-        );
-      }
-
-      if (inv.product === "listing") {
-        const durDays = Number(
-          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-        );
-        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
-        if (inv.playerProfileId) {
-          await PlayerProfile.updateOne(
-            { _id: inv.playerProfileId, user: inv.userId },
-            {
-              $set: {
-                isListed: true,
-                isActive: true,
-                listingExpiresAt: end,
-                activeExpireAt: end,
-              },
-            },
-            { session }
-          );
-        }
-        await Entitlement.updateOne(
-          {
-            userId: inv.userId,
-            type: `listed_${inv.targetType}`,
-            playerProfileId: inv.playerProfileId,
-          },
-          {
-            $set: {
-              active: true,
-              grantedAt: new Date(),
-              expiresAt: end,
-              sourceInvoice: inv._id,
-            },
-          },
-          { upsert: true, session }
-        );
-      }
-
-      if (inv.product === "promotion") {
-        const promoDays = Number(
-          inv.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
-        );
-        const end = new Date(Date.now() + promoDays * 24 * 60 * 60 * 1000);
-        if (inv.playerProfileId) {
-          await PlayerProfile.updateOne(
-            { _id: inv.playerProfileId, user: inv.userId },
-            {
-              $set: {
-                "isPromoted.status": true,
-                "isPromoted.type": inv.featureType || "toplist",
-                "isPromoted.startDate": new Date(),
-                "isPromoted.endDate": end,
-              },
-            },
-            { session }
-          );
-        }
-        await Entitlement.updateOne(
-          {
-            userId: inv.userId,
-            type: `promoted_${inv.targetType}`,
-            playerProfileId: inv.playerProfileId,
-          },
-          {
-            $set: {
-              active: true,
-              grantedAt: new Date(),
-              expiresAt: end,
-              sourceInvoice: inv._id,
-            },
-          },
-          { upsert: true, session }
-        );
-      }
+      await grantPaidInvoiceEffects(inv, PRICING, session);
     });
   } catch (err) {
     console.error("webhook txn error", err);
-  } finally {
-    session.endSession();
   }
 
   return res.status(200).json({ ok: true, verified: isPaid });
@@ -681,7 +660,13 @@ export const paymentWebhook = async (req, res) => {
 
 export const getPaymentStatus = async (req, res) => {
   const { id } = req.params;
-  const inv = await Invoice.findById(id);
+  const isStaff = STAFF_ROLES.includes(req.user?.role);
+  const inv = isStaff
+    ? await Invoice.findById(id)
+    : await Invoice.findOne({
+        _id: id,
+        $or: [{ userId: req.user?._id }, { user: req.user?._id }],
+      });
   if (!inv)
     return res.status(404).json({ success: false, message: "not_found" });
   return res.status(200).json({
@@ -853,6 +838,27 @@ export const listAllInvoices = async (req, res) => {
   });
 };
 
+async function verifyWithPaylinkAndApply(inv) {
+  const transactionNo = inv.providerInvoiceId || inv.providerTransactionNo;
+  if (!transactionNo) {
+    return { verified: false, paid: false, error: "no_provider_reference" };
+  }
+  try {
+    const verify = await paylinkGetInvoice(String(transactionNo));
+    const isPaid = String(verify.orderStatus || "").toLowerCase() === "paid";
+    if (isPaid && inv.status !== "paid") {
+      await applyPaidEffects(inv, verify);
+    }
+    return {
+      verified: true,
+      paid: isPaid,
+      status: String(verify.orderStatus || ""),
+    };
+  } catch (err) {
+    return { verified: false, paid: false, error: String(err?.message || err) };
+  }
+}
+
 export const recheckByOrderNumber = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -893,136 +899,34 @@ export const recheckByOrderNumber = async (req, res) => {
 
 export const simulateSuccess = async (req, res) => {
   try {
+    // إغلاق حاسم: يجب تفعيل المحاكاة صراحةً في بيئة غير الإنتاج فقط
+    const simulationEnabled =
+      process.env.NODE_ENV !== "production" &&
+      process.env.PAYMENT_SIMULATION_ENABLED === "true";
+    if (!simulationEnabled) {
+      return res.status(404).json({ success: false, message: "not_found" });
+    }
+
     const { id } = req.params;
+
     const inv = await Invoice.findById(id);
     if (!inv)
       return res
         .status(404)
         .json({ success: false, message: "invoice_not_found" });
 
-    const PRICING = await getPricingSettings();
+    const isOwner = String(inv.userId || "") === String(req.user?._id || "");
+    const isStaff = STAFF_ROLES.includes(req.user?.role);
 
-    if (inv.status !== "paid") {
-      inv.status = "paid";
-      inv.paidAt = new Date();
-      inv.providerTransactionNo =
-        inv.providerTransactionNo || `SIM-${Date.now()}`;
-
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-      if (inv.product === "contacts_access") {
-        const durDays = Number(
-          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-        );
-        inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-      } else if (inv.product === "listing") {
-        const durDays = Number(
-          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-        );
-        inv.expiresAt = new Date(Date.now() + durDays * ONE_DAY_MS);
-      }
-
-      await inv.save();
-
-      if (inv.product === "contacts_access") {
-        const durDays = Number(
-          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-        );
-        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
-        await Entitlement.updateOne(
-          {
-            userId: inv.userId,
-            type: "contacts_access",
-            playerProfileId: null,
-          },
-          {
-            $set: {
-              active: true,
-              grantedAt: new Date(),
-              expiresAt: end,
-              sourceInvoice: inv._id,
-            },
-          },
-          { upsert: true }
-        );
-        await User.updateOne(
-          { _id: inv.userId },
-          { $set: { isActive: true, activeExpireAt: end } }
-        );
-      }
-
-      if (inv.product === "listing") {
-        const durDays = Number(
-          inv.durationDays || PRICING.ONE_YEAR_DAYS || 365
-        );
-        const end = new Date(Date.now() + durDays * ONE_DAY_MS);
-        if (inv.playerProfileId) {
-          await PlayerProfile.updateOne(
-            { _id: inv.playerProfileId, user: inv.userId },
-            {
-              $set: {
-                isListed: true,
-                isActive: true,
-                listingExpiresAt: end,
-                activeExpireAt: end,
-              },
-            }
-          );
-        }
-        await Entitlement.updateOne(
-          {
-            userId: inv.userId,
-            type: `listed_${inv.targetType}`,
-            playerProfileId: inv.playerProfileId,
-          },
-          {
-            $set: {
-              active: true,
-              grantedAt: new Date(),
-              expiresAt: end,
-              sourceInvoice: inv._id,
-            },
-          },
-          { upsert: true }
-        );
-      }
-
-      if (inv.product === "promotion") {
-        const promoDays = Number(
-          inv.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
-        );
-        const end = new Date(Date.now() + promoDays * 24 * 60 * 60 * 1000);
-        if (inv.playerProfileId) {
-          await PlayerProfile.updateOne(
-            { _id: inv.playerProfileId, user: inv.userId },
-            {
-              $set: {
-                "isPromoted.status": true,
-                "isPromoted.type": inv.featureType || "toplist",
-                "isPromoted.startDate": new Date(),
-                "isPromoted.endDate": end,
-              },
-            }
-          );
-        }
-        await Entitlement.updateOne(
-          {
-            userId: inv.userId,
-            type: `promoted_${inv.targetType}`,
-            playerProfileId: inv.playerProfileId,
-          },
-          {
-            $set: {
-              active: true,
-              grantedAt: new Date(),
-              expiresAt: end,
-              sourceInvoice: inv._id,
-            },
-          },
-          { upsert: true }
-        );
-      }
+    if (!isOwner && !isStaff) {
+      return res
+        .status(403)
+        .json({ success: false, message: "forbidden" });
     }
+
+    const simTx = inv.providerTransactionNo || `SIM-${Date.now()}`;
+    await applyPaidEffects(inv, { transactionNo: simTx });
+
     return res.status(200).json({
       success: true,
       data: { id: String(inv._id), status: inv.status },
@@ -1032,5 +936,3 @@ export const simulateSuccess = async (req, res) => {
     return res.status(500).json({ success: false, message: "simulate_failed" });
   }
 };
-
-export { applyPaidEffects };

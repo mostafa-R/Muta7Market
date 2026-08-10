@@ -79,14 +79,12 @@ const logger = winston.createLogger({
   ],
 });
 
-// Console transport for non-production
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: devFormat,
-    })
-  );
-}
+// Console transport for all environments (JSON in production, colored in dev)
+logger.add(
+  new winston.transports.Console({
+    format: process.env.NODE_ENV === "production" ? prodFormat : devFormat,
+  })
+);
 
 // Add custom logging methods for structured logging
 logger.logRequest = (req, res, duration) => {

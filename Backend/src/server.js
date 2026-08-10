@@ -29,10 +29,13 @@ import { initializeEmailService } from "./services/email.service.js";
 import { isOriginAllowed } from "./config/allowedOrigins.js";
 import memoryOptimizer from "./utils/memoryOptimizer.js";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+
+
 
 if (process.env.NODE_ENV === "production") {
   memoryOptimizer.initialize();

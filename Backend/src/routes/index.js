@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { initializeEmailService } from "../services/email.service.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
+import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 import aboutsRouter from "./about.routes.js";
 import adSettingsRoutes from "./ad-settings.routes.js";
 import adminRoutes from "./admin.routes.js";
@@ -9,15 +10,19 @@ import analyticsRoutes from "./analytics.routes.js";
 import authRoutes from "./auth.routes.js";
 import coachRoutes from "./coach.routes.js";
 import entitlementRoutes from "./entitlement.routes.js";
+import kycRoutes from "./kyc.routes.js";
 import localizationRoutes from "./localization.routes.js";
+import negotiationRoutes from "./negotiation.routes.js";
 import notificationRoutes from "./notification.routes.js";
 import offerRoutes from "./offer.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import playerRoutes from "./player.routes.js";
 import promotionalOfferRoutes from "./promotional-offer.routes.js";
 import settingsRoutes from "./settings.routes.js";
+import shortlistRoutes from "./shortlist.routes.js";
 import sportRoutes from "./sport.routes.js";
 import termsRouter from "./term.routes.js";
+import transferOfferRoutes from "./transferOffer.routes.js";
 import uploadRoutes from "./upload.routes.js";
 import userRoutes from "./user.routes.js";
 
@@ -32,6 +37,10 @@ router.use("/offers", offerRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/entitlements", entitlementRoutes);
+router.use("/kyc", kycRoutes);
+router.use("/shortlists", shortlistRoutes);
+router.use("/negotiations", negotiationRoutes);
+router.use("/transfer-offers", transferOfferRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/terms", termsRouter);
 router.use("/about", aboutsRouter);
@@ -60,10 +69,15 @@ router.get("/config/pricing", async (req, res) => {
   }
 });
 
-router.get("/test-email", async (req, res) => {
-  const result = await initializeEmailService.testEmailConnection();
-  res.status(result.success ? 200 : 500).json(result);
-});
+router.get(
+  "/test-email",
+  authMiddleware,
+  authorize("admin", "super_admin"),
+  async (req, res) => {
+    const result = await initializeEmailService.testEmailConnection();
+    res.status(result.success ? 200 : 500).json(result);
+  }
+);
 
 router.get("/test", (req, res) => {
   res.json({ message: "API is working!" });

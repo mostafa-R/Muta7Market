@@ -3,12 +3,16 @@ import User from "../models/user.model.js";
 import { PROFILE_STATUS, PAGINATION } from "../config/constants.js";
 import mongoose from "mongoose";
 
+const STAFF_ROLES = ["admin", "super_admin"];
+
+const isStaff = (role) => STAFF_ROLES.includes(role);
+
 export const createCoach = async (req, res) => {
   try {
-    const { id } = req.user;
+    const userId = req.user._id || req.user.id;
     const coachData = req.body;
 
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -16,7 +20,7 @@ export const createCoach = async (req, res) => {
       });
     }
 
-    const existingCoach = await Coach.findOne({ user: id });
+    const existingCoach = await Coach.findOne({ user: userId });
     if (existingCoach) {
       return res.status(400).json({
         success: false,
@@ -24,10 +28,10 @@ export const createCoach = async (req, res) => {
       });
     }
 
-    const coach = new Coach(coachData);
+    const coach = new Coach({ ...coachData, user: userId });
     await coach.save();
 
-    await coach.populate("user", "email username");
+    await coach.populate("user", "email name");
 
     res.status(201).json({
       success: true,
@@ -58,6 +62,8 @@ export const getAllCoaches = async (req, res) => {
       sortBy = "createdAt",
       sortOrder = "desc",
       isPromoted,
+      contractStatus,
+      experience,
     } = req.query;
 
     const filter = { isActive: true };
@@ -73,6 +79,12 @@ export const getAllCoaches = async (req, res) => {
     }
     if (gender) {
       filter.gender = gender;
+    }
+    if (contractStatus) {
+      filter.contractStatus = contractStatus;
+    }
+    if (experience) {
+      filter["experience.years"] = { $gte: parseInt(experience) };
     }
     if (minAge || maxAge) {
       filter.age = {};
@@ -137,7 +149,7 @@ export const getAllCoaches = async (req, res) => {
 
 export const getCoachById = async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -146,7 +158,7 @@ export const getCoachById = async (req, res) => {
       });
     }
 
-    const coach = await Coach.findById(id).populate("user", "email username");
+    const coach = await Coach.findById(id).populate("user", "email name");
 
     if (!coach) {
       return res.status(404).json({
@@ -174,7 +186,6 @@ export const getCoachById = async (req, res) => {
 export const updateCoach = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -183,17 +194,52 @@ export const updateCoach = async (req, res) => {
       });
     }
 
-    const coach = await Coach.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    }).populate("user", "email username");
-
-    if (!coach) {
+    const current = await Coach.findById(id);
+    if (!current) {
       return res.status(404).json({
         success: false,
         message: "Coach not found",
       });
     }
+
+    const ownerId = current.user || null;
+    const isOwner =
+      ownerId &&
+      String(ownerId) === String(req.user._id || req.user.id);
+    if (!isOwner && !isStaff(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to update this coach",
+      });
+    }
+
+    const allowed = [
+      "name",
+      "age",
+      "gender",
+      "nationality",
+      "category",
+      "experience",
+      "licenses",
+      "monthlySalary",
+      "annualContract",
+      "contractEndDate",
+      "media",
+      "socialLinks",
+      "achievements",
+      "contactInfo",
+      "seo",
+    ];
+
+    const updateData = {};
+    for (const key of allowed) {
+      if (key in req.body) updateData[key] = req.body[key];
+    }
+
+    const coach = await Coach.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate("user", "email name");
 
     res.status(200).json({
       success: true,
@@ -220,14 +266,25 @@ export const deleteCoach = async (req, res) => {
       });
     }
 
-    const coach = await Coach.findByIdAndDelete(id);
-
-    if (!coach) {
+    const current = await Coach.findById(id);
+    if (!current) {
       return res.status(404).json({
         success: false,
         message: "Coach not found",
       });
     }
+
+    const ownerId = current.user || null;
+    const isOwner =
+      ownerId && String(ownerId) === String(req.user._id || req.user.id);
+    if (!isOwner && !isStaff(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to delete this coach",
+      });
+    }
+
+    await Coach.findByIdAndDelete(id);
 
     res.status(200).json({
       success: true,
@@ -244,7 +301,7 @@ export const deleteCoach = async (req, res) => {
 
 export const promoteCoach = async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id } = req.params;
     const { days, type = "featured" } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -266,6 +323,16 @@ export const promoteCoach = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Coach not found",
+      });
+    }
+
+    const ownerId = coach.user || null;
+    const isOwner =
+      ownerId && String(ownerId) === String(req.user._id || req.user.id);
+    if (!isOwner && !isStaff(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to promote this coach",
       });
     }
 
@@ -309,6 +376,16 @@ export const transferCoach = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Coach not found",
+      });
+    }
+
+    const ownerId = coach.user || null;
+    const isOwner =
+      ownerId && String(ownerId) === String(req.user._id || req.user.id);
+    if (!isOwner && !isStaff(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to transfer this coach",
       });
     }
 

@@ -4,14 +4,23 @@ import {
   uploadMultiple,
   uploadSingle,
 } from "../config/localStorage.js";
+import {
+  authMiddleware,
+  authorize,
+} from "../middleware/auth.middleware.js";
+import { uploadLimiter } from "../middleware/rateLimiter.middleware.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const router = Router();
 
+router.use(authMiddleware);
+router.use(uploadLimiter);
+
 router.post(
   "/",
+  authorize("super_admin", "admin", "player", "coach", "club", "agent", "scout"),
   uploadSingle("file"),
   asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -52,6 +61,7 @@ router.post(
 
 router.post(
   "/multiple",
+  authorize("super_admin", "admin", "player", "coach", "club", "agent", "scout"),
   uploadMultiple("files", 10), 
   asyncHandler(async (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -89,23 +99,5 @@ router.post(
   })
 );
 
-
-router.get("/debug-url", (req, res) => {
-  try {
-    const testPath = "/test/path/file.jpg";
-    const generatedUrl = generatePublicUrl(req, testPath);
-
-    res.json({
-      protocol: req.protocol,
-      host: req.get("host"),
-      headers: req.headers,
-      generatedUrl,
-      env: process.env.NODE_ENV,
-      port: process.env.PORT,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 export default router;

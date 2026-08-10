@@ -39,7 +39,7 @@ const prepareRecipients = async (recipients, segment) => {
 };
 
 const applySegmentFilter = async (users, segment) => {
-  const { criteria } = segment;
+  const criteria = segment?.criteria || {};
 
   return users.filter((user) => {
     if (criteria.role && user.role !== criteria.role) {
