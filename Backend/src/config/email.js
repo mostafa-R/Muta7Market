@@ -16,7 +16,9 @@ export const transporter = isEmailEnabled
         pass: process.env.SMTP_PASS,
       },
       tls: {
-        rejectUnauthorized: false,
+        rejectUnauthorized:
+          String(process.env.SMTP_REJECT_UNAUTHORIZED || "true").toLowerCase() !==
+          "false",
       },
     })
   : nodemailer.createTransport({ jsonTransport: true });

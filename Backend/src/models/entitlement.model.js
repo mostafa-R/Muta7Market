@@ -9,7 +9,13 @@ const EntitlementSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["contacts_access", "player_listed"],
+      enum: [
+        "contacts_access",
+        "listed_player",
+        "listed_coach",
+        "promoted_player",
+        "promoted_coach",
+      ],
       required: true,
     },
     playerProfileId: {
@@ -19,6 +25,7 @@ const EntitlementSchema = new mongoose.Schema(
     },
     active: { type: Boolean, default: true },
     grantedAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, default: null },
     revokedAt: { type: Date, default: null },
     sourceInvoice: {
       type: mongoose.Schema.Types.ObjectId,

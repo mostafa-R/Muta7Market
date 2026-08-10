@@ -80,6 +80,22 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    preferences: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+
+    verifiedBadge: {
+      type: Boolean,
+      default: false,
+    },
+
+    kycStatus: {
+      type: String,
+      enum: ["not_submitted", "pending", "approved", "rejected"],
+      default: "not_submitted",
+    },
   },
   {
     timestamps: true,

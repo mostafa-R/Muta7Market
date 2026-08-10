@@ -11,7 +11,10 @@ import {
   verifyPhone,
 } from "../controllers/auth.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { authLimiter } from "../middleware/rateLimiter.middleware.js";
+import {
+  authLimiter,
+  verifyLimiter,
+} from "../middleware/rateLimiter.middleware.js";
 import validate from "../middleware/validation.middleware.js";
 import * as authValidation from "../validators/auth.validator.js";
 
@@ -39,6 +42,7 @@ router.post(
 );
 router.post(
   "/verify-email",
+  verifyLimiter,
   validate(authValidation.verifyEmailSchema),
   verifyEmail
 );
@@ -49,6 +53,7 @@ router.post("/logout", logout);
 
 router.post(
   "/verify-phone",
+  verifyLimiter,
   validate(authValidation.verifyPhoneSchema),
   verifyPhone
 );

@@ -1,12 +1,11 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import connectDB from "./src/config/db.js";
 import { createCronJobs } from "./src/cron/expiry.jobs.js";
+import { isOriginAllowed } from "./src/config/allowedOrigins.js";
 import app from "./src/server.js";
 import logger from "./src/utils/logger.js";
-
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,10 +15,22 @@ const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: isOriginAllowed,
     methods: ["GET", "POST"],
     credentials: true,
   },
+});
+
+io.use((socket, next) => {
+  try {
+    const origin = socket.handshake.headers.origin;
+    if (!isOriginAllowed(origin)) {
+      return next(new Error("Origin not allowed"));
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 io.on("connection", (socket) => {

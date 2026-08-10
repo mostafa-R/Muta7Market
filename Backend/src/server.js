@@ -16,6 +16,7 @@ import healthMonitoring, {
   healthMetricsMiddleware,
 } from "./middleware/healthMonitoring.middleware.js";
 import localizationMiddleware from "./middleware/localization.middleware.js";
+import { maintenanceMiddleware } from "./middleware/maintenance.middleware.js";
 import {
   errorMonitoring,
   metricsMiddleware,
@@ -25,6 +26,7 @@ import rateLimiter from "./middleware/rateLimiter.middleware.js";
 import routes from "./routes/index.js";
 import monitoringRoutes from "./routes/monitoring.routes.js";
 import { initializeEmailService } from "./services/email.service.js";
+import { isOriginAllowed } from "./config/allowedOrigins.js";
 import memoryOptimizer from "./utils/memoryOptimizer.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,19 +57,7 @@ app.use(
 
 const corsOptions = {
   origin(origin, callback) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:5001",
-      "http://localhost:5173",
-      "https://muta7markt.com",
-      "https://www.muta7markt.com",
-      "https://dash.muta7markt.com",
-      "https://muta7markt.com",
-      "http://muta7markt.com",
-      "https://dashboard.muta7markt.com",
-    ];
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -145,6 +135,8 @@ app.use(
 );
 
 app.use("/api/", rateLimiter);
+
+app.use("/api/v1", maintenanceMiddleware);
 
 app.use("/api/v1", routes);
 app.use("/api/v1/monitoring", monitoringRoutes);

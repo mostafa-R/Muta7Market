@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { isEmailEnabled, sendEmail } from "../config/email.js";
+import { PUBLIC_REGISTERABLE_ROLES } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
 import userModel from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
@@ -12,10 +13,14 @@ import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 
 export const register = asyncHandler(async (req, res) => {
-  const { name, phone, password, confirmPassword, email } = req.body;
+  const { name, phone, password, confirmPassword, email, role } = req.body;
 
   if (password !== confirmPassword) {
     throw new ApiError(400, "Passwords do not match.");
+  }
+
+  if (role && !PUBLIC_REGISTERABLE_ROLES.includes(role)) {
+    throw new ApiError(400, "Invalid role.");
   }
 
   const existEmail = await userModel.findOne({ email });
@@ -51,6 +56,7 @@ export const register = asyncHandler(async (req, res) => {
     emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
     phoneVerificationOTP: phoneVerificationHashedOTP,
     phoneVerificationExpires: Date.now() + 10 * 60 * 1000,
+    role: role || undefined,
   });
 
   await user.save();
@@ -146,6 +152,7 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   user.lastLogin = new Date();
+  user.cleanExpiredTokens();
 
   const accessToken = generateAccessToken(user);
 

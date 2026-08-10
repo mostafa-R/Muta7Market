@@ -1,7 +1,40 @@
 export const USER_ROLES = {
   SUPER_ADMIN: "super_admin",
   ADMIN: "admin",
+  PLAYER: "player",
+  COACH: "coach",
+  CLUB: "club",
+  AGENT: "agent",
+  SCOUT: "scout",
   USER: "user",
+};
+
+export const PUBLIC_REGISTERABLE_ROLES = [
+  USER_ROLES.PLAYER,
+  USER_ROLES.COACH,
+  USER_ROLES.CLUB,
+  USER_ROLES.AGENT,
+  USER_ROLES.SCOUT,
+];
+
+export const STAFF_ROLES = [USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN];
+
+export const CONTRACT_STATUS = {
+  FREE_AGENT: "free_agent",
+  CONTRACTED: "contracted",
+  LOANED: "loaned",
+};
+
+export const KYC_STATUS = {
+  NOT_SUBMITTED: "not_submitted",
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+};
+
+export const OFFER_TYPE = {
+  INTEREST: "interest",
+  OFFICIAL: "official",
 };
 
 export const PROFILE_STATUS = {

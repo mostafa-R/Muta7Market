@@ -16,8 +16,14 @@ export const createRateLimiter = (options) => {
 
 export const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 50,
+  max: 20,
   message: "Too many authentication attempts. Please try again later.",
+});
+
+export const verifyLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many verification attempts. Please try again later.",
 });
 
 export const generalLimiter = createRateLimiter({

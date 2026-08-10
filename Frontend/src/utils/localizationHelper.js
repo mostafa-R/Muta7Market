@@ -1,6 +1,81 @@
 import { useTranslation } from "react-i18next";
 import i18n from "./i18n";
 
+const TRANSLATION_CACHE_KEY = "muta7market_translation_cache";
+const TRANSLATION_CACHE_VERSION = "1";
+
+/**
+ * Read the cached translations from localStorage
+ * @returns {Object} - Map of language -> translations
+ */
+const readTranslationCache = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(TRANSLATION_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.version !== TRANSLATION_CACHE_VERSION) return {};
+    return parsed.data && typeof parsed.data === "object" ? parsed.data : {};
+  } catch {
+    return {};
+  }
+};
+
+/**
+ * Persist translations for a language into localStorage so they can be
+ * restored synchronously on the next visit (avoids key flash on first paint).
+ * @param {string} language - Language code
+ * @param {Object} data - Flat map of translation key -> value
+ */
+const writeTranslationCache = (language, data) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (!data || typeof data !== "object") return;
+    const cache = readTranslationCache();
+    cache[language] = data;
+    localStorage.setItem(
+      TRANSLATION_CACHE_KEY,
+      JSON.stringify({
+        version: TRANSLATION_CACHE_VERSION,
+        data: cache,
+      })
+    );
+  } catch {
+    // Ignore quota/storage errors - cache is best-effort
+  }
+};
+
+/**
+ * Synchronously add cached translations for a language into i18next.
+ * Call before the first render so t() returns real text instead of keys.
+ * @param {string} language - Language code
+ * @returns {boolean} - true if cached translations were loaded
+ */
+export const hydrateTranslationsSync = (language) => {
+  if (typeof window === "undefined") return false;
+  const data = readTranslationCache()[language];
+  if (!data || typeof data !== "object") return false;
+
+  Object.entries(data).forEach(([key, value]) => {
+    i18n.addResource(language, "common", key, value);
+    i18n.addResource(language, "dynamic", key, value);
+  });
+
+  return true;
+};
+
+/**
+ * Remove the cached translations from localStorage
+ */
+export const clearTranslationCache = () => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(TRANSLATION_CACHE_KEY);
+  } catch {
+    // Ignore
+  }
+};
+
 /**
  * Custom hook to get translations with dynamic loading from backend
  * @returns {Object} - Translation utilities
@@ -94,6 +169,9 @@ export const useLocalizedText = () => {
           i18nInstance.addResource(language, "dynamic", key, value);
         });
 
+        // Cache translations for instant restore on next visit
+        writeTranslationCache(language, result.data);
+
         return result.data;
       }
 
@@ -133,6 +211,12 @@ export const initDynamicTranslations = async (preferredLanguage = null) => {
 
     console.log("🌐 Initializing translations from backend API...");
 
+    // Restore any cached translations immediately so text is available
+    // before the network requests resolve.
+    if (preferredLanguage) {
+      hydrateTranslationsSync(preferredLanguage);
+    }
+
     // Set default language to Arabic
     if (!i18n.language || i18n.language === "cimode") {
       i18n.changeLanguage("ar");
@@ -164,6 +248,9 @@ export const initDynamicTranslations = async (preferredLanguage = null) => {
             // Add to the common namespace to replace the static JSON files
             i18n.addResource(lang, "common", key, value);
           });
+
+          // Cache translations for instant restore on next visit
+          writeTranslationCache(lang, result.data);
 
           // If this is the first language (preferred), ensure it's set as current
           if (lang === languages[0]) {
