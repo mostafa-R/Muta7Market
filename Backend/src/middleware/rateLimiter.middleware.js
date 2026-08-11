@@ -38,10 +38,4 @@ export const generalLimiter = createRateLimiter({
   message: "Too many requests from this IP. Please try again later.",
 });
 
-export const paymentLimiter = createRateLimiter({
-  windowMs: 5 * 60 * 1000,
-  max: 20,
-  message: "Too many payment attempts. Please try again in a few minutes.",
-});
-
 export default generalLimiter;

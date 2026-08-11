@@ -184,6 +184,5 @@ export const generatePublicUrl = (req, filePath) => {
 export const uploadSingle = (fieldName) => uploadLocal.single(fieldName);
 export const uploadMultiple = (fieldName, maxCount) =>
   uploadLocal.array(fieldName, maxCount);
-export const uploadFields = (fields) => uploadLocal.fields(fields);
 
 export default uploadLocal;

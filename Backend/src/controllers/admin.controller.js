@@ -9,10 +9,6 @@ import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 
-function escapeRegex(s = "") {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, search, role, isActive } = req.query;
 

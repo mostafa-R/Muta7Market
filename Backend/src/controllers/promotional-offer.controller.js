@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { OFFER_STATUS } from "../config/constants.js";
-import { deleteFromCloudinary } from "../middleware/localUpload.middleware.js";
+import { deleteLocalFile } from "../middleware/localUpload.middleware.js";
 import PromotionalOffer from "../models/promotional-offer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -251,7 +251,7 @@ export const updatePromotionalOfferImage = asyncHandler(async (req, res) => {
   }
 
   if (offer.media && offer.media.image && offer.media.image.publicId) {
-    await deleteFromCloudinary(offer.media.image.publicId);
+    await deleteLocalFile(offer.media.image.publicId);
   }
 
   const imageUploadResult = await handleMediaUpload(req.file, req, "image");
@@ -290,7 +290,7 @@ export const deletePromotionalOffer = asyncHandler(async (req, res) => {
   }
 
   if (offer.media && offer.media.image && offer.media.image.publicId) {
-    await deleteFromCloudinary(offer.media.image.publicId);
+    await deleteLocalFile(offer.media.image.publicId);
   }
 
   await PromotionalOffer.findByIdAndDelete(id);

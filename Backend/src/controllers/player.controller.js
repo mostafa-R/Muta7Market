@@ -7,6 +7,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
 import {
   deleteAllPlayerMedia,
+  deleteMediaFromLocal,
   handleMediaUpload,
   processPlayerMedia,
   replaceMediaItem,
@@ -86,7 +87,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
           userId: req.user._id,
           product: "listing",
           targetType,
-          profileId: player._id,
+          playerProfileId: player._id,
           status: "pending",
         },
         {
@@ -115,47 +116,6 @@ export const createPlayer = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(201, player, "Player profile created successfully")
       );
-
-    try {
-      const raw = String(req.body.jop || "").toLowerCase();
-      const targetType = raw === "coach" ? "coach" : "player";
-      const pricing = await getPricingSettings();
-
-      const amount =
-        targetType === "coach"
-          ? pricing.listing_price.coach || pricing.listing_year.coach
-          : pricing.listing_price.player || pricing.listing_year.player;
-
-      const orderNo = makeOrderNumber("listing", String(userId));
-
-      await Invoice.findOneAndUpdate(
-        {
-          userId,
-          product: "listing",
-          targetType,
-          playerProfileId: player._id,
-          status: "pending",
-        },
-        {
-          $setOnInsert: {
-            orderNumber: orderNo,
-            invoiceNumber: orderNo,
-            amount,
-            currency: "SAR",
-            durationDays:
-              targetType === "coach"
-                ? pricing.listing_days.coach || pricing.ONE_YEAR_DAYS
-                : pricing.listing_days.player || pricing.ONE_YEAR_DAYS,
-            featureType: null,
-            status: "pending",
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          },
-        },
-        { upsert: true }
-      );
-    } catch (e) {
-      console.error("[createPlayer] seed listing draft failed", e);
-    }
   } catch (error) {
     console.error("Error creating player profile:", error);
     throw new ApiError(
@@ -710,13 +670,13 @@ export const deletePlayerDocument = async (req, res) => {
 
     if (player.media?.document?.publicId) {
       try {
-        await deleteMediaFromCloudinary(player.media.document.publicId, "auto");
+        await deleteMediaFromLocal(player.media.document.publicId, "auto");
         console.log(
-          `🗑️ Deleted document from player ${playerId}: ${player.media.document.publicId}`
+          `ðŸ—‘ï¸ Deleted document from player ${playerId}: ${player.media.document.publicId}`
         );
       } catch (error) {
         console.warn(
-          "Failed to delete document from Cloudinary:",
+          "Failed to delete document from local storage:",
           error.message
         );
       }
@@ -773,12 +733,12 @@ export const deletePlayerVideo = async (req, res) => {
 
     if (player.media?.video?.publicId) {
       try {
-        await deleteMediaFromCloudinary(player.media.video.publicId, "video");
+        await deleteMediaFromLocal(player.media.video.publicId, "video");
         console.log(
-          `🗑️ Deleted video from player ${playerId}: ${player.media.video.publicId}`
+          `ðŸ—‘ï¸ Deleted video from player ${playerId}: ${player.media.video.publicId}`
         );
       } catch (error) {
-        console.warn("Failed to delete video from Cloudinary:", error.message);
+        console.warn("Failed to delete video from local storage:", error.message);
       }
 
       player.media.video = {
@@ -855,7 +815,7 @@ export const deletePlayerImages = async (req, res) => {
 
       for (const publicId of publicIds) {
         try {
-          await deleteMediaFromCloudinary(publicId, "image");
+          await deleteMediaFromLocal(publicId, "image");
           const result = deleteResults.find((r) => r.publicId === publicId);
           if (result) result.status = "deleted_successfully";
         } catch (error) {
@@ -871,7 +831,7 @@ export const deletePlayerImages = async (req, res) => {
       await player.save();
 
       console.log(
-        `🗑️ Deleted ${publicIds.length} images from player ${playerId}`
+        `ðŸ—‘ï¸ Deleted ${publicIds.length} images from player ${playerId}`
       );
 
       res.json({
@@ -917,7 +877,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
 
     if (player.media) {
       if (player.media.profileImage?.publicId) {
-        await deleteMediaFromCloudinary(
+        await deleteMediaFromLocal(
           player.media.profileImage.publicId,
           "image"
         ).catch((err) =>
@@ -928,7 +888,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       if (player.media.images && player.media.images.length > 0) {
         for (const image of player.media.images) {
           if (image.publicId) {
-            await deleteMediaFromCloudinary(image.publicId, "image").catch(
+            await deleteMediaFromLocal(image.publicId, "image").catch(
               (err) => console.warn("Failed to delete image:", err.message)
             );
           }
@@ -936,14 +896,14 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       }
 
       if (player.media.video && player.media.video.publicId) {
-        await deleteMediaFromCloudinary(
+        await deleteMediaFromLocal(
           player.media.video.publicId,
           "video"
         ).catch((err) => console.warn("Failed to delete video:", err.message));
       }
 
       if (player.media.document && player.media.document.publicId) {
-        await deleteMediaFromCloudinary(
+        await deleteMediaFromLocal(
           player.media.document.publicId,
           "auto"
         ).catch((err) =>
@@ -1070,7 +1030,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
 
   if (player.media[mediaType]?.publicId) {
     const resourceType = mediaType === "video" ? "video" : "auto";
-    await deleteMediaFromCloudinary(
+    await deleteMediaFromLocal(
       player.media[mediaType].publicId,
       resourceType
     ).catch((err) =>
@@ -1079,7 +1039,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   }
 
   const resourceType = mediaType === "video" ? "video" : "auto";
-  const mediaData = await handleMediaUpload(file, resourceType);
+  const mediaData = await handleMediaUpload(file, req, resourceType);
 
   const mediaItem = {
     url: mediaData.url,
@@ -1132,7 +1092,7 @@ export const deleteMedia = asyncHandler(async (req, res) => {
 
   const resourceType = mediaType === "video" ? "video" : "auto";
   if (player.media[mediaType].publicId) {
-    await deleteMediaFromCloudinary(
+    await deleteMediaFromLocal(
       player.media[mediaType].publicId,
       resourceType
     ).catch((err) =>

@@ -214,18 +214,6 @@ class HealthMonitoringService {
         };
       }
 
-      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-        services.cloudinary = {
-          status: "configured",
-          message: "Cloudinary is configured",
-        };
-      } else {
-        services.cloudinary = {
-          status: "not_configured",
-          message: "Cloudinary not configured",
-        };
-      }
-
       const allConfigured = Object.values(services).every(
         (s) => s.status === "configured"
       );

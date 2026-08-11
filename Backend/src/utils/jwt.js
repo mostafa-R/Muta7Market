@@ -14,7 +14,3 @@ export const generateAccessToken = (user) => {
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 };
-
-export const verifyAccessToken = (token) => {
-  return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-};

@@ -1,19 +1,11 @@
-import {
-  uploadFields,
-  uploadLocal,
-  uploadMultiple,
-  uploadSingle,
-} from "../config/localStorage.js";
+import { uploadLocal, uploadMultiple, uploadSingle } from "../config/localStorage.js";
+import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
 
-export { uploadFields, uploadMultiple, uploadSingle };
+export { uploadMultiple, uploadSingle };
 
 export const uploadMixed = uploadLocal;
 
-export const deleteFromCloudinary = async (
-  publicId,
-  resourceType = "image"
-) => {
-  const { deleteMediaFromLocal } = await import("../utils/localMediaUtils.js");
+export const deleteLocalFile = async (publicId, resourceType = "image") => {
   return await deleteMediaFromLocal(publicId, resourceType);
 };
 

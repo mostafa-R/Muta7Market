@@ -24,10 +24,6 @@ export const getTerms = async ({ page = 1, limit = 10 }) => {
   };
 };
 
-export const getTermById = async (id) => {
-  return Term.findById(id).lean();
-};
-
 export const updateTermById = async (id, payload) => {
   return Term.findByIdAndUpdate(id, payload, {
     new: true,

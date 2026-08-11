@@ -1,4 +1,4 @@
-import { deleteFromCloudinary } from "../middleware/localUpload.middleware.js";
+import { deleteLocalFile } from "../middleware/localUpload.middleware.js";
 import SiteSettings from "../models/site-settings.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -85,7 +85,7 @@ export const updateSiteLogo = asyncHandler(async (req, res) => {
   }
 
   if (settings.logo && settings.logo.publicId) {
-    await deleteFromCloudinary(settings.logo.publicId);
+    await deleteLocalFile(settings.logo.publicId);
   }
 
   const logoUploadResult = await handleMediaUpload(req.file, req, "image");
@@ -114,7 +114,7 @@ export const updateSiteFavicon = asyncHandler(async (req, res) => {
   }
 
   if (settings.favicon && settings.favicon.publicId) {
-    await deleteFromCloudinary(settings.favicon.publicId);
+    await deleteLocalFile(settings.favicon.publicId);
   }
 
   const faviconUploadResult = await handleMediaUpload(req.file, req, "image");

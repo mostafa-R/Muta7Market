@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { deleteFromCloudinary } from "../middleware/localUpload.middleware.js";
+import { deleteLocalFile } from "../middleware/localUpload.middleware.js";
 import Sport from "../models/sport.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -306,7 +306,7 @@ export const updateSport = asyncHandler(async (req, res) => {
 
   if (req.file) {
     if (sport.icon?.publicId) {
-      await deleteFromCloudinary(sport.icon.publicId);
+      await deleteLocalFile(sport.icon.publicId);
     }
 
     const iconUploadResult = await handleMediaUpload(req.file, req, "image");
@@ -337,7 +337,7 @@ export const updateSportIcon = asyncHandler(async (req, res) => {
 
   // delete old icon (if any)
   if (sport.icon?.publicId) {
-    await deleteFromCloudinary(sport.icon.publicId);
+    await deleteLocalFile(sport.icon.publicId);
   }
 
   const iconUploadResult = await handleMediaUpload(req.file, req, "image");
@@ -365,7 +365,7 @@ export const deleteSport = asyncHandler(async (req, res) => {
   if (!sport) throw new ApiError(404, "اللعبة الرياضية غير موجودة");
 
   if (sport.icon?.publicId) {
-    await deleteFromCloudinary(sport.icon.publicId);
+    await deleteLocalFile(sport.icon.publicId);
   }
 
   await Sport.findByIdAndDelete(id);
@@ -387,6 +387,20 @@ export const getActiveSports = asyncHandler(async (_req, res) => {
     );
 });
 
-export const getSportBySlug = asyncHandler(async (_req, _res) => {
-  throw new ApiError(410, "تم إزالة خاصية الـ slug من نموذج اللعبة.");
+export const getSportBySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+
+  if (!slug || !isNonEmptyString(slug)) {
+    throw new ApiError(400, "الـ slug مطلوب");
+  }
+
+  const sport = await Sport.findOne({ slug: slug.toLowerCase().trim() });
+
+  if (!sport) {
+    throw new ApiError(404, "اللعبة الرياضية غير موجودة");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, sport, "تم الحصول على اللعبة الرياضية بنجاح"));
 });

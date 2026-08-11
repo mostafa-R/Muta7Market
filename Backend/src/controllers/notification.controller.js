@@ -2,7 +2,7 @@ import OneSignal from "onesignal-node";
 import NotificationLog from "../models/notificationLog.model.js";
 import NotificationTemplate from "../models/notificationTemplate.model.js";
 import User from "../models/user.model.js";
-import { initializeEmailService } from "../services/email.service.js";
+import { sendNotificationEmail } from "../services/email.service.js";
 import smsService from "../services/sms.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -199,7 +199,7 @@ export const sendNotification = asyncHandler(async (req, res) => {
             const emailContent = template
               ? await renderTemplate(template, "email", { user, data })
               : { subject: title, body: message };
-            await initializeEmailService.sendNotificationEmail(
+            await sendNotificationEmail(
               user.email,
               emailContent.subject,
               emailContent.body,
@@ -630,7 +630,7 @@ export const sendInternalNotification = async (
               const emailContent = template
                 ? await renderTemplate(template, "email", { user, data })
                 : { subject: title, body: message };
-              await initializeEmailService.sendNotificationEmail(
+              await sendNotificationEmail(
                 user.email,
                 emailContent.subject,
                 emailContent.body,

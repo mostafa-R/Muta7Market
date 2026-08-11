@@ -137,46 +137,6 @@ async function sendEmail(options) {
   }
 }
 
-async function sendVerificationEmail(email, token) {
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
-  return sendEmail({
-    to: email,
-    subject: "Verify Your Email - Sports Platform",
-    template: "verification",
-    context: {
-      verificationUrl,
-      validHours: 24,
-    },
-  });
-}
-
-async function sendPasswordResetEmail(email, token) {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
-  return sendEmail({
-    to: email,
-    subject: "Reset Your Password - Sports Platform",
-    template: "password-reset",
-    context: {
-      resetUrl,
-      validMinutes: 30,
-    },
-  });
-}
-
-async function sendWelcomeEmail(user) {
-  return sendEmail({
-    to: user.email,
-    subject: "Welcome to Sports Platform",
-    template: "welcome",
-    context: {
-      userName: user.name,
-      loginUrl: `${process.env.FRONTEND_URL}/login`,
-    },
-  });
-}
-
 async function sendNotificationEmail(email, subject, body, data = {}) {
   return sendEmail({
     to: email,
@@ -191,118 +151,6 @@ async function sendNotificationEmail(email, subject, body, data = {}) {
   });
 }
 
-async function sendPaymentConfirmationEmail(user, payment, invoice) {
-  return sendEmail({
-    to: user.email,
-    subject: "Payment Confirmation - Sports Platform",
-    template: "payment-confirmation",
-    context: {
-      userName: user.name,
-      invoiceNumber: invoice.invoiceNumber,
-      amount: payment.amount,
-      currency: payment.currency,
-      paymentDate: payment.completedAt,
-      items: invoice.items,
-      subtotal: invoice.subtotal,
-      taxAmount: invoice.taxAmount,
-      totalAmount: invoice.totalAmount,
-      downloadUrl: `${process.env.API_URL}/api/v1/invoices/${invoice._id}/download`,
-    },
-  });
-}
-
-async function sendOfferNotificationEmail(user, offer, type = "new") {
-  const subjects = {
-    new: "Your Offer Has Been Published",
-    promoted: "Your Offer Has Been Promoted",
-    expired: "Your Offer Has Expired",
-    contactUnlocked: "Someone Unlocked Your Contact Information",
-  };
-
-  return sendEmail({
-    to: user.email,
-    subject: subjects[type] || "Offer Update",
-    template: "offer-notification",
-    context: {
-      userName: user.name,
-      offerTitle: offer.title.en,
-      offerStatus: type,
-      offerUrl: `${process.env.FRONTEND_URL}/offers/${offer._id}`,
-      expiryDate: offer.expiryDate,
-    },
-  });
-}
-
-async function sendNewsletter(recipients, subject, content, _segment) {
-  const results = {
-    sent: 0,
-    failed: 0,
-    errors: [],
-  };
-
-  const batchSize = 50;
-  for (let i = 0; i < recipients.length; i += batchSize) {
-    const batch = recipients.slice(i, i + batchSize);
-
-    const promises = batch.map((recipient) =>
-      sendEmail({
-        to: recipient.email,
-        subject,
-        template: "newsletter",
-        context: {
-          userName: recipient.name,
-          content,
-          unsubscribeUrl: `${process.env.FRONTEND_URL}/unsubscribe?token=${recipient.unsubscribeToken}`,
-          preferencesUrl: `${process.env.FRONTEND_URL}/preferences`,
-        },
-      })
-        .then(() => {
-          results.sent++;
-        })
-        .catch((error) => {
-          results.failed++;
-          results.errors.push({
-            email: recipient.email,
-            error: error.message,
-          });
-        })
-    );
-
-    await Promise.all(promises);
-
-    if (i + batchSize < recipients.length) {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
-  }
-
-  return results;
-}
-
-async function sendInvoiceEmail(user, invoice, attachmentPath) {
-  return sendEmail({
-    to: user.email,
-    subject: `Invoice ${invoice.invoiceNumber} - Sports Platform`,
-    template: "invoice",
-    context: {
-      userName: user.name,
-      invoiceNumber: invoice.invoiceNumber,
-      issueDate: invoice.issueDate,
-      dueDate: invoice.dueDate,
-      items: invoice.items,
-      subtotal: invoice.subtotal,
-      taxAmount: invoice.taxAmount,
-      totalAmount: invoice.totalAmount,
-      paymentUrl: `${process.env.FRONTEND_URL}/pay-invoice/${invoice._id}`,
-    },
-    attachments: [
-      {
-        filename: `invoice-${invoice.invoiceNumber}.pdf`,
-        path: attachmentPath,
-      },
-    ],
-  });
-}
-
 async function testEmailConnection() {
   try {
     await transporter.verify();
@@ -312,15 +160,4 @@ async function testEmailConnection() {
   }
 }
 
-export {
-  initializeEmailService,
-  sendInvoiceEmail,
-  sendNewsletter,
-  sendNotificationEmail,
-  sendOfferNotificationEmail,
-  sendPasswordResetEmail,
-  sendPaymentConfirmationEmail,
-  sendVerificationEmail,
-  sendWelcomeEmail,
-  testEmailConnection,
-};
+export { initializeEmailService, sendNotificationEmail, testEmailConnection };

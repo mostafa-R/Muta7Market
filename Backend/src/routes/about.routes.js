@@ -3,7 +3,6 @@ import express from "express";
 import {
   createAbout,
   getAbouts,
-  getAboutById,
   updateAboutById,
   patchAboutById,
   deleteAboutById,

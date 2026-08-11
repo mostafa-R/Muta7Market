@@ -24,10 +24,6 @@ export const getAbouts = async ({ page = 1, limit = 10 }) => {
   };
 };
 
-export const getAboutById = async (id) => {
-  return About.findById(id).lean();
-};
-
 export const updateAboutById = async (id, payload) => {
   return About.findByIdAndUpdate(id, payload, {
     new: true,

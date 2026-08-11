@@ -1,14 +1,27 @@
 import express from "express";
 import {
   createPlayer,
+  deleteMedia,
+  deletePlayer,
   deletePlayerDocument,
   deletePlayerImages,
   deletePlayerProfile,
   deletePlayerVideo,
   getAllPlayers,
+  getFeaturedPlayers,
   getMyProfile,
+  getPlayerAnalytics,
   getPlayerById,
+  getPlayersByPosition,
+  getPromotedPlayers,
+  getSimilarPlayers,
+  promotePlayer,
+  searchPlayers,
+  transferPlayer,
   updatePlayer,
+  updateStatistics,
+  uploadMedia,
+  uploadProfileImage,
 } from "../controllers/player.controller.js";
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
 import { uploadMixed } from "../middleware/localUpload.middleware.js";
@@ -23,6 +36,14 @@ const router = express.Router();
 
 router.get("/", getAllPlayers);
 
+router.get("/search", searchPlayers);
+
+router.get("/promoted", getPromotedPlayers);
+
+router.get("/featured", getFeaturedPlayers);
+
+router.get("/position/:position", getPlayersByPosition);
+
 router.get("/playerprofile", authMiddleware, verifiedOnly, getMyProfile);
 
 router.delete("/:id/images", authMiddleware, verifiedOnly, deletePlayerImages);
@@ -35,6 +56,8 @@ router.delete(
   verifiedOnly,
   deletePlayerDocument
 );
+
+router.get("/:id/similar", getSimilarPlayers);
 
 router.get("/:id", getPlayerById);
 
@@ -88,6 +111,30 @@ router.patch(
   updatePlayer
 );
 
+router.get("/:id/analytics", getPlayerAnalytics);
+
+router.post(
+  "/:id/profile-image",
+  uploadMixed.single("profileImage"),
+  uploadProfileImage
+);
+
+router.post(
+  "/:id/media/:mediaType",
+  uploadMixed.array("media", 1),
+  uploadMedia
+);
+
+router.delete("/:playerId/media/:mediaType", deleteMedia);
+
+router.post("/:id/promote", promotePlayer);
+
+router.post("/:id/transfer", transferPlayer);
+
+router.patch("/:id/statistics", updateStatistics);
+
 router.delete("/delete-player-profile", verifiedOnly, deletePlayerProfile);
+
+router.delete("/:id", deletePlayer);
 
 export default router;

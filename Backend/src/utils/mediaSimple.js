@@ -1,7 +1,6 @@
-import { cloudinary } from "../config/cloudinary.js";
+import { deleteMediaFromLocal } from "./localMediaUtils.js";
 
 /**
-
  * @param {String} publicId 
  * @param {String} resourceType 
  * @returns {Object} 
@@ -12,9 +11,7 @@ export const deleteFile = async (publicId, resourceType = "image") => {
   }
 
   try {
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType,
-    });
+    const result = await deleteMediaFromLocal(publicId, resourceType);
     return { success: true, message: `تم حذف ${resourceType} بنجاح` };
   } catch (error) {
     console.error(`خطأ في حذف ${resourceType}:`, error.message);

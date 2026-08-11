@@ -32,29 +32,3 @@ export const buildSortQuery = (sortBy) => {
 
   return sortFields;
 };
-
-export const buildFilterQuery = (filters) => {
-  const query = {};
-
-  Object.keys(filters).forEach((key) => {
-    if (filters[key] !== undefined && filters[key] !== "") {
-      // Handle different filter types
-      if (key.includes("_gte") || key.includes("_lte")) {
-        const field = key.replace(/_gte|_lte/, "");
-        query[field] = query[field] || {};
-        if (key.includes("_gte")) {
-          query[field].$gte = filters[key];
-        } else {
-          query[field].$lte = filters[key];
-        }
-      } else if (key.includes("_like")) {
-        const field = key.replace(/_like/, "");
-        query[field] = { $regex: filters[key], $options: "i" };
-      } else {
-        query[key] = filters[key];
-      }
-    }
-  });
-
-  return query;
-};

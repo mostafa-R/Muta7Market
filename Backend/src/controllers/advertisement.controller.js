@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { deleteFromCloudinary } from "../middleware/localUpload.middleware.js";
+import { deleteLocalFile } from "../middleware/localUpload.middleware.js";
 import Advertisement from "../models/advertisement.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -307,7 +307,7 @@ export const updateAdvertisementMedia = asyncHandler(async (req, res) => {
 
   if (req.files && req.files.desktop && req.files.desktop[0]) {
     if (advertisement.media.desktop && advertisement.media.desktop.publicId) {
-      await deleteFromCloudinary(advertisement.media.desktop.publicId);
+      await deleteLocalFile(advertisement.media.desktop.publicId);
     }
 
     const desktopImageUploadResult = await handleMediaUpload(
@@ -330,7 +330,7 @@ export const updateAdvertisementMedia = asyncHandler(async (req, res) => {
 
   if (req.files && req.files.mobile && req.files.mobile[0]) {
     if (advertisement.media.mobile && advertisement.media.mobile.publicId) {
-      await deleteFromCloudinary(advertisement.media.mobile.publicId);
+      await deleteLocalFile(advertisement.media.mobile.publicId);
     }
 
     const mobileImageUploadResult = await handleMediaUpload(
@@ -372,11 +372,11 @@ export const deleteAdvertisement = asyncHandler(async (req, res) => {
   }
 
   if (advertisement.media.desktop && advertisement.media.desktop.publicId) {
-    await deleteFromCloudinary(advertisement.media.desktop.publicId);
+    await deleteLocalFile(advertisement.media.desktop.publicId);
   }
 
   if (advertisement.media.mobile && advertisement.media.mobile.publicId) {
-    await deleteFromCloudinary(advertisement.media.mobile.publicId);
+    await deleteLocalFile(advertisement.media.mobile.publicId);
   }
 
   await Advertisement.findByIdAndDelete(id);
