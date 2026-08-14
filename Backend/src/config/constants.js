@@ -92,6 +92,21 @@ export const PRICING = {
     coach: Number(process.env.PRICE_PROMO_COACH_PER_DAY),
   },
 
+  promotion_premium_year: {
+    player: Number(process.env.PRICE_PROMO_PLAYER_PREMIUM_YEAR) || 150,
+    coach: Number(process.env.PRICE_PROMO_COACH_PREMIUM_YEAR) || 150,
+  },
+
+  promotion_premium_per_day: {
+    player: Number(process.env.PRICE_PROMO_PLAYER_PREMIUM_PER_DAY) || 10,
+    coach: Number(process.env.PRICE_PROMO_COACH_PREMIUM_PER_DAY) || 10,
+  },
+
+  promotion_premium_days: {
+    player: Number(process.env.PROMOTION_PREMIUM_DEFAULT_DAYS) || 15,
+    coach: Number(process.env.PROMOTION_PREMIUM_DEFAULT_DAYS) || 15,
+  },
+
   // Offer pricing
   ADD_OFFER: Number(process.env.PRICE_ADD_OFFER) || 50,
   PROMOTE_OFFER_PER_DAY: Number(process.env.PRICE_PROMOTE_OFFER_PER_DAY) || 10,

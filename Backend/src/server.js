@@ -72,10 +72,10 @@ const corsOptions = {
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
-app.use(mongoSanitize());
-
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+app.use(mongoSanitize());
 
 app.use(cookieParser());
 
@@ -112,7 +112,11 @@ app.use(localizationMiddleware);
 app.use(
   "/uploads",
   (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
+    const requestOrigin = req.headers.origin;
+    if (requestOrigin && isOriginAllowed(requestOrigin)) {
+      res.header("Access-Control-Allow-Origin", requestOrigin);
+      res.header("Vary", "Origin");
+    }
     res.header("Access-Control-Allow-Methods", "GET");
     res.header(
       "Access-Control-Allow-Headers",

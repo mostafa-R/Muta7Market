@@ -119,8 +119,9 @@ export const register = asyncHandler(async (req, res) => {
   };
 
   const exposeCodes =
-    String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
-    (!isEmailEnabled && process.env.NODE_ENV !== "production");
+    process.env.NODE_ENV !== "production" &&
+    (String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
+      !isEmailEnabled);
 
   const extraDev = exposeCodes
     ? {
@@ -303,7 +304,11 @@ export const changePassword = asyncHandler(async (req, res) => {
 });
 
 export const getProfile = asyncHandler(async (req, res) => {
-  const user = await userModel.findById(req.user.id).select("-password");
+  const user = await userModel
+    .findById(req.user.id)
+    .select(
+      "-password -refreshTokens -emailVerificationToken -emailVerificationExpires -phoneVerificationOTP -phoneVerificationExpires -passwordResetToken -passwordResetExpires"
+    );
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -340,8 +345,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   );
 
   const exposeCodes =
-    String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
-    (!isEmailEnabled && process.env.NODE_ENV !== "production");
+    process.env.NODE_ENV !== "production" &&
+    (String(process.env.OTP_DEV_MODE || "0").toLowerCase() === "1" ||
+      !isEmailEnabled);
 
   const extraDev = exposeCodes
     ? {

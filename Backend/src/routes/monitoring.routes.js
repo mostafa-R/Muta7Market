@@ -87,7 +87,7 @@ router.get(
 router.get(
   "/metrics",
   authMiddleware,
-  authorize("admin"),
+  authorize("admin", "super_admin"),
   asyncHandler(async (req, res) => {
     try {
       const metrics = metricsCollector.getMetrics();
@@ -117,7 +117,7 @@ router.get(
 router.post(
   "/metrics/reset",
   authMiddleware,
-  authorize("admin"),
+  authorize("admin", "super_admin"),
   asyncHandler(async (req, res) => {
     try {
       const oldMetrics = metricsCollector.getMetrics();
@@ -148,7 +148,7 @@ router.post(
 router.get(
   "/logs",
   authMiddleware,
-  authorize("admin"),
+  authorize("admin", "super_admin"),
   asyncHandler(async (req, res) => {
     try {
       const { level = "error", limit = 100 } = req.query;
@@ -225,7 +225,7 @@ router.get(
 router.get(
   "/system",
   authMiddleware,
-  authorize("admin"),
+  authorize("admin", "super_admin"),
   asyncHandler(async (req, res) => {
     try {
       const systemInfo = {

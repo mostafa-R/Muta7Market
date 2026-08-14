@@ -19,12 +19,15 @@ import {
 import validate, {
   validateQuery,
 } from "../middleware/validation.middleware.js";
+import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import playerModel from "../models/player.model.js";
 import sportModel from "../models/sport.model.js";
 
 const aboutsRouter = express.Router();
+
+const adminOnly = [authMiddleware, authorize("admin", "super_admin")];
 
 const validateParams = (schema) => {
   return (req, _res, next) => {
@@ -77,7 +80,7 @@ aboutsRouter.get(
   }
 );
 
-aboutsRouter.post("/", validate(createAboutSchema), async (req, res, next) => {
+aboutsRouter.post("/", adminOnly, validate(createAboutSchema), async (req, res, next) => {
   try {
     const created = await createAbout(req.body);
     return res
@@ -90,6 +93,7 @@ aboutsRouter.post("/", validate(createAboutSchema), async (req, res, next) => {
 
 aboutsRouter.put(
   "/:id",
+  adminOnly,
   validateParams(idParamSchema),
   validate(putAboutSchema),
   async (req, res, next) => {
@@ -107,6 +111,7 @@ aboutsRouter.put(
 
 aboutsRouter.patch(
   "/:id",
+  adminOnly,
   validateParams(idParamSchema),
   validate(patchAboutSchema),
   async (req, res, next) => {
@@ -124,6 +129,7 @@ aboutsRouter.patch(
 
 aboutsRouter.delete(
   "/:id",
+  adminOnly,
   validateParams(idParamSchema),
   async (req, res, next) => {
     try {

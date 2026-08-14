@@ -198,6 +198,14 @@ export const restorePricingDefaults = asyncHandler(async (req, res) => {
       price: 100,
       days: 15,
     },
+    promotion_player_premium: {
+      price: 150,
+      days: 15,
+    },
+    promotion_coach_premium: {
+      price: 150,
+      days: 15,
+    },
 
     contacts_access_year: 190,
     listing_year: {
@@ -211,6 +219,14 @@ export const restorePricingDefaults = asyncHandler(async (req, res) => {
     promotion_per_day: {
       player: 15,
       coach: 15,
+    },
+    promotion_premium_year: {
+      player: 150,
+      coach: 150,
+    },
+    promotion_premium_per_day: {
+      player: 10,
+      coach: 10,
     },
     promotion_default_days: 15,
   };

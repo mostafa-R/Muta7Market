@@ -27,7 +27,6 @@ const isDocument = (mimetype) =>
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
   ].includes(mimetype);
 
 const getFileParams = (file) => {
@@ -68,7 +67,6 @@ const fileFilter = (req, file, cb) => {
     "image/png",
     "image/gif",
     "image/webp",
-    "image/svg+xml",
     "video/mp4",
     "video/mpeg",
     "video/quicktime",
@@ -78,11 +76,9 @@ const fileFilter = (req, file, cb) => {
     "video/webm",
     "video/3gpp",
     "video/x-flv",
-    "application/octet-stream",
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
   ];
 
   const fileExtension = file.originalname
@@ -95,7 +91,6 @@ const fileFilter = (req, file, cb) => {
     "png",
     "gif",
     "webp",
-    "svg",
     "mp4",
     "avi",
     "mov",
@@ -109,7 +104,6 @@ const fileFilter = (req, file, cb) => {
     "pdf",
     "doc",
     "docx",
-    "txt",
   ];
 
   if (

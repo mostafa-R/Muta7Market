@@ -16,7 +16,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
-    return res.status(401).json({ message: "Invalid token", error: error.message });
+    return res.status(401).json({ message: "Invalid token" });
   }
 
   const user = await User.findById(decoded.id)

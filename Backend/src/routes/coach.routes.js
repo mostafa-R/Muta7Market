@@ -15,7 +15,8 @@ import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 import validate from "../middleware/validation.middleware.js";
 import {
   createCoachSchema,
-  updateUserSchema,
+  promoteCoachSchema,
+  updateCoachSchema,
 } from "../validators/coach.validator.js";
 
 const router = express.Router();
@@ -29,12 +30,12 @@ router.get("/:id", getCoachById);
 router.use(authMiddleware);
 
 router.post("/", validate(createCoachSchema), createCoach);
-router.put("/:id", validate(updateUserSchema), updateCoach);
+router.put("/:id", validate(updateCoachSchema), updateCoach);
 router.delete("/:id", deleteCoach);
 
 router.use(authorize("admin", "super_admin", "coach"));
 
-router.post("/:id/promote", promoteCoach);
+router.post("/:id/promote", validate(promoteCoachSchema), promoteCoach);
 router.post("/transfer/:id", transferCoach);
 
 export default router;

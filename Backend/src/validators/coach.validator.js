@@ -151,3 +151,104 @@ export const updateUserSchema = Joi.object({
   isActive: Joi.boolean(),
   role: Joi.string().valid('admin', 'coach', 'player', 'scout') // Adjust based on your roles
 });
+
+export const promoteCoachSchema = Joi.object({
+  days: Joi.number().min(1).max(365).required(),
+  type: Joi.string().valid('featured', 'premium').default('featured')
+});
+
+export const updateCoachSchema = Joi.object({
+  name: Joi.object({
+    en: Joi.string(),
+    ar: Joi.string()
+  }),
+  age: Joi.number().min(25).max(70),
+  gender: Joi.string().valid(...Object.values(GENDER)),
+  nationality: Joi.string(),
+  category: Joi.string().valid(
+    'head_coach',
+    'assistant_coach',
+    'goalkeeper_coach',
+    'fitness_coach',
+    'technical_director'
+  ),
+  experience: Joi.object({
+    years: Joi.number().min(0),
+    clubs: Joi.array().items(
+      Joi.object({
+        name: Joi.string(),
+        position: Joi.string(),
+        from: Joi.date(),
+        to: Joi.date(),
+        achievements: Joi.array().items(Joi.string())
+      })
+    )
+  }),
+  licenses: Joi.array().items(
+    Joi.object({
+      name: Joi.string(),
+      issuedBy: Joi.string(),
+      issuedDate: Joi.date(),
+      expiryDate: Joi.date(),
+      documentUrl: Joi.string().uri()
+    })
+  ),
+  monthlySalary: Joi.object({
+    amount: Joi.number().min(0),
+    currency: Joi.string()
+  }),
+  annualContract: Joi.object({
+    amount: Joi.number().min(0),
+    currency: Joi.string()
+  }),
+  contractEndDate: Joi.date().optional(),
+  media: Joi.object({
+    profileImage: Joi.object({
+      url: Joi.string().uri(),
+      publicId: Joi.string()
+    }),
+    images: Joi.array().items(
+      Joi.object({
+        url: Joi.string().uri(),
+        publicId: Joi.string(),
+        title: Joi.string(),
+        type: Joi.string(),
+        uploadedAt: Joi.date()
+      })
+    )
+  }),
+  socialLinks: Joi.object({
+    instagram: Joi.string().uri(),
+    twitter: Joi.string().uri(),
+    whatsapp: Joi.string(),
+    linkedin: Joi.string().uri()
+  }),
+  achievements: Joi.array().items(
+    Joi.object({
+      title: Joi.string(),
+      year: Joi.number().integer().min(1900).max(new Date().getFullYear()),
+      description: Joi.string()
+    })
+  ),
+  contactInfo: Joi.object({
+    isHidden: Joi.boolean(),
+    email: Joi.string().email(),
+    phone: Joi.string(),
+    agent: Joi.object({
+      name: Joi.string(),
+      phone: Joi.string(),
+      email: Joi.string().email()
+    })
+  }),
+  seo: Joi.object({
+    metaTitle: Joi.object({
+      en: Joi.string(),
+      ar: Joi.string()
+    }),
+    metaDescription: Joi.object({
+      en: Joi.string(),
+      ar: Joi.string()
+    }),
+    keywords: Joi.array().items(Joi.string())
+  })
+});

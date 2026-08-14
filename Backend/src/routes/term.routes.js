@@ -19,10 +19,13 @@ import {
 import validate, {
   validateQuery,
 } from "../middleware/validation.middleware.js";
+import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
 const termsRouter = express.Router();
+
+const adminOnly = [authMiddleware, authorize("admin", "super_admin")];
 
 const validateParams = (schema) => {
   return (req, _res, next) => {
@@ -59,7 +62,7 @@ termsRouter.get("/", validateQuery(listQuerySchema), async (req, res, next) => {
   }
 });
 
-termsRouter.post("/", validate(createTermSchema), async (req, res, next) => {
+termsRouter.post("/", adminOnly, validate(createTermSchema), async (req, res, next) => {
   try {
     const created = await createTerm(req.body);
     return res
@@ -72,6 +75,7 @@ termsRouter.post("/", validate(createTermSchema), async (req, res, next) => {
 
 termsRouter.put(
   "/:id",
+  adminOnly,
   validateParams(idParamSchema),
   validate(putTermSchema),
   async (req, res, next) => {
@@ -89,6 +93,7 @@ termsRouter.put(
 
 termsRouter.patch(
   "/:id",
+  adminOnly,
   validateParams(idParamSchema),
   validate(patchTermSchema),
   async (req, res, next) => {
@@ -106,6 +111,7 @@ termsRouter.patch(
 
 termsRouter.delete(
   "/:id",
+  adminOnly,
   validateParams(idParamSchema),
   async (req, res, next) => {
     try {

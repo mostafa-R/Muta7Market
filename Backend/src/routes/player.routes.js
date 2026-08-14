@@ -29,6 +29,7 @@ import { parseJsonFields } from "../middleware/parseJsonFields.js";
 import validate from "../middleware/validation.middleware.js";
 import {
   createPlayerSchema,
+  promotePlayerSchema,
   updatePlayerSchema,
 } from "../validators/player.validator.js";
 
@@ -127,7 +128,7 @@ router.post(
 
 router.delete("/:playerId/media/:mediaType", deleteMedia);
 
-router.post("/:id/promote", promotePlayer);
+router.post("/:id/promote", validate(promotePlayerSchema), promotePlayer);
 
 router.post("/:id/transfer", transferPlayer);
 

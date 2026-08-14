@@ -85,6 +85,43 @@ export const getPricingSettings = async () => {
           DEFAULT_PRICING.promotion_per_day.coach,
       },
 
+      // Premium promotion tier (admin-controlled pricing)
+      promotion_premium_price: {
+        player: settings.pricing.promotion_player_premium?.price || 150,
+        coach: settings.pricing.promotion_coach_premium?.price || 150,
+      },
+
+      promotion_premium_days: {
+        player: settings.pricing.promotion_player_premium?.days || 15,
+        coach: settings.pricing.promotion_coach_premium?.days || 15,
+      },
+
+      promotion_premium_year: {
+        player:
+          settings.pricing.promotion_player_premium?.price ||
+          DEFAULT_PRICING.promotion_premium_year.player,
+        coach:
+          settings.pricing.promotion_coach_premium?.price ||
+          DEFAULT_PRICING.promotion_premium_year.coach,
+      },
+
+      promotion_premium_per_day: {
+        player:
+          (settings.pricing.promotion_player_premium?.price &&
+          settings.pricing.promotion_player_premium?.days
+            ? settings.pricing.promotion_player_premium.price /
+              settings.pricing.promotion_player_premium.days
+            : settings.pricing.promotion_premium_per_day?.player) ||
+          DEFAULT_PRICING.promotion_premium_per_day.player,
+        coach:
+          (settings.pricing.promotion_coach_premium?.price &&
+          settings.pricing.promotion_coach_premium?.days
+            ? settings.pricing.promotion_coach_premium.price /
+              settings.pricing.promotion_coach_premium.days
+            : settings.pricing.promotion_premium_per_day?.coach) ||
+          DEFAULT_PRICING.promotion_premium_per_day.coach,
+      },
+
       ONE_YEAR_DAYS:
         settings.pricing.listing_player?.days || DEFAULT_PRICING.ONE_YEAR_DAYS,
       PROMOTION_DEFAULT_DAYS:
@@ -103,6 +140,30 @@ export const getPricingSettings = async () => {
     console.error("Error getting pricing settings:", error);
     return DEFAULT_PRICING;
   }
+};
+
+/**
+ * Compute promotion amount + duration for a given tier.
+ * Prices come from admin-controlled pricing settings.
+ * @returns {{ amount: number, durationDays: number }}
+ */
+export const computePromotionAmount = (PRICING, targetType, tier, requestedDays) => {
+  const t = targetType === "coach" ? "coach" : "player";
+  const isPremium = tier === "premium";
+
+  const perDay = (isPremium ? PRICING.promotion_premium_per_day : PRICING.promotion_per_day)?.[t] || (isPremium ? 10 : 15);
+  const year = (isPremium ? PRICING.promotion_premium_year : PRICING.promotion_year)?.[t] || 0;
+  const defaultDays = isPremium
+    ? PRICING.promotion_premium_days?.[t] || 15
+    : Number(PRICING.PROMOTION_DEFAULT_DAYS || 15);
+
+  const d = Number(requestedDays) || defaultDays;
+
+  if (d >= (PRICING.ONE_YEAR_DAYS || 365) && year > 0) {
+    return { amount: year, durationDays: PRICING.ONE_YEAR_DAYS || 365 };
+  }
+
+  return { amount: perDay * d, durationDays: d };
 };
 
 /**

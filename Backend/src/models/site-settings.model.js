@@ -76,6 +76,14 @@ const siteSettingsSchema = new mongoose.Schema(
         price: { type: Number, default: 100 },
         days: { type: Number, default: 15 },
       },
+      promotion_player_premium: {
+        price: { type: Number, default: 150 },
+        days: { type: Number, default: 15 },
+      },
+      promotion_coach_premium: {
+        price: { type: Number, default: 150 },
+        days: { type: Number, default: 15 },
+      },
     },
 
     maintenance: {

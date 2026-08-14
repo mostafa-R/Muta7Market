@@ -14,8 +14,11 @@ import {
 } from "../utils/localMediaUtils.js";
 import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
-import { getPricingSettings } from "../utils/pricingUtils.js";
+import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
+import { paylinkCreateInvoice } from "../services/paylink.client.js";
 import { sendInternalNotification } from "./notification.controller.js";
+
+const STAFF_ROLES = ["admin", "super_admin"];
 
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -157,6 +160,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   const and = [{ isActive: true }, { isConfirmed: true }];
 
   if (search) {
+    if (String(search).length > 100) {
+      throw new ApiError(400, "Search query is too long");
+    }
     and.push({
       $or: [
         { "name.en": { $regex: search, $options: "i" } },
@@ -479,7 +485,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       player.socialLinks.youtube = req.body.socialLinks.youtube;
   }
 
-  if (req.body.isPromoted) {
+  if (req.body.isPromoted && isStaff) {
     if (!player.isPromoted) player.isPromoted = {};
     if (req.body.isPromoted.status !== undefined)
       player.isPromoted.status = req.body.isPromoted.status;
@@ -1115,10 +1121,58 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, `${mediaType} deleted successfully`));
 });
 
+async function initiatePlayerPromotionPayment(invoice, user, req) {
+  if (invoice.paymentUrl) {
+    return invoice.paymentUrl;
+  }
+
+  const days = Number(invoice.durationDays || 15);
+  const tier = invoice.featureType === "premium" ? "premium" : "featured";
+  const title = `Player ${tier} promotion (${days} day${days === 1 ? "" : "s"})`;
+
+  const originFallback =
+    req.get && req.get("origin") ? req.get("origin") : null;
+  const frontUrl =
+    process.env.FRONTEND_URL ||
+    originFallback ||
+    process.env.APP_URL ||
+    "http://localhost:3000";
+  const callBackUrl = `${frontUrl.replace(
+    /\/$/,
+    ""
+  )}/profile?tab=payments&invoiceId=${String(invoice._id)}`;
+  const cancelUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments`;
+
+  const payload = {
+    orderNumber: invoice.orderNumber,
+    amount: invoice.amount,
+    currency: invoice.currency || "SAR",
+    clientName: user?.name || user?.email,
+    clientEmail: user?.email,
+    clientMobile: user?.phone || "0500000000",
+    products: [{ title, price: invoice.amount, qty: 1, isDigital: true }],
+    supportedCardBrands: ["mada", "visaMastercard", "stcpay"],
+    callBackUrl,
+    cancelUrl,
+    note: `userId=${invoice.userId};product=promotion;targetType=player;profileId=${
+      invoice.playerProfileId || ""
+    };durationDays=${invoice.durationDays || ""}`,
+  };
+
+  const data = await paylinkCreateInvoice(payload);
+  invoice.provider = "paylink";
+  invoice.providerInvoiceId = data.transactionNo || data.invoiceId || undefined;
+  invoice.paymentUrl = data.url || null;
+  if (!invoice.invoiceNumber) invoice.invoiceNumber = invoice.orderNumber;
+  await invoice.save();
+  return invoice.paymentUrl;
+}
+
 export const promotePlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const userId = req.user._id;
   const { days, type = "featured" } = req.body;
+  const isStaff = STAFF_ROLES.includes(req.user.role);
 
   if (!days || days < 1) {
     throw new ApiError(
@@ -1133,7 +1187,7 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  if (player.user.toString() !== userId.toString()) {
+  if (player.user.toString() !== userId.toString() && !isStaff) {
     throw new ApiError(403, "You can only promote your own profile");
   }
 
@@ -1141,33 +1195,102 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Player is already promoted");
   }
 
-  if (player.promote) {
-    await player.promote(days, type);
-  } else {
-    player.isPromoted = {
-      status: true,
-      type,
-      startDate: new Date(),
-      endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
-    };
-    await player.save();
+  if (isStaff) {
+    const staffTier = type === "premium" ? "premium" : "featured";
+    if (player.promote) {
+      await player.promote(days, staffTier);
+    } else {
+      player.isPromoted = {
+        status: true,
+        type: staffTier,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
+      };
+      await player.save();
+    }
+
+    await sendInternalNotification(
+      userId,
+      "Profile Promoted",
+      `Your player profile has been promoted for ${days} days!`,
+      { playerId: player._id, days, type: staffTier }
+    );
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, player, "Player promoted successfully"));
   }
+
+  const PRICING = await getPricingSettings();
+  const tier = type === "premium" ? "premium" : "featured";
+  const { amount, durationDays: d } = computePromotionAmount(
+    PRICING,
+    "player",
+    tier,
+    days
+  );
+
+  let invoice = await Invoice.findOne({
+    userId,
+    product: "promotion",
+    targetType: "player",
+    playerProfileId: player._id,
+    status: "pending",
+  });
+
+  if (invoice) {
+    if (!invoice.paymentUrl) {
+      invoice.durationDays = d;
+      invoice.featureType = tier;
+      invoice.amount = amount;
+      await invoice.save();
+    }
+  } else {
+    const orderNo = makeOrderNumber("promotion", String(userId));
+    invoice = await Invoice.create({
+      orderNumber: orderNo,
+      invoiceNumber: orderNo,
+      userId,
+      product: "promotion",
+      targetType: "player",
+      playerProfileId: player._id,
+      durationDays: d,
+      featureType: tier,
+      amount,
+      currency: "SAR",
+      status: "pending",
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+  }
+
+  const paymentUrl = await initiatePlayerPromotionPayment(invoice, req.user, req);
 
   await sendInternalNotification(
     userId,
-    "Profile Promoted",
-    `Your player profile has been promoted for ${days} days!`,
-    { playerId: player._id, days, type }
+    "Payment Required",
+    "Please complete payment to promote your player profile",
+    { playerId: player._id, invoiceId: String(invoice._id), days, type }
   );
 
   res
-    .status(200)
-    .json(new ApiResponse(200, player, "Player promoted successfully"));
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        {
+          player,
+          paymentUrl,
+          invoiceId: String(invoice._id),
+        },
+        "Please complete payment to promote your player profile"
+      )
+    );
 });
 
 export const transferPlayer = asyncHandler(async (req, res) => {
   const playerId = req.params.id;
   const { clubName, amount, transferDate } = req.body;
+  const isStaff = STAFF_ROLES.includes(req.user.role);
 
   if (!clubName || !amount) {
     throw new ApiError(400, "Club name and transfer amount are required");
@@ -1177,6 +1300,13 @@ export const transferPlayer = asyncHandler(async (req, res) => {
 
   if (!player) {
     throw new ApiError(404, "Player not found");
+  }
+
+  if (player.user.toString() !== String(req.user._id) && !isStaff) {
+    throw new ApiError(
+      403,
+      "You can only mark your own player profile as transferred"
+    );
   }
 
   if (player.status === "transferred") {
@@ -1294,6 +1424,10 @@ export const searchPlayers = asyncHandler(async (req, res) => {
 
   if (!search) {
     throw new ApiError(400, "Search query is required");
+  }
+
+  if (String(search).length > 100) {
+    throw new ApiError(400, "Search query is too long");
   }
 
   const query = {

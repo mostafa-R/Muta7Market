@@ -188,14 +188,25 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
   const { skip } = paginate(page, limit);
   const sort = buildSortQuery(sortBy) || { createdAt: -1 };
 
-  const [offers, total] = await Promise.all([
-    TransferOffer.find(query)
-      .sort(sort)
-      .limit(parseInt(limit))
-      .skip(skip)
+  const isStaff = STAFF_ROLES.includes(req.user?.role);
+  const baseQuery = TransferOffer.find(query)
+    .sort(sort)
+    .limit(parseInt(limit))
+    .skip(skip);
+
+  if (isStaff) {
+    baseQuery
       .populate("fromUser", "name email role")
-      .populate("toUser", "name email role")
-      .populate("targetProfileId", "name age nationality position jop"),
+      .populate("toUser", "name email role");
+  } else {
+    baseQuery
+      .select("-salary -transferFee -contractDuration -message")
+      .populate("fromUser", "name role")
+      .populate("toUser", "name role");
+  }
+
+  const [offers, total] = await Promise.all([
+    baseQuery.populate("targetProfileId", "name age nationality position jop"),
     TransferOffer.countDocuments(query),
   ]);
 

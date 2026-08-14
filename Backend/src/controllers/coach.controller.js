@@ -1,16 +1,85 @@
 import Coach from "../models/coach.model.js";
 import User from "../models/user.model.js";
+import Invoice from "../models/invoice.model.js";
 import { PROFILE_STATUS, PAGINATION } from "../config/constants.js";
 import mongoose from "mongoose";
+import { paylinkCreateInvoice } from "../services/paylink.client.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
+import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
 
 const STAFF_ROLES = ["admin", "super_admin"];
 
 const isStaff = (role) => STAFF_ROLES.includes(role);
 
+const COACH_CREATE_FIELDS = [
+  "name",
+  "age",
+  "gender",
+  "nationality",
+  "category",
+  "experience",
+  "licenses",
+  "monthlySalary",
+  "annualContract",
+  "contractEndDate",
+  "contractStatus",
+  "media",
+  "socialLinks",
+  "achievements",
+  "contactInfo",
+  "seo",
+];
+
+async function initiateCoachPromotionPayment(invoice, user, req) {
+  if (invoice.paymentUrl) {
+    return invoice.paymentUrl;
+  }
+
+  const days = Number(invoice.durationDays || 15);
+  const tier = invoice.featureType === "premium" ? "premium" : "featured";
+  const title = `Coach ${tier} promotion (${days} day${days === 1 ? "" : "s"})`;
+
+  const originFallback =
+    req.get && req.get("origin") ? req.get("origin") : null;
+  const frontUrl =
+    process.env.FRONTEND_URL ||
+    originFallback ||
+    process.env.APP_URL ||
+    "http://localhost:3000";
+  const callBackUrl = `${frontUrl.replace(
+    /\/$/,
+    ""
+  )}/profile?tab=payments&invoiceId=${String(invoice._id)}`;
+  const cancelUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments`;
+
+  const payload = {
+    orderNumber: invoice.orderNumber,
+    amount: invoice.amount,
+    currency: invoice.currency || "SAR",
+    clientName: user?.name || user?.email,
+    clientEmail: user?.email,
+    clientMobile: user?.phone || "0500000000",
+    products: [{ title, price: invoice.amount, qty: 1, isDigital: true }],
+    supportedCardBrands: ["mada", "visaMastercard", "stcpay"],
+    callBackUrl,
+    cancelUrl,
+    note: `userId=${invoice.userId};product=promotion;targetType=coach;profileId=${
+      invoice.playerProfileId || ""
+    };durationDays=${invoice.durationDays || ""}`,
+  };
+
+  const data = await paylinkCreateInvoice(payload);
+  invoice.provider = "paylink";
+  invoice.providerInvoiceId = data.transactionNo || data.invoiceId || undefined;
+  invoice.paymentUrl = data.url || null;
+  if (!invoice.invoiceNumber) invoice.invoiceNumber = invoice.orderNumber;
+  await invoice.save();
+  return invoice.paymentUrl;
+}
+
 export const createCoach = async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
-    const coachData = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -26,6 +95,11 @@ export const createCoach = async (req, res) => {
         success: false,
         message: "Coach profile already exists for this user",
       });
+    }
+
+    const coachData = {};
+    for (const key of COACH_CREATE_FIELDS) {
+      if (key in req.body) coachData[key] = req.body[key];
     }
 
     const coach = new Coach({ ...coachData, user: userId });
@@ -336,12 +410,71 @@ export const promoteCoach = async (req, res) => {
       });
     }
 
-    await coach.promote(days, type);
+    if (isStaff(req.user.role)) {
+      await coach.promote(days, type === "premium" ? "premium" : "featured");
 
-    res.status(200).json({
+      return res.status(200).json({
+        success: true,
+        message: "Coach promoted successfully",
+        data: coach,
+      });
+    }
+
+    const PRICING = await getPricingSettings();
+    const tier = type === "premium" ? "premium" : "featured";
+    const { amount, durationDays: d } = computePromotionAmount(
+      PRICING,
+      "coach",
+      tier,
+      days
+    );
+
+    let invoice = await Invoice.findOne({
+      userId: req.user._id || req.user.id,
+      product: "promotion",
+      targetType: "coach",
+      playerProfileId: coach._id,
+      status: "pending",
+    });
+
+    if (invoice) {
+      if (!invoice.paymentUrl) {
+        invoice.durationDays = d;
+        invoice.featureType = tier;
+        invoice.amount = amount;
+        await invoice.save();
+      }
+    } else {
+      const orderNo = makeOrderNumber(
+        "promotion",
+        String(req.user._id || req.user.id)
+      );
+      invoice = await Invoice.create({
+        orderNumber: orderNo,
+        invoiceNumber: orderNo,
+        userId: req.user._id || req.user.id,
+        product: "promotion",
+        targetType: "coach",
+        playerProfileId: coach._id,
+        durationDays: d,
+        featureType: tier,
+        amount,
+        currency: "SAR",
+        status: "pending",
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+    }
+
+    const paymentUrl = await initiateCoachPromotionPayment(
+      invoice,
+      req.user,
+      req
+    );
+
+    return res.status(201).json({
       success: true,
-      message: "Coach promoted successfully",
-      data: coach,
+      message: "Please complete payment to promote this coach",
+      data: { coach, paymentUrl, invoiceId: String(invoice._id) },
     });
   } catch (error) {
     res.status(500).json({

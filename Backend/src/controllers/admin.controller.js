@@ -9,6 +9,18 @@ import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 
+const assertRoleEscalation = (requester, requestedRole) => {
+  if (
+    requestedRole === "super_admin" &&
+    (!requester || requester.role !== "super_admin")
+  ) {
+    throw new ApiError(
+      403,
+      "Only a super admin can assign the super_admin role"
+    );
+  }
+};
+
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, search, role, isActive } = req.query;
 
@@ -89,6 +101,8 @@ export const createUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User with this email or phone already exists");
   }
 
+  assertRoleEscalation(req.user, role);
+
   const user = await User.create({
     email,
     name,
@@ -134,6 +148,8 @@ export const updateUser = asyncHandler(async (req, res) => {
 
   delete updates.password;
   delete updates.refreshTokens;
+
+  assertRoleEscalation(req.user, updates.role);
 
   const updatedUser = await User.findByIdAndUpdate(id, updates, {
     new: true,
@@ -479,6 +495,8 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
   if (!email || !name || !password) {
     throw new ApiError(400, "Email, name, and password are required");
   }
+
+  assertRoleEscalation(req.user, role);
 
   try {
     const existingUser = await User.findOne({
@@ -866,6 +884,8 @@ export const bulkUpdateUsers = asyncHandler(async (req, res) => {
 
   delete updates.password;
   delete updates.refreshTokens;
+
+  assertRoleEscalation(req.user, updates.role);
 
   const result = await User.updateMany({ _id: { $in: userIds } }, updates, {
     runValidators: true,

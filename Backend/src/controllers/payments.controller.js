@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import Coach from "../models/coach.model.js";
 import Entitlement from "../models/entitlement.model.js";
 import Invoice from "../models/invoice.model.js";
 import Offer from "../models/offer.model.js";
@@ -11,7 +12,7 @@ import {
   paylinkGetInvoice,
 } from "../services/paylink.client.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
-import { getPricingSettings } from "../utils/pricingUtils.js";
+import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
 import { runInTransaction } from "../utils/transactions.js";
 import { OFFER_STATUS } from "../config/constants.js";
 
@@ -113,13 +114,27 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
       opts
     );
   } else if (invoice.product === "promotion") {
-    if (invoice.playerProfileId) {
+    if (invoice.targetType === "coach") {
+      await Coach.updateOne(
+        { _id: invoice.playerProfileId, user: invoice.userId },
+        {
+          $set: {
+            "isPromoted.status": true,
+            "isPromoted.type":
+              invoice.featureType === "premium" ? "premium" : "featured",
+            "isPromoted.startDate": new Date(),
+            "isPromoted.endDate": end,
+          },
+        },
+        profileOpts
+      );
+    } else if (invoice.playerProfileId) {
       await PlayerProfile.updateOne(
         { _id: invoice.playerProfileId, user: invoice.userId },
         {
           $set: {
             "isPromoted.status": true,
-            "isPromoted.type": invoice.featureType || "toplist",
+            "isPromoted.type": invoice.featureType || "featured",
             "isPromoted.startDate": new Date(),
             "isPromoted.endDate": end,
           },
@@ -339,8 +354,10 @@ export const createDraftInvoice = async (req, res) => {
 
     const PRICING = await getPricingSettings();
 
-    const { product, playerProfileId, durationDays, force } = req.body;
+    const { product, playerProfileId, durationDays, force, featureType: requestedFeatureType } =
+      req.body;
     const prod = String(product || "").toLowerCase();
+    const requestedTier = requestedFeatureType === "premium" ? "premium" : "featured";
 
     if (!["contacts_access", "listing", "promotion"].includes(prod)) {
       return res
@@ -377,30 +394,15 @@ export const createDraftInvoice = async (req, res) => {
           PRICING.listing_year[targetType];
         dur = PRICING.listing_days?.[targetType] || PRICING.ONE_YEAR_DAYS;
       } else if (prod === "promotion") {
-        featureType = "toplist";
-        const customDays = PRICING.promotion_days?.[targetType];
-        const customPrice = PRICING.promotion_price?.[targetType];
-
-        if (customPrice && customDays && !durationDays) {
-          amount = customPrice;
-          dur = customDays;
-        } else {
-          const perDay = PRICING.promotion_per_day[targetType] || 15;
-          const d = Number(
-            durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
-          );
-          if (
-            !durationDays &&
-            PRICING.promotion_year[targetType] > 0 &&
-            d >= PRICING.ONE_YEAR_DAYS
-          ) {
-            amount = PRICING.promotion_year[targetType];
-            dur = PRICING.ONE_YEAR_DAYS;
-          } else {
-            amount = perDay * d;
-            dur = d;
-          }
-        }
+        featureType = requestedTier;
+        const promo = computePromotionAmount(
+          PRICING,
+          targetType,
+          requestedTier,
+          durationDays
+        );
+        amount = promo.amount;
+        dur = promo.durationDays;
       }
     }
 
@@ -424,16 +426,23 @@ export const createDraftInvoice = async (req, res) => {
             product: prod,
             targetType: targetType || null,
             playerProfileId: playerProfileId || null,
+            status: "pending",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+          $set: {
             durationDays: dur,
             featureType,
             amount,
             currency: "SAR",
-            status: "pending",
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },
         },
         { new: true, upsert: true }
       );
+    } else if (!invoice.paymentUrl) {
+      invoice.durationDays = dur;
+      invoice.featureType = featureType;
+      invoice.amount = amount;
+      await invoice.save();
     }
 
     return res.status(200).json({
@@ -497,7 +506,8 @@ export const initiatePaymentByInvoiceId = async (req, res) => {
           inv.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
         );
         const label = inv.targetType === "coach" ? "Coach" : "Player";
-        return `Top list (${label}) (${days} day${days === 1 ? "" : "s"})`;
+        const tier = inv.featureType === "premium" ? "Premium" : "Featured";
+        return `${tier} (${label}) (${days} day${days === 1 ? "" : "s"})`;
       }
       return inv.product;
     })();
@@ -579,7 +589,7 @@ export const paymentWebhook = async (req, res) => {
     verify = await paylinkGetInvoice(transactionNo);
   } catch (err) {
     console.error("verify error", err);
-    return res.status(200).json({ ok: false, verify: "failed" });
+    return res.status(502).json({ ok: false, verify: "failed" });
   }
 
   const verifyOrder = String(
