@@ -8,6 +8,10 @@ import { processPlayerMedia } from "../utils/localMediaUtils.js";
 import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
+import {
+  ensureSearchIndexes,
+  reindexAll,
+} from "../services/search.service.js";
 
 const assertRoleEscalation = (requester, requestedRole) => {
   if (
@@ -217,7 +221,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 
   const filter = {};
 
-  filter.jop = jop || "player";
+  filter.job = jop || req.query.job || "player";
 
   if (search) {
     filter.name = { $regex: search, $options: "i" };
@@ -350,6 +354,7 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
     minAge,
     maxAge,
     jop = "all",
+    job,
     isActive,
     isPromoted,
     days,
@@ -360,6 +365,8 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   page = parseInt(page, 10) || 1;
   limit = parseInt(limit, 10) || 10;
 
+  if (job) jop = job || "all";
+
   const baseFilter = [];
 
   baseFilter.push({
@@ -367,9 +374,9 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   });
 
   if (jop === "player" || jop === "coach") {
-    baseFilter.push({ jop });
+    baseFilter.push({ job: jop });
   } else {
-    baseFilter.push({ jop: { $in: ["player", "coach"] } });
+    baseFilter.push({ job: { $in: ["player", "coach"] } });
   }
 
   if (search) {
@@ -424,7 +431,7 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   const [players, total] = await Promise.all([
     Player.find(query)
       .select(
-        "name jop createdAt isActive isConfirmed status age nationality game media.profileImage contactInfo.email contactInfo.phone isPromoted"
+        "name job jop createdAt isActive isConfirmed status age nationality game media.profileImage contactInfo.email contactInfo.phone isPromoted"
       )
       .populate("user", "name email phone role isActive")
       .sort(sort)
@@ -473,6 +480,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     birthCountry,
     customBirthCountry,
     jop,
+    job,
     roleType,
     customRoleType,
     position,
@@ -541,7 +549,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       customNationality,
       birthCountry,
       customBirthCountry,
-      jop,
+      job: job || jop,
       roleType,
       customRoleType,
       position,
@@ -563,7 +571,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     });
 
     try {
-      const raw = String(jop || "").toLowerCase();
+      const raw = String(jop || job || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
       const pricing = await getPricingSettings();
 
@@ -698,6 +706,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "birthCountry",
     "customBirthCountry",
     "jop",
+    "job",
     "roleType",
     "customRoleType",
     "position",
@@ -823,20 +832,20 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     //   .select("name email createdAt")
     //   .lean(),
 
-    Player.countDocuments({ jop: "player" }),
-    Player.countDocuments({ isActive: true, jop: "player" }),
-    // Player.countDocuments({ isActive: true, isConfirmed: true, jop: "player" }),
-    // Player.find({ jop: "player" })
+    Player.countDocuments({ job: "player" }),
+    Player.countDocuments({ isActive: true, job: "player" }),
+    // Player.countDocuments({ isActive: true, isConfirmed: true, job: "player" }),
+    // Player.find({ job: "player" })
     //   .sort({ createdAt: -1 })
     //   .limit(5)
     //   .populate("user", "name email")
     //   .lean(),
 
-    Player.countDocuments({ jop: "coach" }),
-    Player.countDocuments({ isActive: true, jop: "coach" }),
-    // Player.countDocuments({ isActive: true, isConfirmed: true, jop: "coach" }),
+    Player.countDocuments({ job: "coach" }),
+    Player.countDocuments({ isActive: true, job: "coach" }),
+    // Player.countDocuments({ isActive: true, isConfirmed: true, job: "coach" }),
     // Player
-    //   .find({ jop: "coach" })
+    //   .find({ job: "coach" })
     //   .sort({ createdAt: -1 })
     //   .limit(5)
     //   .populate("user", "name email")
@@ -923,5 +932,13 @@ export const bulkUpdatePlayers = asyncHandler(async (req, res) => {
       },
       `${result.modifiedCount} players updated successfully`
     )
+  );
+});
+
+export const reindexSearch = asyncHandler(async (req, res) => {
+  const indexStatus = await ensureSearchIndexes();
+  const result = await reindexAll();
+  res.status(200).json(
+    new ApiResponse(200, { indexStatus, ...result }, "Search reindex complete")
   );
 });

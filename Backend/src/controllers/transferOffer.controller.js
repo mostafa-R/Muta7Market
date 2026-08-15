@@ -1,14 +1,17 @@
 import mongoose from "mongoose";
 import { OFFER_TYPE } from "../config/constants.js";
+import { isEmailEnabled, sendEmail } from "../config/email.js";
 import Invoice from "../models/invoice.model.js";
 import Player from "../models/player.model.js";
 import TransferOffer from "../models/transferOffer.model.js";
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { buildSortQuery, paginate } from "../utils/helpers.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { paylinkCreateInvoice, paylinkGetInvoice } from "../services/paylink.client.js";
+import { emitToUser } from "../services/socket.service.js";
 import { applyPaidEffects } from "./payments.controller.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
@@ -20,6 +23,37 @@ const TRANSFER_ALLOWED_FIELDS = [
   "contractDuration",
   "transferFee",
 ];
+
+const notifyTransferTarget = async (targetUserId, offer) => {
+  if (!targetUserId) return;
+
+  emitToUser(targetUserId, "transfer_offer:new", {
+    transferOfferId: String(offer._id),
+    type: offer.type || "official",
+    status: offer.status || "pending",
+    targetType: offer.targetType || "player",
+  });
+
+  try {
+    const targetUser = await User.findById(targetUserId)
+      .select("name email")
+      .lean();
+    if (!targetUser?.email || !isEmailEnabled) return;
+
+    const offerTypeLabel =
+      offer.type === "interest" ? "expression of interest" : "official transfer offer";
+    const subject = `You received a new ${offerTypeLabel} on Muta7 Market`;
+    const text =
+      `Hello ${targetUser.name},\n\n` +
+      `A club sent you a new ${offerTypeLabel} on Muta7 Market.\n` +
+      `Please log in to review the details and respond.\n\n` +
+      `— Muta7 Market Team`;
+
+    await sendEmail(targetUser.email, subject, text, text.split("\n").join("<br/>"));
+  } catch (error) {
+    console.error("Failed to send transfer offer email:", error.message);
+  }
+};
 
 async function initiateTransferPayment(invoice, user, req) {
   if (invoice.paymentUrl) {
@@ -165,6 +199,8 @@ export const createTransferOffer = asyncHandler(async (req, res) => {
     { transferOfferId: String(offer._id) }
   );
 
+  await notifyTransferTarget(targetUserId, offer);
+
   res.status(201).json(
     new ApiResponse(201, offer, "Transfer offer created successfully")
   );
@@ -206,7 +242,7 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
   }
 
   const [offers, total] = await Promise.all([
-    baseQuery.populate("targetProfileId", "name age nationality position jop"),
+    baseQuery.populate("targetProfileId", "name age nationality position job jop"),
     TransferOffer.countDocuments(query),
   ]);
 
@@ -241,7 +277,7 @@ export const getMyTransferOffers = asyncHandler(async (req, res) => {
       .skip(skip)
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role")
-      .populate("targetProfileId", "name age nationality position jop"),
+      .populate("targetProfileId", "name age nationality position job jop"),
     TransferOffer.countDocuments(query),
   ]);
 
@@ -328,6 +364,10 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
       "Your transfer offer was countered",
       { transferOfferId: String(offer._id) }
     );
+    emitToUser(offer.fromUser, "transfer_offer:updated", {
+      transferOfferId: String(offer._id),
+      status: "countered",
+    });
 
     res.status(200).json(
       new ApiResponse(200, offer, "Counter offer submitted successfully")
@@ -357,6 +397,10 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
       "Your transfer offer was accepted",
       { transferOfferId: String(offer._id) }
     );
+    emitToUser(offer.fromUser, "transfer_offer:updated", {
+      transferOfferId: String(offer._id),
+      status: "accepted",
+    });
 
     res.status(200).json(
       new ApiResponse(200, offer, "Transfer offer accepted successfully")
@@ -374,6 +418,10 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
       "Your transfer offer was rejected",
       { transferOfferId: String(offer._id) }
     );
+    emitToUser(offer.fromUser, "transfer_offer:updated", {
+      transferOfferId: String(offer._id),
+      status: "rejected",
+    });
 
     res.status(200).json(
       new ApiResponse(200, offer, "Transfer offer rejected successfully")

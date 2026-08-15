@@ -32,13 +32,13 @@ const sanitizeRoleTypes = (roleTypes = []) => {
   if (!Array.isArray(roleTypes)) return [];
   return roleTypes
     .map((r) => ({
-      jop: normalizeJop(r?.jop),
+      job: normalizeJop(r?.job || r?.jop),
       name: {
         ar: typeof r?.name?.ar === "string" ? r.name.ar.trim() : "",
         en: typeof r?.name?.en === "string" ? r.name.en.trim() : "",
       },
     }))
-    .filter((r) => r.jop && r.name.ar && r.name.en);
+    .filter((r) => r.job && r.name.ar && r.name.en);
 };
 
 const sanitizeSEO = (seo = {}) => {

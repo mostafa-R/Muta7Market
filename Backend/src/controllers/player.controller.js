@@ -16,9 +16,26 @@ import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
 import { paylinkCreateInvoice } from "../services/paylink.client.js";
+import { search } from "../services/search.service.js";
+import { recordProfileChanges } from "../services/profileChange.service.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
 const STAFF_ROLES = ["admin", "super_admin"];
+
+const canManagePlayer = (user, player) => {
+  const userId = String(user?._id || user?.id || "");
+  if (!userId) return false;
+  if (STAFF_ROLES.includes(user?.role)) return true;
+  if (String(player?.user) === userId) return true;
+  if (
+    user?.role === "agent" &&
+    player?.agentUser &&
+    String(player.agentUser) === userId
+  ) {
+    return true;
+  }
+  return false;
+};
 
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -56,6 +73,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
       birthCountry: req.body.birthCountry,
       customBirthCountry: req.body.customBirthCountry,
       jop: req.body.jop,
+      job: req.body.job || req.body.jop,
       roleType: req.body.roleType,
       customRoleType: req.body.customRoleType,
       position: req.body.position,
@@ -74,7 +92,7 @@ export const createPlayer = asyncHandler(async (req, res) => {
     });
 
     try {
-      const raw = String(req.body.jop || player.jop || "").toLowerCase();
+      const raw = String(req.body.job || req.body.jop || player.job || player.jop || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
       const pricing = await getPricingSettings();
 
@@ -175,7 +193,8 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 
   if (nationality)
     and.push({ nationality: { $regex: nationality, $options: "i" } });
-  if (jop) and.push({ jop });
+  const jobFilter = jop || req.query.job;
+  if (jobFilter) and.push({ job: jobFilter });
   if (status) and.push({ status });
   if (gender) and.push({ gender });
   if (position) and.push({ position: { $regex: position, $options: "i" } });
@@ -350,9 +369,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   const player = await Player.findById(playerId);
   if (!player) throw new ApiError(404, "Player not found");
 
-  if (userRole !== "admin" && String(player.user) !== String(userId)) {
+  if (!canManagePlayer(req.user, player)) {
     throw new ApiError(403, "You can only update your own profile");
   }
+
+  const beforeSnapshot = player.toObject();
 
   if (req.body.name !== undefined) player.name = req.body.name;
   if (req.body.age !== undefined) player.age = req.body.age;
@@ -366,6 +387,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (req.body.customBirthCountry !== undefined)
     player.customBirthCountry = req.body.customBirthCountry;
   if (req.body.jop !== undefined) player.jop = req.body.jop;
+  if (req.body.job !== undefined) player.job = req.body.job;
   if (req.body.roleType !== undefined) {
     try {
       if (
@@ -610,6 +632,14 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   player.updatedAt = new Date();
   await player.save();
 
+  await recordProfileChanges({
+    profileType: "player",
+    before: beforeSnapshot,
+    after: player,
+    changedBy: req.user._id,
+    changedByRole: req.user.role,
+  });
+
   await sendInternalNotification(
     player.user,
     "Profile Updated",
@@ -667,7 +697,7 @@ export const deletePlayerDocument = async (req, res) => {
       });
     }
 
-    if (player.user.toString() !== req.user._id.toString()) {
+    if (!canManagePlayer(req.user, player)) {
       return res.status(403).json({
         success: false,
         message: "You can only delete document from your own profile",
@@ -730,7 +760,7 @@ export const deletePlayerVideo = async (req, res) => {
       });
     }
 
-    if (player.user.toString() !== req.user._id.toString()) {
+    if (!canManagePlayer(req.user, player)) {
       return res.status(403).json({
         success: false,
         message: "You can only delete video from your own profile",
@@ -797,7 +827,7 @@ export const deletePlayerImages = async (req, res) => {
       });
     }
 
-    if (player.user.toString() !== req.user._id.toString()) {
+    if (!canManagePlayer(req.user, player)) {
       return res.status(403).json({
         success: false,
         message: "You can only delete images from your own profile",
@@ -971,7 +1001,7 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Player not found");
     }
 
-    if (player.user.toString() !== userId.toString()) {
+    if (!canManagePlayer(req.user, player)) {
       throw new ApiError(403, "You can only update your own profile");
     }
 
@@ -1018,7 +1048,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Media file is required");
   }
 
-  if (!["video", "document"].includes(mediaType)) {
+  if (!["video", "videos", "document"].includes(mediaType)) {
     throw new ApiError(400, "Invalid media type");
   }
 
@@ -1028,8 +1058,53 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  if (player.user.toString() !== userId.toString()) {
+  if (!canManagePlayer(req.user, player)) {
     throw new ApiError(403, "You can only update your own profile");
+  }
+
+  if (mediaType === "videos") {
+    const isProPlayer =
+      Boolean(player.isPro) &&
+      (!player.proExpiresAt || new Date(player.proExpiresAt) > new Date());
+    const videoLimit = Math.max(1, Number(process.env.PLAYER_VIDEO_LIMIT || 5));
+    const current = Array.isArray(player.media.videos) ? player.media.videos.length : 0;
+    const remaining = isProPlayer ? req.files.length : videoLimit - current;
+
+    if (!isProPlayer && remaining <= 0) {
+      throw new ApiError(400, `Video reel limit reached (${videoLimit}). Delete a reel before uploading new ones.`);
+    }
+
+    const uploads = req.files.slice(0, remaining);
+    const added = [];
+
+    for (const file of uploads) {
+      const mediaData = await handleMediaUpload(file, req, "video");
+      const reelItem = {
+        url: mediaData.url,
+        publicId: mediaData.publicId,
+        title: file.originalname || "highlight reel",
+        duration: 0,
+        uploadedAt: new Date(),
+      };
+      player.media.videos.push(reelItem);
+      added.push(reelItem);
+    }
+
+    await player.save();
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          added,
+          total: player.media.videos.length,
+          limit: isProPlayer ? null : videoLimit,
+          unlimited: isProPlayer,
+        },
+        `${added.length} highlight reel(s) uploaded successfully`
+      )
+    );
+    return;
   }
 
   const file = req.files[0];
@@ -1078,7 +1153,7 @@ export const deleteMedia = asyncHandler(async (req, res) => {
   const { playerId, mediaType } = req.params;
   const userId = req.user._id;
 
-  if (!["video", "document"].includes(mediaType)) {
+  if (!["video", "videos", "document"].includes(mediaType)) {
     throw new ApiError(400, "Invalid media type");
   }
 
@@ -1088,8 +1163,69 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  if (player.user.toString() !== userId.toString()) {
+  if (!canManagePlayer(req.user, player)) {
     throw new ApiError(403, "You can only update your own profile");
+  }
+
+  if (mediaType === "videos") {
+    const index = Number(req.query.index);
+
+    if (Number.isInteger(index) && index >= 0) {
+      const reel = player.media.videos?.[index];
+      if (!reel) {
+        throw new ApiError(404, "Highlight reel not found");
+      }
+      if (reel.publicId) {
+        await deleteMediaFromLocal(reel.publicId, "video").catch((err) =>
+          console.warn(`Failed to delete reel ${index}:`, err.message)
+        );
+      }
+      player.media.videos.splice(index, 1);
+      await player.save();
+
+      res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { total: player.media.videos.length },
+            "Highlight reel deleted successfully"
+          )
+        );
+      return;
+    }
+
+    const { publicId } = req.body || {};
+    if (!publicId) {
+      throw new ApiError(
+        400,
+        "Provide ?index=N or a publicId to delete a specific reel"
+      );
+    }
+
+    const idx = (player.media.videos || []).findIndex(
+      (v) => v.publicId === publicId
+    );
+    if (idx === -1) {
+      throw new ApiError(404, "Highlight reel not found");
+    }
+
+    await deleteMediaFromLocal(publicId, "video").catch((err) =>
+      console.warn(`Failed to delete reel:`, err.message)
+    );
+    player.media.videos.splice(idx, 1);
+    await player.save();
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { total: player.media.videos.length },
+          "Highlight reel deleted successfully"
+        )
+      );
+    return;
   }
 
   if (!player.media[mediaType] || !player.media[mediaType].publicId) {
@@ -1187,7 +1323,7 @@ export const promotePlayer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  if (player.user.toString() !== userId.toString() && !isStaff) {
+  if (!canManagePlayer(req.user, player)) {
     throw new ApiError(403, "You can only promote your own profile");
   }
 
@@ -1302,7 +1438,7 @@ export const transferPlayer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Player not found");
   }
 
-  if (player.user.toString() !== String(req.user._id) && !isStaff) {
+  if (!canManagePlayer(req.user, player)) {
     throw new ApiError(
       403,
       "You can only mark your own player profile as transferred"
@@ -1350,8 +1486,7 @@ export const updateStatistics = asyncHandler(async (req, res) => {
   }
 
   if (
-    player.user.toString() !== userId.toString() &&
-    req.user.role !== "admin"
+    !canManagePlayer(req.user, player)
   ) {
     throw new ApiError(403, "You can only update your own statistics");
   }
@@ -1504,6 +1639,56 @@ export const searchPlayers = asyncHandler(async (req, res) => {
 
   const { skip } = paginate(page, limit);
 
+  const esResult = await search("player", {
+    q: search,
+    filters: {
+      position,
+      nationality,
+      preferredFoot,
+      contractStatus,
+      physicalCondition,
+      ageMin,
+      ageMax,
+      heightMin,
+      heightMax,
+      weightMin,
+      weightMax,
+      salaryMin,
+      salaryMax,
+      skills,
+    },
+    from: skip,
+    size: parseInt(limit),
+    sortBy,
+  });
+  if (esResult) {
+    const ids = esResult.ids;
+    const esPlayers = ids.length
+      ? await Player.find({ _id: { $in: ids } }).populate("user", "name email")
+      : [];
+    const rank = new Map(ids.map((id, i) => [String(id), i]));
+    esPlayers.sort(
+      (a, b) => (rank.get(String(a._id)) ?? 0) - (rank.get(String(b._id)) ?? 0)
+    );
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          players: esPlayers,
+          searchQuery: search,
+          engine: "elasticsearch",
+          pagination: {
+            total: esResult.total,
+            pages: Math.ceil(esResult.total / parseInt(limit)),
+            page: parseInt(page),
+            limit: parseInt(limit),
+          },
+        },
+        `Found ${esResult.total} players matching your search`
+      )
+    );
+  }
+
   let sort = { createdAt: -1 };
   if (sortBy === "date") {
     sort = { createdAt: -1 };
@@ -1600,7 +1785,7 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
       { position: currentPlayer.position },
       { nationality: currentPlayer.nationality },
       { skills: { $in: currentPlayer.skills || [] } },
-      { jop: currentPlayer.jop },
+      { jop: currentPlayer.jop || currentPlayer.job },
     ],
   };
 
@@ -1670,8 +1855,10 @@ export const getFeaturedPlayers = asyncHandler(async (req, res) => {
 
   const query = {
     isActive: true,
-    "isPromoted.status": true,
-    "isPromoted.endDate": { $gt: new Date() },
+    $or: [
+      { "isPromoted.status": true, "isPromoted.endDate": { $gt: new Date() } },
+      { isPro: true, proExpiresAt: { $gt: new Date() } },
+    ],
   };
 
   const players = await Player.find(query)
@@ -1746,7 +1933,7 @@ const calculateProfileCompleteness = (player) => {
   if (player.statistics) {
     completedFields++;
   }
-  if (player.jop) {
+  if (player.jop || player.job) {
     completedFields++;
   }
 

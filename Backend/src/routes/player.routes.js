@@ -122,7 +122,7 @@ router.post(
 
 router.post(
   "/:id/media/:mediaType",
-  uploadMixed.array("media", 1),
+  uploadMixed.array("media", 10),
   uploadMedia
 );
 

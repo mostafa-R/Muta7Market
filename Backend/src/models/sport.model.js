@@ -26,7 +26,7 @@ const sportSchema = new mongoose.Schema(
     ],
     roleTypes: [
       {
-        jop: {
+        job: {
           type: String,
           enum: ["player", "coach"],
           required: true,

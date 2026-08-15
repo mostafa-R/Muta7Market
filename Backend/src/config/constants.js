@@ -54,6 +54,11 @@ export const CATEGORY = {
   COACH: "coach",
 };
 
+export const PLAN_TYPES = {
+  FREE: "free",
+  PRO: "pro",
+};
+
 export const PAYMENT_STATUS = {
   PENDING: "pending",
   COMPLETED: "completed",
@@ -114,6 +119,12 @@ export const PRICING = {
 
   ONE_YEAR_DAYS: 365,
   PROMOTION_DEFAULT_DAYS: Number(process.env.PROMOTION_DEFAULT_DAYS),
+
+  pro_player: {
+    month: Number(process.env.PRICE_PRO_PLAYER_MONTH) || 49,
+    year: Number(process.env.PRICE_PRO_PLAYER_YEAR) || 499,
+  },
+  PRO_DEFAULT_DAYS: Number(process.env.PRO_DEFAULT_DAYS) || 30,
 };
 
 export const PAGINATION = {

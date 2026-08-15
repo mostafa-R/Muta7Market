@@ -64,6 +64,10 @@ const userSchema = new mongoose.Schema(
           default: Date.now,
           expires: 604800,
         },
+        expiresAt: {
+          type: Date,
+          default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
       },
     ],
     lastLogin: Date,
@@ -129,6 +133,18 @@ userSchema.methods.cleanExpiredTokens = function () {
     const tokenAge = now - tokenObj.createdAt;
     return tokenAge < 7 * 24 * 60 * 60 * 1000;
   });
+};
+
+userSchema.methods.tokensMatch = function (hashedToken) {
+  return this.refreshTokens.some(
+    (tokenObj) => tokenObj.token === hashedToken && tokenObj.expiresAt > new Date()
+  );
+};
+
+userSchema.methods.revokeRefreshToken = function (hashedToken) {
+  this.refreshTokens = this.refreshTokens.filter(
+    (tokenObj) => tokenObj.token !== hashedToken
+  );
 };
 
 export default mongoose.model("User", userSchema);

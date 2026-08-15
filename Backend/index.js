@@ -1,14 +1,20 @@
 import "dotenv/config";
 import { createServer } from "http";
+import { createAdapter } from "@socket.io/redis-adapter";
+import mongoose from "mongoose";
+import redis from "redis";
+import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import connectDB from "./src/config/db.js";
 import { createCronJobs } from "./src/cron/expiry.jobs.js";
 import { isOriginAllowed } from "./src/config/allowedOrigins.js";
+import NegotiationRoom from "./src/models/negotiationRoom.model.js";
+import User from "./src/models/user.model.js";
 import app from "./src/server.js";
 import logger from "./src/utils/logger.js";
-import { setSocketServer } from "./src/services/socket.service.js";
+import { setSocketServer, userRoom } from "./src/services/socket.service.js";
 
-const PORT = process.env.PORT ;
+const PORT = process.env.PORT;
 
 connectDB();
 
@@ -22,12 +28,57 @@ const io = new Server(server, {
   },
 });
 
-io.use((socket, next) => {
+const redisUrl = process.env.REDIS_URL || "";
+
+if (redisUrl) {
   try {
-    const origin = socket.handshake.headers.origin;
-    if (!isOriginAllowed(origin)) {
-      return next(new Error("Origin not allowed"));
+    const pubClient = redis.createClient({ url: redisUrl });
+    const subClient = pubClient.duplicate();
+
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+
+    io.adapter(createAdapter(pubClient, subClient));
+    logger.info("Socket.io Redis adapter enabled");
+  } catch (error) {
+    logger.error("Socket.io Redis adapter failed, falling back to in-memory:", error);
+  }
+}
+
+io.use(async (socket, next) => {
+  try {
+    const token =
+      socket.handshake.auth?.token ||
+      socket.handshake.auth?.accessToken ||
+      socket.handshake.query?.token;
+
+    if (!token) {
+      return next(new Error("Authentication required"));
     }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return next(new Error("Invalid or expired token"));
+    }
+
+    const user = await User.findById(decoded.id)
+      .select("name email phone role isActive verifiedBadge")
+      .lean();
+
+    if (!user || !user.isActive) {
+      return next(new Error("User not found or inactive"));
+    }
+
+    socket.data.user = {
+      id: String(user._id),
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      verifiedBadge: Boolean(user.verifiedBadge),
+    };
+
     next();
   } catch (error) {
     next(error);
@@ -37,12 +88,48 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   logger.info(`Socket connected: ${socket.id}`);
 
-  socket.on("join", (room) => {
-    if (typeof room !== "string" || !/^negotiation:[0-9a-f]{24}$/i.test(room)) {
-      return;
+  socket.join(userRoom(socket.data.user.id));
+
+  socket.on("join", async (room, ack) => {
+    try {
+      if (typeof room !== "string" || !/^negotiation:[0-9a-f]{24}$/i.test(room)) {
+        if (typeof ack === "function") {
+          ack({ success: false, error: "Invalid room" });
+        }
+        return;
+      }
+
+      const roomId = room.split(":")[1];
+      if (!mongoose.Types.ObjectId.isValid(roomId)) {
+        if (typeof ack === "function") {
+          ack({ success: false, error: "Invalid room" });
+        }
+        return;
+      }
+
+      const membership = await NegotiationRoom.exists({
+        _id: roomId,
+        participants: socket.data.user.id,
+      });
+
+      if (!membership) {
+        if (typeof ack === "function") {
+          ack({ success: false, error: "Not a participant of this room" });
+        }
+        return;
+      }
+
+      socket.join(room);
+      logger.info(`Socket ${socket.id} joined room: ${room}`);
+      if (typeof ack === "function") {
+        ack({ success: true });
+      }
+    } catch (error) {
+      logger.error("Socket join error:", error);
+      if (typeof ack === "function") {
+        ack({ success: false, error: "Server error" });
+      }
     }
-    socket.join(room);
-    logger.info(`Socket ${socket.id} joined room: ${room}`);
   });
 
   socket.on("leave", (room) => {

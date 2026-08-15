@@ -220,4 +220,4 @@ offerSchema.pre("save", function (next) {
   next();
 });
 
-export default mongoose.model("Offer", offerSchema);
+export default mongoose.model("Listing", offerSchema, "offers");

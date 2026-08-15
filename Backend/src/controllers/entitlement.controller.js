@@ -12,6 +12,7 @@ export const checkEntitlement = async (req, res) => {
     "listed_coach",
     "promoted_player",
     "promoted_coach",
+    "pro_player",
   ];
   if (!ALLOWED_TYPES.includes(type)) {
     return res.status(400).json({ success: false, message: "invalid_type" });

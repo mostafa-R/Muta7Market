@@ -32,6 +32,7 @@ const InvoiceSchema = new mongoose.Schema(
         "promote_offer",
         "unlock_contact",
         "transfer_offer",
+        "pro",
       ],
       required: true,
       index: true,
@@ -72,7 +73,7 @@ const InvoiceSchema = new mongoose.Schema(
 
     relatedOffer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Offer",
+      ref: "Listing",
       default: null,
     },
 

@@ -103,6 +103,8 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     isActive,
     priority,
     advertiser,
+    targeting,
+    trial,
   } = req.body;
 
   if (!title || !type || !position || !displayPeriod || !advertiser) {
@@ -119,9 +121,27 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     priority: priority || 0,
     advertiser,
     pricing: { cost: 0, currency: "SAR" },
-    targeting: {},
     source: source || "internal",
   };
+
+  if (targeting) {
+    advertisementData.targeting = {
+      countries: targeting.countries || [],
+      cities: targeting.cities || [],
+      sports: targeting.sports || [],
+    };
+  }
+
+  if (trial) {
+    advertisementData.trial = {
+      isTrial: Boolean(trial.isTrial),
+      academyName: trial.academyName || null,
+      registrationLink: trial.registrationLink || null,
+      ageGroups: trial.ageGroups || [],
+      startDate: trial.startDate || null,
+      endDate: trial.endDate || null,
+    };
+  }
 
   if (advertisementData.source === "google") {
     if (!googleAd || !googleAd.adSlotId) {
@@ -208,6 +228,8 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
     priority,
     advertiser,
     pricing,
+    targeting,
+    trial,
   } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -282,6 +304,28 @@ export const updateAdvertisement = asyncHandler(async (req, res) => {
     advertisement.googleAd = {
       ...advertisement.googleAd,
       ...googleAd,
+    };
+  }
+
+  if (targeting) {
+    advertisement.targeting = {
+      ...(advertisement.targeting || {}),
+      countries: targeting.countries ?? advertisement.targeting?.countries ?? [],
+      cities: targeting.cities ?? advertisement.targeting?.cities ?? [],
+      sports: targeting.sports ?? advertisement.targeting?.sports ?? [],
+    };
+  }
+
+  if (trial) {
+    advertisement.trial = {
+      ...(advertisement.trial || {}),
+      isTrial: trial.isTrial ?? advertisement.trial?.isTrial ?? false,
+      academyName: trial.academyName ?? advertisement.trial?.academyName ?? null,
+      registrationLink:
+        trial.registrationLink ?? advertisement.trial?.registrationLink ?? null,
+      ageGroups: trial.ageGroups ?? advertisement.trial?.ageGroups ?? [],
+      startDate: trial.startDate ?? advertisement.trial?.startDate ?? null,
+      endDate: trial.endDate ?? advertisement.trial?.endDate ?? null,
     };
   }
 
@@ -417,12 +461,25 @@ export const registerAdvertisementClick = asyncHandler(async (req, res) => {
 export const getActiveAdvertisementsByPosition = asyncHandler(
   async (req, res) => {
     const { position } = req.params;
-    const { limit = 5, source = "internal" } = req.query;
+    const {
+      limit = 5,
+      source = "internal",
+      country,
+      city,
+      sport,
+      trial,
+    } = req.query;
 
     const advertisements = await Advertisement.getActiveAds(
       position,
       parseInt(limit, 10),
-      source
+      source,
+      {
+        country,
+        city,
+        sport,
+        trialOnly: trial,
+      }
     );
 
     if (source === "internal") {

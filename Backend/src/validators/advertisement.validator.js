@@ -75,6 +75,21 @@ export const createAdvertisementSchema = Joi.object({
 
   priority: Joi.number().integer().min(0),
 
+  targeting: Joi.object({
+    countries: Joi.array().items(Joi.string().trim()),
+    cities: Joi.array().items(Joi.string().trim()),
+    sports: Joi.array().items(Joi.string().trim()),
+  }),
+
+  trial: Joi.object({
+    isTrial: Joi.boolean(),
+    academyName: Joi.string().trim().allow("", null),
+    registrationLink: Joi.string().uri().allow("", null),
+    ageGroups: Joi.array().items(Joi.string().trim()),
+    startDate: Joi.date().allow(null),
+    endDate: Joi.date().greater(Joi.ref("startDate")).allow(null),
+  }),
+
   advertiser: Joi.object({
     name: Joi.string().required().messages({
       "string.empty": "يجب توفير اسم المعلن",
@@ -122,6 +137,21 @@ export const updateAdvertisementSchema = Joi.object({
   isActive: Joi.boolean(),
 
   priority: Joi.number().integer().min(0),
+
+  targeting: Joi.object({
+    countries: Joi.array().items(Joi.string().trim()),
+    cities: Joi.array().items(Joi.string().trim()),
+    sports: Joi.array().items(Joi.string().trim()),
+  }),
+
+  trial: Joi.object({
+    isTrial: Joi.boolean(),
+    academyName: Joi.string().trim().allow("", null),
+    registrationLink: Joi.string().uri().allow("", null),
+    ageGroups: Joi.array().items(Joi.string().trim()),
+    startDate: Joi.date().allow(null),
+    endDate: Joi.date().greater(Joi.ref("startDate")).allow(null),
+  }),
 
   advertiser: Joi.object({
     name: Joi.string(),

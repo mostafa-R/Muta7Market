@@ -133,6 +133,23 @@ export const getPricingSettings = async () => {
       ADD_OFFER: settings.pricing.add_offer || DEFAULT_PRICING.ADD_OFFER,
       PROMOTE_OFFER_PER_DAY: settings.pricing.promote_offer_per_day || DEFAULT_PRICING.PROMOTE_OFFER_PER_DAY,
       UNLOCK_CONTACT: settings.pricing.unlock_contact || DEFAULT_PRICING.UNLOCK_CONTACT,
+
+      // Player Pro plan pricing
+      pro_player: {
+        month:
+          settings.pricing.pro_player?.monthly ||
+          settings.pricing.pro_player?.price ||
+          DEFAULT_PRICING.pro_player?.month,
+        year:
+          settings.pricing.pro_player?.yearly ||
+          settings.pricing.pro_player?.year ||
+          DEFAULT_PRICING.pro_player?.year,
+      },
+      PRO_DEFAULT_DAYS:
+        settings.pricing.pro_player?.days ||
+        settings.pricing.pro_default_days ||
+        process.env.PRO_DEFAULT_DAYS ||
+        DEFAULT_PRICING.PRO_DEFAULT_DAYS,
     };
 
     return pricing;

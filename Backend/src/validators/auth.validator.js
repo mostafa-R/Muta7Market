@@ -22,6 +22,12 @@ export const loginSchema = Joi.object({
   password: Joi.string().required(),
 });
 
+export const refreshTokenSchema = Joi.object({
+  refreshToken: Joi.string().optional().messages({
+    "string.empty": "Refresh token cannot be empty",
+  }),
+});
+
 export const verifyEmailSchema = Joi.object({
   otp: Joi.string().required(),
 });

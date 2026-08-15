@@ -13,7 +13,8 @@ export const createPlayerSchema = Joi.object({
   birthCountry: Joi.string().trim().allow("", null).optional(),
   customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
-  jop: Joi.string().valid("player", "coach").required(),
+  job: Joi.string().valid("player", "coach"),
+  jop: Joi.string().valid("player", "coach"),
   roleType: Joi.alternatives()
     .try(
       Joi.string().trim().allow("", null),
@@ -163,6 +164,7 @@ export const updatePlayerSchema = Joi.object({
   customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
   jop: Joi.string().valid("player", "coach"),
+  job: Joi.string().valid("player", "coach"),
   roleType: Joi.alternatives()
     .try(
       Joi.string().trim().allow("", null),

@@ -141,6 +141,31 @@ export const deleteAllPlayerMedia = async (media) => {
       }
     }
 
+    if (media.videos && Array.isArray(media.videos)) {
+      for (let i = 0; i < media.videos.length; i++) {
+        const video = media.videos[i];
+        if (video?.publicId) {
+          try {
+            await deleteMediaFromLocal(video.publicId, "video");
+            deletionResults.successful.push({
+              type: `highlight reel ${i + 1}`,
+              publicId: video.publicId,
+            });
+          } catch (err) {
+            console.warn(
+              `Failed to delete highlight reel ${i + 1}:`,
+              err.message
+            );
+            deletionResults.failed.push({
+              type: `highlight reel ${i + 1}`,
+              publicId: video.publicId,
+              error: err.message,
+            });
+          }
+        }
+      }
+    }
+
     if (media.document?.publicId) {
       try {
         await deleteMediaFromLocal(media.document.publicId, "auto");

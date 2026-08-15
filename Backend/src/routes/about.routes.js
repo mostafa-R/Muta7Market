@@ -60,8 +60,8 @@ aboutsRouter.get(
       const { page, limit } = req.query;
       const result = await getAbouts({ page, limit });
       const [totalPlayers, totalCoach, totalSports] = [
-        await playerModel.countDocuments({ jop: "player" }),
-        await playerModel.countDocuments({ jop: "coach" }),
+        await playerModel.countDocuments({ job: "player" }),
+        await playerModel.countDocuments({ job: "coach" }),
         await sportModel.countDocuments(),
       ];
       return res

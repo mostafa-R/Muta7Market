@@ -2,9 +2,10 @@ import crypto from "crypto";
 import Coach from "../models/coach.model.js";
 import Entitlement from "../models/entitlement.model.js";
 import Invoice from "../models/invoice.model.js";
-import Offer from "../models/offer.model.js";
+import Listing from "../models/listing.model.js";
 import PaymentEvent from "../models/paymentEvent.model.js";
 import PlayerProfile from "../models/player.model.js";
+import Subscription from "../models/subscription.model.js";
 import TransferOffer from "../models/transferOffer.model.js";
 import User from "../models/user.model.js";
 import {
@@ -15,6 +16,7 @@ import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
 import { runInTransaction } from "../utils/transactions.js";
 import { OFFER_STATUS } from "../config/constants.js";
+import { emitToUser } from "../services/socket.service.js";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -34,12 +36,25 @@ function entitlementDurationDays(invoice, PRICING) {
     return Number(
       invoice.durationDays || PRICING.PROMOTION_DEFAULT_DAYS || 15
     );
+  if (invoice.product === "pro")
+    return Number(
+      invoice.durationDays ||
+        PRICING.PRO_DEFAULT_DAYS ||
+        process.env.PRO_DEFAULT_DAYS ||
+        30
+    );
   return 0;
 }
 
 function entitlementKey(invoice) {
   if (invoice.product === "contacts_access") {
     return { type: "contacts_access", playerProfileId: null };
+  }
+  if (invoice.product === "pro") {
+    return {
+      type: "pro_player",
+      playerProfileId: invoice.playerProfileId || null,
+    };
   }
   const prefix = invoice.product === "listing" ? "listed" : "promoted";
   return {
@@ -147,12 +162,52 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
       entitlementSet,
       opts
     );
+  } else if (invoice.product === "pro") {
+    if (invoice.playerProfileId) {
+      await PlayerProfile.updateOne(
+        { _id: invoice.playerProfileId, user: invoice.userId },
+        {
+          $set: {
+            isPro: true,
+            proSince: new Date(),
+            proExpiresAt: end,
+          },
+        },
+        profileOpts
+      );
+    }
+    await Subscription.updateOne(
+      {
+        user: invoice.userId,
+        plan: "pro",
+        status: { $in: ["active", "canceled", "expired"] },
+      },
+      {
+        $set: {
+          plan: "pro",
+          status: "active",
+          playerProfileId: invoice.playerProfileId || null,
+          startDate: new Date(),
+          endDate,
+          autoRenew: false,
+          billingInterval: invoice.featureType === "year" ? "year" : "month",
+          sourceInvoice: invoice._id,
+        },
+        $setOnInsert: { user: invoice.userId },
+      },
+      opts
+    );
+    await Entitlement.updateOne(
+      { userId: invoice.userId, ...key },
+      entitlementSet,
+      opts
+    );
   } else if (
     ["add_offer", "promote_offer", "unlock_contact"].includes(
       invoice.product
     ) &&
     invoice.relatedOffer
-  ) {    let offerQuery = Offer.findById(invoice.relatedOffer);
+  ) {    let offerQuery = Listing.findById(invoice.relatedOffer);
     if (session) offerQuery = offerQuery.session(session);
     const offer = await offerQuery;
     if (offer) {
@@ -202,6 +257,15 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
       transfer.payment.paidAmount = invoice.amount;
       transfer.payment.invoiceId = invoice._id;
       await transfer.save({ session });
+
+      if (transfer.toUser && String(transfer.toUser) !== String(invoice.userId)) {
+        emitToUser(transfer.toUser, "transfer_offer:new", {
+          transferOfferId: String(transfer._id),
+          type: transfer.type || "official",
+          status: transfer.status || "pending",
+          targetType: transfer.targetType || "player",
+        });
+      }
     }
   }
 

@@ -6,7 +6,7 @@ import User from "./src/models/user.model.js";
 import Player from "./src/models/player.model.js";
 import Invoice from "./src/models/invoice.model.js";
 import Entitlement from "./src/models/entitlement.model.js";
-import Offer from "./src/models/offer.model.js";
+import Listing from "./src/models/listing.model.js";
 import TransferOffer from "./src/models/transferOffer.model.js";
 
 const MOCK_PORT = 9001;
@@ -370,7 +370,7 @@ async function main() {
   }, { Authorization: WEBHOOK_AUTH });
   check("offer webhook processed", offerWebhook.status === 200 && offerWebhook.json?.ok === true);
 
-  const offerDoc = await Offer.findById(offerId).lean();
+  const offerDoc = await Listing.findById(offerId).lean();
   check(
     "offer activated after payment",
     offerDoc?.payment?.isPaid === true && offerDoc?.status === "active",

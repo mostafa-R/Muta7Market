@@ -5,6 +5,7 @@ import {
   getProfile,
   login,
   logout,
+  refreshToken,
   register,
   resetPassword,
   verifyEmail,
@@ -39,6 +40,12 @@ router.post(
   authLimiter,
   validate(authValidation.resetPasswordSchema),
   resetPassword
+);
+router.post(
+  "/refresh",
+  authLimiter,
+  validate(authValidation.refreshTokenSchema),
+  refreshToken
 );
 router.post(
   "/verify-email",

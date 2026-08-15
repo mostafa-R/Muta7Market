@@ -1,6 +1,6 @@
 import { OFFER_STATUS } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
-import Offer from "../models/offer.model.js";
+import Listing from "../models/listing.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -27,8 +27,8 @@ const OFFER_ALLOWED_FIELDS = [
   "expiryDate",
 ];
 
-const updateExpiredOffers = async () => {
-  await Offer.updateMany(
+const updateExpiredListings = async () => {
+  await Listing.updateMany(
     {
       expiryDate: { $lt: new Date() },
       status: OFFER_STATUS.ACTIVE,
@@ -37,7 +37,7 @@ const updateExpiredOffers = async () => {
   );
 };
 
-async function createOfferInvoice(
+async function createListingInvoice(
   userId,
   offerId,
   product,
@@ -116,7 +116,7 @@ async function initiateInvoicePayment(invoice, user, req) {
   return invoice.paymentUrl;
 }
 
-export const createOffer = asyncHandler(async (req, res) => {
+export const createListing = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const requirePayment = req.user.role !== "admin";
 
@@ -129,14 +129,14 @@ export const createOffer = asyncHandler(async (req, res) => {
     const pricing = await getPricingSettings();
     const amount = data.pricing?.addOfferCost || pricing.ADD_OFFER;
 
-    const offer = await Offer.create({
+    const offer = await Listing.create({
       user: userId,
       ...data,
       payment: { isPaid: false },
       status: OFFER_STATUS.PENDING,
     });
 
-    const invoice = await createOfferInvoice(
+    const invoice = await createListingInvoice(
       userId,
       offer._id,
       "add_offer",
@@ -165,7 +165,7 @@ export const createOffer = asyncHandler(async (req, res) => {
       )
     );
   } else {
-    const offer = await Offer.create({
+    const offer = await Listing.create({
       user: userId,
       ...data,
       payment: { isPaid: true, paidAt: new Date() },
@@ -174,18 +174,18 @@ export const createOffer = asyncHandler(async (req, res) => {
 
     await sendInternalNotification(
       userId,
-      "Offer Created Successfully",
+      "Listing Created Successfully",
       `Your offer "${offer.title?.en || offer.title}" has been created and is now live!`,
       { offerId: offer._id }
     );
 
     res
       .status(201)
-      .json(new ApiResponse(201, offer, "Offer created successfully"));
+      .json(new ApiResponse(201, offer, "Listing created successfully"));
   }
 });
 
-export const getAllOffers = asyncHandler(async (req, res) => {
+export const getAllListings = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
@@ -245,7 +245,7 @@ export const getAllOffers = asyncHandler(async (req, res) => {
     }
   }
 
-  await updateExpiredOffers();
+  await updateExpiredListings();
 
   const { skip } = paginate(page, limit);
   let sort = buildSortQuery(sortBy);
@@ -259,14 +259,14 @@ export const getAllOffers = asyncHandler(async (req, res) => {
   }
 
   const [offers, total] = await Promise.all([
-    Offer.find(query)
+    Listing.find(query)
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip)
       .populate("user", "name email")
       .select("-unlockedBy")
       .lean(),
-    Offer.countDocuments(query),
+    Listing.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -281,22 +281,22 @@ export const getAllOffers = asyncHandler(async (req, res) => {
           limit: parseInt(limit),
         },
       },
-      "Offers fetched successfully"
+      "Listings fetched successfully"
     )
   );
 });
 
-export const getOfferById = asyncHandler(async (req, res) => {
+export const getListingById = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user?._id;
 
-  const offer = await Offer.findById(offerId).populate("user", "name email");
+  const offer = await Listing.findById(offerId).populate("user", "name email");
 
   if (
     !offer ||
     (!offer.isActive && (!userId || offer.user.toString() !== userId))
   ) {
-    throw new ApiError(404, "Offer not found");
+    throw new ApiError(404, "Listing not found");
   }
 
   if (!userId || userId.toString() !== offer.user.toString()) {
@@ -328,20 +328,20 @@ export const getOfferById = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { offer: offerData, hasUnlockedContact },
-        "Offer fetched successfully"
+        "Listing fetched successfully"
       )
     );
 });
 
-export const updateOffer = asyncHandler(async (req, res) => {
+export const updateListing = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
   const userRole = req.user.role;
 
-  const offer = await Offer.findById(offerId);
+  const offer = await Listing.findById(offerId);
 
   if (!offer) {
-    throw new ApiError(404, "Offer not found");
+    throw new ApiError(404, "Listing not found");
   }
 
   if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
@@ -362,25 +362,25 @@ export const updateOffer = asyncHandler(async (req, res) => {
 
   await sendInternalNotification(
     offer.user,
-    "Offer Updated",
+    "Listing Updated",
     `Your offer "${offer.title?.en || offer.title}" has been updated successfully`,
     { offerId: offer._id }
   );
 
   res
     .status(200)
-    .json(new ApiResponse(200, offer, "Offer updated successfully"));
+    .json(new ApiResponse(200, offer, "Listing updated successfully"));
 });
 
-export const deleteOffer = asyncHandler(async (req, res) => {
+export const deleteListing = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
   const userRole = req.user.role;
 
-  const offer = await Offer.findById(offerId);
+  const offer = await Listing.findById(offerId);
 
   if (!offer) {
-    throw new ApiError(404, "Offer not found");
+    throw new ApiError(404, "Listing not found");
   }
 
   if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
@@ -409,17 +409,17 @@ export const deleteOffer = asyncHandler(async (req, res) => {
 
   await sendInternalNotification(
     offer.user,
-    "Offer Deleted",
+    "Listing Deleted",
     `Your offer "${offer.title?.en || offer.title}" has been deleted`,
     { offerId: offer._id }
   );
 
   res
     .status(200)
-    .json(new ApiResponse(200, null, "Offer deleted successfully"));
+    .json(new ApiResponse(200, null, "Listing deleted successfully"));
 });
 
-export const getMyOffers = asyncHandler(async (req, res) => {
+export const getMyListings = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { includeInactive = false, page = 1, limit = 10 } = req.query;
 
@@ -431,12 +431,12 @@ export const getMyOffers = asyncHandler(async (req, res) => {
   const { skip } = paginate(page, limit);
 
   const [offers, total] = await Promise.all([
-    Offer.find(query)
+    Listing.find(query)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip)
       .populate("unlockedBy.user", "name email"),
-    Offer.countDocuments(query),
+    Listing.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -456,7 +456,7 @@ export const getMyOffers = asyncHandler(async (req, res) => {
   );
 });
 
-export const promoteOffer = asyncHandler(async (req, res) => {
+export const promoteListing = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
   const userRole = req.user.role;
@@ -469,10 +469,10 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     );
   }
 
-  const offer = await Offer.findById(offerId);
+  const offer = await Listing.findById(offerId);
 
   if (!offer) {
-    throw new ApiError(404, "Offer not found");
+    throw new ApiError(404, "Listing not found");
   }
 
   if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
@@ -484,7 +484,7 @@ export const promoteOffer = asyncHandler(async (req, res) => {
   }
 
   if (offer.isCurrentlyPromoted) {
-    throw new ApiError(400, "Offer is already promoted");
+    throw new ApiError(400, "Listing is already promoted");
   }
 
   const pricing = await getPricingSettings();
@@ -492,7 +492,7 @@ export const promoteOffer = asyncHandler(async (req, res) => {
     days *
     (offer.pricing?.promotionCost?.perDay || pricing.PROMOTE_OFFER_PER_DAY);
 
-  const invoice = await createOfferInvoice(
+  const invoice = await createListingInvoice(
     userId,
     offer._id,
     "promote_offer",
@@ -524,10 +524,10 @@ export const unlockContact = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
 
-  const offer = await Offer.findById(offerId);
+  const offer = await Listing.findById(offerId);
 
   if (!offer) {
-    throw new ApiError(404, "Offer not found");
+    throw new ApiError(404, "Listing not found");
   }
 
   if (offer.user.toString() === userId.toString()) {
@@ -559,7 +559,7 @@ export const unlockContact = asyncHandler(async (req, res) => {
   const pricing = await getPricingSettings();
   const unlockCost = offer.pricing?.unlockContactCost || pricing.UNLOCK_CONTACT;
 
-  const invoice = await createOfferInvoice(
+  const invoice = await createListingInvoice(
     userId,
     offer._id,
     "unlock_contact",
@@ -587,17 +587,17 @@ export const unlockContact = asyncHandler(async (req, res) => {
     );
 });
 
-export const getOfferStatistics = asyncHandler(async (req, res) => {
+export const getListingStatistics = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user._id;
 
-  const offer = await Offer.findById(offerId).populate(
+  const offer = await Listing.findById(offerId).populate(
     "unlockedBy.user",
     "name email phone"
   );
 
   if (!offer) {
-    throw new ApiError(404, "Offer not found");
+    throw new ApiError(404, "Listing not found");
   }
 
   if (offer.user.toString() !== userId.toString()) {
@@ -615,12 +615,12 @@ export const getOfferStatistics = asyncHandler(async (req, res) => {
         unlockedBy: offer.unlockedBy || [],
         totalRevenue: (offer.unlockedBy?.length || 0) * unlockCost,
       },
-      "Offer statistics fetched successfully"
+      "Listing statistics fetched successfully"
     )
   );
 });
 
-export const confirmOfferPayment = asyncHandler(async (req, res) => {
+export const confirmListingPayment = asyncHandler(async (req, res) => {
   const { invoiceId } = req.params;
   const userId = req.user._id;
   const isStaff = STAFF_ROLES.includes(req.user.role);
@@ -663,7 +663,7 @@ export const confirmOfferPayment = asyncHandler(async (req, res) => {
   );
 });
 
-export const searchOffers = asyncHandler(async (req, res) => {
+export const searchListings = asyncHandler(async (req, res) => {
   const {
     q: search,
     category,
@@ -721,14 +721,14 @@ export const searchOffers = asyncHandler(async (req, res) => {
   }
 
   const [offers, total] = await Promise.all([
-    Offer.find(query)
+    Listing.find(query)
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip)
       .populate("user", "name email")
       .select("-unlockedBy")
       .lean(),
-    Offer.countDocuments(query),
+    Listing.countDocuments(query),
   ]);
 
   res.status(200).json(
@@ -749,7 +749,7 @@ export const searchOffers = asyncHandler(async (req, res) => {
   );
 });
 
-export const getFeaturedOffers = asyncHandler(async (req, res) => {
+export const getFeaturedListings = asyncHandler(async (req, res) => {
   const { limit = 6 } = req.query;
 
   const query = {
@@ -759,7 +759,7 @@ export const getFeaturedOffers = asyncHandler(async (req, res) => {
     "promotion.endDate": { $gt: new Date() },
   };
 
-  const offers = await Offer.find(query)
+  const offers = await Listing.find(query)
     .sort({ "promotion.position": 1, "promotion.startDate": -1 })
     .limit(parseInt(limit))
     .populate("user", "name email")
@@ -771,13 +771,13 @@ export const getFeaturedOffers = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, offers, "Featured offers fetched successfully"));
 });
 
-export const getSimilarOffers = asyncHandler(async (req, res) => {
+export const getSimilarListings = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const { limit = 5 } = req.query;
 
-  const currentOffer = await Offer.findById(offerId);
-  if (!currentOffer) {
-    throw new ApiError(404, "Offer not found");
+  const currentListing = await Listing.findById(offerId);
+  if (!currentListing) {
+    throw new ApiError(404, "Listing not found");
   }
 
   const query = {
@@ -785,13 +785,13 @@ export const getSimilarOffers = asyncHandler(async (req, res) => {
     isActive: true,
     "payment.isPaid": true,
     $or: [
-      { category: currentOffer.category },
-      { "seo.keywords": { $in: currentOffer.seo?.keywords || [] } },
-      { "offerDetails.location": currentOffer.offerDetails?.location },
+      { category: currentListing.category },
+      { "seo.keywords": { $in: currentListing.seo?.keywords || [] } },
+      { "offerDetails.location": currentListing.offerDetails?.location },
     ],
   };
 
-  const similarOffers = await Offer.find(query)
+  const similarListings = await Listing.find(query)
     .sort({ createdAt: -1 })
     .limit(parseInt(limit))
     .populate("user", "name email")
@@ -801,6 +801,6 @@ export const getSimilarOffers = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json(
-      new ApiResponse(200, similarOffers, "Similar offers fetched successfully")
+      new ApiResponse(200, similarListings, "Similar offers fetched successfully")
     );
 });

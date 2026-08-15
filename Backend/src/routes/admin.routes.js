@@ -14,6 +14,7 @@ import {
   // getRecentUnconfirmedPeople,
   getRecentUnconfirmedPlayers,
   getUserById,
+  reindexSearch,
   updateActivation,
   updateConfirmation,
   updatePlayer,
@@ -50,6 +51,8 @@ const router = express.Router();
 router.use(authMiddleware, authorize("admin", "super_admin"));
 
 router.get("/dashboard/stats", getDashboardStats);
+
+router.post("/search/reindex", reindexSearch);
 
 router.get("/users", validateQuery(getUsersQuerySchema), getAllUsers);
 

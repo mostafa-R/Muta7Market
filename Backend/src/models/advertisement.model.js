@@ -64,6 +64,38 @@ const advertisementSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    targeting: {
+      type: new mongoose.Schema(
+        {
+          countries: { type: [String], default: [] },
+          cities: { type: [String], default: [] },
+          sports: { type: [String], default: [] },
+        },
+        { _id: false }
+      ),
+      default: () => ({ countries: [], cities: [], sports: [] }),
+    },
+    trial: {
+      type: new mongoose.Schema(
+        {
+          isTrial: { type: Boolean, default: false },
+          academyName: { type: String, trim: true, default: null },
+          registrationLink: { type: String, trim: true, default: null },
+          ageGroups: { type: [String], default: [] },
+          startDate: { type: Date, default: null },
+          endDate: { type: Date, default: null },
+        },
+        { _id: false }
+      ),
+      default: () => ({
+        isTrial: false,
+        academyName: null,
+        registrationLink: null,
+        ageGroups: [],
+        startDate: null,
+        endDate: null,
+      }),
+    },
     clicks: {
       type: Number,
       default: 0,
@@ -130,7 +162,8 @@ advertisementSchema.methods.registerView = async function () {
 advertisementSchema.statics.getActiveAds = async function (
   position,
   limit = 5,
-  source = "internal"
+  source = "internal",
+  geo = {}
 ) {
   const now = new Date();
   const query = {
@@ -138,14 +171,37 @@ advertisementSchema.statics.getActiveAds = async function (
     isActive: true,
     "displayPeriod.startDate": { $lte: now },
     "displayPeriod.endDate": { $gte: now },
-    source: source,
   };
+  if (source) query.source = source;
+  if (geo.trialOnly === true || geo.trialOnly === "true") {
+    query["trial.isTrial"] = true;
+  }
+  if (geo.sport) {
+    query.$or = [{ "targeting.sports": { $in: [geo.sport] } }, { "targeting.sports": { $size: 0 } }];
+  }
 
   try {
     const ads = await this.find(query)
       .sort({ priority: -1, createdAt: -1 })
-      .limit(limit);
-    return ads;
+      .limit(limit * 4);
+
+    const country = geo.country;
+    const city = geo.city;
+
+    const filtered = ads.filter((ad) => {
+      const targeting = ad.targeting || {};
+      const countries = targeting.countries || [];
+      const cities = targeting.cities || [];
+      if (country && countries.length && !countries.includes(country)) {
+        return false;
+      }
+      if (city && cities.length && !cities.includes(city)) {
+        return false;
+      }
+      return true;
+    });
+
+    return filtered.slice(0, parseInt(limit, 10) || 5);
   } catch (error) {
     console.error("Error fetching active ads:", error);
     return [];

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { GENDER, PROFILE_STATUS } from "../config/constants.js";
+import { indexProfile, removeProfile } from "../services/search.service.js";
 
 const mediaVideoSchema = new mongoose.Schema(
   {
@@ -48,6 +49,21 @@ const playerSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    agentUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
+    },
+    agentCode: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    agentLinkedAt: {
+      type: Date,
+      default: null,
+    },
     name: {
       type: String,
       required: true,
@@ -84,7 +100,7 @@ const playerSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
-    jop: {
+    job: {
       type: String,
       enum: ["player", "coach"],
       required: true,
@@ -231,6 +247,10 @@ const playerSchema = new mongoose.Schema(
           uploadedAt: null,
         }),
       },
+      videos: {
+        type: [mediaVideoSchema],
+        default: [],
+      },
       document: {
         type: mediaDocumentSchema,
         default: () => ({
@@ -291,12 +311,28 @@ const playerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isPro: {
+      type: Boolean,
+      default: false,
+    },
+    proSince: {
+      type: Date,
+      default: null,
+    },
+    proExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
+        if (ret.job !== undefined) {
+          ret.jop = ret.job;
+        }
+
         if (
           (ret.nationality === "other" || ret.nationality === "") &&
           ret.customNationality
@@ -348,7 +384,7 @@ const playerSchema = new mongoose.Schema(
 
 playerSchema.index({ isActive: 1, activeExpireAt: 1 });
 playerSchema.index({ name: "text", position: "text" });
-playerSchema.index({ nationality: 1, jop: 1, status: 1 });
+playerSchema.index({ nationality: 1, job: 1, status: 1 });
 playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
 playerSchema.index({ game: 1 });
 
@@ -385,6 +421,30 @@ playerSchema.pre("validate", function (next) {
     this.status = this.status.toLowerCase();
   }
   next();
+});
+
+playerSchema.post("save", async function (doc) {
+  try {
+    await indexProfile("player", doc);
+  } catch {}
+});
+playerSchema.post("findOneAndUpdate", async function (doc) {
+  if (!doc) return;
+  try {
+    await indexProfile("player", doc);
+  } catch {}
+});
+playerSchema.post("deleteOne", async function (doc) {
+  if (!doc) return;
+  try {
+    await removeProfile("player", doc._id);
+  } catch {}
+});
+playerSchema.post("findOneAndDelete", async function (doc) {
+  if (!doc) return;
+  try {
+    await removeProfile("player", doc._id);
+  } catch {}
 });
 
 export default mongoose.model("Player", playerSchema);

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Shortlist from "../models/shortlist.model.js";
 import Player from "../models/player.model.js";
+import ProfileChange from "../models/profileChange.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -20,7 +21,7 @@ export const getMyShortlists = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
   const items = await Shortlist.find({ user: userId })
     .sort({ updatedAt: -1 })
-    .populate("players", "name age nationality position jop isActive");
+    .populate("players", "name age nationality position job jop isActive");
 
   res.status(200).json(
     new ApiResponse(200, items, "Shortlists fetched successfully")
@@ -44,7 +45,7 @@ export const getShortlist = asyncHandler(async (req, res) => {
     (s) =>
       Shortlist.findById(s._id).populate(
         "players",
-        "name age nationality position jop roleType game contractStatus isActive media isListed"
+        "name age nationality position job jop roleType game contractStatus isActive media isListed"
       )
   );
 
@@ -118,6 +119,52 @@ export const removePlayerFromShortlist = asyncHandler(async (req, res) => {
       200,
       { id: String(shortlist._id), players: shortlist.players },
       "Player removed from shortlist"
+    )
+  );
+});
+
+export const getShortlistChanges = asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
+  const shortlist = await loadOwnedShortlist(req.params.id, userId);
+
+  const playerIds = shortlist.players;
+  if (!playerIds.length) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { changes: [], players: [], updatedPlayers: [] },
+        "No players in this shortlist"
+      )
+    );
+  }
+
+  const { limit = 50 } = req.query;
+  const limitNum = Math.min(parseInt(limit) || 50, 200);
+
+  const [changes, players, updatedPlayers] = await Promise.all([
+    ProfileChange.find({
+      profileType: "player",
+      profileId: { $in: playerIds },
+    })
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .lean(),
+    Player.find({ _id: { $in: playerIds } })
+      .select("name age nationality position job jop isActive updatedAt")
+      .lean(),
+    Player.find({
+      _id: { $in: playerIds },
+      updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    })
+      .select("name age nationality position job jop isActive updatedAt")
+      .lean(),
+  ]);
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { changes, players, updatedPlayers },
+      "Shortlist changes fetched successfully"
     )
   );
 });

@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { paylinkCreateInvoice } from "../services/paylink.client.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
+import { search } from "../services/search.service.js";
 
 const STAFF_ROLES = ["admin", "super_admin"];
 
@@ -186,6 +187,52 @@ export const getAllCoaches = async (req, res) => {
     const pageNum = parseInt(page);
     const limitNum = Math.min(parseInt(limit), PAGINATION.MAX_LIMIT);
     const skip = (pageNum - 1) * limitNum;
+
+    if (search) {
+      const esResult = await search("coach", {
+        q: search,
+        filters: {
+          category,
+          nationality,
+          gender,
+          contractStatus,
+          experienceMin: experience,
+          ageMin: minAge,
+          ageMax: maxAge,
+          isPromoted: isPromoted === "true" ? true : undefined,
+        },
+        from: skip,
+        size: limitNum,
+        sortBy,
+      });
+      if (esResult) {
+        const ids = esResult.ids;
+        const coaches = ids.length
+          ? await Coach.find({ _id: { $in: ids } })
+              .populate("user", "email username")
+              .lean()
+          : [];
+        const rank = new Map(ids.map((id, i) => [String(id), i]));
+        coaches.sort(
+          (a, b) => (rank.get(String(a._id)) ?? 0) - (rank.get(String(b._id)) ?? 0)
+        );
+        const total = esResult.total;
+        const totalPages = Math.ceil(total / limitNum);
+        return res.status(200).json({
+          success: true,
+          engine: "elasticsearch",
+          data: coaches,
+          pagination: {
+            currentPage: pageNum,
+            totalPages,
+            totalItems: total,
+            itemsPerPage: limitNum,
+            hasNextPage: pageNum < totalPages,
+            hasPrevPage: pageNum > 1,
+          },
+        });
+      }
+    }
 
     const sort = {};
     sort[sortBy] = sortOrder === "desc" ? -1 : 1;

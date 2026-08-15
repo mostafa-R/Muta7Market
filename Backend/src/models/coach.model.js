@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { GENDER, PROFILE_STATUS } from "../config/constants.js";
+import { indexProfile, removeProfile } from "../services/search.service.js";
 
 const coachSchema = new mongoose.Schema(
   {
@@ -203,5 +204,29 @@ coachSchema.methods.transfer = async function (clubName, amount) {
   };
   return this.save();
 };
+
+coachSchema.post("save", async function (doc) {
+  try {
+    await indexProfile("coach", doc);
+  } catch {}
+});
+coachSchema.post("findOneAndUpdate", async function (doc) {
+  if (!doc) return;
+  try {
+    await indexProfile("coach", doc);
+  } catch {}
+});
+coachSchema.post("deleteOne", async function (doc) {
+  if (!doc) return;
+  try {
+    await removeProfile("coach", doc._id);
+  } catch {}
+});
+coachSchema.post("findOneAndDelete", async function (doc) {
+  if (!doc) return;
+  try {
+    await removeProfile("coach", doc._id);
+  } catch {}
+});
 
 export default mongoose.model("Coach", coachSchema);

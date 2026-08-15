@@ -6,6 +6,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { emitToRoom } from "../services/socket.service.js";
+import { encryptMessage } from "../services/chatEncryption.service.js";
 
 const getUserId = (req) => req.user._id || req.user.id;
 
@@ -84,8 +85,10 @@ export const getRoomMessages = asyncHandler(async (req, res) => {
     { $addToSet: { readBy: userId } }
   );
 
+  const clientMessages = messages.map((msg) => msg.toClientJSON(msg.sender));
+
   res.status(200).json(
-    new ApiResponse(200, messages, "Messages fetched successfully")
+    new ApiResponse(200, clientMessages, "Messages fetched successfully")
   );
 });
 
@@ -100,10 +103,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "This negotiation room is closed");
   }
 
+  const encrypted = encryptMessage(text);
+
   const message = await NegotiationMessage.create({
     room: room._id,
     sender: userId,
-    message: text,
+    message: encrypted ? encrypted.content : text,
+    encryption: encrypted || null,
     readBy: [userId],
   });
 
@@ -112,12 +118,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
     "name email role verifiedBadge"
   );
 
-  emitToRoom(`negotiation:${room._id}`, "negotiation:message", populated);
+  const clientMessage = populated.toClientJSON(populated.sender);
+
+  emitToRoom(`negotiation:${room._id}`, "negotiation:message", clientMessage);
   room.updatedAt = new Date();
   await room.save();
 
   res.status(201).json(
-    new ApiResponse(201, populated, "Message sent successfully")
+    new ApiResponse(201, clientMessage, "Message sent successfully")
   );
 });
 

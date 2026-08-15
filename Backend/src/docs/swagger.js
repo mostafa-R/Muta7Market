@@ -1034,13 +1034,15 @@ const swaggerDocument = {
     },
 
     // ================================
-    // OFFER ENDPOINTS
+    // LISTING ENDPOINTS (Marketplace)
+    // Canonical path: /listings — /listings kept as a legacy alias.
     // ================================
-    "/offers": {
+    "/listings": {
       get: {
-        tags: ["Offers"],
-        summary: "Get all offers",
-        description: "Get list of all offers with filtering and pagination",
+        tags: ["Listings"],
+        summary: "Get all listings (marketplace)",
+        description:
+          "Get list of all marketplace listings with filtering and pagination. Canonical path is /listings; /listings is a legacy alias.",
         parameters: [
           {
             name: "page",
@@ -1078,7 +1080,7 @@ const swaggerDocument = {
         ],
         responses: {
           200: {
-            description: "Offers retrieved successfully",
+            description: "Listings retrieved successfully",
             content: {
               "application/json": {
                 schema: {
@@ -1090,9 +1092,9 @@ const swaggerDocument = {
                         data: {
                           type: "object",
                           properties: {
-                            offers: {
+                            listings: {
                               type: "array",
-                              items: { $ref: "#/components/schemas/Offer" },
+                              items: { $ref: "#/components/schemas/Listing" },
                             },
                           },
                         },
@@ -1106,10 +1108,10 @@ const swaggerDocument = {
         },
       },
       post: {
-        tags: ["Offers"],
-        summary: "Create new offer",
+        tags: ["Listings"],
+        summary: "Create new listing",
         description:
-          "Create a new job/opportunity offer (requires authentication)",
+          "Create a new job/opportunity listing (requires authentication)",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -1178,7 +1180,7 @@ const swaggerDocument = {
         },
         responses: {
           201: {
-            description: "Offer created successfully",
+            description: "Listing created successfully",
             content: {
               "application/json": {
                 schema: {
@@ -1190,7 +1192,7 @@ const swaggerDocument = {
                         data: {
                           type: "object",
                           properties: {
-                            offer: { $ref: "#/components/schemas/Offer" },
+                            listing: { $ref: "#/components/schemas/Listing" },
                           },
                         },
                       },
@@ -1220,23 +1222,23 @@ const swaggerDocument = {
       },
     },
 
-    "/offers/{id}": {
+    "/listings/{id}": {
       get: {
-        tags: ["Offers"],
-        summary: "Get offer by ID",
-        description: "Get detailed information about a specific offer",
+        tags: ["Listings"],
+        summary: "Get listing by ID",
+        description: "Get detailed information about a specific listing",
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "Offer ID",
+            description: "Listing ID",
             schema: { type: "string", format: "objectId" },
           },
         ],
         responses: {
           200: {
-            description: "Offer retrieved successfully",
+            description: "Listing retrieved successfully",
             content: {
               "application/json": {
                 schema: {
@@ -1248,7 +1250,7 @@ const swaggerDocument = {
                         data: {
                           type: "object",
                           properties: {
-                            offer: { $ref: "#/components/schemas/Offer" },
+                            listing: { $ref: "#/components/schemas/Listing" },
                           },
                         },
                       },
@@ -1259,7 +1261,7 @@ const swaggerDocument = {
             },
           },
           404: {
-            description: "Offer not found",
+            description: "Listing not found",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
@@ -1269,16 +1271,16 @@ const swaggerDocument = {
         },
       },
       put: {
-        tags: ["Offers"],
-        summary: "Update offer",
-        description: "Update offer information (requires authentication)",
+        tags: ["Listings"],
+        summary: "Update listing",
+        description: "Update listing information (requires authentication)",
         security: [{ bearerAuth: [] }],
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "Offer ID",
+            description: "Listing ID",
             schema: { type: "string", format: "objectId" },
           },
         ],
@@ -1314,7 +1316,7 @@ const swaggerDocument = {
         },
         responses: {
           200: {
-            description: "Offer updated successfully",
+            description: "Listing updated successfully",
             content: {
               "application/json": {
                 schema: {
@@ -1326,7 +1328,7 @@ const swaggerDocument = {
                         data: {
                           type: "object",
                           properties: {
-                            offer: { $ref: "#/components/schemas/Offer" },
+                            listing: { $ref: "#/components/schemas/Listing" },
                           },
                         },
                       },
@@ -1353,7 +1355,7 @@ const swaggerDocument = {
             },
           },
           404: {
-            description: "Offer not found",
+            description: "Listing not found",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
@@ -1363,22 +1365,22 @@ const swaggerDocument = {
         },
       },
       delete: {
-        tags: ["Offers"],
-        summary: "Delete offer",
-        description: "Delete offer (requires authentication)",
+        tags: ["Listings"],
+        summary: "Delete listing",
+        description: "Delete listing (requires authentication)",
         security: [{ bearerAuth: [] }],
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "Offer ID",
+            description: "Listing ID",
             schema: { type: "string", format: "objectId" },
           },
         ],
         responses: {
           200: {
-            description: "Offer deleted successfully",
+            description: "Listing deleted successfully",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Success" },
@@ -1394,7 +1396,7 @@ const swaggerDocument = {
             },
           },
           404: {
-            description: "Offer not found",
+            description: "Listing not found",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
@@ -1405,14 +1407,14 @@ const swaggerDocument = {
       },
     },
 
-    "/offers/featured": {
+    "/listings/featured": {
       get: {
-        tags: ["Offers"],
-        summary: "Get featured offers",
-        description: "Get list of featured/promoted offers",
+        tags: ["Listings"],
+        summary: "Get featured listings",
+        description: "Get list of featured/promoted listings",
         responses: {
           200: {
-            description: "Featured offers retrieved successfully",
+            description: "Featured listings retrieved successfully",
             content: {
               "application/json": {
                 schema: {
@@ -1424,9 +1426,9 @@ const swaggerDocument = {
                         data: {
                           type: "object",
                           properties: {
-                            offers: {
+                            listings: {
                               type: "array",
-                              items: { $ref: "#/components/schemas/Offer" },
+                              items: { $ref: "#/components/schemas/Listing" },
                             },
                           },
                         },
@@ -1441,11 +1443,11 @@ const swaggerDocument = {
       },
     },
 
-    "/offers/search": {
+    "/listings/search": {
       get: {
-        tags: ["Offers"],
-        summary: "Search offers",
-        description: "Search offers with advanced filters",
+        tags: ["Listings"],
+        summary: "Search listings",
+        description: "Search listings with advanced filters",
         parameters: [
           {
             name: "q",
@@ -1489,9 +1491,9 @@ const swaggerDocument = {
                         data: {
                           type: "object",
                           properties: {
-                            offers: {
+                            listings: {
                               type: "array",
-                              items: { $ref: "#/components/schemas/Offer" },
+                              items: { $ref: "#/components/schemas/Listing" },
                             },
                           },
                         },

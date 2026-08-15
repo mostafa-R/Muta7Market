@@ -8,6 +8,7 @@ import {
   deleteShortlist,
   addPlayerToShortlist,
   removePlayerFromShortlist,
+  getShortlistChanges,
 } from "../controllers/shortlist.controller.js";
 
 const router = Router();
@@ -16,6 +17,7 @@ router.use(authMiddleware);
 
 router.get("/", getMyShortlists);
 router.post("/", createShortlist);
+router.get("/:id/changes", getShortlistChanges);
 router.get("/:id", getShortlist);
 router.put("/:id", updateShortlist);
 router.delete("/:id", deleteShortlist);

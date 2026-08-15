@@ -8,9 +8,38 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generateVerificationEmail } from "../utils/emailTemplates.js";
 import { generateOTP, generateRandomString } from "../utils/helpers.js";
-import { generateAccessToken } from "../utils/jwt.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  REFRESH_TOKEN_MAX_AGE_MS,
+} from "../utils/jwt.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
+
+const hashRefreshToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+
+const setRefreshTokenCookie = (res, token) => {
+  res.cookie("refreshToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+  });
+};
+
+const issueRefreshToken = async (user) => {
+  const refreshToken = generateRefreshToken(user);
+  user.cleanExpiredTokens();
+  user.refreshTokens.push({
+    token: hashRefreshToken(refreshToken),
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS),
+  });
+  await user.save();
+  return refreshToken;
+};
 
 export const register = asyncHandler(async (req, res) => {
   const { name, phone, password, confirmPassword, email, role } = req.body;
@@ -100,8 +129,7 @@ export const register = asyncHandler(async (req, res) => {
   );
 
   const accessToken = generateAccessToken(user);
-
-  await user.save();
+  const refreshToken = await issueRefreshToken(user);
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
@@ -109,6 +137,7 @@ export const register = asyncHandler(async (req, res) => {
     sameSite: "None",
     maxAge: 1000 * 60 * 15,
   });
+  setRefreshTokenCookie(res, refreshToken);
 
   const userData = {
     id: user._id,
@@ -136,6 +165,7 @@ export const register = asyncHandler(async (req, res) => {
       {
         user: userData,
         accessToken,
+        refreshToken,
         ...extraDev,
       },
       "User registered successfully"
@@ -153,11 +183,9 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   user.lastLogin = new Date();
-  user.cleanExpiredTokens();
 
   const accessToken = generateAccessToken(user);
-
-  await user.save();
+  const refreshToken = await issueRefreshToken(user);
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
@@ -165,6 +193,7 @@ export const login = asyncHandler(async (req, res) => {
     sameSite: "None",
     maxAge: 1000 * 60 * 60 * 24 * 7,
   });
+  setRefreshTokenCookie(res, refreshToken);
 
   const sanitizedUser = {
     id: user._id,
@@ -183,14 +212,33 @@ export const login = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: sanitizedUser, token: accessToken },
+        { user: sanitizedUser, token: accessToken, refreshToken },
         "Login successful"
       )
     );
 });
 
-export const logout = asyncHandler(async (_req, res) => {
+export const logout = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (refreshToken) {
+    try {
+      const user = await userModel.findById(req.user?.id).select("+refreshTokens");
+      if (user) {
+        user.revokeRefreshToken(hashRefreshToken(refreshToken));
+        await user.save();
+      }
+    } catch (error) {
+      console.error("Logout refresh token revocation failed:", error.message);
+    }
+  }
+
   res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+  });
+  res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "None",
@@ -199,6 +247,51 @@ export const logout = asyncHandler(async (_req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, null, "Logged out successfully"));
+});
+
+export const refreshToken = asyncHandler(async (req, res) => {
+  const refreshToken = req.body?.refreshToken || req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is required");
+  }
+
+  let decoded;
+  try {
+    decoded = verifyRefreshToken(refreshToken);
+  } catch (error) {
+    throw new ApiError(401, "Invalid or expired refresh token");
+  }
+
+  const user = await userModel.findById(decoded.id).select("+refreshTokens");
+  if (!user) {
+    throw new ApiError(401, "User not found");
+  }
+
+  if (!user.tokensMatch(hashRefreshToken(refreshToken))) {
+    throw new ApiError(401, "Refresh token has been revoked");
+  }
+
+  user.revokeRefreshToken(hashRefreshToken(refreshToken));
+  const newRefreshToken = await issueRefreshToken(user);
+
+  const accessToken = generateAccessToken(user);
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
+  setRefreshTokenCookie(res, newRefreshToken);
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { accessToken, refreshToken: newRefreshToken },
+      "Tokens refreshed successfully"
+    )
+  );
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {

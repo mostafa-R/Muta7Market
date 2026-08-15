@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { OFFER_STATUS } from '../config/constants.js';
 
-export const createOfferSchema = Joi.object({
+export const createListingSchema = Joi.object({
   title: Joi.object({
     en: Joi.string().min(10).max(100).required(),
     ar: Joi.string().min(10).max(100).required()
@@ -69,7 +69,7 @@ export const createOfferSchema = Joi.object({
   })
 });
 
-export const updateOfferSchema = createOfferSchema.keys({
+export const updateListingSchema = createListingSchema.keys({
   title: Joi.object({
     en: Joi.string().min(10).max(100),
     ar: Joi.string().min(10).max(100)

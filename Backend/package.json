@@ -8,7 +8,10 @@
     "start:prod": "NODE_ENV=production node --expose-gc index.js",
     "dev": "nodemon index.js",
     "test": "node payment.e2e.mjs",
+    "test:e2e": "node payment.e2e.mjs",
+    "test:payments": "node payment.e2e.mjs",
     "sync-indexes": "node scripts/sync-indexes.js",
+    "migrate:jop": "node scripts/migrate-jop-to-job.js",
     "seed": "node src/seeds/seed.js",
     "health": "curl -f http://localhost:8000/health || exit 1"
   },
@@ -23,6 +26,8 @@
   "license": "ISC",
   "description": "Professional Sports Player & Coach Marketing Platform API",
   "dependencies": {
+    "@elastic/elasticsearch": "^8.19.2",
+    "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
