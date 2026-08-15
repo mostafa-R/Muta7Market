@@ -69,7 +69,26 @@ export const getKycDocument = asyncHandler(async (req, res) => {
     }
   }
 
-  const filePath = getKycDocumentPath(filename);
+  let filePath = getKycDocumentPath(filename, isStaff ? undefined : userId);
+  if (!fs.existsSync(filePath)) {
+    const legacyPath = getKycDocumentPath(filename);
+    if (fs.existsSync(legacyPath)) {
+      filePath = legacyPath;
+    } else if (isStaff) {
+      const ownerKyc = await Kyc.findOne({
+        "documents.publicId": filename,
+      })
+        .select("user")
+        .lean();
+      if (ownerKyc) {
+        const userPath = getKycDocumentPath(filename, String(ownerKyc.user));
+        if (fs.existsSync(userPath)) {
+          filePath = userPath;
+        }
+      }
+    }
+  }
+
   if (!fs.existsSync(filePath)) {
     throw new ApiError(404, "Document not found");
   }
@@ -114,36 +133,6 @@ export const submitKyc = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please provide at least one document");
   }
 
-  const sanitizedDocs = documents
-    .filter((d) => d && typeof d.url === "string" && d.url)
-    .map((d) => {
-      const rawUrl = String(d.url);
-
-      if (!rawUrl.includes(KYC_DOCUMENT_PATH)) {
-        throw new ApiError(
-          400,
-          "KYC documents must be uploaded through the secure KYC upload endpoint (/api/v1/kyc/upload). Public /uploads URLs are not allowed."
-        );
-      }
-
-      let filenameFromUrl;
-      try {
-        filenameFromUrl = decodeURIComponent(rawUrl.split("/").pop().split("?")[0]);
-      } catch {
-        throw new ApiError(400, "KYC document url is invalid");
-      }
-
-      return {
-        documentType: String(d.documentType || "other"),
-        url: rawUrl,
-        publicId: d.publicId || filenameFromUrl || null,
-      };
-    });
-
-  if (sanitizedDocs.length === 0) {
-    throw new ApiError(400, "Documents must include a valid url");
-  }
-
   const existing = await Kyc.findOne({ user: userId });
   const kyc =
     existing ||
@@ -151,11 +140,63 @@ export const submitKyc = asyncHandler(async (req, res) => {
       user: userId,
     });
 
+  const sanitizedDocs = [];
+  for (const d of documents) {
+    if (!d || typeof d.url !== "string" || !d.url) continue;
+
+    const rawUrl = String(d.url);
+
+    if (!rawUrl.includes(KYC_DOCUMENT_PATH)) {
+      throw new ApiError(
+        400,
+        "KYC documents must be uploaded through the secure KYC upload endpoint (/api/v1/kyc/upload). Public /uploads URLs are not allowed."
+      );
+    }
+
+    let filenameFromUrl;
+    try {
+      filenameFromUrl = decodeURIComponent(rawUrl.split("/").pop().split("?")[0]);
+    } catch {
+      throw new ApiError(400, "KYC document url is invalid");
+    }
+
+    if (!filenameFromUrl) {
+      throw new ApiError(400, "KYC document url is invalid");
+    }
+
+    const fileInUserDir = fs.existsSync(
+      getKycDocumentPath(filenameFromUrl, String(userId))
+    );
+    const fileInLegacyDir = fs.existsSync(getKycDocumentPath(filenameFromUrl));
+    const legacyOwned =
+      existing &&
+      (existing.documents || []).some(
+        (oldDoc) => oldDoc.publicId === filenameFromUrl
+      );
+
+    if (!fileInUserDir && !(fileInLegacyDir && legacyOwned)) {
+      throw new ApiError(
+        400,
+        "Each KYC document must first be uploaded through the secure KYC upload endpoint by your account"
+      );
+    }
+
+    sanitizedDocs.push({
+      documentType: String(d.documentType || "other"),
+      url: rawUrl,
+      publicId: filenameFromUrl,
+    });
+  }
+
+  if (sanitizedDocs.length === 0) {
+    throw new ApiError(400, "Documents must include a valid url");
+  }
+
   if (existing && Array.isArray(existing.documents)) {
     const keptIds = new Set(sanitizedDocs.map((d) => d.publicId));
     for (const oldDoc of existing.documents) {
       if (oldDoc.publicId && !keptIds.has(oldDoc.publicId)) {
-        deleteKycDocument(oldDoc.publicId);
+        deleteKycDocument(oldDoc.publicId, String(userId));
       }
     }
   }
@@ -172,7 +213,7 @@ export const submitKyc = asyncHandler(async (req, res) => {
 
   await User.updateOne(
     { _id: userId },
-    { $set: { kycStatus: KYC_STATUS.PENDING } }
+    { $set: { kycStatus: KYC_STATUS.PENDING, verifiedBadge: false } }
   );
 
   res.status(200).json(

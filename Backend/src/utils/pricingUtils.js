@@ -145,6 +145,28 @@ export const getPricingSettings = async () => {
           settings.pricing.pro_player?.year ||
           DEFAULT_PRICING.pro_player?.year,
       },
+
+      // B2B scouting subscription plans (clubs & agents)
+      club_subscription: {
+        month:
+          settings.pricing.club_subscription?.monthly ||
+          settings.pricing.club_subscription?.price ||
+          DEFAULT_PRICING.club_subscription?.month,
+        year:
+          settings.pricing.club_subscription?.yearly ||
+          settings.pricing.club_subscription?.year ||
+          DEFAULT_PRICING.club_subscription?.year,
+      },
+      agent_subscription: {
+        month:
+          settings.pricing.agent_subscription?.monthly ||
+          settings.pricing.agent_subscription?.price ||
+          DEFAULT_PRICING.agent_subscription?.month,
+        year:
+          settings.pricing.agent_subscription?.yearly ||
+          settings.pricing.agent_subscription?.year ||
+          DEFAULT_PRICING.agent_subscription?.year,
+      },
       PRO_DEFAULT_DAYS:
         settings.pricing.pro_player?.days ||
         settings.pricing.pro_default_days ||

@@ -578,12 +578,26 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
       );
     }
 
+    const TargetModel = offer.targetType === "coach" ? Coach : Player;
+    const targetProfile = await TargetModel.findById(
+      offer.targetProfileId
+    ).select("user agentUser");
+    if (targetProfile) {
+      const boundTargetIds = [targetProfile.user, targetProfile.agentUser]
+        .filter(Boolean)
+        .map(String);
+      if (!boundTargetIds.includes(String(userId))) {
+        throw new ApiError(
+          403,
+          "Only the target profile owner or its agent can accept this offer"
+        );
+      }
+    }
+
     offer.status = "accepted";
     await offer.save();
 
     if (offer.type === OFFER_TYPE.OFFICIAL) {
-      const TargetModel = offer.targetType === "coach" ? Coach : Player;
-      const targetProfile = await TargetModel.findById(offer.targetProfileId);
       if (targetProfile) {
         targetProfile.contractStatus = "contracted";
         await targetProfile.save();

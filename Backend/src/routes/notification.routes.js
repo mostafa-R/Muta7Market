@@ -27,7 +27,7 @@ router.post(
   authorize("admin", "super_admin"),
   sendNotification
 );
-router.post("/bulk", authMiddleware, authorize("admin"), sendBulkNotifications);
+router.post("/bulk", authMiddleware, authorize("admin", "super_admin"), sendBulkNotifications);
 
 router.get("/my", authMiddleware, getUserNotifications);
 router.patch("/read", authMiddleware, markAsRead);
@@ -60,7 +60,7 @@ router.put(
 router.delete(
   "/templates/:id",
   authMiddleware,
-  authorize("admin"),
+  authorize("admin", "super_admin"),
   deleteTemplate
 );
 

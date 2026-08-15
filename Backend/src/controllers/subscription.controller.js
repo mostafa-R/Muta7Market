@@ -6,6 +6,7 @@ import Invoice from "../models/invoice.model.js";
 import Entitlement from "../models/entitlement.model.js";
 import Player from "../models/player.model.js";
 import Subscription from "../models/subscription.model.js";
+import User from "../models/user.model.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { paylinkCreateInvoice } from "../services/paylink.client.js";
@@ -24,14 +25,16 @@ const safeNumber = (value, fallback) => {
   return Number.isFinite(num) && num > 0 ? num : fallback;
 };
 
-const computeProDetails = (pricing, interval) => {
+const computePlanDetails = (plan, pricing, interval) => {
   const month = safeNumber(
-    pricing?.pro_player?.month || process.env.PRICE_PRO_PLAYER_MONTH,
-    49
+    pricing?.[`${plan}_subscription`]?.month ||
+      process.env[`PRICE_${plan.toUpperCase()}_SUBSCRIPTION_MONTH`],
+    plan === "club" ? 149 : plan === "agent" ? 99 : 49
   );
   const year = safeNumber(
-    pricing?.pro_player?.year || process.env.PRICE_PRO_PLAYER_YEAR,
-    499
+    pricing?.[`${plan}_subscription`]?.year ||
+      process.env[`PRICE_${plan.toUpperCase()}_SUBSCRIPTION_YEAR`],
+    plan === "club" ? 1499 : plan === "agent" ? 999 : 499
   );
   const defaultDays = safeNumber(
     process.env.PRO_DEFAULT_DAYS || pricing?.PRO_DEFAULT_DAYS,
@@ -45,16 +48,34 @@ const computeProDetails = (pricing, interval) => {
   return { amount: month, durationDays: defaultDays };
 };
 
-async function initiateProPayment(invoice, user, req) {
+const computeProDetails = (pricing, interval) =>
+  computePlanDetails("pro", pricing, interval);
+
+const PLAN_PRODUCT = {
+  pro: "pro",
+  club: "club_subscription",
+  agent: "agent_subscription",
+};
+
+const PLAN_ENTITLEMENT = {
+  pro: "pro_player",
+  club: "club_subscription",
+  agent: "agent_subscription",
+};
+
+async function initiatePlanPayment(invoice, user, req, plan) {
   if (invoice.paymentUrl) {
     return invoice.paymentUrl;
   }
 
   const interval = invoice.featureType === "year" ? "year" : "month";
-  const title =
-    interval === "year"
-      ? "Player Pro subscription (1 year)"
-      : "Player Pro subscription (1 month)";
+  const planLabel =
+    plan === "club"
+      ? "Club scouting subscription"
+      : plan === "agent"
+        ? "Agent scouting subscription"
+        : "Player Pro subscription";
+  const title = `${planLabel} (1 ${interval})`;
 
   const originFallback =
     req.get && req.get("origin") ? req.get("origin") : null;
@@ -80,7 +101,7 @@ async function initiateProPayment(invoice, user, req) {
     supportedCardBrands: ["mada", "visaMastercard", "stcpay"],
     callBackUrl,
     cancelUrl,
-    note: `userId=${invoice.userId};product=pro;targetType=player;profileId=${
+    note: `userId=${invoice.userId};product=${PLAN_PRODUCT[plan] || "pro"};plan=${plan};profileId=${
       invoice.playerProfileId || ""
     };durationDays=${invoice.durationDays || ""}`,
   };
@@ -100,7 +121,10 @@ export const getProStatus = asyncHandler(async (req, res) => {
   const player = await Player.findOne({ user: userId }).select(
     "isPro proSince proExpiresAt"
   );
-  const activeSub = await Subscription.findActiveForUser(userId);
+  const activeSub = await Subscription.findActiveForUser(
+    userId,
+    ["pro", "club", "agent"]
+  );
 
   const isPro =
     Boolean(player?.isPro) &&
@@ -141,36 +165,60 @@ export const getMySubscription = asyncHandler(async (req, res) => {
   );
 });
 
-export const subscribeToPro = asyncHandler(async (req, res) => {
+export const subscribeToPlan = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { playerId, billingInterval = "month" } = req.body;
+  const {
+    plan = "pro",
+    playerId,
+    billingInterval = "month",
+  } = req.body;
 
-  const player = await Player.findById(playerId);
-
-  if (!player) {
-    throw new ApiError(404, "Player profile not found");
+  if (!["pro", "club", "agent"].includes(plan)) {
+    throw new ApiError(400, "Invalid plan");
   }
 
-  if (!canManagePlayer(req.user, player)) {
-    throw new ApiError(403, "You can only subscribe Pro for your own profile");
+  if (plan === "club" && req.user.role !== "club" && !STAFF_ROLES.includes(req.user.role)) {
+    throw new ApiError(403, "Only club accounts can subscribe to the club plan");
+  }
+  if (plan === "agent" && req.user.role !== "agent" && !STAFF_ROLES.includes(req.user.role)) {
+    throw new ApiError(403, "Only agent accounts can subscribe to the agent plan");
   }
 
-  const active = await Subscription.findActiveForUser(userId);
+  let profileId = null;
+  if (plan === "pro") {
+    if (!playerId) {
+      throw new ApiError(400, "playerId is required for the Pro plan");
+    }
+    const player = await Player.findById(playerId);
+    if (!player) {
+      throw new ApiError(404, "Player profile not found");
+    }
+    if (!canManagePlayer(req.user, player)) {
+      throw new ApiError(403, "You can only subscribe Pro for your own profile");
+    }
+    profileId = player._id;
+  }
+
+  const active = await Subscription.findActiveForUser(userId, [plan]);
 
   if (active) {
-    throw new ApiError(400, "You already have an active Pro subscription");
+    throw new ApiError(400, `You already have an active ${plan} subscription`);
   }
 
   const pricing = await getPricingSettings();
-  const { amount, durationDays } = computeProDetails(pricing, billingInterval);
+  const { amount, durationDays } = computePlanDetails(
+    plan,
+    pricing,
+    billingInterval
+  );
 
   const invoice = await Invoice.create({
-    orderNumber: makeOrderNumber("pro", String(userId)),
-    invoiceNumber: makeOrderNumber("pro", String(userId)),
+    orderNumber: makeOrderNumber(PLAN_PRODUCT[plan], String(userId)),
+    invoiceNumber: makeOrderNumber(PLAN_PRODUCT[plan], String(userId)),
     userId,
-    product: "pro",
-    targetType: "player",
-    playerProfileId: player._id,
+    product: PLAN_PRODUCT[plan],
+    targetType: plan === "pro" ? "player" : null,
+    playerProfileId: profileId,
     durationDays,
     featureType: billingInterval,
     amount,
@@ -180,31 +228,38 @@ export const subscribeToPro = asyncHandler(async (req, res) => {
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
-  const paymentUrl = await initiateProPayment(invoice, req.user, req);
+  const paymentUrl = await initiatePlanPayment(invoice, req.user, req, plan);
 
   res.status(201).json(
     new ApiResponse(
       201,
-      { invoice, paymentUrl },
-      "Pro subscription invoice created successfully"
+      { invoice, paymentUrl, plan },
+      `${plan} subscription invoice created successfully`
     )
   );
 });
 
+export const subscribeToPro = asyncHandler(async (req, res) => {
+  req.body = { ...req.body, plan: "pro" };
+  return subscribeToPlan(req, res);
+});
+
 export const cancelSubscription = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const { plan } = req.body;
 
-  const sub = await Subscription.findActiveForUser(userId);
+  const plans = ["pro", "club", "agent"].includes(plan) ? [plan] : ["pro", "club", "agent"];
+  const sub = await Subscription.findActiveForUser(userId, plans);
 
   if (!sub) {
-    throw new ApiError(404, "No active Pro subscription found");
+    throw new ApiError(404, "No active subscription found");
   }
 
   sub.status = "canceled";
   sub.autoRenew = false;
   await sub.save();
 
-  if (sub.playerProfileId) {
+  if (sub.plan === "pro" && sub.playerProfileId) {
     const player = await Player.findById(sub.playerProfileId);
     if (player) {
       player.isPro = false;
@@ -213,10 +268,24 @@ export const cancelSubscription = asyncHandler(async (req, res) => {
     }
   }
 
+  if (sub.plan === "club" || sub.plan === "agent") {
+    await User.updateOne(
+      { _id: userId },
+      { $set: { isActive: false, activeExpireAt: null } }
+    );
+  }
+
+  const entitlementType =
+    sub.plan === "club"
+      ? "club_subscription"
+      : sub.plan === "agent"
+        ? "agent_subscription"
+        : "pro_player";
+
   await Entitlement.updateMany(
     {
       userId,
-      type: "pro_player",
+      type: entitlementType,
       active: true,
       playerProfileId: sub.playerProfileId || null,
     },

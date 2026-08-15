@@ -4,17 +4,28 @@ import Evaluation from "../models/evaluation.model.js";
 import Player from "../models/player.model.js";
 import Coach from "../models/coach.model.js";
 import TransferOffer from "../models/transferOffer.model.js";
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const MIN_RATINGS_FOR_STATS = 3;
+const SUBJECT_TYPES = ["player", "coach", "scout", "agent", "academy"];
+const PROFILE_SUBJECT_TYPES = ["player", "coach"];
+
+const getSubjectOwnerId = async (subjectType, subject) => {
+  if (!PROFILE_SUBJECT_TYPES.includes(subjectType)) return null;
+  const TargetModel = subjectType === "coach" ? Coach : Player;
+  const profile = await TargetModel.findById(subject).select("user agentUser");
+  if (!profile) return null;
+  return [profile.user, profile.agentUser].filter(Boolean).map(String);
+};
 
 const validateContext = async (evaluator, subjectType, subject, context) => {
   const contextType = context?.type || "general";
 
-  if (["player", "coach"].includes(subjectType)) {
+  if (PROFILE_SUBJECT_TYPES.includes(subjectType)) {
     const TargetModel = subjectType === "coach" ? Coach : Player;
     const profile = await TargetModel.findById(subject).select(
       "user agentUser"
@@ -22,6 +33,17 @@ const validateContext = async (evaluator, subjectType, subject, context) => {
     if (!profile) throw new ApiError(404, "Evaluation subject not found");
     if (String(profile.user) === String(evaluator)) {
       throw new ApiError(403, "You cannot evaluate yourself");
+    }
+  } else {
+    const user = await User.findById(subject).select("role deletedAt").lean();
+    if (!user || user.deletedAt) {
+      throw new ApiError(404, "Evaluation subject not found");
+    }
+    if (subjectType !== "academy" && user.role !== subjectType) {
+      throw new ApiError(
+        400,
+        `Subject is not of type ${subjectType}`
+      );
     }
   }
 
@@ -61,6 +83,10 @@ const validateContext = async (evaluator, subjectType, subject, context) => {
 export const createEvaluation = asyncHandler(async (req, res) => {
   const evaluator = req.user._id;
   const { subjectType, subject, context, ratings, overallRating, strengths, weaknesses, notes, recommendation, status } = req.body;
+
+  if (!SUBJECT_TYPES.includes(subjectType)) {
+    throw new ApiError(400, "Invalid subjectType");
+  }
 
   if (!isValidObjectId(subject)) {
     throw new ApiError(400, "Invalid subject ID");
@@ -149,14 +175,29 @@ export const getMyEvaluations = asyncHandler(async (req, res) => {
 
 export const getEvaluationsBySubject = asyncHandler(async (req, res) => {
   const { subjectType, subject } = req.params;
-  const { status = "submitted", page = 1, limit = 20 } = req.query;
+  const { status, page = 1, limit = 20 } = req.query;
 
+  if (!SUBJECT_TYPES.includes(subjectType)) {
+    throw new ApiError(400, "Invalid subjectType");
+  }
   if (!isValidObjectId(subject)) {
     throw new ApiError(400, "Invalid subject ID");
   }
 
+  const userId = req.user._id;
+  const isStaff = STAFF_ROLES.includes(req.user.role);
+  const ownerIds = await getSubjectOwnerId(subjectType, subject);
+  const isSubjectOwner = ownerIds?.includes(String(userId));
+
   const filter = { subjectType, subject };
-  if (status) filter.status = status;
+  if (status && status !== "submitted") {
+    if (!isStaff && !isSubjectOwner) {
+      throw new ApiError(403, "You can only view submitted evaluations");
+    }
+    filter.status = status;
+  } else {
+    filter.status = "submitted";
+  }
 
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -166,7 +207,7 @@ export const getEvaluationsBySubject = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)
-      .populate("evaluator", "name email role"),
+      .populate("evaluator", "name role"),
     Evaluation.countDocuments(filter),
   ]);
 
@@ -193,9 +234,30 @@ export const getEvaluationById = asyncHandler(async (req, res) => {
 
   const evaluation = await Evaluation.findById(id).populate(
     "evaluator",
-    "name email role"
+    "name role"
   );
   if (!evaluation) throw new ApiError(404, "Evaluation not found");
+
+  const userId = req.user._id;
+  const isStaff = STAFF_ROLES.includes(req.user.role);
+  const isEvaluator = String(evaluation.evaluator._id) === String(userId);
+  const ownerIds = await getSubjectOwnerId(
+    evaluation.subjectType,
+    String(evaluation.subject)
+  );
+  const isSubjectOwner = ownerIds?.includes(String(userId));
+
+  if (!isEvaluator && !isSubjectOwner && !isStaff) {
+    throw new ApiError(403, "You can only view evaluations you authored or received");
+  }
+
+  if (
+    evaluation.status === "draft" &&
+    !isEvaluator &&
+    !isStaff
+  ) {
+    throw new ApiError(403, "This evaluation is not published yet");
+  }
 
   res
     .status(200)

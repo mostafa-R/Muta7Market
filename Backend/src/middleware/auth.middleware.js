@@ -1,7 +1,7 @@
-import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 
 export const authMiddleware = asyncHandler(async (req, res, next) => {
   const token =
@@ -14,7 +14,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = verifyAccessToken(token);
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
   }
@@ -25,6 +25,10 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 
   if (!user) {
     return res.status(401).json({ message: "Invalid token" });
+  }
+
+  if (user.deletedAt) {
+    return res.status(403).json({ message: "Account has been deactivated" });
   }
 
   if (user.deletedAt) {

@@ -37,6 +37,28 @@ const canManagePlayer = (user, player) => {
   return false;
 };
 
+const sanitizePlayerForViewer = (player, canSeeContacts) => {
+  const data = player?.toJSON ? player.toJSON() : player;
+  if (!data) return data;
+  if (canSeeContacts) return data;
+  if (data.user && typeof data.user === "object") {
+    delete data.user.email;
+    delete data.user.phone;
+  }
+  delete data.contactInfo;
+  return data;
+};
+
+const viewerCanSeeContacts = async (req) => {
+  if (!req.user) return false;
+  try {
+    const requester = await User.findById(req.user._id).select("isActive");
+    return Boolean(requester?.isActive);
+  } catch {
+    return false;
+  }
+};
+
 export const createPlayer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
@@ -331,6 +353,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     });
     if (esResult) {
       const ids = esResult.ids;
+      const canSeeContacts = await viewerCanSeeContacts(req);
       const esPlayers = ids.length
         ? await Player.find({ _id: { $in: ids } }).populate(
             "user",
@@ -345,7 +368,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           {
-            players: esPlayers,
+            players: esPlayers.map((p) =>
+              sanitizePlayerForViewer(p, canSeeContacts)
+            ),
             engine: "elasticsearch",
             pagination: {
               total: esResult.total,
@@ -363,6 +388,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   }
 
   try {
+    const canSeeContacts = await viewerCanSeeContacts(req);
     const [players, total] = await Promise.all([
       Player.find(query)
         .sort(sort)
@@ -394,7 +420,9 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          players,
+          players: players.map((p) =>
+            sanitizePlayerForViewer(p, canSeeContacts)
+          ),
           pagination: {
             total,
             pages: Math.ceil(total / limitNum),
@@ -444,11 +472,7 @@ export const getPlayerById = asyncHandler(async (req, res) => {
     canSeeContacts = Boolean(isOwner || requesterIsActive);
   } catch {}
 
-  const playerData = player.toJSON();
-  if (!canSeeContacts && playerData?.user) {
-    delete playerData.user.email;
-    delete playerData.user.phone;
-  }
+  const playerData = sanitizePlayerForViewer(player, canSeeContacts);
 
   res
     .status(200)
@@ -1648,10 +1672,16 @@ export const getPromotedPlayers = asyncHandler(async (req, res) => {
     .limit(parseInt(limit))
     .populate("user", "name email");
 
+  const canSeeContacts = await viewerCanSeeContacts(req);
+
   res
     .status(200)
     .json(
-      new ApiResponse(200, players, "Promoted players fetched successfully")
+      new ApiResponse(
+        200,
+        players.map((p) => sanitizePlayerForViewer(p, canSeeContacts)),
+        "Promoted players fetched successfully"
+      )
     );
 });
 
@@ -1802,6 +1832,7 @@ export const searchPlayers = asyncHandler(async (req, res) => {
   });
   if (esResult) {
     const ids = esResult.ids;
+    const canSeeContacts = await viewerCanSeeContacts(req);
     const esPlayers = ids.length
       ? await Player.find({ _id: { $in: ids } }).populate("user", "name email")
       : [];
@@ -1813,7 +1844,9 @@ export const searchPlayers = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          players: esPlayers,
+          players: esPlayers.map((p) =>
+            sanitizePlayerForViewer(p, canSeeContacts)
+          ),
           searchQuery: search,
           engine: "elasticsearch",
           pagination: {
@@ -1851,11 +1884,13 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     Player.countDocuments(query),
   ]);
 
+  const canSeeContacts = await viewerCanSeeContacts(req);
+
   res.status(200).json(
     new ApiResponse(
       200,
       {
-        players,
+        players: players.map((p) => sanitizePlayerForViewer(p, canSeeContacts)),
         searchQuery: search,
         pagination: {
           total,

@@ -34,5 +34,13 @@ export const verifyRefreshToken = (token) => {
   return decoded;
 };
 
+export const verifyAccessToken = (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (decoded.type === "refresh") {
+    throw new Error("Refresh token cannot be used as an access token");
+  }
+  return decoded;
+};
+
 export const REFRESH_TOKEN_MAX_AGE_MS =
   7 * 24 * 60 * 60 * 1000;

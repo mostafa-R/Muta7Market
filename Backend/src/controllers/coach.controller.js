@@ -13,6 +13,28 @@ import { escapeRegex } from "../utils/helpers.js";
 
 const isStaff = (role) => STAFF_ROLES.includes(role);
 
+const sanitizeCoachForViewer = (coach, canSeeContacts) => {
+  const data = coach?.toJSON ? coach.toJSON() : { ...coach };
+  if (!data) return data;
+  if (canSeeContacts) return data;
+  if (data.user && typeof data.user === "object") {
+    delete data.user.email;
+    delete data.user.username;
+  }
+  delete data.contactInfo;
+  return data;
+};
+
+const viewerCanSeeContacts = async (req) => {
+  if (!req.user) return false;
+  try {
+    const requester = await User.findById(req.user._id).select("isActive");
+    return Boolean(requester?.isActive);
+  } catch {
+    return false;
+  }
+};
+
 const COACH_CREATE_FIELDS = [
   "name",
   "age",
@@ -88,6 +110,16 @@ export const createCoach = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "User not found",
+      });
+    }
+
+    if (
+      user.role !== "coach" &&
+      !STAFF_ROLES.includes(user.role)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only coach accounts can create a coach profile",
       });
     }
 
@@ -224,10 +256,11 @@ export const getAllCoaches = async (req, res) => {
         );
         const total = esResult.total;
         const totalPages = Math.ceil(total / limitNum);
+        const canSeeContacts = await viewerCanSeeContacts(req);
         return res.status(200).json({
           success: true,
           engine: "elasticsearch",
-          data: coaches,
+          data: coaches.map((c) => sanitizeCoachForViewer(c, canSeeContacts)),
           pagination: {
             currentPage: pageNum,
             totalPages,
@@ -297,9 +330,18 @@ export const getCoachById = async (req, res) => {
     coach.views += 1;
     await coach.save();
 
+    const canSeeContacts = await viewerCanSeeContacts(req);
+    const isOwner =
+      req.user &&
+      String(coach.user?._id || coach.user) === String(req.user._id || req.user.id);
+    const data = sanitizeCoachForViewer(
+      coach,
+      Boolean(canSeeContacts || isOwner)
+    );
+
     res.status(200).json({
       success: true,
-      data: coach,
+      data,
     });
   } catch (error) {
     res.status(500).json({
@@ -680,9 +722,14 @@ export const getPromotedCoaches = async (req, res) => {
 
     const total = await Coach.countDocuments(filter);
 
+    const canSeeContacts = await viewerCanSeeContacts(req);
+    const sanitized = coaches.map((c) =>
+      sanitizeCoachForViewer(c, canSeeContacts)
+    );
+
     res.status(200).json({
       success: true,
-      data: coaches,
+      data: sanitized,
       pagination: {
         currentPage: pageNum,
         totalPages: Math.ceil(total / limitNum),

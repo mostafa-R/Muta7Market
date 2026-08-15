@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { isEmailEnabled, sendEmail } from "../config/email.js";
 import { PUBLIC_REGISTERABLE_ROLES } from "../config/constants.js";
 import userModel from "../models/user.model.js";
+import smsService from "../services/sms.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -13,6 +14,13 @@ import {
   verifyRefreshToken,
   REFRESH_TOKEN_MAX_AGE_MS,
 } from "../utils/jwt.js";
+
+const isSmsConfigured = () =>
+  Boolean(
+    process.env.SMS_API_KEY &&
+      process.env.SMS_API_URL &&
+      String(process.env.SMS_API_URL).startsWith("http")
+  );
 
 const hashRefreshToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
@@ -93,6 +101,16 @@ export const register = asyncHandler(async (req, res) => {
     generateVerificationEmail(emailToken)
   );
 
+  let smsSent = false;
+  if (isSmsConfigured()) {
+    try {
+      await smsService.sendOTP(user.phone, phoneOTP, 10);
+      smsSent = true;
+    } catch (error) {
+      console.error("Failed to send phone OTP via SMS:", error.message);
+    }
+  }
+
   const accessToken = generateAccessToken(user);
   const refreshToken = await issueRefreshToken(user);
 
@@ -121,8 +139,9 @@ export const register = asyncHandler(async (req, res) => {
     ? {
         dev: { emailVerificationCode: emailToken, phoneOTP },
         emailSent: !!emailResult?.success,
+        smsSent,
       }
-    : { emailSent: !!emailResult?.success };
+    : { emailSent: !!emailResult?.success, smsSent };
 
   res.status(201).json(
     new ApiResponse(
@@ -355,6 +374,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
+  user.refreshTokens = [];
   await user.save();
 
   res
@@ -453,6 +473,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.password = password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
+  user.refreshTokens = [];
 
   await user.save();
 

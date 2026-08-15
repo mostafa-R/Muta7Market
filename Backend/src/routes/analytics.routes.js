@@ -11,7 +11,7 @@ import { validateTimeRange } from "../validators/analytics.validator.js";
 
 const router = Router();
 
-router.use(verifyJWT, authorize("admin"));
+router.use(verifyJWT, authorize("admin", "super_admin"));
 
 router.get("/overview", validateTimeRange, getAnalyticsOverview);
 router.get("/realtime", getRealTimeAnalytics);

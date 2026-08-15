@@ -97,6 +97,14 @@ export const PRICING = {
     month: Number(process.env.PRICE_PRO_PLAYER_MONTH) || 49,
     year: Number(process.env.PRICE_PRO_PLAYER_YEAR) || 499,
   },
+  club_subscription: {
+    month: Number(process.env.PRICE_CLUB_SUBSCRIPTION_MONTH) || 149,
+    year: Number(process.env.PRICE_CLUB_SUBSCRIPTION_YEAR) || 1499,
+  },
+  agent_subscription: {
+    month: Number(process.env.PRICE_AGENT_SUBSCRIPTION_MONTH) || 99,
+    year: Number(process.env.PRICE_AGENT_SUBSCRIPTION_YEAR) || 999,
+  },
   PRO_DEFAULT_DAYS: Number(process.env.PRO_DEFAULT_DAYS) || 30,
 };
 

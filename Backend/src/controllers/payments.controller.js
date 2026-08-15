@@ -1,4 +1,5 @@
 ﻿import crypto from "crypto";
+import mongoose from "mongoose";
 import Advertisement from "../models/advertisement.model.js";
 import Coach from "../models/coach.model.js";
 import Entitlement from "../models/entitlement.model.js";
@@ -43,6 +44,11 @@ function entitlementDurationDays(invoice, PRICING) {
         process.env.PRO_DEFAULT_DAYS ||
         30
     );
+  if (
+    invoice.product === "club_subscription" ||
+    invoice.product === "agent_subscription"
+  )
+    return Number(invoice.durationDays || PRICING.PRO_DEFAULT_DAYS || 30);
   return 0;
 }
 
@@ -54,6 +60,18 @@ function entitlementKey(invoice) {
     return {
       type: "pro_player",
       playerProfileId: invoice.playerProfileId || null,
+    };
+  }
+  if (
+    invoice.product === "club_subscription" ||
+    invoice.product === "agent_subscription"
+  ) {
+    return {
+      type:
+        invoice.product === "club_subscription"
+          ? "club_subscription"
+          : "agent_subscription",
+      playerProfileId: null,
     };
   }
   const prefix = invoice.product === "listing" ? "listed" : "promoted";
@@ -196,6 +214,42 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
         $setOnInsert: { user: invoice.userId },
       },
       opts
+    );
+    await Entitlement.updateOne(
+      { userId: invoice.userId, ...key },
+      entitlementSet,
+      opts
+    );
+  } else if (
+    invoice.product === "club_subscription" ||
+    invoice.product === "agent_subscription"
+  ) {
+    const plan = invoice.product === "club_subscription" ? "club" : "agent";
+    await Subscription.updateOne(
+      {
+        user: invoice.userId,
+        plan,
+        status: { $in: ["active", "canceled", "expired"] },
+      },
+      {
+        $set: {
+          plan,
+          status: "active",
+          playerProfileId: null,
+          startDate: new Date(),
+          endDate,
+          autoRenew: false,
+          billingInterval: invoice.featureType === "year" ? "year" : "month",
+          sourceInvoice: invoice._id,
+        },
+        $setOnInsert: { user: invoice.userId },
+      },
+      opts
+    );
+    await User.updateOne(
+      { _id: invoice.userId },
+      { $set: { isActive: true, activeExpireAt: end } },
+      profileOpts
     );
     await Entitlement.updateOne(
       { userId: invoice.userId, ...key },
@@ -750,6 +804,9 @@ export const paymentWebhook = async (req, res) => {
 
 export const getPaymentStatus = async (req, res) => {
   const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "invalid_id" });
+  }
   const isStaff = STAFF_ROLES.includes(req.user?.role);
   const inv = isStaff
     ? await Invoice.findById(id)

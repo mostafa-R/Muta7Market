@@ -10,7 +10,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["free", "pro"],
+      enum: ["free", "pro", "club", "agent"],
       default: "free",
     },
     status: {
@@ -56,16 +56,19 @@ subscriptionSchema.methods.isActive = function () {
   const now = new Date();
   return (
     this.status === "active" &&
-    this.plan === "pro" &&
+    this.plan !== "free" &&
     (!this.endDate || new Date(this.endDate) > now)
   );
 };
 
-subscriptionSchema.statics.findActiveForUser = async function (userId) {
+subscriptionSchema.statics.findActiveForUser = async function (
+  userId,
+  plans = ["pro"]
+) {
   const now = new Date();
   return this.findOne({
     user: userId,
-    plan: "pro",
+    plan: { $in: plans },
     status: "active",
     $or: [{ endDate: null }, { endDate: { $gt: now } }],
   }).sort({ startDate: -1 });

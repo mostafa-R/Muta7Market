@@ -3,7 +3,6 @@ import { createServer } from "http";
 import { createAdapter } from "@socket.io/redis-adapter";
 import mongoose from "mongoose";
 import redis from "redis";
-import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import connectDB from "./src/config/db.js";
 import { createCronJobs } from "./src/cron/expiry.jobs.js";
@@ -12,6 +11,7 @@ import NegotiationRoom from "./src/models/negotiationRoom.model.js";
 import User from "./src/models/user.model.js";
 import app from "./src/server.js";
 import logger from "./src/utils/logger.js";
+import { verifyAccessToken } from "./src/utils/jwt.js";
 import { setSocketServer, userRoom } from "./src/services/socket.service.js";
 import {
   canConnect,
@@ -64,16 +64,16 @@ io.use(async (socket, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = verifyAccessToken(token);
     } catch (err) {
       return next(new Error("Invalid or expired token"));
     }
 
     const user = await User.findById(decoded.id)
-      .select("name email phone role isActive verifiedBadge")
+      .select("name email phone role isActive deletedAt verifiedBadge")
       .lean();
 
-    if (!user || !user.isActive) {
+    if (!user || user.deletedAt) {
       return next(new Error("User not found or inactive"));
     }
 

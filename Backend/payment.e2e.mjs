@@ -169,6 +169,7 @@ async function main() {
     isEmailVerified: true,
     isPhoneVerified: true,
     isActive: true,
+    verifiedBadge: true,
   });
   const adminU = await User.create({
     name: "Pay Admin",
@@ -188,6 +189,7 @@ async function main() {
     gender: "male",
     nationality: "Saudi",
     jop: "player",
+    job: "player",
     position: "Striker",
     game: { en: "Football", ar: "كرة القدم", slug: "football" },
     isActive: true,

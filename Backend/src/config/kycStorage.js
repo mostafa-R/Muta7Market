@@ -28,7 +28,12 @@ const KYC_ALLOWED_MIMETYPES = [
 const KYC_ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "pdf", "doc", "docx"];
 
 const kycStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, KYC_UPLOADS_DIR),
+  destination: (req, file, cb) => {
+    const userId = String(req.user?._id || req.user?.id || "anonymous");
+    const userDir = join(KYC_UPLOADS_DIR, userId);
+    fs.mkdirSync(userDir, { recursive: true });
+    cb(null, userDir);
+  },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const extension = file.originalname.split(".").pop().toLowerCase();
@@ -86,7 +91,7 @@ export const generateKycDocumentUrl = (req, filename) => {
   return `${protocol}://${host}${KYC_DOCUMENT_ROUTE}/${encodeURIComponent(filename)}`;
 };
 
-export const getKycDocumentPath = (filename) => {
+export const getKycDocumentPath = (filename, userId) => {
   if (typeof filename !== "string" || !/^[\w.-]+$/.test(filename)) {
     throw new ApiError(400, "Invalid file name");
   }
@@ -94,14 +99,24 @@ export const getKycDocumentPath = (filename) => {
   if (safeName !== filename) {
     throw new ApiError(400, "Invalid file name");
   }
+  if (userId) {
+    return join(KYC_UPLOADS_DIR, String(userId), safeName);
+  }
   return join(KYC_UPLOADS_DIR, safeName);
 };
 
-export const deleteKycDocument = (filename) => {
+export const deleteKycDocument = (filename, userId) => {
   try {
-    const filePath = getKycDocumentPath(filename);
+    const filePath = getKycDocumentPath(filename, userId);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      return;
+    }
+    if (userId) {
+      const legacyPath = getKycDocumentPath(filename);
+      if (fs.existsSync(legacyPath)) {
+        fs.unlinkSync(legacyPath);
+      }
     }
   } catch (error) {
     console.error("Error deleting KYC document:", error);
