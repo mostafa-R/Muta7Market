@@ -9,7 +9,7 @@ const TZ = "Africa/Cairo";
 
 let running = false;
 
-export async function runExpirySweep(now = new Date()) {
+async function runExpirySweep(now = new Date()) {
   if (running) {
     logger.warn("[expiry-sweep] previous run still in progress, skipping");
     return { skipped: true };
@@ -89,7 +89,7 @@ export async function runExpirySweep(now = new Date()) {
   }
 }
 
-export function startExpiryCron() {
+function startExpiryCron() {
   cron.schedule(
     "0 0 * * *",
     async () => {

@@ -6,7 +6,7 @@ import { removeLocalUpload, validateFileSignature } from "./magicBytes.js";
  * @param {String} resourceType 
  * @returns {Object} 
  */
-export const deleteFile = async (publicId, resourceType = "image") => {
+const deleteFile = async (publicId, resourceType = "image") => {
   if (!publicId) {
     return { success: false, message: "لا يوجد معرف للملف" };
   }
@@ -25,7 +25,7 @@ export const deleteFile = async (publicId, resourceType = "image") => {
  * @param {String} resourceType
  * @returns {Object}
  */
-export const uploadFile = async (file, resourceType = null) => {
+const uploadFile = async (file, resourceType = null) => {
   if (!file) {
     return null;
   }

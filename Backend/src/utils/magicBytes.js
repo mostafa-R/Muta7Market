@@ -65,7 +65,7 @@ const matchesAt = (buf, sig, offset = 0) => {
  * Detect the real file type from its header (magic bytes).
  * Returns a canonical kind string or "unknown".
  */
-export const detectFileType = (filePath) => {
+const detectFileType = (filePath) => {
   let fd;
   try {
     fd = fs.openSync(filePath, "r");

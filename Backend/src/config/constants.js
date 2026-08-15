@@ -19,12 +19,6 @@ export const PUBLIC_REGISTERABLE_ROLES = [
 
 export const STAFF_ROLES = [USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN];
 
-export const CONTRACT_STATUS = {
-  FREE_AGENT: "free_agent",
-  CONTRACTED: "contracted",
-  LOANED: "loaned",
-};
-
 export const KYC_STATUS = {
   NOT_SUBMITTED: "not_submitted",
   PENDING: "pending",
@@ -49,36 +43,11 @@ export const GENDER = {
   FEMALE: "female",
 };
 
-export const CATEGORY = {
-  PLAYER: "player",
-  COACH: "coach",
-};
-
-export const PLAN_TYPES = {
-  FREE: "free",
-  PRO: "pro",
-};
-
-export const PAYMENT_STATUS = {
-  PENDING: "pending",
-  PAID: "paid",
-  CANCELLED: "cancelled",
-  EXPIRED: "expired",
-  FAILED: "failed",
-  REFUNDED: "refunded",
-};
-
 export const OFFER_STATUS = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   EXPIRED: "expired",
   PENDING: "pending",
-};
-
-export const NOTIFICATION_TYPES = {
-  EMAIL: "email",
-  SMS: "sms",
-  PUSH: "push",
 };
 
 export const PRICING = {

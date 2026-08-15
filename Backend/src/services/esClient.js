@@ -29,8 +29,3 @@ export const getSearchClient = async () => {
     return null;
   }
 };
-
-export const resetSearchClient = () => {
-  client = null;
-  initializationFailed = false;
-};

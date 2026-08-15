@@ -76,36 +76,3 @@ export async function paylinkGetInvoice(transactionNo) {
   if (!r.ok) throw new Error(`getInvoice ${r.status}: ${JSON.stringify(j)}`);
   return j;
 }
-
-export async function paylinkGetOrderByNumber(orderNumber) {
-  const token = await auth();
-  const r = await withTimeout(
-    fetch(
-      `${baseUrl}/api/getOrder/${encodeURIComponent(orderNumber)}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    )
-  );
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`getOrder ${r.status}: ${JSON.stringify(j)}`);
-  return j;
-}
-
-export async function paylinkGetTransactionsOfOrder(orderNumber) {
-  const token = await auth();
-  const r = await withTimeout(
-    fetch(
-      `${baseUrl}/api/getTransactions/${encodeURIComponent(orderNumber)}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    )
-  );
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok)
-    throw new Error(`getTransactions ${r.status}: ${JSON.stringify(j)}`);
-  return j;
-}

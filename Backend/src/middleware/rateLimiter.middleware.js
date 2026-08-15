@@ -1,7 +1,7 @@
 import rateLimit from "express-rate-limit";
 import ApiError from "../utils/ApiError.js";
 
-export const createRateLimiter = (options) => {
+const createRateLimiter = (options) => {
   return rateLimit({
     windowMs: options.windowMs || 15 * 60 * 1000,
     max: options.max || 100,
@@ -32,7 +32,7 @@ export const uploadLimiter = createRateLimiter({
   message: "Too many upload requests. Please try again later.",
 });
 
-export const generalLimiter = createRateLimiter({
+const generalLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   message: "Too many requests from this IP. Please try again later.",

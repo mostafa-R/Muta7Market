@@ -1,5 +1,4 @@
 import Joi from 'joi';
-import { OFFER_STATUS } from '../config/constants.js';
 
 export const createListingSchema = Joi.object({
   title: Joi.object({
@@ -92,27 +91,4 @@ export const updateListingSchema = createListingSchema.keys({
     whatsapp: Joi.string(),
     preferredContactMethod: Joi.string().valid('email', 'phone', 'whatsapp')
   })
-});
-
-export const filterOfferSchema = Joi.object({
-  page: Joi.number().min(1).default(1),
-  limit: Joi.number().min(1).max(100).default(10),
-  sortBy: Joi.string(),
-  search: Joi.string(),
-  category: Joi.string(),
-  status: Joi.string().valid(...Object.values(OFFER_STATUS)),
-  isPromoted: Joi.boolean(),
-  nationality: Joi.string(),
-  minSalary: Joi.number(),
-  maxSalary: Joi.number(),
-  location: Joi.string()
-});
-
-export const promoteOfferSchema = Joi.object({
-  days: Joi.number().min(1).max(365).required(),
-  type: Joi.string().valid('featured', 'premium', 'urgent').default('featured')
-});
-
-export const unlockContactSchema = Joi.object({
-  offerId: Joi.string().required()
 });

@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { initializeEmailService } from "../services/email.service.js";
+import {
+  initializeEmailService,
+  testEmailConnection,
+} from "../services/email.service.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 import { authMiddleware, authorize } from "../middleware/auth.middleware.js";
 import aboutsRouter from "./about.routes.js";
@@ -83,7 +86,7 @@ router.get(
   authMiddleware,
   authorize("admin", "super_admin"),
   async (req, res) => {
-    const result = await initializeEmailService.testEmailConnection();
+    const result = await testEmailConnection();
     res.status(result.success ? 200 : 500).json(result);
   }
 );

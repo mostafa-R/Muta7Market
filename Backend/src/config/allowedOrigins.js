@@ -1,4 +1,4 @@
-export const getAllowedOrigins = () => {
+const getAllowedOrigins = () => {
   return process.env.ALLOWED_ORIGINS?.split(",")
     .map((o) => o.trim())
     .filter(Boolean) || [

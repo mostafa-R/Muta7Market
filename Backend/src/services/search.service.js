@@ -1,6 +1,6 @@
 import { getSearchClient, isSearchEngineEnabled } from "./esClient.js";
 
-export const SEARCH_INDEX = {
+const SEARCH_INDEX = {
   player: "muta7_player_profiles",
   coach: "muta7_coach_profiles",
 };
@@ -82,7 +82,7 @@ const toStringValue = (value) => {
   return String(value);
 };
 
-export const buildPlayerSearchDoc = (player) => {
+const buildPlayerSearchDoc = (player) => {
   const doc = player && player.toObject ? player.toObject() : player || {};
   const rawName = doc.name;
   const name =
@@ -121,7 +121,7 @@ export const buildPlayerSearchDoc = (player) => {
   };
 };
 
-export const buildCoachSearchDoc = (coach) => {
+const buildCoachSearchDoc = (coach) => {
   const doc = coach && coach.toObject ? coach.toObject() : coach || {};
   const name = doc.name || {};
   const experience = doc.experience || {};
@@ -154,7 +154,7 @@ const shouldIndexPlayer = (player) =>
 
 const shouldIndexCoach = (coach) => Boolean(coach && coach.isActive);
 
-export const shouldIndex = (type, doc) =>
+const shouldIndex = (type, doc) =>
   type === "player"
     ? shouldIndexPlayer(doc)
     : type === "coach"

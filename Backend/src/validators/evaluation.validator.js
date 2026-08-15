@@ -59,24 +59,3 @@ export const updateEvaluationSchema = Joi.object({
   ),
   status: Joi.string().valid("draft", "submitted"),
 });
-
-export const getEvaluationsBySubjectSchema = Joi.object({
-  subjectType: Joi.string()
-    .valid("player", "coach", "scout", "agent", "academy")
-    .required(),
-  subject: Joi.string().hex().length(24).required(),
-  status: Joi.string().valid("draft", "submitted"),
-  page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-});
-
-export const getEvaluationByIdSchema = Joi.object({
-  id: Joi.string().hex().length(24).required(),
-});
-
-export const getSubjectRatingStatsSchema = Joi.object({
-  subjectType: Joi.string()
-    .valid("player", "coach", "scout", "agent", "academy")
-    .required(),
-  subject: Joi.string().hex().length(24).required(),
-});

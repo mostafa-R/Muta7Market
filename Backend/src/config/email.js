@@ -6,7 +6,7 @@ export const isEmailEnabled = !["0", "false", "no"].includes(
   String(process.env.EMAIL_ENABLED || "").toLowerCase()
 );
 
-export const transporter = isEmailEnabled
+const transporter = isEmailEnabled
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT),

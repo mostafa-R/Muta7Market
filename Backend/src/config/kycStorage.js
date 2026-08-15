@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Private directory (NOT served by express.static under /uploads)
-export const KYC_UPLOADS_DIR = join(__dirname, "../../privateUploads/kyc");
-export const KYC_DOCUMENT_ROUTE = "/api/v1/kyc/document";
+const KYC_UPLOADS_DIR = join(__dirname, "../../privateUploads/kyc");
+const KYC_DOCUMENT_ROUTE = "/api/v1/kyc/document";
 
 if (!fs.existsSync(KYC_UPLOADS_DIR)) {
   fs.mkdirSync(KYC_UPLOADS_DIR, { recursive: true });

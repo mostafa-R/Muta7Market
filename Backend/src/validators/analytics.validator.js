@@ -1,16 +1,12 @@
 import Joi from "joi";
 
-export const getAnalyticsOverviewSchema = Joi.object({
+const getAnalyticsOverviewSchema = Joi.object({
   timeRange: Joi.string()
     .valid("7d", "30d", "90d", "12m")
     .default("7d")
     .messages({
       "any.only": "Time range must be one of: 7d, 30d, 90d, 12m",
     }),
-});
-
-export const getRealTimeAnalyticsSchema = Joi.object({
-  // No additional parameters needed for real-time analytics
 });
 
 export const validateTimeRange = (req, res, next) => {

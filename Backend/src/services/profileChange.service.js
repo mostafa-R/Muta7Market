@@ -99,7 +99,7 @@ const normalize = (value) => {
   return value;
 };
 
-export const diffProfileChanges = (before, after, trackedFields) => {
+const diffProfileChanges = (before, after, trackedFields) => {
   const changes = [];
   for (const field of trackedFields) {
     const oldValue = normalize(getValue(before, field));
@@ -161,7 +161,7 @@ export const recordProfileChanges = async ({
   }
 };
 
-export const notifyShortlistScouts = async (profileType, profileId, changes) => {
+const notifyShortlistScouts = async (profileType, profileId, changes) => {
   try {
     const profileKey = profileType === "coach" ? "coaches" : "players";
     const shortlists = await Shortlist.find({

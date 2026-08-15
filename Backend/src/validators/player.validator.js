@@ -367,16 +367,3 @@ export const promotePlayerSchema = Joi.object({
   days: Joi.number().min(1).max(365).required(),
   type: Joi.string().valid("featured", "premium").default("featured"),
 });
-
-export const transferPlayerSchema = Joi.object({
-  clubName: Joi.string().required(),
-  amount: Joi.number().min(0).required(),
-});
-
-export const statisticsSchema = Joi.object({
-  goals: Joi.number().min(0),
-  assists: Joi.number().min(0),
-  matches: Joi.number().min(0),
-  yellowCards: Joi.number().min(0),
-  redCards: Joi.number().min(0),
-});
