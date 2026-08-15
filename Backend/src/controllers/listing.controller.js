@@ -1,10 +1,10 @@
-import { OFFER_STATUS } from "../config/constants.js";
+﻿import { OFFER_STATUS, STAFF_ROLES } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
 import Listing from "../models/listing.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { buildSortQuery, paginate } from "../utils/helpers.js";
+import { buildSortQuery, paginate, escapeRegex } from "../utils/helpers.js";
 import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
@@ -12,7 +12,6 @@ import { paylinkCreateInvoice, paylinkGetInvoice } from "../services/paylink.cli
 import { applyPaidEffects } from "./payments.controller.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 const OFFER_ALLOWED_FIELDS = [
   "title",
@@ -118,7 +117,14 @@ async function initiateInvoicePayment(invoice, user, req) {
 
 export const createListing = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const requirePayment = req.user.role !== "admin";
+  const requirePayment = !STAFF_ROLES.includes(req.user.role);
+
+  if (requirePayment && !req.user.verifiedBadge) {
+    throw new ApiError(
+      403,
+      "Only verified clubs can create listings. Please complete KYC verification first"
+    );
+  }
 
   const data = {};
   for (const key of OFFER_ALLOWED_FIELDS) {
@@ -200,17 +206,24 @@ export const getAllListings = asyncHandler(async (req, res) => {
     location,
   } = req.query;
 
+  const isStaff = STAFF_ROLES.includes(req.user?.role);
+
   const query = {
     isActive: true,
     "payment.isPaid": true,
   };
 
+  if (!status) {
+    query.status = { $ne: OFFER_STATUS.EXPIRED };
+  }
+
   if (search) {
+    const safeSearch = escapeRegex(search);
     query.$or = [
-      { "title.en": { $regex: search, $options: "i" } },
-      { "title.ar": { $regex: search, $options: "i" } },
-      { "description.en": { $regex: search, $options: "i" } },
-      { "description.ar": { $regex: search, $options: "i" } },
+      { "title.en": { $regex: safeSearch, $options: "i" } },
+      { "title.ar": { $regex: safeSearch, $options: "i" } },
+      { "description.en": { $regex: safeSearch, $options: "i" } },
+      { "description.ar": { $regex: safeSearch, $options: "i" } },
     ];
   }
 
@@ -224,7 +237,10 @@ export const getAllListings = asyncHandler(async (req, res) => {
     query["targetProfile.nationality"] = nationality;
   }
   if (location) {
-    query["offerDetails.location"] = { $regex: location, $options: "i" };
+    query["offerDetails.location"] = {
+      $regex: escapeRegex(location),
+      $options: "i",
+    };
   }
 
   if (minSalary || maxSalary) {
@@ -247,7 +263,7 @@ export const getAllListings = asyncHandler(async (req, res) => {
 
   await updateExpiredListings();
 
-  const { skip } = paginate(page, limit);
+  const { skip, limit: limitNum } = paginate(page, limit);
   let sort = buildSortQuery(sortBy);
 
   if (!sortBy) {
@@ -261,10 +277,10 @@ export const getAllListings = asyncHandler(async (req, res) => {
   const [offers, total] = await Promise.all([
     Listing.find(query)
       .sort(sort)
-      .limit(parseInt(limit))
+      .limit(limitNum)
       .skip(skip)
       .populate("user", "name email")
-      .select("-unlockedBy")
+      .select(isStaff ? "" : "-unlockedBy")
       .lean(),
     Listing.countDocuments(query),
   ]);
@@ -276,9 +292,9 @@ export const getAllListings = asyncHandler(async (req, res) => {
         offers,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page: parseInt(page),
-          limit: parseInt(limit),
+          pages: Math.ceil(total / limitNum),
+          page: Math.max(1, parseInt(page) || 1),
+          limit: limitNum,
         },
       },
       "Listings fetched successfully"
@@ -289,6 +305,7 @@ export const getAllListings = asyncHandler(async (req, res) => {
 export const getListingById = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const userId = req.user?._id;
+  const isStaff = STAFF_ROLES.includes(req.user?.role);
 
   const offer = await Listing.findById(offerId).populate("user", "name email");
 
@@ -296,6 +313,11 @@ export const getListingById = asyncHandler(async (req, res) => {
     !offer ||
     (!offer.isActive && (!userId || offer.user.toString() !== userId))
   ) {
+    throw new ApiError(404, "Listing not found");
+  }
+
+  const isOwner = userId && offer.user.toString() === userId.toString();
+  if (!isStaff && !isOwner && offer.status === OFFER_STATUS.EXPIRED) {
     throw new ApiError(404, "Listing not found");
   }
 
@@ -344,11 +366,11 @@ export const updateListing = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Listing not found");
   }
 
-  if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
+  if (!STAFF_ROLES.includes(userRole) && offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only update your own offers");
   }
 
-  if (!offer.payment.isPaid && userRole !== "admin") {
+  if (!offer.payment.isPaid && !STAFF_ROLES.includes(userRole)) {
     throw new ApiError(400, "Please complete payment before updating offer");
   }
 
@@ -383,7 +405,7 @@ export const deleteListing = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Listing not found");
   }
 
-  if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
+  if (!STAFF_ROLES.includes(userRole) && offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only delete your own offers");
   }
 
@@ -475,11 +497,11 @@ export const promoteListing = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Listing not found");
   }
 
-  if (userRole !== "admin" && offer.user.toString() !== userId.toString()) {
+  if (!STAFF_ROLES.includes(userRole) && offer.user.toString() !== userId.toString()) {
     throw new ApiError(403, "You can only promote your own offers");
   }
 
-  if (!offer.payment.isPaid && userRole !== "admin") {
+  if (!offer.payment.isPaid && !STAFF_ROLES.includes(userRole)) {
     throw new ApiError(400, "Please complete initial payment before promoting");
   }
 
@@ -710,7 +732,7 @@ export const searchListings = asyncHandler(async (req, res) => {
     }
   }
 
-  const { skip } = paginate(page, limit);
+  const { skip, limit: limitNum } = paginate(page, limit);
 
   let sort = { createdAt: -1 };
   if (sortBy === "salary") {
@@ -723,7 +745,7 @@ export const searchListings = asyncHandler(async (req, res) => {
   const [offers, total] = await Promise.all([
     Listing.find(query)
       .sort(sort)
-      .limit(parseInt(limit))
+      .limit(limitNum)
       .skip(skip)
       .populate("user", "name email")
       .select("-unlockedBy")
@@ -739,9 +761,9 @@ export const searchListings = asyncHandler(async (req, res) => {
         searchQuery: search,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page: parseInt(page),
-          limit: parseInt(limit),
+          pages: Math.ceil(total / limitNum),
+          page: Math.max(1, parseInt(page) || 1),
+          limit: limitNum,
         },
       },
       `Found ${total} offers matching your search`
@@ -751,6 +773,7 @@ export const searchListings = asyncHandler(async (req, res) => {
 
 export const getFeaturedListings = asyncHandler(async (req, res) => {
   const { limit = 6 } = req.query;
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 6));
 
   const query = {
     isActive: true,
@@ -761,7 +784,7 @@ export const getFeaturedListings = asyncHandler(async (req, res) => {
 
   const offers = await Listing.find(query)
     .sort({ "promotion.position": 1, "promotion.startDate": -1 })
-    .limit(parseInt(limit))
+    .limit(limitNum)
     .populate("user", "name email")
     .select("-unlockedBy")
     .lean();
@@ -774,6 +797,7 @@ export const getFeaturedListings = asyncHandler(async (req, res) => {
 export const getSimilarListings = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const { limit = 5 } = req.query;
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 5));
 
   const currentListing = await Listing.findById(offerId);
   if (!currentListing) {
@@ -784,6 +808,7 @@ export const getSimilarListings = asyncHandler(async (req, res) => {
     _id: { $ne: offerId },
     isActive: true,
     "payment.isPaid": true,
+    status: { $ne: OFFER_STATUS.EXPIRED },
     $or: [
       { category: currentListing.category },
       { "seo.keywords": { $in: currentListing.seo?.keywords || [] } },
@@ -793,7 +818,7 @@ export const getSimilarListings = asyncHandler(async (req, res) => {
 
   const similarListings = await Listing.find(query)
     .sort({ createdAt: -1 })
-    .limit(parseInt(limit))
+    .limit(limitNum)
     .populate("user", "name email")
     .select("-unlockedBy")
     .lean();
@@ -804,3 +829,5 @@ export const getSimilarListings = asyncHandler(async (req, res) => {
       new ApiResponse(200, similarListings, "Similar offers fetched successfully")
     );
 });
+
+

@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import Entitlement from "../models/entitlement.model.js";
 import Player from "../models/player.model.js";
+import Subscription from "../models/subscription.model.js";
 import User from "../models/user.model.js";
 import logger from "../utils/logger.js";
 
@@ -46,6 +47,21 @@ export async function runExpirySweep(now = new Date()) {
       }
     );
 
+    let entitlements = { modifiedCount: 0 };
+    try {
+      entitlements = await Entitlement.updateMany(
+        { active: true, expiresAt: { $ne: null, $lte: n } },
+        { $set: { active: false, revokedAt: n } }
+      );
+    } catch (err) {
+      logger.error("[expiry-sweep] entitlement sweep failed", err);
+    }
+
+    const subscriptions = await Subscription.updateMany(
+      { status: "active", endDate: { $ne: null, $lte: n } },
+      { $set: { status: "expired", autoRenew: false } }
+    );
+
     const playersPro = await Player.updateMany(
       { isPro: true, proExpiresAt: { $ne: null, $lte: n } },
       {
@@ -54,22 +70,13 @@ export async function runExpirySweep(now = new Date()) {
       }
     );
 
-    let entitlements = { modifiedCount: 0 };
-    try {
-      entitlements = await Entitlement.updateMany(
-        { active: true, expiresAt: { $ne: null, $lte: n } },
-        { $set: { active: false } }
-      );
-    } catch (err) {
-      logger.error("[expiry-sweep] entitlement sweep failed", err);
-    }
-
     const result = {
       users: users.modifiedCount,
       playersActive: playersActive.modifiedCount,
       playersPromo: playersPromo.modifiedCount,
       playersPro: playersPro.modifiedCount,
       entitlements: entitlements.modifiedCount,
+      subscriptions: subscriptions.modifiedCount,
     };
 
     logger.info("[expiry-sweep] completed", result);

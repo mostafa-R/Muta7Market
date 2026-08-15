@@ -27,6 +27,12 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     return res.status(401).json({ message: "Invalid token" });
   }
 
+  if (user.deletedAt) {
+    return res
+      .status(403)
+      .json({ message: "Your account has been deactivated" });
+  }
+
   req.user = {
     ...decoded,
     _id: user._id,
@@ -62,7 +68,7 @@ export const authorize = (...roles) => {
 
 export const verifiedOnly = asyncHandler(async (req, res, next) => {
   if (req.user.isEmailVerified === false) {
-    throw new ApiError(403, "Please verify your email and phone to continue");
+    throw new ApiError(403, "Please verify your email to continue");
   }
   next();
 });

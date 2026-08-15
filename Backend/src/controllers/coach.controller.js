@@ -1,14 +1,15 @@
-import Coach from "../models/coach.model.js";
+﻿import Coach from "../models/coach.model.js";
 import User from "../models/user.model.js";
 import Invoice from "../models/invoice.model.js";
-import { PROFILE_STATUS, PAGINATION } from "../config/constants.js";
+import { PROFILE_STATUS, PAGINATION, STAFF_ROLES } from "../config/constants.js";
 import mongoose from "mongoose";
 import { paylinkCreateInvoice } from "../services/paylink.client.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
 import { search } from "../services/search.service.js";
+import { recordProfileChanges } from "../services/profileChange.service.js";
+import { escapeRegex } from "../utils/helpers.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 const isStaff = (role) => STAFF_ROLES.includes(role);
 
@@ -172,10 +173,11 @@ export const getAllCoaches = async (req, res) => {
     }
 
     if (search) {
+      const safeSearch = escapeRegex(search);
       filter.$or = [
-        { "name.en": { $regex: search, $options: "i" } },
-        { "name.ar": { $regex: search, $options: "i" } },
-        { nationality: { $regex: search, $options: "i" } },
+        { "name.en": { $regex: safeSearch, $options: "i" } },
+        { "name.ar": { $regex: safeSearch, $options: "i" } },
+        { nationality: { $regex: safeSearch, $options: "i" } },
       ];
     }
 
@@ -184,8 +186,11 @@ export const getAllCoaches = async (req, res) => {
       filter["isPromoted.endDate"] = { $gt: new Date() };
     }
 
-    const pageNum = parseInt(page);
-    const limitNum = Math.min(parseInt(limit), PAGINATION.MAX_LIMIT);
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(
+      PAGINATION.MAX_LIMIT,
+      Math.max(1, parseInt(limit) || PAGINATION.DEFAULT_LIMIT)
+    );
     const skip = (pageNum - 1) * limitNum;
 
     if (search) {
@@ -195,6 +200,7 @@ export const getAllCoaches = async (req, res) => {
           category,
           nationality,
           gender,
+          status,
           contractStatus,
           experienceMin: experience,
           ageMin: minAge,
@@ -323,6 +329,8 @@ export const updateCoach = async (req, res) => {
       });
     }
 
+    const beforeSnapshot = current.toObject();
+
     const ownerId = current.user || null;
     const isOwner =
       ownerId &&
@@ -361,6 +369,18 @@ export const updateCoach = async (req, res) => {
       new: true,
       runValidators: true,
     }).populate("user", "email name");
+
+    try {
+      await recordProfileChanges({
+        profileType: "coach",
+        before: beforeSnapshot,
+        after: coach,
+        changedBy: req.user._id || req.user.id,
+        changedByRole: req.user.role,
+      });
+    } catch (recordError) {
+      console.error("Failed to record coach profile changes:", recordError.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -592,7 +612,7 @@ export const getCoachesByCategory = async (req, res) => {
       req.query;
 
     const pageNum = parseInt(page);
-    const limitNum = Math.min(parseInt(limit), PAGINATION.MAX_LIMIT);
+    const limitNum = Math.min(PAGINATION.MAX_LIMIT, Math.max(1, parseInt(limit) || PAGINATION.DEFAULT_LIMIT));
     const skip = (pageNum - 1) * limitNum;
 
     const coaches = await Coach.find({
@@ -639,7 +659,7 @@ export const getPromotedCoaches = async (req, res) => {
     } = req.query;
 
     const pageNum = parseInt(page);
-    const limitNum = Math.min(parseInt(limit), PAGINATION.MAX_LIMIT);
+    const limitNum = Math.min(PAGINATION.MAX_LIMIT, Math.max(1, parseInt(limit) || PAGINATION.DEFAULT_LIMIT));
     const skip = (pageNum - 1) * limitNum;
 
     const filter = {
@@ -758,3 +778,5 @@ export const getCoachStats = async (req, res) => {
     });
   }
 };
+
+

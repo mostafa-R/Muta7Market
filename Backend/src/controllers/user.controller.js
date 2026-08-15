@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { generatePublicUrl } from "../config/localStorage.js";
 import Invoice from "../models/invoice.model.js";
 import User from "../models/user.model.js";
@@ -165,8 +166,34 @@ export const update = async (req, res) => {
       if (emailExists) {
         errors.email = "Email already in use";
       } else {
-        errors.email =
-          "Email change requires verification. Please use the email change endpoint.";
+        const newEmail = req.body.email.toLowerCase();
+        const emailToken = crypto
+          .randomInt(100000, 999999)
+          .toString()
+          .padStart(6, "0");
+
+        updates.email = newEmail;
+        updates.isEmailVerified = false;
+        updates.emailVerificationToken = crypto
+          .createHash("sha256")
+          .update(emailToken)
+          .digest("hex");
+        updates.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+
+        try {
+          const { sendEmail } = await import("../config/email.js");
+          const { generateVerificationEmail } = await import(
+            "../utils/emailTemplates.js"
+          );
+          await sendEmail(
+            newEmail,
+            "Verify Your New Email",
+            `Your verification code is: ${emailToken}`,
+            generateVerificationEmail(emailToken)
+          );
+        } catch (emailError) {
+          console.error("Failed to send email-change verification:", emailError);
+        }
       }
     }
 
@@ -177,8 +204,6 @@ export const update = async (req, res) => {
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "No valid fields to update" });
     }
-
-    updates.lastLogin = new Date();
 
     const updatedUser = await User.findByIdAndUpdate(
       id,

@@ -20,10 +20,18 @@ const ShortlistSchema = new mongoose.Schema(
         ref: "Player",
       },
     ],
+    coaches: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Coach",
+      },
+    ],
   },
   { timestamps: true }
 );
 
 ShortlistSchema.index({ user: 1, name: 1 });
+ShortlistSchema.index({ coaches: 1 });
+ShortlistSchema.index({ players: 1 });
 
 export default mongoose.model("Shortlist", ShortlistSchema);

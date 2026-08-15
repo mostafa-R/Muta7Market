@@ -105,6 +105,11 @@ const playerSchema = new mongoose.Schema(
       enum: ["player", "coach"],
       required: true,
     },
+    jop: {
+      type: String,
+      enum: ["player", "coach"],
+      default: null,
+    },
     roleType: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
@@ -140,6 +145,26 @@ const playerSchema = new mongoose.Schema(
       },
     },
     customPosition: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    secondaryPosition: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+      validate: {
+        validator: function (v) {
+          if (v === null) return true;
+          return (
+            typeof v === "string" ||
+            (v && typeof v === "object" && v.ar && v.en)
+          );
+        },
+        message:
+          "Secondary position must be a string or an object with ar, en, and optional slug properties",
+      },
+    },
+    customSecondaryPosition: {
       type: String,
       default: null,
       trim: true,
@@ -201,6 +226,34 @@ const playerSchema = new mongoose.Schema(
         titles: [String],
       },
     ],
+    skills: {
+      type: [String],
+      default: [],
+      trim: true,
+    },
+    previousClubs: {
+      type: [String],
+      default: [],
+      trim: true,
+    },
+    achievements: {
+      type: [String],
+      default: [],
+      trim: true,
+    },
+    languages: {
+      type: [String],
+      default: [],
+      trim: true,
+    },
+    bio: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    statistics: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
     transferredTo: {
       club: { type: String, default: null },
       startDate: { type: Date, default: null },
@@ -359,6 +412,14 @@ const playerSchema = new mongoose.Schema(
           ret.customPosition
         ) {
           ret.position = ret.customPosition;
+        }
+
+        if (
+          (ret.secondaryPosition === "other" ||
+            ret.secondaryPosition === "") &&
+          ret.customSecondaryPosition
+        ) {
+          ret.secondaryPosition = ret.customSecondaryPosition;
         }
 
         if (

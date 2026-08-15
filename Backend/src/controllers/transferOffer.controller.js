@@ -1,8 +1,10 @@
-import mongoose from "mongoose";
-import { OFFER_TYPE } from "../config/constants.js";
+﻿import mongoose from "mongoose";
+import { OFFER_TYPE, STAFF_ROLES } from "../config/constants.js";
 import { isEmailEnabled, sendEmail } from "../config/email.js";
 import Invoice from "../models/invoice.model.js";
 import Player from "../models/player.model.js";
+import Coach from "../models/coach.model.js";
+import NegotiationRoom from "../models/negotiationRoom.model.js";
 import TransferOffer from "../models/transferOffer.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
@@ -15,7 +17,31 @@ import { emitToUser } from "../services/socket.service.js";
 import { applyPaidEffects } from "./payments.controller.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
+const toNumber = (value, fallback) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+const validateMoney = (value, fieldName) => {
+  if (value == null) return;
+  const amount = toNumber(value.amount, NaN);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new ApiError(400, `${fieldName} amount must be a non-negative number`);
+  }
+};
+
+const closeOfferRooms = async (offer) => {
+  if (!offer?.negotiationRoom) return;
+  try {
+    await NegotiationRoom.updateOne(
+      { _id: offer.negotiationRoom, status: "open" },
+      { $set: { status: "closed" } }
+    );
+  } catch (error) {
+    console.error("Failed to close negotiation room:", error.message);
+  }
+};
+
 
 const TRANSFER_ALLOWED_FIELDS = [
   "message",
@@ -47,7 +73,7 @@ const notifyTransferTarget = async (targetUserId, offer) => {
       `Hello ${targetUser.name},\n\n` +
       `A club sent you a new ${offerTypeLabel} on Muta7 Market.\n` +
       `Please log in to review the details and respond.\n\n` +
-      `— Muta7 Market Team`;
+      `â€” Muta7 Market Team`;
 
     await sendEmail(targetUser.email, subject, text, text.split("\n").join("<br/>"));
   } catch (error) {
@@ -120,18 +146,45 @@ export const createTransferOffer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "targetProfileId is required and must be valid");
   }
 
-  const targetProfile = await Player.findById(targetProfileId);
+  const isCoachTarget = targetType === "coach";
+  const targetProfile = isCoachTarget
+    ? await Coach.findById(targetProfileId)
+    : await Player.findById(targetProfileId);
   if (!targetProfile) throw new ApiError(404, "Target profile not found");
-  if (!targetProfile.isActive || !targetProfile.isConfirmed) {
+
+  if (isCoachTarget) {
+    if (!targetProfile.isActive) {
+      throw new ApiError(
+        400,
+        "Target profile must be active to receive transfer offers"
+      );
+    }
+  } else if (!targetProfile.isActive || !targetProfile.isConfirmed) {
     throw new ApiError(
       400,
       "Target profile must be active and confirmed to receive transfer offers"
     );
   }
 
-  const targetUserId = toUserId || targetProfile.user;
-  if (!targetUserId) {
+  const ownerUser = isCoachTarget
+    ? targetProfile.user
+    : targetProfile.user || null;
+  const agentUser = !isCoachTarget ? targetProfile.agentUser || null : null;
+
+  const boundTargetIds = [ownerUser, agentUser]
+    .filter(Boolean)
+    .map(String);
+
+  if (!boundTargetIds.length) {
     throw new ApiError(400, "Target profile has no owner");
+  }
+
+  const targetUserId = toUserId || ownerUser;
+  if (!targetUserId || !boundTargetIds.includes(String(targetUserId))) {
+    throw new ApiError(
+      400,
+      "toUserId must match the target profile owner or its agent"
+    );
   }
   if (String(targetUserId) === String(userId)) {
     throw new ApiError(400, "You cannot send an offer to yourself");
@@ -142,8 +195,29 @@ export const createTransferOffer = asyncHandler(async (req, res) => {
     if (key in req.body) data[key] = req.body[key];
   }
 
-  const transferFee = Number(data.transferFee?.amount || 0);
-  if (transferFee < 0) throw new ApiError(400, "Invalid transfer fee");
+  validateMoney(data.transferFee, "transferFee");
+  validateMoney(data.salary, "salary");
+  if (data.contractDuration != null) {
+    const duration = toNumber(data.contractDuration, NaN);
+    if (!Number.isFinite(duration) || duration < 1 || !Number.isInteger(duration)) {
+      throw new ApiError(
+        400,
+        "contractDuration must be a positive whole number of years"
+      );
+    }
+    data.contractDuration = duration;
+  }
+
+  const transferFee = toNumber(data.transferFee?.amount, 0);
+
+  if (type === OFFER_TYPE.OFFICIAL && !isStaff) {
+    if (!req.user.verifiedBadge) {
+      throw new ApiError(
+        403,
+        "Only verified clubs can send official transfer offers. Please complete KYC verification first"
+      );
+    }
+  }
 
   if (type === OFFER_TYPE.INTEREST) {
     const existingInterest = await TransferOffer.findOne({
@@ -316,12 +390,12 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
     query.$or = [{ fromUser: req.user._id }, { toUser: req.user._id }];
   }
 
-  const { skip } = paginate(page, limit);
+  const { skip, limit: limitNum } = paginate(page, limit);
   const sort = buildSortQuery(sortBy) || { createdAt: -1 };
 
   const baseQuery = TransferOffer.find(query)
     .sort(sort)
-    .limit(parseInt(limit))
+    .limit(limitNum)
     .skip(skip);
 
   if (isStaff) {
@@ -330,7 +404,6 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
       .populate("toUser", "name email role");
   } else {
     baseQuery
-      .select("-salary -transferFee -contractDuration -message")
       .populate("fromUser", "name role")
       .populate("toUser", "name role");
   }
@@ -347,9 +420,9 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
         offers,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page: parseInt(page),
-          limit: parseInt(limit),
+          pages: Math.ceil(total / limitNum),
+          page: Math.max(1, parseInt(page) || 1),
+          limit: limitNum,
         },
       },
       "Transfer offers fetched successfully"
@@ -360,14 +433,14 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
 export const getMyTransferOffers = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { page = 1, limit = 10 } = req.query;
-  const { skip } = paginate(page, limit);
+  const { skip, limit: limitNum } = paginate(page, limit);
 
   const query = { $or: [{ fromUser: userId }, { toUser: userId }] };
 
   const [offers, total] = await Promise.all([
     TransferOffer.find(query)
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
+      .limit(limitNum)
       .skip(skip)
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role")
@@ -382,9 +455,9 @@ export const getMyTransferOffers = asyncHandler(async (req, res) => {
         offers,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page: parseInt(page),
-          limit: parseInt(limit),
+          pages: Math.ceil(total / limitNum),
+          page: Math.max(1, parseInt(page) || 1),
+          limit: limitNum,
         },
       },
       "Your transfer offers fetched successfully"
@@ -420,7 +493,7 @@ export const getTransferOfferById = asyncHandler(async (req, res) => {
 
 export const respondToTransferOffer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { action } = req.params; // accept | reject | withdraw
+  const { action } = req.params; // accept | reject | withdraw | counter
   const { salary, transferFee, contractDuration } = req.body;
 
   const offer = await TransferOffer.findById(req.params.id);
@@ -428,14 +501,18 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
 
   const isFrom = String(offer.fromUser) === String(userId);
   const isTo = String(offer.toUser) === String(userId);
+  if (!isFrom && !isTo) {
+    throw new ApiError(403, "You are not a party to this offer");
+  }
 
   if (action === "withdraw") {
     if (!isFrom) throw new ApiError(403, "Only the sender can withdraw");
-    if (offer.status !== "pending") {
-      throw new ApiError(400, "Only pending offers can be withdrawn");
+    if (offer.status !== "pending" && offer.status !== "countered") {
+      throw new ApiError(400, "Only pending or countered offers can be withdrawn");
     }
     offer.status = "withdrawn";
     await offer.save();
+    await closeOfferRooms(offer);
     res.status(200).json(
       new ApiResponse(200, offer, "Transfer offer withdrawn successfully")
     );
@@ -443,23 +520,34 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
   }
 
   if (action === "counter") {
-    if (!isTo) throw new ApiError(403, "Only the recipient can counter");
     if (offer.status !== "pending" && offer.status !== "countered") {
       throw new ApiError(400, "This offer can no longer be countered");
     }
+    validateMoney(salary, "salary");
+    validateMoney(transferFee, "transferFee");
+    if (contractDuration != null) {
+      const duration = toNumber(contractDuration, NaN);
+      if (!Number.isFinite(duration) || duration < 1 || !Number.isInteger(duration)) {
+        throw new ApiError(
+          400,
+          "contractDuration must be a positive whole number of years"
+        );
+      }
+      offer.contractDuration = duration;
+    }
     if (salary) offer.salary = { ...offer.salary, ...salary };
     if (transferFee) offer.transferFee = { ...offer.transferFee, ...transferFee };
-    if (contractDuration) offer.contractDuration = Number(contractDuration);
     offer.status = "countered";
     await offer.save();
 
+    const otherParty = isFrom ? offer.toUser : offer.fromUser;
     await sendInternalNotification(
-      offer.fromUser,
+      otherParty,
       "Transfer Offer Countered",
       "Your transfer offer was countered",
       { transferOfferId: String(offer._id) }
     );
-    emitToUser(offer.fromUser, "transfer_offer:updated", {
+    emitToUser(otherParty, "transfer_offer:updated", {
       transferOfferId: String(offer._id),
       status: "countered",
     });
@@ -470,10 +558,13 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
     return;
   }
 
-  if (!isTo) throw new ApiError(403, "Only the recipient can respond");
-
-  if (offer.status !== "pending") {
-    throw new ApiError(400, "Only pending offers can be responded to");
+  const isPending = offer.status === "pending";
+  const isCountered = offer.status === "countered";
+  if (!isPending && !isCountered) {
+    throw new ApiError(400, "This offer can no longer be responded to");
+  }
+  if (isPending && !isTo) {
+    throw new ApiError(403, "Only the recipient can respond to a pending offer");
   }
 
   if (action === "accept") {
@@ -491,12 +582,15 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
     await offer.save();
 
     if (offer.type === OFFER_TYPE.OFFICIAL) {
-      const targetProfile = await Player.findById(offer.targetProfileId);
+      const TargetModel = offer.targetType === "coach" ? Coach : Player;
+      const targetProfile = await TargetModel.findById(offer.targetProfileId);
       if (targetProfile) {
         targetProfile.contractStatus = "contracted";
         await targetProfile.save();
       }
     }
+
+    await closeOfferRooms(offer);
 
     const label =
       offer.type === OFFER_TYPE.INTEREST
@@ -524,6 +618,7 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
   if (action === "reject") {
     offer.status = "rejected";
     await offer.save();
+    await closeOfferRooms(offer);
 
     await sendInternalNotification(
       offer.fromUser,
@@ -590,3 +685,4 @@ export const confirmTransferOfferPayment = asyncHandler(async (req, res) => {
     )
   );
 });
+

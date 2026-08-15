@@ -1,4 +1,7 @@
 import Joi from "joi";
+import { USER_ROLES } from "../config/constants.js";
+
+const ALL_ROLES = Object.values(USER_ROLES);
 
 // ================================
 // USER VALIDATION SCHEMAS
@@ -59,10 +62,10 @@ export const createUserSchema = Joi.object({
     }),
 
   role: Joi.string()
-    .valid("user", "admin", "super_admin")
+    .valid(...ALL_ROLES)
     .default("user")
     .messages({
-      "any.only": "Role must be one of: user, admin, super_admin",
+      "any.only": "Role must be one of the valid system roles",
     }),
 
   isActive: Joi.boolean().default(true),
@@ -103,9 +106,11 @@ export const updateUserSchema = Joi.object({
       "string.max": "Phone number cannot exceed 20 characters",
     }),
 
-  role: Joi.string().valid("user", "admin", "super_admin").messages({
-    "any.only": "Role must be one of: user, admin, super_admin",
-  }),
+  role: Joi.string()
+    .valid(...ALL_ROLES)
+    .messages({
+      "any.only": "Role must be one of the valid system roles",
+    }),
 
   isActive: Joi.boolean(),
   isEmailVerified: Joi.boolean(),
@@ -172,6 +177,10 @@ export const createPlayerSchema = Joi.object({
 
   position: Joi.string().trim().max(100).messages({
     "string.max": "Position cannot exceed 100 characters",
+  }),
+
+  secondaryPosition: Joi.string().trim().max(100).messages({
+    "string.max": "Secondary position cannot exceed 100 characters",
   }),
 
   status: Joi.string()
@@ -370,6 +379,23 @@ export const updatePlayerSchema = Joi.object({
     "string.max": "Custom position cannot exceed 100 characters",
   }),
 
+  secondaryPosition: Joi.alternatives()
+    .try(
+      Joi.string().trim().max(100).allow(""),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      }).unknown()
+    )
+    .messages({
+      "string.max": "Secondary position cannot exceed 100 characters",
+    }),
+
+  customSecondaryPosition: Joi.string().trim().max(100).allow("").messages({
+    "string.max": "Custom secondary position cannot exceed 100 characters",
+  }),
+
   status: Joi.string()
     .valid("available", "contracted", "transferred", "recently transferred")
     .messages({
@@ -532,7 +558,18 @@ export const updatePlayerSchema = Joi.object({
   // Additional fields
   media: Joi.object().unknown(true),
   stats: Joi.object().unknown(true),
-  bio: Joi.string().max(1000).allow(""),
+  statistics: Joi.object().unknown(true),
+  skills: Joi.array().items(Joi.string().trim().allow("")),
+  previousClubs: Joi.array().items(Joi.string().trim().allow("")),
+  achievements: Joi.array().items(Joi.string().trim().allow("")),
+  languages: Joi.array().items(Joi.string().trim().allow("")),
+  bio: Joi.alternatives().try(
+    Joi.string().max(1000).allow(""),
+    Joi.object({
+      en: Joi.string().allow("", null),
+      ar: Joi.string().allow("", null),
+    }).unknown()
+  ),
 
   seo: Joi.object({
     metaTitle: Joi.object({
@@ -608,6 +645,7 @@ export const getPlayersQuerySchema = Joi.object({
   jop: Joi.string().valid("player", "coach").optional(), // ✅ إضافة jop field
   job: Joi.string().valid("player", "coach").optional(),
   position: Joi.string().max(100),
+  secondaryPosition: Joi.string().max(100),
   status: Joi.string().valid(
     "available",
     "contracted",

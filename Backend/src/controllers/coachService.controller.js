@@ -1,3 +1,4 @@
+﻿import { STAFF_ROLES } from "../config/constants.js";
 import mongoose from "mongoose";
 import Coach from "../models/coach.model.js";
 import CoachService from "../models/coachService.model.js";
@@ -5,7 +6,6 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 export const createCoachService = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
@@ -21,7 +21,7 @@ export const createCoachService = asyncHandler(async (req, res) => {
   const service = await CoachService.create({
     user: userId,
     coach: coach ? coach._id : null,
-    title: title || { en: "Training Session", ar: "جلسة تدريبية" },
+    title: title || { en: "Training Session", ar: "Ø¬Ù„Ø³Ø© ØªØ¯Ø±ÙŠØ¨ÙŠØ©" },
     description: description || { en: null, ar: null },
     category: category || "other",
     price: price || { amount: 0, currency: "SAR" },

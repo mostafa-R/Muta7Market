@@ -13,6 +13,8 @@ const PLAYER_TRACKED_FIELDS = [
   "birthCountry",
   "position",
   "customPosition",
+  "secondaryPosition",
+  "customSecondaryPosition",
   "roleType",
   "jop",
   "job",
@@ -60,6 +62,7 @@ const SIGNIFICANT_FIELDS = [
   "age",
   "nationality",
   "position",
+  "secondaryPosition",
   "roleType",
   "contractStatus",
   "physicalCondition",
@@ -141,8 +144,12 @@ export const recordProfileChanges = async ({
     const significant = changes.filter((change) =>
       SIGNIFICANT_FIELDS.includes(change.field)
     );
-    if (profileType === "player" && significant.length) {
-      notified = await notifyShortlistScouts(profileId, significant);
+    if (significant.length) {
+      notified = await notifyShortlistScouts(
+        profileType,
+        profileId,
+        significant
+      );
     }
 
     return { changes, notified };
@@ -154,17 +161,18 @@ export const recordProfileChanges = async ({
   }
 };
 
-export const notifyShortlistScouts = async (profileId, changes) => {
+export const notifyShortlistScouts = async (profileType, profileId, changes) => {
   try {
+    const profileKey = profileType === "coach" ? "coaches" : "players";
     const shortlists = await Shortlist.find({
-      players: profileId,
+      [profileKey]: profileId,
     }).select("user");
 
     const userIds = [...new Set(shortlists.map((s) => String(s.user)))];
 
     const scouts = await User.find({
       _id: { $in: userIds },
-      role: "scout",
+      role: { $in: ["scout", "club"] },
       isActive: true,
     }).select("_id name");
 

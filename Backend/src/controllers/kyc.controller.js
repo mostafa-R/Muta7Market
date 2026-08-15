@@ -14,6 +14,13 @@ import fs from "fs";
 const KYC_DOCUMENT_PATH = "/api/v1/kyc/document/";
 
 export const uploadKycDocument = asyncHandler(async (req, res) => {
+  if (req.user.role !== "club") {
+    throw new ApiError(
+      403,
+      "KYC verification is only available for club accounts"
+    );
+  }
+
   if (!req.file) {
     throw new ApiError(400, "No file provided");
   }
@@ -93,6 +100,14 @@ export const getMyKyc = asyncHandler(async (req, res) => {
 
 export const submitKyc = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
+
+  if (req.user.role !== "club") {
+    throw new ApiError(
+      403,
+      "KYC verification is only available for club accounts"
+    );
+  }
+
   const { entityName, entityType, documents } = req.body;
 
   if (!Array.isArray(documents) || documents.length === 0) {
@@ -203,6 +218,15 @@ export const reviewKyc = asyncHandler(async (req, res) => {
   }
 
   const reviewerId = req.user._id || req.user.id;
+
+  const targetUser = await User.findById(kyc.user).select("role").lean();
+  if (!targetUser) throw new ApiError(404, "KYC user not found");
+  if (targetUser.role !== "club") {
+    throw new ApiError(
+      400,
+      "KYC can only be approved for club accounts"
+    );
+  }
 
   if (action === "approve") {
     kyc.status = KYC_STATUS.APPROVED;

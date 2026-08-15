@@ -26,16 +26,17 @@ import {
 import { authMiddleware, verifiedOnly } from "../middleware/auth.middleware.js";
 import { uploadMixed } from "../middleware/localUpload.middleware.js";
 import { parseJsonFields } from "../middleware/parseJsonFields.js";
-import validate from "../middleware/validation.middleware.js";
+import validate, { validateQuery } from "../middleware/validation.middleware.js";
 import {
   createPlayerSchema,
+  filterPlayerSchema,
   promotePlayerSchema,
   updatePlayerSchema,
 } from "../validators/player.validator.js";
 
 const router = express.Router();
 
-router.get("/", getAllPlayers);
+router.get("/", validateQuery(filterPlayerSchema), getAllPlayers);
 
 router.get("/search", searchPlayers);
 
@@ -82,7 +83,14 @@ router.post(
     "contactInfo",
     "roleType",
     "position",
+    "secondaryPosition",
     "game",
+    "skills",
+    "previousClubs",
+    "achievements",
+    "languages",
+    "bio",
+    "statistics",
   ]),
   validate(createPlayerSchema),
   createPlayer
@@ -106,7 +114,14 @@ router.patch(
     "contactInfo",
     "roleType",
     "position",
+    "secondaryPosition",
     "game",
+    "skills",
+    "previousClubs",
+    "achievements",
+    "languages",
+    "bio",
+    "statistics",
   ]),
   validate(updatePlayerSchema),
   updatePlayer

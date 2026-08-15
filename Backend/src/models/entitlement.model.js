@@ -15,6 +15,7 @@ const EntitlementSchema = new mongoose.Schema(
         "listed_coach",
         "promoted_player",
         "promoted_coach",
+        "pro_player",
       ],
       required: true,
     },

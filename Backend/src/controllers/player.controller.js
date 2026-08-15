@@ -1,10 +1,11 @@
+﻿import { STAFF_ROLES } from "../config/constants.js";
 import Invoice from "../models/invoice.model.js";
 import { default as Player } from "../models/player.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { buildSortQuery, paginate } from "../utils/helpers.js";
+import { buildSortQuery, paginate, escapeRegex } from "../utils/helpers.js";
 import {
   deleteAllPlayerMedia,
   deleteMediaFromLocal,
@@ -20,7 +21,6 @@ import { search } from "../services/search.service.js";
 import { recordProfileChanges } from "../services/profileChange.service.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 const canManagePlayer = (user, player) => {
   const userId = String(user?._id || user?.id || "");
@@ -78,6 +78,8 @@ export const createPlayer = asyncHandler(async (req, res) => {
       customRoleType: req.body.customRoleType,
       position: req.body.position,
       customPosition: req.body.customPosition,
+      secondaryPosition: req.body.secondaryPosition,
+      customSecondaryPosition: req.body.customSecondaryPosition,
       status: req.body.status,
       experience: req.body.experience,
       monthlySalary: req.body.monthlySalary,
@@ -88,6 +90,12 @@ export const createPlayer = asyncHandler(async (req, res) => {
       contactInfo: req.body.contactInfo,
       game: req.body.game,
       customSport: req.body.customSport,
+      skills: req.body.skills,
+      previousClubs: req.body.previousClubs,
+      achievements: req.body.achievements,
+      languages: req.body.languages,
+      bio: req.body.bio,
+      statistics: req.body.statistics,
       media,
     });
 
@@ -163,6 +171,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     isPromoted,
     game,
     position,
+    secondaryPosition,
     roleType,
     heightMin,
     heightMax,
@@ -171,6 +180,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     preferredFoot,
     contractStatus,
     physicalCondition,
+    skills,
   } = req.query;
 
   const now = new Date();
@@ -181,35 +191,52 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     if (String(search).length > 100) {
       throw new ApiError(400, "Search query is too long");
     }
+    const safeSearch = escapeRegex(search);
     and.push({
       $or: [
-        { "name.en": { $regex: search, $options: "i" } },
-        { "name.ar": { $regex: search, $options: "i" } },
-        { position: { $regex: search, $options: "i" } },
-        { skills: { $in: [new RegExp(search, "i")] } },
+        { "name.en": { $regex: safeSearch, $options: "i" } },
+        { "name.ar": { $regex: safeSearch, $options: "i" } },
+        { position: { $regex: safeSearch, $options: "i" } },
+        { skills: { $in: [new RegExp(safeSearch, "i")] } },
       ],
     });
   }
 
   if (nationality)
-    and.push({ nationality: { $regex: nationality, $options: "i" } });
+    and.push({ nationality: { $regex: escapeRegex(nationality), $options: "i" } });
   const jobFilter = jop || req.query.job;
   if (jobFilter) and.push({ job: jobFilter });
   if (status) and.push({ status });
   if (gender) and.push({ gender });
-  if (position) and.push({ position: { $regex: position, $options: "i" } });
-  if (roleType) and.push({ roleType: { $regex: roleType, $options: "i" } });
-  if (preferredFoot)
-    and.push({ preferredFoot: { $regex: preferredFoot, $options: "i" } });
-  if (contractStatus) and.push({ contractStatus });
-  if (physicalCondition) and.push({ physicalCondition });
-  if (game) {
+  if (position) and.push({ position: { $regex: escapeRegex(position), $options: "i" } });
+  if (secondaryPosition)
     and.push({
       $or: [
-        { game: { $regex: game, $options: "i" } },
-        { "game.ar": { $regex: game, $options: "i" } },
-        { "game.en": { $regex: game, $options: "i" } },
-        { "game.slug": { $regex: game, $options: "i" } },
+        { secondaryPosition: { $regex: escapeRegex(secondaryPosition), $options: "i" } },
+        { "secondaryPosition.en": { $regex: escapeRegex(secondaryPosition), $options: "i" } },
+        { "secondaryPosition.ar": { $regex: escapeRegex(secondaryPosition), $options: "i" } },
+      ],
+    });
+  if (roleType) and.push({ roleType: { $regex: escapeRegex(roleType), $options: "i" } });
+  if (preferredFoot)
+    and.push({ preferredFoot: { $regex: escapeRegex(preferredFoot), $options: "i" } });
+  if (contractStatus) and.push({ contractStatus });
+  if (physicalCondition) and.push({ physicalCondition });
+  if (skills) {
+    const skillList = String(skills)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (skillList.length) and.push({ skills: { $in: skillList } });
+  }
+  if (game) {
+    const safeGame = escapeRegex(game);
+    and.push({
+      $or: [
+        { game: { $regex: safeGame, $options: "i" } },
+        { "game.ar": { $regex: safeGame, $options: "i" } },
+        { "game.en": { $regex: safeGame, $options: "i" } },
+        { "game.slug": { $regex: safeGame, $options: "i" } },
       ],
     });
   }
@@ -267,6 +294,72 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
       isPro: -1,
       createdAt: -1,
     };
+  }
+
+  const esIncompatibleFilters = jop || req.query.job || roleType || game;
+  if (search && !esIncompatibleFilters) {
+    const esResult = await search("player", {
+      q: search,
+      filters: {
+        position,
+        secondaryPosition,
+        nationality,
+        gender,
+        status,
+        preferredFoot,
+        contractStatus,
+        physicalCondition,
+        skills,
+        isPromoted:
+          isPromoted === "true"
+            ? true
+            : isPromoted === "false"
+              ? false
+              : undefined,
+        ageMin,
+        ageMax,
+        heightMin,
+        heightMax,
+        weightMin,
+        weightMax,
+        salaryMin,
+        salaryMax,
+      },
+      from: skip,
+      size: limitNum,
+      sortBy,
+    });
+    if (esResult) {
+      const ids = esResult.ids;
+      const esPlayers = ids.length
+        ? await Player.find({ _id: { $in: ids } }).populate(
+            "user",
+            "name email"
+          )
+        : [];
+      const rank = new Map(ids.map((id, i) => [String(id), i]));
+      esPlayers.sort(
+        (a, b) => (rank.get(String(a._id)) ?? 0) - (rank.get(String(b._id)) ?? 0)
+      );
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            players: esPlayers,
+            engine: "elasticsearch",
+            pagination: {
+              total: esResult.total,
+              pages: Math.ceil(esResult.total / limitNum),
+              page: Number(page),
+              limit: limitNum,
+            },
+          },
+          esPlayers.length || Number(page) !== 1
+            ? "Players fetched successfully"
+            : "No players found for the given criteria"
+        )
+      );
+    }
   }
 
   try {
@@ -423,6 +516,23 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
   if (req.body.customPosition !== undefined)
     player.customPosition = req.body.customPosition;
+  if (req.body.secondaryPosition !== undefined) {
+    try {
+      if (
+        typeof req.body.secondaryPosition === "string" &&
+        req.body.secondaryPosition.startsWith("{")
+      ) {
+        player.secondaryPosition = JSON.parse(req.body.secondaryPosition);
+      } else {
+        player.secondaryPosition = req.body.secondaryPosition;
+      }
+    } catch (error) {
+      console.error("Error parsing secondary position field:", error);
+      player.secondaryPosition = req.body.secondaryPosition;
+    }
+  }
+  if (req.body.customSecondaryPosition !== undefined)
+    player.customSecondaryPosition = req.body.customSecondaryPosition;
   if (req.body.status !== undefined) player.status = req.body.status;
   if (req.body.experience !== undefined)
     player.experience = req.body.experience;
@@ -456,6 +566,16 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (Array.isArray(req.body.careerHistory)) {
     player.careerHistory = req.body.careerHistory;
   }
+
+  if (Array.isArray(req.body.skills)) player.skills = req.body.skills;
+  if (Array.isArray(req.body.previousClubs))
+    player.previousClubs = req.body.previousClubs;
+  if (Array.isArray(req.body.achievements))
+    player.achievements = req.body.achievements;
+  if (Array.isArray(req.body.languages)) player.languages = req.body.languages;
+  if (req.body.bio !== undefined) player.bio = req.body.bio;
+  if (req.body.statistics !== undefined)
+    player.statistics = req.body.statistics;
 
   if (req.body.contractEndDate !== undefined) {
     player.contractEndDate =
@@ -709,7 +829,7 @@ export const deletePlayerDocument = async (req, res) => {
       try {
         await deleteMediaFromLocal(player.media.document.publicId, "auto");
         console.log(
-          `ðŸ—‘ï¸ Deleted document from player ${playerId}: ${player.media.document.publicId}`
+          `Ã°Å¸â€”â€˜Ã¯Â¸Â Deleted document from player ${playerId}: ${player.media.document.publicId}`
         );
       } catch (error) {
         console.warn(
@@ -772,7 +892,7 @@ export const deletePlayerVideo = async (req, res) => {
       try {
         await deleteMediaFromLocal(player.media.video.publicId, "video");
         console.log(
-          `ðŸ—‘ï¸ Deleted video from player ${playerId}: ${player.media.video.publicId}`
+          `Ã°Å¸â€”â€˜Ã¯Â¸Â Deleted video from player ${playerId}: ${player.media.video.publicId}`
         );
       } catch (error) {
         console.warn("Failed to delete video from local storage:", error.message);
@@ -868,7 +988,7 @@ export const deletePlayerImages = async (req, res) => {
       await player.save();
 
       console.log(
-        `ðŸ—‘ï¸ Deleted ${publicIds.length} images from player ${playerId}`
+        `Ã°Å¸â€”â€˜Ã¯Â¸Â Deleted ${publicIds.length} images from player ${playerId}`
       );
 
       res.json({
@@ -908,7 +1028,7 @@ export const deletePlayer = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Player not found");
     }
 
-    if (userRole !== "admin" && player.user.toString() !== userId.toString()) {
+    if (!STAFF_ROLES.includes(userRole) && player.user.toString() !== userId.toString()) {
       throw new ApiError(403, "You can only delete your own profile");
     }
 
@@ -1067,7 +1187,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     const isProPlayer =
       Boolean(player.isPro) &&
       (!player.proExpiresAt || new Date(player.proExpiresAt) > new Date());
-    const videoLimit = Math.max(1, Number(process.env.PLAYER_VIDEO_LIMIT || 5));
+    const videoLimit = Math.max(1, Number(process.env.PLAYER_VIDEO_LIMIT || 1));
     const current = Array.isArray(player.media.videos) ? player.media.videos.length : 0;
     const remaining = isProPlayer ? req.files.length : videoLimit - current;
 
@@ -1492,11 +1612,10 @@ export const updateStatistics = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only update your own statistics");
   }
 
-  if (player.statistics) {
-    Object.assign(player.statistics, statistics);
-  } else {
-    player.statistics = statistics;
-  }
+  player.statistics = {
+    ...(player.statistics || {}),
+    ...statistics,
+  };
 
   await player.save();
 
@@ -1540,6 +1659,7 @@ export const searchPlayers = asyncHandler(async (req, res) => {
   const {
     q: search,
     position,
+    secondaryPosition,
     nationality,
     ageMin,
     ageMax,
@@ -1553,6 +1673,8 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     preferredFoot,
     contractStatus,
     physicalCondition,
+    status,
+    gender,
     page = 1,
     limit = 10,
     sortBy = "date",
@@ -1566,31 +1688,44 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Search query is too long");
   }
 
+  const safeSearch = escapeRegex(search);
   const query = {
     isActive: true,
     $or: [
-      { "name.en": { $regex: search, $options: "i" } },
-      { "name.ar": { $regex: search, $options: "i" } },
-      { position: { $regex: search, $options: "i" } },
-      { skills: { $in: [new RegExp(search, "i")] } },
-      { previousClubs: { $in: [new RegExp(search, "i")] } },
+      { "name.en": { $regex: safeSearch, $options: "i" } },
+      { "name.ar": { $regex: safeSearch, $options: "i" } },
+      { position: { $regex: safeSearch, $options: "i" } },
+      { skills: { $in: [new RegExp(safeSearch, "i")] } },
+      { previousClubs: { $in: [new RegExp(safeSearch, "i")] } },
     ],
   };
 
   if (position) {
-    query.position = { $regex: position, $options: "i" };
+    query.position = { $regex: escapeRegex(position), $options: "i" };
+  }
+  if (secondaryPosition) {
+    query.secondaryPosition = {
+      $regex: escapeRegex(secondaryPosition),
+      $options: "i",
+    };
   }
   if (nationality) {
-    query.nationality = { $regex: nationality, $options: "i" };
+    query.nationality = { $regex: escapeRegex(nationality), $options: "i" };
   }
   if (preferredFoot) {
-    query.preferredFoot = { $regex: preferredFoot, $options: "i" };
+    query.preferredFoot = { $regex: escapeRegex(preferredFoot), $options: "i" };
   }
   if (contractStatus) {
     query.contractStatus = contractStatus;
   }
   if (physicalCondition) {
     query.physicalCondition = physicalCondition;
+  }
+  if (status) {
+    query.status = status;
+  }
+  if (gender) {
+    query.gender = gender;
   }
 
   if (ageMin || ageMax) {
@@ -1638,16 +1773,19 @@ export const searchPlayers = asyncHandler(async (req, res) => {
     query.skills = { $in: skillsArray };
   }
 
-  const { skip } = paginate(page, limit);
+  const { skip, limit: limitNum } = paginate(page, limit);
 
   const esResult = await search("player", {
     q: search,
     filters: {
       position,
+      secondaryPosition,
       nationality,
       preferredFoot,
       contractStatus,
       physicalCondition,
+      status,
+      gender,
       ageMin,
       ageMax,
       heightMin,
@@ -1659,7 +1797,7 @@ export const searchPlayers = asyncHandler(async (req, res) => {
       skills,
     },
     from: skip,
-    size: parseInt(limit),
+    size: limitNum,
     sortBy,
   });
   if (esResult) {
@@ -1680,9 +1818,9 @@ export const searchPlayers = asyncHandler(async (req, res) => {
           engine: "elasticsearch",
           pagination: {
             total: esResult.total,
-            pages: Math.ceil(esResult.total / parseInt(limit)),
-            page: parseInt(page),
-            limit: parseInt(limit),
+            pages: Math.ceil(esResult.total / limitNum),
+            page: Math.max(1, parseInt(page) || 1),
+            limit: limitNum,
           },
         },
         `Found ${esResult.total} players matching your search`
@@ -1707,7 +1845,7 @@ export const searchPlayers = asyncHandler(async (req, res) => {
   const [players, total] = await Promise.all([
     Player.find(query)
       .sort(sort)
-      .limit(parseInt(limit))
+      .limit(limitNum)
       .skip(skip)
       .populate("user", "name email"),
     Player.countDocuments(query),
@@ -1721,9 +1859,9 @@ export const searchPlayers = asyncHandler(async (req, res) => {
         searchQuery: search,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page: parseInt(page),
-          limit: parseInt(limit),
+          pages: Math.ceil(total / limitNum),
+          page: Math.max(1, parseInt(page) || 1),
+          limit: limitNum,
         },
       },
       `Found ${total} players matching your search`
@@ -1743,7 +1881,7 @@ export const getPlayerAnalytics = asyncHandler(async (req, res) => {
 
   if (
     player.user.toString() !== userId.toString() &&
-    req.user.role !== "admin"
+    !STAFF_ROLES.includes(req.user.role)
   ) {
     throw new ApiError(403, "You can only view analytics for your own profile");
   }
@@ -1800,7 +1938,7 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
 
   const similarPlayers = await Player.find(query)
     .sort({ isPro: -1, createdAt: -1 })
-    .limit(parseInt(limit))
+    .limit(Math.min(50, Math.max(1, parseInt(limit) || 10)))
     .populate("user", "name email");
   res
     .status(200)
@@ -1817,17 +1955,25 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
   const { position } = req.params;
   const { limit = 10, page = 1 } = req.query;
 
+  const safePosition = escapeRegex(position);
   const query = {
     isActive: true,
-    position: { $regex: position, $options: "i" },
+    $or: [
+      { position: { $regex: safePosition, $options: "i" } },
+      { "position.en": { $regex: safePosition, $options: "i" } },
+      { "position.ar": { $regex: safePosition, $options: "i" } },
+      { secondaryPosition: { $regex: safePosition, $options: "i" } },
+      { "secondaryPosition.en": { $regex: safePosition, $options: "i" } },
+      { "secondaryPosition.ar": { $regex: safePosition, $options: "i" } },
+    ],
   };
 
-  const { skip } = paginate(page, limit);
+  const { skip, limit: limitNum } = paginate(page, limit);
 
   const [players, total] = await Promise.all([
     Player.find(query)
       .sort({ "isPromoted.status": -1, createdAt: -1 })
-      .limit(parseInt(limit))
+      .limit(limitNum)
       .skip(skip)
       .populate("user", "name email"),
     Player.countDocuments(query),
@@ -1841,9 +1987,9 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
         position,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page: parseInt(page),
-          limit: parseInt(limit),
+          pages: Math.ceil(total / limitNum),
+          page: Math.max(1, parseInt(page) || 1),
+          limit: limitNum,
         },
       },
       `Players in ${position} position fetched successfully`
@@ -1853,6 +1999,7 @@ export const getPlayersByPosition = asyncHandler(async (req, res) => {
 
 export const getFeaturedPlayers = asyncHandler(async (req, res) => {
   const { limit = 6 } = req.query;
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 6));
 
   const query = {
     isActive: true,
@@ -1864,7 +2011,7 @@ export const getFeaturedPlayers = asyncHandler(async (req, res) => {
 
   const players = await Player.find(query)
     .sort({ "isPromoted.startDate": -1, views: -1 })
-    .limit(parseInt(limit))
+    .limit(limitNum)
     .populate("user", "name email");
   res
     .status(200)
@@ -1916,7 +2063,10 @@ const calculateProfileCompleteness = (player) => {
   if (player.languages?.length > 0) {
     completedFields++;
   }
-  if (player.bio?.en) {
+  if (
+    player.bio?.en ||
+    (typeof player.bio === "string" && player.bio.trim())
+  ) {
     completedFields++;
   }
   if (player.contactInfo?.phone) {
@@ -1931,7 +2081,7 @@ const calculateProfileCompleteness = (player) => {
   if (player.media?.document?.url) {
     completedFields++;
   }
-  if (player.statistics) {
+  if (player.statistics && Object.keys(player.statistics).length > 0) {
     completedFields++;
   }
   if (player.jop || player.job) {
@@ -2009,3 +2159,5 @@ export const deletePlayerProfile = asyncHandler(async (req, res) => {
     );
   }
 });
+
+

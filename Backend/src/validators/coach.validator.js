@@ -149,7 +149,7 @@ export const updateUserSchema = Joi.object({
   birthDate: Joi.date().less('now'),
   isDeleted: Joi.boolean(),
   isActive: Joi.boolean(),
-  role: Joi.string().valid('admin', 'coach', 'player', 'scout') // Adjust based on your roles
+  role: Joi.string()
 });
 
 export const promoteCoachSchema = Joi.object({

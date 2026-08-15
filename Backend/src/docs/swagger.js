@@ -830,6 +830,7 @@ const swaggerDocument = {
                   gender: { type: "string", enum: ["male", "female"] },
                   nationality: { type: "string" },
                   position: { type: "string" },
+                  secondaryPosition: { type: "string" },
                   status: {
                     type: "string",
                     enum: ["available", "busy", "transferred", "retired"],

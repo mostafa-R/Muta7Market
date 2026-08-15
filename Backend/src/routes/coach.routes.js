@@ -29,11 +29,11 @@ router.get("/:id", getCoachById);
 
 router.use(authMiddleware);
 
+router.use(authorize("admin", "super_admin", "coach"));
+
 router.post("/", validate(createCoachSchema), createCoach);
 router.put("/:id", validate(updateCoachSchema), updateCoach);
 router.delete("/:id", deleteCoach);
-
-router.use(authorize("admin", "super_admin", "coach"));
 
 router.post("/:id/promote", validate(promoteCoachSchema), promoteCoach);
 router.post("/transfer/:id", transferCoach);

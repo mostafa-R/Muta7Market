@@ -1,4 +1,5 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
+import Advertisement from "../models/advertisement.model.js";
 import Coach from "../models/coach.model.js";
 import Entitlement from "../models/entitlement.model.js";
 import Invoice from "../models/invoice.model.js";
@@ -15,12 +16,11 @@ import {
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings, computePromotionAmount } from "../utils/pricingUtils.js";
 import { runInTransaction } from "../utils/transactions.js";
-import { OFFER_STATUS } from "../config/constants.js";
+import { OFFER_STATUS, STAFF_ROLES } from "../config/constants.js";
 import { emitToUser } from "../services/socket.service.js";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 function entitlementDurationDays(invoice, PRICING) {
   if (invoice.product === "contacts_access")
@@ -266,6 +266,22 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
           targetType: transfer.targetType || "player",
         });
       }
+    }
+  } else if (invoice.product === "advertisement" && invoice.relatedAdvertisement) {
+    let adQuery = Advertisement.findById(invoice.relatedAdvertisement);
+    if (session) adQuery = adQuery.session(session);
+    const ad = await adQuery;
+    if (ad) {
+      ad.isActive = true;
+      ad.pricing = {
+        ...(ad.pricing || {}),
+        cost: invoice.amount || ad.pricing?.cost || 0,
+        currency: invoice.currency || "SAR",
+        paidAt: new Date(),
+        expiresAt: new Date(Date.now() + (invoice.durationDays || 30) * ONE_DAY_MS),
+        invoiceId: invoice._id,
+      };
+      await ad.save({ session });
     }
   }
 
@@ -973,7 +989,7 @@ export const recheckByOrderNumber = async (req, res) => {
 
 export const simulateSuccess = async (req, res) => {
   try {
-    // إغلاق حاسم: يجب تفعيل المحاكاة صراحةً في بيئة غير الإنتاج فقط
+    // Ø¥ØºÙ„Ø§Ù‚ Ø­Ø§Ø³Ù…: ÙŠØ¬Ø¨ ØªÙØ¹ÙŠÙ„ Ø§Ù„Ù…Ø­Ø§ÙƒØ§Ø© ØµØ±Ø§Ø­Ø©Ù‹ ÙÙŠ Ø¨ÙŠØ¦Ø© ØºÙŠØ± Ø§Ù„Ø¥Ù†ØªØ§Ø¬ ÙÙ‚Ø·
     const simulationEnabled =
       process.env.NODE_ENV !== "production" &&
       process.env.PAYMENT_SIMULATION_ENABLED === "true";
@@ -1010,3 +1026,4 @@ export const simulateSuccess = async (req, res) => {
     return res.status(500).json({ success: false, message: "simulate_failed" });
   }
 };
+

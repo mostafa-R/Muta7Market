@@ -1,12 +1,62 @@
+﻿import { STAFF_ROLES } from "../config/constants.js";
 import mongoose from "mongoose";
 import Evaluation from "../models/evaluation.model.js";
+import Player from "../models/player.model.js";
+import Coach from "../models/coach.model.js";
+import TransferOffer from "../models/transferOffer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
-
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+const MIN_RATINGS_FOR_STATS = 3;
+
+const validateContext = async (evaluator, subjectType, subject, context) => {
+  const contextType = context?.type || "general";
+
+  if (["player", "coach"].includes(subjectType)) {
+    const TargetModel = subjectType === "coach" ? Coach : Player;
+    const profile = await TargetModel.findById(subject).select(
+      "user agentUser"
+    );
+    if (!profile) throw new ApiError(404, "Evaluation subject not found");
+    if (String(profile.user) === String(evaluator)) {
+      throw new ApiError(403, "You cannot evaluate yourself");
+    }
+  }
+
+  if (contextType !== "general") {
+    const ref = context?.ref;
+    if (!ref || !isValidObjectId(ref)) {
+      throw new ApiError(
+        400,
+        "context.ref is required when context.type is provided"
+      );
+    }
+    if (["transfer_offer", "interest", "official_offer"].includes(contextType)) {
+      const offer = await TransferOffer.findById(ref).select(
+        "fromUser toUser type status"
+      );
+      if (!offer) throw new ApiError(404, "Linked transfer offer not found");
+      const isParty =
+        String(offer.fromUser) === String(evaluator) ||
+        String(offer.toUser) === String(evaluator);
+      if (!isParty) {
+        throw new ApiError(
+          403,
+          "You can only evaluate within a transfer offer you are a party to"
+        );
+      }
+      if (offer.status === "pending" || offer.status === "countered") {
+        throw new ApiError(
+          400,
+          "Evaluations are only allowed after the offer is resolved"
+        );
+      }
+    }
+  }
+  return contextType;
+};
 
 export const createEvaluation = asyncHandler(async (req, res) => {
   const evaluator = req.user._id;
@@ -15,6 +65,13 @@ export const createEvaluation = asyncHandler(async (req, res) => {
   if (!isValidObjectId(subject)) {
     throw new ApiError(400, "Invalid subject ID");
   }
+
+  const contextType = await validateContext(
+    evaluator,
+    subjectType,
+    subject,
+    context
+  );
 
   const duplicate = await Evaluation.findOne({
     evaluator,
@@ -36,7 +93,7 @@ export const createEvaluation = asyncHandler(async (req, res) => {
     subjectType,
     subject,
     context: {
-      type: context?.type || "general",
+      type: contextType,
       ref: context?.ref || null,
       title: context?.title || null,
     },
@@ -62,8 +119,8 @@ export const getMyEvaluations = asyncHandler(async (req, res) => {
   if (subjectType) filter.subjectType = subjectType;
   if (status) filter.status = status;
 
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
   const [evaluations, total] = await Promise.all([
     Evaluation.find(filter)
@@ -101,8 +158,8 @@ export const getEvaluationsBySubject = asyncHandler(async (req, res) => {
   const filter = { subjectType, subject };
   if (status) filter.status = status;
 
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
   const [evaluations, total] = await Promise.all([
     Evaluation.find(filter)
@@ -165,6 +222,20 @@ export const updateEvaluation = asyncHandler(async (req, res) => {
     }
   }
 
+  if (req.body.context !== undefined) {
+    const contextType = await validateContext(
+      String(req.user._id),
+      evaluation.subjectType,
+      String(evaluation.subject),
+      req.body.context
+    );
+    evaluation.context = {
+      type: contextType,
+      ref: req.body.context?.ref || null,
+      title: req.body.context?.title || null,
+    };
+  }
+
   await evaluation.save();
 
   res
@@ -223,6 +294,8 @@ export const getSubjectRatingStats = asyncHandler(async (req, res) => {
     counts.map((c) => [c._id, c.count])
   );
 
+  const isAvailable = summary.count >= MIN_RATINGS_FOR_STATS;
+
   const topCategories = await Evaluation.aggregate([
     { $match: match },
     { $unwind: "$ratings" },
@@ -243,12 +316,15 @@ export const getSubjectRatingStats = asyncHandler(async (req, res) => {
       {
         subjectType,
         subject,
-        averageRating: summary.avgOverall,
+        averageRating: isAvailable ? summary.avgOverall : null,
         totalEvaluations: summary.count,
+        minimumRequired: MIN_RATINGS_FOR_STATS,
+        isAvailable,
         recommendationDistribution,
-        topCategories,
+        topCategories: isAvailable ? topCategories : [],
       },
       "Rating stats fetched successfully"
     )
   );
 });
+

@@ -33,11 +33,17 @@ const INDEX_MAPPINGS = {
       fields: { keyword: { type: "keyword" } },
     },
     position: { type: "text", analyzer: "text_analyzer" },
+    secondaryPosition: { type: "text", analyzer: "text_analyzer" },
     game: { type: "text", analyzer: "text_analyzer" },
     nationality: { type: "text", analyzer: "text_analyzer" },
-    skills: { type: "text", analyzer: "text_analyzer" },
+    skills: {
+      type: "text",
+      analyzer: "text_analyzer",
+      fields: { keyword: { type: "keyword" } },
+    },
     previousClubs: { type: "text", analyzer: "text_analyzer" },
     category: { type: "text", analyzer: "text_analyzer" },
+    status: { type: "keyword" },
     gender: { type: "keyword" },
     preferredFoot: { type: "keyword" },
     contractStatus: { type: "keyword" },
@@ -49,6 +55,7 @@ const INDEX_MAPPINGS = {
     experienceYears: { type: "integer" },
     views: { type: "integer" },
     isPromoted: { type: "boolean" },
+    isPromotedEndDate: { type: "date" },
     isPro: { type: "boolean" },
     createdAt: { type: "date" },
     updatedAt: { type: "date" },
@@ -66,6 +73,15 @@ const getField = (doc, path) => {
   return cur;
 };
 
+const toStringValue = (value) => {
+  if (value == null) return null;
+  if (typeof value === "string") return value || null;
+  if (typeof value === "object") {
+    return value.en || value.ar || null;
+  }
+  return String(value);
+};
+
 export const buildPlayerSearchDoc = (player) => {
   const doc = player && player.toObject ? player.toObject() : player || {};
   const rawName = doc.name;
@@ -81,13 +97,12 @@ export const buildPlayerSearchDoc = (player) => {
     age: doc.age ?? null,
     gender: doc.gender || null,
     nationality: doc.nationality || null,
-    position: doc.position || null,
-    game:
-      typeof doc.game === "object" && doc.game
-        ? doc.game.ar || doc.game.en || null
-        : doc.game || null,
+    position: toStringValue(doc.position),
+    secondaryPosition: toStringValue(doc.secondaryPosition),
+    game: toStringValue(doc.game),
     skills: Array.isArray(doc.skills) ? doc.skills : [],
     previousClubs: Array.isArray(doc.previousClubs) ? doc.previousClubs : [],
+    status: doc.status || null,
     height: doc.height ?? null,
     weight: doc.weight ?? null,
     preferredFoot: doc.preferredFoot || null,
@@ -96,6 +111,9 @@ export const buildPlayerSearchDoc = (player) => {
     monthlySalaryAmount: salary.amount ?? null,
     views: doc.views || 0,
     isPromoted: Boolean(doc.isPromoted?.status),
+    isPromotedEndDate: doc.isPromoted?.endDate
+      ? new Date(doc.isPromoted.endDate).toISOString()
+      : null,
     isPro: Boolean(doc.isPro),
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
@@ -107,6 +125,7 @@ export const buildCoachSearchDoc = (coach) => {
   const doc = coach && coach.toObject ? coach.toObject() : coach || {};
   const name = doc.name || {};
   const experience = doc.experience || {};
+  const salary = doc.monthlySalary || {};
   return {
     id: String(doc._id),
     "name.ar": name.ar || null,
@@ -115,10 +134,15 @@ export const buildCoachSearchDoc = (coach) => {
     gender: doc.gender || null,
     nationality: doc.nationality || null,
     category: doc.category || null,
+    status: doc.status || null,
     contractStatus: doc.contractStatus || null,
     experienceYears: experience.years ?? null,
+    monthlySalaryAmount: salary.amount ?? null,
     views: doc.views || 0,
     isPromoted: Boolean(doc.isPromoted?.status),
+    isPromotedEndDate: doc.isPromoted?.endDate
+      ? new Date(doc.isPromoted.endDate).toISOString()
+      : null,
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
     profileImageUrl: doc.media?.profileImage?.url || null,
@@ -151,6 +175,14 @@ export const ensureSearchIndexes = async () => {
           settings: INDEX_SETTINGS,
           mappings: INDEX_MAPPINGS,
         });
+      } else {
+        try {
+          await client.indices.putMapping({ index, properties: INDEX_MAPPINGS.properties });
+        } catch (mappingError) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error(`ES mapping update error [${type}]:`, mappingError.message);
+          }
+        }
       }
       results[type] = "ready";
     } catch (error) {
@@ -204,11 +236,6 @@ const buildRange = (min, max) => {
   return Object.keys(range).length ? range : null;
 };
 
-const termOrRegexFilter = (field, value) => {
-  if (!value) return null;
-  return { match: { [field]: { query: String(value), fuzziness: "AUTO" } } };
-};
-
 const buildSearchQuery = (type, { q, filters = {} }) => {
   const must = [];
   const filter = [];
@@ -216,7 +243,7 @@ const buildSearchQuery = (type, { q, filters = {} }) => {
   if (q) {
     const fields =
       type === "player"
-        ? ["name.en", "name.ar", "position", "game", "skills", "previousClubs", "nationality"]
+        ? ["name.en", "name.ar", "position", "secondaryPosition", "game", "skills", "previousClubs", "nationality"]
         : ["name.en", "name.ar", "category", "nationality"];
     must.push({
       multi_match: { query: q, fields, type: "best_fields", fuzziness: "AUTO" },
@@ -224,18 +251,38 @@ const buildSearchQuery = (type, { q, filters = {} }) => {
   }
 
   if (filters.position) filter.push({ match: { position: filters.position } });
+  if (filters.secondaryPosition)
+    filter.push({ match: { secondaryPosition: filters.secondaryPosition } });
   if (filters.nationality)
     filter.push({ match: { nationality: filters.nationality } });
+  if (filters.status) filter.push({ term: { status: filters.status } });
   if (filters.preferredFoot)
     filter.push({ term: { preferredFoot: filters.preferredFoot } });
   if (filters.contractStatus)
     filter.push({ term: { contractStatus: filters.contractStatus } });
   if (filters.physicalCondition)
     filter.push({ term: { physicalCondition: filters.physicalCondition } });
-  if (filters.isPromoted !== undefined)
-    filter.push({ term: { isPromoted: Boolean(filters.isPromoted) } });
+  if (filters.isPromoted !== undefined) {
+    if (String(filters.isPromoted) === "true") {
+      filter.push({
+        bool: {
+          must: [
+            { term: { isPromoted: true } },
+            {
+              range: {
+                isPromotedEndDate: { gte: new Date().toISOString() },
+              },
+            },
+          ],
+        },
+      });
+    } else {
+      filter.push({ term: { isPromoted: false } });
+    }
+  }
   if (filters.gender) filter.push({ term: { gender: filters.gender } });
-  if (filters.category) filter.push({ match: { category: filters.category } });
+  if (filters.category)
+    filter.push({ term: { "category.keyword": filters.category } });
 
   const ageRange = buildRange(filters.ageMin, filters.ageMax);
   if (ageRange) filter.push({ range: { age: ageRange } });
@@ -253,7 +300,7 @@ const buildSearchQuery = (type, { q, filters = {} }) => {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    if (skillsArr.length) filter.push({ terms: { skills: skillsArr } });
+    if (skillsArr.length) filter.push({ terms: { "skills.keyword": skillsArr } });
   }
 
   const query = {
@@ -270,7 +317,6 @@ const buildSort = (type, sortBy) => {
   if (sortBy === "salary") return [{ monthlySalaryAmount: { order: "desc" } }];
   if (sortBy === "age") return [{ age: { order: "asc" } }];
   if (sortBy === "views") return [{ views: { order: "desc" } }];
-  if (type === "coach") return [{ createdAt: { order: "desc" } }];
   return [
     { isPromoted: { order: "desc" } },
     { isPro: { order: "desc" } },

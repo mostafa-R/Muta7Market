@@ -1,10 +1,59 @@
 import mongoose from "mongoose";
+import { STAFF_ROLES } from "../config/constants.js";
 import { deleteLocalFile } from "../middleware/localUpload.middleware.js";
 import Advertisement from "../models/advertisement.model.js";
+import Invoice from "../models/invoice.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { handleMediaUpload } from "../utils/localMediaUtils.js";
+import { makeOrderNumber } from "../utils/orderNumber.js";
+import { paylinkCreateInvoice } from "../services/paylink.client.js";
+
+const DEFAULT_AD_COST = 100;
+
+async function initiateAdvertisementPayment(invoice, user, req) {
+  if (invoice.paymentUrl) return invoice.paymentUrl;
+
+  const originFallback =
+    req.get && req.get("origin") ? req.get("origin") : null;
+  const frontUrl =
+    process.env.FRONTEND_URL ||
+    originFallback ||
+    process.env.APP_URL ||
+    "http://localhost:3000";
+  const callBackUrl = `${frontUrl.replace(
+    /\/$/,
+    ""
+  )}/profile?tab=payments&invoiceId=${String(invoice._id)}`;
+  const cancelUrl = `${frontUrl.replace(/\/$/, "")}/profile?tab=payments`;
+
+  const payload = {
+    orderNumber: invoice.orderNumber,
+    amount: invoice.amount,
+    currency: invoice.currency || "SAR",
+    clientName: user?.name || user?.email,
+    clientEmail: user?.email,
+    clientMobile: user?.phone || "0500000000",
+    products: [
+      { title: "Advertisement", price: invoice.amount, qty: 1, isDigital: true },
+    ],
+    supportedCardBrands: ["mada", "visaMastercard", "stcpay"],
+    callBackUrl,
+    cancelUrl,
+    note: `userId=${invoice.userId};product=advertisement;relatedAdvertisement=${
+      invoice.relatedAdvertisement || ""
+    }`,
+  };
+
+  const data = await paylinkCreateInvoice(payload);
+  invoice.provider = "paylink";
+  invoice.providerInvoiceId = data.transactionNo || data.invoiceId || undefined;
+  invoice.paymentUrl = data.url || null;
+  if (!invoice.invoiceNumber) invoice.invoiceNumber = invoice.orderNumber;
+  await invoice.save();
+  return invoice.paymentUrl;
+}
 
 export const getAllAdvertisements = asyncHandler(async (req, res) => {
   const {
@@ -117,7 +166,7 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
     type,
     position,
     displayPeriod,
-    isActive: isActive !== undefined ? isActive : true,
+    isActive: isActive !== undefined ? isActive : false,
     priority: priority || 0,
     advertiser,
     pricing: { cost: 0, currency: "SAR" },
@@ -208,9 +257,63 @@ export const createAdvertisement = asyncHandler(async (req, res) => {
 
   const newAdvertisement = await Advertisement.create(advertisementData);
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, newAdvertisement, "تم إنشاء الإعلان بنجاح"));
+  const isStaff = STAFF_ROLES.includes(req.user.role);
+  if (isStaff && req.body.paid === false) {
+    return res
+      .status(201)
+      .json(new ApiResponse(201, newAdvertisement, "تم إنشاء الإعلان بنجاح"));
+  }
+
+  const advertiserUser = String(advertiser?.email || "").toLowerCase();
+  const advertiserOwner = advertiser?.userId || req.user._id;
+
+  const cost = Math.max(
+    1,
+    Number(req.body.pricing?.cost || newAdvertisement.pricing?.cost || DEFAULT_AD_COST)
+  );
+  const durationDays = Math.max(
+    1,
+    Number(
+      req.body.displayPeriod?.days ||
+        newAdvertisement.displayPeriod?.days ||
+        30
+    )
+  );
+
+  const orderNo = makeOrderNumber("advertisement", String(advertiserOwner));
+  const invoice = await Invoice.create({
+    orderNumber: orderNo,
+    invoiceNumber: orderNo,
+    userId: advertiserOwner,
+    product: "advertisement",
+    targetType: null,
+    playerProfileId: null,
+    durationDays,
+    featureType: null,
+    amount: cost,
+    currency: String(req.body.pricing?.currency || "SAR"),
+    status: "pending",
+    relatedAdvertisement: newAdvertisement._id,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+  });
+
+  const paymentUrl = await initiateAdvertisementPayment(
+    invoice,
+    { ...req.user, email: advertiserUser || req.user.email },
+    req
+  );
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      {
+        advertisement: newAdvertisement,
+        invoiceId: String(invoice._id),
+        paymentUrl,
+      },
+      "تم إنشاء الإعلان، يرجى إتمام الدفع لتفعيله"
+    )
+  );
 });
 
 export const updateAdvertisement = asyncHandler(async (req, res) => {

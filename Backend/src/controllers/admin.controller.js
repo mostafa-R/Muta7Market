@@ -208,6 +208,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     limit = 10,
     search,
     position,
+    secondaryPosition,
     status,
     nationality,
     minAge,
@@ -229,6 +230,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 
   if (position) {
     filter.position = position;
+  }
+
+  if (secondaryPosition) {
+    filter.secondaryPosition = secondaryPosition;
   }
 
   if (status) {
@@ -485,6 +490,8 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     customRoleType,
     position,
     customPosition,
+    secondaryPosition,
+    customSecondaryPosition,
     status,
     experience,
     monthlySalary,
@@ -554,6 +561,8 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       customRoleType,
       position,
       customPosition,
+      secondaryPosition,
+      customSecondaryPosition,
       status,
       experience,
       monthlySalary,
@@ -711,6 +720,8 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "customRoleType",
     "position",
     "customPosition",
+    "secondaryPosition",
+    "customSecondaryPosition",
     "status",
     "experience",
     "game",
@@ -726,6 +737,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "isConfirmed",
     "views",
     "stats",
+    "statistics",
+    "skills",
+    "previousClubs",
+    "achievements",
+    "languages",
     "bio",
     "isPromoted",
   ];
@@ -736,6 +752,11 @@ export const updatePlayer = asyncHandler(async (req, res) => {
       updates[key] = req.body[key];
     }
   });
+
+  if (req.body.stats !== undefined && updates.statistics === undefined) {
+    updates.statistics = req.body.stats;
+  }
+  delete updates.stats;
 
   updates.media = await safelyUpdatePlayerMedia(
     req.files,

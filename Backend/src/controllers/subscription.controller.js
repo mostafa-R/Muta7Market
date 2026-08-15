@@ -1,14 +1,15 @@
+﻿import { STAFF_ROLES } from "../config/constants.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Invoice from "../models/invoice.model.js";
+import Entitlement from "../models/entitlement.model.js";
 import Player from "../models/player.model.js";
 import Subscription from "../models/subscription.model.js";
-import { getDefaultPricing } from "../utils/pricingUtils.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { paylinkCreateInvoice } from "../services/paylink.client.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 const canManagePlayer = (user, player) => {
   const userId = String(user?._id || user?.id || "");
@@ -18,15 +19,23 @@ const canManagePlayer = (user, player) => {
   return false;
 };
 
+const safeNumber = (value, fallback) => {
+  const num = Number(value);
+  return Number.isFinite(num) && num > 0 ? num : fallback;
+};
+
 const computeProDetails = (pricing, interval) => {
-  const month = Number(
-    pricing?.pro_player?.month || process.env.PRICE_PRO_PLAYER_MONTH || 49
+  const month = safeNumber(
+    pricing?.pro_player?.month || process.env.PRICE_PRO_PLAYER_MONTH,
+    49
   );
-  const year = Number(
-    pricing?.pro_player?.year || process.env.PRICE_PRO_PLAYER_YEAR || 499
+  const year = safeNumber(
+    pricing?.pro_player?.year || process.env.PRICE_PRO_PLAYER_YEAR,
+    499
   );
-  const defaultDays = Number(
-    process.env.PRO_DEFAULT_DAYS || pricing?.PRO_DEFAULT_DAYS || 30
+  const defaultDays = safeNumber(
+    process.env.PRO_DEFAULT_DAYS || pricing?.PRO_DEFAULT_DAYS,
+    30
   );
 
   if (interval === "year") {
@@ -152,7 +161,7 @@ export const subscribeToPro = asyncHandler(async (req, res) => {
     throw new ApiError(400, "You already have an active Pro subscription");
   }
 
-  const pricing = getDefaultPricing();
+  const pricing = await getPricingSettings();
   const { amount, durationDays } = computeProDetails(pricing, billingInterval);
 
   const invoice = await Invoice.create({
@@ -168,6 +177,7 @@ export const subscribeToPro = asyncHandler(async (req, res) => {
     currency: "SAR",
     status: "pending",
     provider: "paylink",
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
   const paymentUrl = await initiateProPayment(invoice, req.user, req);
@@ -203,7 +213,18 @@ export const cancelSubscription = asyncHandler(async (req, res) => {
     }
   }
 
+  await Entitlement.updateMany(
+    {
+      userId,
+      type: "pro_player",
+      active: true,
+      playerProfileId: sub.playerProfileId || null,
+    },
+    { $set: { active: false, revokedAt: new Date() } }
+  );
+
   res.status(200).json(
     new ApiResponse(200, sub, "Subscription cancelled successfully")
   );
 });
+

@@ -61,7 +61,9 @@ export const PLAN_TYPES = {
 
 export const PAYMENT_STATUS = {
   PENDING: "pending",
-  COMPLETED: "completed",
+  PAID: "paid",
+  CANCELLED: "cancelled",
+  EXPIRED: "expired",
   FAILED: "failed",
   REFUNDED: "refunded",
 };
@@ -80,21 +82,22 @@ export const NOTIFICATION_TYPES = {
 };
 
 export const PRICING = {
-  contacts_access_year: Number(process.env.PRICE_CONTACTS_ACCESS_YEAR),
+  contacts_access_year:
+    Number(process.env.PRICE_CONTACTS_ACCESS_YEAR) || 199,
 
   listing_year: {
-    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR),
-    coach: Number(process.env.PRICE_LISTING_COACH_YEAR),
+    player: Number(process.env.PRICE_LISTING_PLAYER_YEAR) || 99,
+    coach: Number(process.env.PRICE_LISTING_COACH_YEAR) || 99,
   },
 
   promotion_year: {
-    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR),
-    coach: Number(process.env.PRICE_PROMO_COACH_YEAR),
+    player: Number(process.env.PRICE_PROMO_PLAYER_YEAR) || 149,
+    coach: Number(process.env.PRICE_PROMO_COACH_YEAR) || 149,
   },
 
   promotion_per_day: {
-    player: Number(process.env.PRICE_PROMO_PLAYER_PER_DAY),
-    coach: Number(process.env.PRICE_PROMO_COACH_PER_DAY),
+    player: Number(process.env.PRICE_PROMO_PLAYER_PER_DAY) || 5,
+    coach: Number(process.env.PRICE_PROMO_COACH_PER_DAY) || 5,
   },
 
   promotion_premium_year: {
@@ -118,7 +121,8 @@ export const PRICING = {
   UNLOCK_CONTACT: Number(process.env.PRICE_UNLOCK_CONTACT) || 25,
 
   ONE_YEAR_DAYS: 365,
-  PROMOTION_DEFAULT_DAYS: Number(process.env.PROMOTION_DEFAULT_DAYS),
+  PROMOTION_DEFAULT_DAYS:
+    Number(process.env.PROMOTION_DEFAULT_DAYS) || 15,
 
   pro_player: {
     month: Number(process.env.PRICE_PRO_PLAYER_MONTH) || 49,

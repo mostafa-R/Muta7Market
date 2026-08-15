@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import NegotiationRoom from "../models/negotiationRoom.model.js";
 import NegotiationMessage from "../models/negotiationMessage.model.js";
 import Player from "../models/player.model.js";
+import Coach from "../models/coach.model.js";
 import TransferOffer from "../models/transferOffer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -10,6 +11,7 @@ import { emitToRoom } from "../services/socket.service.js";
 import { encryptMessage } from "../services/chatEncryption.service.js";
 
 const getUserId = (req) => req.user._id || req.user.id;
+const MAX_MESSAGE_LENGTH = 4000;
 
 async function loadRoomForUser(id, userId) {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -69,9 +71,10 @@ export const createRoom = asyncHandler(async (req, res) => {
   ]);
 
   if (offer.targetProfileId) {
-    const targetProfile = await Player.findById(
+    const TargetModel = offer.targetType === "coach" ? Coach : Player;
+    const targetProfile = await TargetModel.findById(
       offer.targetProfileId
-    ).select("agentUser");
+    ).select("agentUser user");
     if (targetProfile?.agentUser) {
       allowedParties.add(String(targetProfile.agentUser));
     }
@@ -111,13 +114,35 @@ export const createRoom = asyncHandler(async (req, res) => {
 
 export const getMyRooms = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const items = await NegotiationRoom.find({ participants: userId })
-    .sort({ updatedAt: -1 })
-    .populate("participants", "name email phone role verifiedBadge")
-    .populate("offer", "status targetProfileId targetType salary transferFee");
+  const { page = 1, limit = 20 } = req.query;
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const skip = (pageNum - 1) * limitNum;
+
+  const [items, total] = await Promise.all([
+    NegotiationRoom.find({ participants: userId })
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("participants", "name email phone role verifiedBadge")
+      .populate("offer", "status targetProfileId targetType salary transferFee"),
+    NegotiationRoom.countDocuments({ participants: userId }),
+  ]);
 
   res.status(200).json(
-    new ApiResponse(200, items, "Negotiation rooms fetched successfully")
+    new ApiResponse(
+      200,
+      {
+        rooms: items,
+        pagination: {
+          total,
+          pages: Math.ceil(total / limitNum),
+          page: pageNum,
+          limit: limitNum,
+        },
+      },
+      "Negotiation rooms fetched successfully"
+    )
   );
 });
 
@@ -147,6 +172,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   const text = String(req.body.message || "").trim();
   if (!text) throw new ApiError(400, "Message cannot be empty");
+  if (text.length > MAX_MESSAGE_LENGTH) {
+    throw new ApiError(
+      400,
+      `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters`
+    );
+  }
 
   if (room.status !== "open") {
     throw new ApiError(400, "This negotiation room is closed");

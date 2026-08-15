@@ -8,10 +8,6 @@ export function userRoom(userId) {
   return `user:${userId}`;
 }
 
-export function negotiationRoom(roomId) {
-  return `negotiation:${roomId}`;
-}
-
 export function emitToRoom(room, event, payload) {
   if (!io) return false;
   io.to(room).emit(event, payload);

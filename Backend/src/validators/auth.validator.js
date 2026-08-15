@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { PUBLIC_REGISTERABLE_ROLES } from "../config/constants.js";
 
 export const registerSchema = Joi.object({
   name: Joi.string().trim().min(2).max(50).required(),
@@ -15,6 +16,12 @@ export const registerSchema = Joi.object({
   confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
     "any.only": "Passwords do not match",
   }),
+  role: Joi.string()
+    .valid(...PUBLIC_REGISTERABLE_ROLES)
+    .optional()
+    .messages({
+      "any.only": "Role must be one of: player, coach, club, agent, scout",
+    }),
 });
 
 export const loginSchema = Joi.object({

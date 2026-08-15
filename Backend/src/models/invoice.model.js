@@ -33,6 +33,7 @@ const InvoiceSchema = new mongoose.Schema(
         "unlock_contact",
         "transfer_offer",
         "pro",
+        "advertisement",
       ],
       required: true,
       index: true,
@@ -83,6 +84,12 @@ const InvoiceSchema = new mongoose.Schema(
       default: null,
     },
 
+    relatedAdvertisement: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Advertisement",
+      default: null,
+    },
+
     lastPaymentErrors: { type: [PaymentErrorSchema], default: [] },
   },
   { timestamps: true }
@@ -90,7 +97,24 @@ const InvoiceSchema = new mongoose.Schema(
 
 InvoiceSchema.index(
   { userId: 1, product: 1, targetType: 1, playerProfileId: 1, status: 1 },
-  { unique: true, partialFilterExpression: { status: "pending" } }
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "pending",
+      product: {
+        $in: [
+          "contacts_access",
+          "listing",
+          "promotion",
+          "add_offer",
+          "promote_offer",
+          "unlock_contact",
+          "pro",
+          "advertisement",
+        ],
+      },
+    },
+  }
 );
 
 InvoiceSchema.index({ orderNumber: 1 }, { unique: true });

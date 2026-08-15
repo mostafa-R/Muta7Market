@@ -1,3 +1,4 @@
+﻿import { STAFF_ROLES } from "../config/constants.js";
 import mongoose from "mongoose";
 import Player from "../models/player.model.js";
 import User from "../models/user.model.js";
@@ -6,7 +7,6 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
-const STAFF_ROLES = ["admin", "super_admin"];
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -212,3 +212,4 @@ export const redeemAgentCode = asyncHandler(async (req, res) => {
     )
   );
 });
+

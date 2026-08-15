@@ -37,6 +37,17 @@ export const createPlayerSchema = Joi.object({
     )
     .optional(),
   customPosition: Joi.string().trim().allow("", null).optional(),
+  secondaryPosition: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .optional(),
+  customSecondaryPosition: Joi.string().trim().allow("", null).optional(),
   status: Joi.string()
     .valid(...Object.values(PROFILE_STATUS))
     .optional(),
@@ -68,6 +79,21 @@ export const createPlayerSchema = Joi.object({
       })
     )
     .optional(),
+
+  skills: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  previousClubs: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  achievements: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  languages: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  bio: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        en: Joi.string().allow("", null),
+        ar: Joi.string().allow("", null),
+      }).unknown()
+    )
+    .optional(),
+  statistics: Joi.object().unknown(true).optional(),
 
   transferredTo: Joi.object({
     club: Joi.string().allow("", null),
@@ -187,6 +213,17 @@ export const updatePlayerSchema = Joi.object({
     )
     .optional(),
   customPosition: Joi.string().trim().allow("", null).optional(),
+  secondaryPosition: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required(),
+        slug: Joi.string().optional(),
+      })
+    )
+    .optional(),
+  customSecondaryPosition: Joi.string().trim().allow("", null).optional(),
   status: Joi.string().valid(...Object.values(PROFILE_STATUS)),
 
   experience: Joi.number().min(0).optional(),
@@ -216,6 +253,21 @@ export const updatePlayerSchema = Joi.object({
       })
     )
     .optional(),
+
+  skills: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  previousClubs: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  achievements: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  languages: Joi.array().items(Joi.string().trim().allow("")).optional(),
+  bio: Joi.alternatives()
+    .try(
+      Joi.string().trim().allow("", null),
+      Joi.object({
+        en: Joi.string().allow("", null),
+        ar: Joi.string().allow("", null),
+      }).unknown()
+    )
+    .optional(),
+  statistics: Joi.object().unknown(true).optional(),
 
   monthlySalary: Joi.object({
     amount: Joi.number().min(0),
@@ -292,10 +344,21 @@ export const filterPlayerSchema = Joi.object({
   category: Joi.string(),
   status: Joi.string(),
   gender: Joi.string().valid(...Object.values(GENDER)),
+  position: Joi.string(),
+  secondaryPosition: Joi.string(),
+  preferredFoot: Joi.string(),
+  contractStatus: Joi.string(),
+  physicalCondition: Joi.string(),
+  skills: Joi.string(),
+  game: Joi.string(),
   ageMin: Joi.number().min(15),
   ageMax: Joi.number().max(50),
   salaryMin: Joi.number().min(0),
   salaryMax: Joi.number(),
+  heightMin: Joi.number(),
+  heightMax: Joi.number(),
+  weightMin: Joi.number(),
+  weightMax: Joi.number(),
   isPromoted: Joi.boolean(),
   search: Joi.string(),
 });

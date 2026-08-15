@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import { isEmailEnabled, sendEmail } from "../config/email.js";
 import { PUBLIC_REGISTERABLE_ROLES } from "../config/constants.js";
-import Invoice from "../models/invoice.model.js";
 import userModel from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -14,8 +13,6 @@ import {
   verifyRefreshToken,
   REFRESH_TOKEN_MAX_AGE_MS,
 } from "../utils/jwt.js";
-import { makeOrderNumber } from "../utils/orderNumber.js";
-import { getPricingSettings } from "../utils/pricingUtils.js";
 
 const hashRefreshToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
@@ -77,7 +74,6 @@ export const register = asyncHandler(async (req, res) => {
 
   const user = new userModel({
     name,
-    profileImage: "",
     phone,
     email,
     password,
@@ -89,37 +85,6 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   await user.save();
-
-  try {
-    const exists = await Invoice.findOne({
-      userId: user._id,
-      product: "contacts_access",
-      status: "pending",
-    });
-
-    if (!exists) {
-      const pricing = await getPricingSettings();
-      const orderNo = makeOrderNumber("contacts_access", String(user._id));
-      await Invoice.create({
-        orderNumber: orderNo,
-        invoiceNumber: orderNo,
-        userId: user._id,
-        product: "contacts_access",
-        targetType: null,
-        profileId: null,
-        durationDays:
-          pricing.contacts_access_days || pricing.ONE_YEAR_DAYS || 365,
-        featureType: null,
-        amount: pricing.contacts_access_price || pricing.contacts_access_year,
-        currency: "SAR",
-        status: "pending",
-
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      });
-    }
-  } catch (e) {
-    console.error("seed contacts_access draft failed", e);
-  }
 
   const emailResult = await sendEmail(
     user.email,
@@ -180,6 +145,13 @@ export const login = asyncHandler(async (req, res) => {
 
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, "Username or password is incorrect");
+  }
+
+  if (user.deletedAt) {
+    throw new ApiError(
+      403,
+      "Your account has been deactivated. Please contact support"
+    );
   }
 
   user.lastLogin = new Date();
