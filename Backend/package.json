@@ -12,6 +12,7 @@
     "test:payments": "node payment.e2e.mjs",
     "sync-indexes": "node scripts/sync-indexes.js",
     "migrate:jop": "node scripts/migrate-jop-to-job.js",
+    "migrate:kyc-documents": "node scripts/migrate-kyc-documents.js",
     "seed": "node src/seeds/seed.js",
     "health": "curl -f http://localhost:8000/health || exit 1"
   },

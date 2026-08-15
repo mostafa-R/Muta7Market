@@ -46,6 +46,14 @@ export async function runExpirySweep(now = new Date()) {
       }
     );
 
+    const playersPro = await Player.updateMany(
+      { isPro: true, proExpiresAt: { $ne: null, $lte: n } },
+      {
+        $set: { isPro: false },
+        $unset: { proExpiresAt: "", proSince: "" },
+      }
+    );
+
     let entitlements = { modifiedCount: 0 };
     try {
       entitlements = await Entitlement.updateMany(
@@ -60,6 +68,7 @@ export async function runExpirySweep(now = new Date()) {
       users: users.modifiedCount,
       playersActive: playersActive.modifiedCount,
       playersPromo: playersPromo.modifiedCount,
+      playersPro: playersPro.modifiedCount,
       entitlements: entitlements.modifiedCount,
     };
 

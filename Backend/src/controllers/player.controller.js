@@ -264,6 +264,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
   if (!sortBy) {
     sort = {
       "isPromoted.status": -1,
+      isPro: -1,
       createdAt: -1,
     };
   }
@@ -1798,7 +1799,7 @@ export const getSimilarPlayers = asyncHandler(async (req, res) => {
   }
 
   const similarPlayers = await Player.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ isPro: -1, createdAt: -1 })
     .limit(parseInt(limit))
     .populate("user", "name email");
   res

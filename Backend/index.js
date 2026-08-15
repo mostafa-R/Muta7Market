@@ -13,6 +13,13 @@ import User from "./src/models/user.model.js";
 import app from "./src/server.js";
 import logger from "./src/utils/logger.js";
 import { setSocketServer, userRoom } from "./src/services/socket.service.js";
+import {
+  canConnect,
+  eventAllowed,
+  releaseConnection,
+  releaseSocket,
+  trackConnection,
+} from "./src/middleware/socketRateLimit.middleware.js";
 
 const PORT = process.env.PORT;
 
@@ -79,6 +86,17 @@ io.use(async (socket, next) => {
       verifiedBadge: Boolean(user.verifiedBadge),
     };
 
+    const ip =
+      socket.handshake.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+      socket.handshake.address;
+
+    if (!canConnect(ip, String(user._id))) {
+      return next(new Error("Too many connections, try again later"));
+    }
+
+    socket.data.connectionId = ip;
+    trackConnection(ip, String(user._id));
+
     next();
   } catch (error) {
     next(error);
@@ -87,6 +105,14 @@ io.use(async (socket, next) => {
 
 io.on("connection", (socket) => {
   logger.info(`Socket connected: ${socket.id}`);
+
+  socket.use(([eventName], next) => {
+    const isRoomOp = eventName === "join" || eventName === "leave";
+    if (!eventAllowed(socket.id, isRoomOp)) {
+      return next(new Error("Rate limit exceeded"));
+    }
+    next();
+  });
 
   socket.join(userRoom(socket.data.user.id));
 
@@ -140,6 +166,11 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     logger.info(`Socket disconnected: ${socket.id}`);
+    releaseSocket(socket.id);
+    releaseConnection(
+      socket.data.connectionId,
+      socket.data.user?.id
+    );
   });
 });
 

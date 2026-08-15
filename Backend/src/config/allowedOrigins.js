@@ -13,7 +13,17 @@ export const getAllowedOrigins = () => {
   ];
 };
 
+const allowOriginless = process.env.ALLOW_ORIGINLESS_REQUESTS !== "false";
+
 export const isOriginAllowed = (origin) => {
   const allowed = getAllowedOrigins();
-  return !origin || allowed.includes(origin);
+
+  // No-Origin requests (curl, cron, webhooks, native apps, server-to-server)
+  // are allowed intentionally: CORS is a browser-only protection and cannot
+  // defend against non-browser clients anyway. Browsers always send Origin
+  // on cross-origin requests, so this does not weaken browser security.
+  // Set ALLOW_ORIGINLESS_REQUESTS=false to reject them entirely.
+  if (!origin) return allowOriginless;
+
+  return allowed.includes(origin);
 };

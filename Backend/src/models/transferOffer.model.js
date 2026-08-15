@@ -46,6 +46,11 @@ const TransferOfferSchema = new mongoose.Schema(
       default: "pending",
       index: true,
     },
+    relatedInterest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TransferOffer",
+      default: null,
+    },
     negotiationRoom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NegotiationRoom",
@@ -67,5 +72,6 @@ const TransferOfferSchema = new mongoose.Schema(
 
 TransferOfferSchema.index({ fromUser: 1, status: 1 });
 TransferOfferSchema.index({ toUser: 1, status: 1 });
+TransferOfferSchema.index({ type: 1, status: 1 });
 
 export default mongoose.model("TransferOffer", TransferOfferSchema);

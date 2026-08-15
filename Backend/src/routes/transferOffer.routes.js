@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import {
+  authMiddleware,
+  authorize,
+} from "../middleware/auth.middleware.js";
 import {
   createTransferOffer,
   getTransferOffers,
@@ -11,10 +14,20 @@ import {
 
 const router = Router();
 
-router.get("/", getTransferOffers);
+router.get(
+  "/",
+  authMiddleware,
+  authorize("club", "agent", "admin", "super_admin"),
+  getTransferOffers
+);
 router.get("/my", authMiddleware, getMyTransferOffers);
 router.get("/:id", authMiddleware, getTransferOfferById);
-router.post("/", authMiddleware, createTransferOffer);
+router.post(
+  "/",
+  authMiddleware,
+  authorize("club", "agent", "admin", "super_admin"),
+  createTransferOffer
+);
 router.post("/:id/:action", authMiddleware, respondToTransferOffer);
 router.post(
   "/payment/confirm/:invoiceId",

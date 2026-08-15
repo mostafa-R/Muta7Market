@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import NegotiationRoom from "../models/negotiationRoom.model.js";
 import NegotiationMessage from "../models/negotiationMessage.model.js";
+import Player from "../models/player.model.js";
 import TransferOffer from "../models/transferOffer.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -26,31 +27,79 @@ export const createRoom = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
   const { participantIds = [], offerId } = req.body;
 
+  if (!offerId) {
+    throw new ApiError(400, "offerId is required to create a negotiation room");
+  }
+  if (!mongoose.Types.ObjectId.isValid(offerId)) {
+    throw new ApiError(400, "Invalid offer ID");
+  }
   if (!Array.isArray(participantIds) || participantIds.length === 0) {
     throw new ApiError(400, "At least one participant is required");
   }
-
-  let offer = null;
-  if (offerId) {
-    if (!mongoose.Types.ObjectId.isValid(offerId)) {
-      throw new ApiError(400, "Invalid offer ID");
+  for (const id of participantIds) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ApiError(400, "Invalid participant ID");
     }
-    offer = await TransferOffer.findById(offerId);
-    if (!offer) throw new ApiError(404, "Transfer offer not found");
   }
 
-  const participants = [...new Set(
-    [String(userId), ...participantIds.map(String)]
-  )];
+  const offer = await TransferOffer.findById(offerId);
+  if (!offer) throw new ApiError(404, "Transfer offer not found");
+
+  if (!["pending", "countered"].includes(offer.status)) {
+    throw new ApiError(
+      400,
+      "Negotiation rooms can only be created for pending or countered offers"
+    );
+  }
+
+  const existingOpen = await NegotiationRoom.findOne({
+    offer: offer._id,
+    status: "open",
+  });
+  if (existingOpen) {
+    throw new ApiError(
+      400,
+      "An open negotiation room already exists for this offer"
+    );
+  }
+
+  const allowedParties = new Set([
+    String(offer.fromUser),
+    String(offer.toUser),
+  ]);
+
+  if (offer.targetProfileId) {
+    const targetProfile = await Player.findById(
+      offer.targetProfileId
+    ).select("agentUser");
+    if (targetProfile?.agentUser) {
+      allowedParties.add(String(targetProfile.agentUser));
+    }
+  }
+
+  if (!allowedParties.has(String(userId))) {
+    throw new ApiError(403, "You are not a party of this transfer offer");
+  }
+
+  const requested = participantIds.map(String);
+  const participants = [...new Set([String(userId), ...requested])];
+  for (const id of participants) {
+    if (!allowedParties.has(id)) {
+      throw new ApiError(
+        403,
+        "Only parties of this transfer offer (sender, recipient, or the target's agent) can join the room"
+      );
+    }
+  }
 
   const room = await NegotiationRoom.create({
-    offer: offer ? offer._id : null,
+    offer: offer._id,
     createdBy: userId,
     participants,
     status: "open",
   });
 
-  if (offer && !offer.negotiationRoom) {
+  if (!offer.negotiationRoom) {
     offer.negotiationRoom = room._id;
     await offer.save();
   }

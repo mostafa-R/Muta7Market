@@ -12,6 +12,7 @@ import { uploadLimiter } from "../middleware/rateLimiter.middleware.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { validateUploadedFiles } from "../utils/magicBytes.js";
 
 const router = Router();
 
@@ -26,6 +27,8 @@ router.post(
     if (!req.file) {
       throw new ApiError(400, "No file provided");
     }
+
+    validateUploadedFiles(req);
 
     try {
       const url = generatePublicUrl(req, req.file.path);
@@ -67,6 +70,8 @@ router.post(
     if (!req.files || req.files.length === 0) {
       throw new ApiError(400, "No files provided");
     }
+
+    validateUploadedFiles(req);
 
     try {
       const responses = req.files.map((file) => {

@@ -49,6 +49,7 @@ const INDEX_MAPPINGS = {
     experienceYears: { type: "integer" },
     views: { type: "integer" },
     isPromoted: { type: "boolean" },
+    isPro: { type: "boolean" },
     createdAt: { type: "date" },
     updatedAt: { type: "date" },
     profileImageUrl: { type: "keyword", index: false },
@@ -95,6 +96,7 @@ export const buildPlayerSearchDoc = (player) => {
     monthlySalaryAmount: salary.amount ?? null,
     views: doc.views || 0,
     isPromoted: Boolean(doc.isPromoted?.status),
+    isPro: Boolean(doc.isPro),
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
     profileImageUrl: doc.media?.profileImage?.url || null,
@@ -269,7 +271,11 @@ const buildSort = (type, sortBy) => {
   if (sortBy === "age") return [{ age: { order: "asc" } }];
   if (sortBy === "views") return [{ views: { order: "desc" } }];
   if (type === "coach") return [{ createdAt: { order: "desc" } }];
-  return [{ isPromoted: { order: "desc" } }, { createdAt: { order: "desc" } }];
+  return [
+    { isPromoted: { order: "desc" } },
+    { isPro: { order: "desc" } },
+    { createdAt: { order: "desc" } },
+  ];
 };
 
 export const search = async (

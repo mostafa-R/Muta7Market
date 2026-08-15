@@ -26,6 +26,7 @@ yarn-error.log*
 # logs & uploads
 /logs
 /uploads
+/privateUploads
 *.log
 
 Backend/logs

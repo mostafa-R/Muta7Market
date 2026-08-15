@@ -3,6 +3,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { generatePublicUrl } from "../config/localStorage.js";
 import ApiError from "./ApiError.js";
+import { validateFileSignature } from "./magicBytes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +36,8 @@ export const handleMediaUpload = async (file, req, resourceType = null) => {
       `File size exceeds limit: ${sizeInMB}MB. Maximum allowed is ${maxSizeInMB}MB for ${resourceType} files.`
     );
   }
+
+  validateFileSignature(file);
 
   try {
     const publicUrl = generatePublicUrl(req, file.path);

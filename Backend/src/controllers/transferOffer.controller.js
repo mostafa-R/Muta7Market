@@ -102,13 +102,19 @@ async function initiateTransferPayment(invoice, user, req) {
 
 export const createTransferOffer = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const requirePayment = !STAFF_ROLES.includes(req.user.role);
+  const isStaff = STAFF_ROLES.includes(req.user.role);
 
   const {
     targetProfileId,
     toUserId,
     targetType = "player",
+    type = OFFER_TYPE.OFFICIAL,
+    relatedInterest,
   } = req.body;
+
+  if (!Object.values(OFFER_TYPE).includes(type)) {
+    throw new ApiError(400, "Invalid offer type");
+  }
 
   if (!mongoose.Types.ObjectId.isValid(targetProfileId)) {
     throw new ApiError(400, "targetProfileId is required and must be valid");
@@ -116,6 +122,12 @@ export const createTransferOffer = asyncHandler(async (req, res) => {
 
   const targetProfile = await Player.findById(targetProfileId);
   if (!targetProfile) throw new ApiError(404, "Target profile not found");
+  if (!targetProfile.isActive || !targetProfile.isConfirmed) {
+    throw new ApiError(
+      400,
+      "Target profile must be active and confirmed to receive transfer offers"
+    );
+  }
 
   const targetUserId = toUserId || targetProfile.user;
   if (!targetUserId) {
@@ -133,18 +145,96 @@ export const createTransferOffer = asyncHandler(async (req, res) => {
   const transferFee = Number(data.transferFee?.amount || 0);
   if (transferFee < 0) throw new ApiError(400, "Invalid transfer fee");
 
-  const offer = await TransferOffer.create({
-    type: OFFER_TYPE.OFFICIAL,
+  if (type === OFFER_TYPE.INTEREST) {
+    const existingInterest = await TransferOffer.findOne({
+      type: OFFER_TYPE.INTEREST,
+      fromUser: userId,
+      toUser: targetUserId,
+      targetProfileId,
+      status: { $in: ["pending", "accepted", "countered"] },
+    });
+    if (existingInterest) {
+      throw new ApiError(
+        400,
+        "You already sent an expression of interest for this profile"
+      );
+    }
+  }
+
+  const offerData = {
+    type,
     fromUser: userId,
     toUser: targetUserId,
     targetProfileId,
     targetType: targetType === "coach" ? "coach" : "player",
     ...data,
     status: "pending",
-    payment: { isPaid: !requirePayment, paidAt: requirePayment ? null : new Date() },
-  });
+    payment: {
+      isPaid: isStaff,
+      paidAt: isStaff ? new Date() : null,
+    },
+  };
 
-  if (requirePayment) {
+  if (type === OFFER_TYPE.OFFICIAL && relatedInterest) {
+    if (!mongoose.Types.ObjectId.isValid(relatedInterest)) {
+      throw new ApiError(400, "relatedInterest must be a valid transfer offer id");
+    }
+    const interest = await TransferOffer.findOne({
+      _id: relatedInterest,
+      type: OFFER_TYPE.INTEREST,
+      status: "accepted",
+    });
+    if (!interest) {
+      throw new ApiError(
+        400,
+        "relatedInterest must be an accepted expression of interest"
+      );
+    }
+    if (
+      String(interest.fromUser) !== String(userId) ||
+      String(interest.toUser) !== String(targetUserId) ||
+      String(interest.targetProfileId) !== String(targetProfileId)
+    ) {
+      throw new ApiError(
+        400,
+        "relatedInterest does not match the offer parties"
+      );
+    }
+
+    const existingOfficial = await TransferOffer.findOne({
+      type: OFFER_TYPE.OFFICIAL,
+      relatedInterest: interest._id,
+      status: { $in: ["pending", "accepted"] },
+    });
+    if (existingOfficial) {
+      throw new ApiError(
+        400,
+        "An official offer already exists for this expression of interest"
+      );
+    }
+
+    offerData.relatedInterest = interest._id;
+  }
+
+  const offer = await TransferOffer.create(offerData);
+
+  if (type === OFFER_TYPE.INTEREST) {
+    await sendInternalNotification(
+      targetUserId,
+      "Expression of Interest",
+      "You received a new expression of interest",
+      { transferOfferId: String(offer._id) }
+    );
+
+    await notifyTransferTarget(targetUserId, offer);
+
+    res.status(201).json(
+      new ApiResponse(201, offer, "Expression of interest sent successfully")
+    );
+    return;
+  }
+
+  if (!isStaff) {
     if (transferFee <= 0) {
       await offer.deleteOne();
       throw new ApiError(
@@ -221,10 +311,14 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
   if (type) query.type = type;
   if (targetType) query.targetType = targetType;
 
+  const isStaff = STAFF_ROLES.includes(req.user?.role);
+  if (!isStaff) {
+    query.$or = [{ fromUser: req.user._id }, { toUser: req.user._id }];
+  }
+
   const { skip } = paginate(page, limit);
   const sort = buildSortQuery(sortBy) || { createdAt: -1 };
 
-  const isStaff = STAFF_ROLES.includes(req.user?.role);
   const baseQuery = TransferOffer.find(query)
     .sort(sort)
     .limit(parseInt(limit))
@@ -304,6 +398,7 @@ export const getTransferOfferById = asyncHandler(async (req, res) => {
     .populate("fromUser", "name email role")
     .populate("toUser", "name email role")
     .populate("targetProfileId")
+    .populate("relatedInterest", "type status fromUser toUser targetProfileId createdAt")
     .populate("negotiationRoom");
 
   if (!offer) throw new ApiError(404, "Transfer offer not found");
@@ -382,21 +477,39 @@ export const respondToTransferOffer = asyncHandler(async (req, res) => {
   }
 
   if (action === "accept") {
+    if (
+      offer.type === OFFER_TYPE.OFFICIAL &&
+      !offer.payment?.isPaid
+    ) {
+      throw new ApiError(
+        400,
+        "This transfer offer cannot be accepted until its payment is completed"
+      );
+    }
+
     offer.status = "accepted";
     await offer.save();
 
-    const targetProfile = await Player.findById(offer.targetProfileId);
-    if (targetProfile) {
-      targetProfile.contractStatus = "contracted";
-      await targetProfile.save();
+    if (offer.type === OFFER_TYPE.OFFICIAL) {
+      const targetProfile = await Player.findById(offer.targetProfileId);
+      if (targetProfile) {
+        targetProfile.contractStatus = "contracted";
+        await targetProfile.save();
+      }
     }
 
-    await sendInternalNotification(
-      offer.fromUser,
-      "Transfer Offer Accepted",
-      "Your transfer offer was accepted",
-      { transferOfferId: String(offer._id) }
-    );
+    const label =
+      offer.type === OFFER_TYPE.INTEREST
+        ? "Expression of Interest Accepted"
+        : "Transfer Offer Accepted";
+    const message =
+      offer.type === OFFER_TYPE.INTEREST
+        ? "Your expression of interest was accepted. You can now send an official offer"
+        : "Your transfer offer was accepted";
+
+    await sendInternalNotification(offer.fromUser, label, message, {
+      transferOfferId: String(offer._id),
+    });
     emitToUser(offer.fromUser, "transfer_offer:updated", {
       transferOfferId: String(offer._id),
       status: "accepted",

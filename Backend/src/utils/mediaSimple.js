@@ -1,4 +1,5 @@
 import { deleteMediaFromLocal } from "./localMediaUtils.js";
+import { removeLocalUpload, validateFileSignature } from "./magicBytes.js";
 
 /**
  * @param {String} publicId 
@@ -51,6 +52,14 @@ export const uploadFile = async (file, resourceType = null) => {
   }
 
   try {
+    try {
+      validateFileSignature(file, { deleteOnFail: false });
+    } catch (err) {
+      removeLocalUpload(file);
+      console.error(`❌ محتوى الملف لا يطابق نوعه المعلن: ${file.originalname}`);
+      return null;
+    }
+
     let finalUrl;
 
     if (file.secure_url) {
@@ -118,6 +127,7 @@ export const safelyUpdatePlayerMedia = async (
     video: null,
     document: null,
     images: [],
+    videos: [],
   };
 
   if (existingPlayerData && existingPlayerData.media) {
@@ -133,6 +143,7 @@ export const safelyUpdatePlayerMedia = async (
         images: Array.isArray(playerMedia.images)
           ? [...playerMedia.images]
           : [],
+        videos: Array.isArray(playerMedia.videos) ? [...playerMedia.videos] : [],
       };
     } catch (error) {
       console.error("❌ خطأ في استخراج بيانات الوسائط الحالية:", error.message);

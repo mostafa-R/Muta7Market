@@ -1,17 +1,22 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { verifyLimiter } from "../middleware/rateLimiter.middleware.js";
+import { kycDocumentUpload } from "../config/kycStorage.js";
 import {
+  getKycDocument,
   getMyKyc,
-  submitKyc,
   listPendingKyc,
   reviewKyc,
+  submitKyc,
+  uploadKycDocument,
 } from "../controllers/kyc.controller.js";
 
 const router = Router();
 
 router.get("/status", authMiddleware, getMyKyc);
 router.post("/request", authMiddleware, verifyLimiter, submitKyc);
+router.post("/upload", authMiddleware, verifyLimiter, kycDocumentUpload, uploadKycDocument);
+router.get("/document/:filename", authMiddleware, getKycDocument);
 
 router.get(
   "/pending",

@@ -3,31 +3,28 @@ import logger from "../utils/logger.js";
 
 const ALGORITHM = "aes-256-gcm";
 
-let encryptionKey = null;
-let keyWarningLogged = false;
-
-function getEncryptionKey() {
-  if (encryptionKey) return encryptionKey;
-
-  const secret = process.env.CHAT_ENCRYPTION_KEY || process.env.JWT_SECRET;
-
-  if (!process.env.CHAT_ENCRYPTION_KEY && !keyWarningLogged) {
-    logger.warn(
-      "CHAT_ENCRYPTION_KEY is not set. Negotiation messages will be encrypted with a key derived from JWT_SECRET. Set CHAT_ENCRYPTION_KEY for a dedicated key."
+if (!process.env.CHAT_ENCRYPTION_KEY) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "CHAT_ENCRYPTION_KEY is required in production. Falling back to JWT_SECRET would decrypt all stored conversations if JWT_SECRET leaks."
     );
-    keyWarningLogged = true;
   }
-
-  encryptionKey = crypto.createHash("sha256").update(secret || "muta7-chat").digest();
-  return encryptionKey;
+  logger.warn(
+    "CHAT_ENCRYPTION_KEY is not set. Negotiation messages will be encrypted with a key derived from JWT_SECRET. Set CHAT_ENCRYPTION_KEY for a dedicated key."
+  );
 }
+
+const encryptionKey = crypto
+  .createHash("sha256")
+  .update(process.env.CHAT_ENCRYPTION_KEY || process.env.JWT_SECRET || "muta7-chat")
+  .digest();
 
 export function encryptMessage(plaintext) {
   const text = String(plaintext ?? "");
   if (!text) return null;
 
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv(ALGORITHM, getEncryptionKey(), iv);
+  const cipher = crypto.createCipheriv(ALGORITHM, encryptionKey, iv);
   const encrypted = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
 
@@ -47,7 +44,7 @@ export function decryptMessage(encrypted) {
   try {
     const decipher = crypto.createDecipheriv(
       ALGORITHM,
-      getEncryptionKey(),
+      encryptionKey,
       Buffer.from(encrypted.iv, "base64")
     );
     decipher.setAuthTag(Buffer.from(encrypted.tag, "base64"));

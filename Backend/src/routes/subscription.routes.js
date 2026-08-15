@@ -3,7 +3,7 @@ import {
   authMiddleware,
   verifiedOnly,
 } from "../middleware/auth.middleware.js";
-import { validate } from "../middleware/validation.middleware.js";
+import validate from "../middleware/validation.middleware.js";
 import { subscribeToProSchema } from "../validators/subscription.validator.js";
 import {
   getProStatus,

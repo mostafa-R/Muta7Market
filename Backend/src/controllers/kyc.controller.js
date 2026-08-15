@@ -1,9 +1,76 @@
-import { KYC_STATUS } from "../config/constants.js";
+import { KYC_STATUS, STAFF_ROLES } from "../config/constants.js";
+import {
+  deleteKycDocument,
+  generateKycDocumentUrl,
+  getKycDocumentPath,
+} from "../config/kycStorage.js";
 import Kyc from "../models/kyc.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import fs from "fs";
+
+const KYC_DOCUMENT_PATH = "/api/v1/kyc/document/";
+
+export const uploadKycDocument = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ApiError(400, "No file provided");
+  }
+
+  const url = generateKycDocumentUrl(req, req.file.filename);
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        url,
+        secure_url: url,
+        public_id: req.file.filename,
+        publicId: req.file.filename,
+        resource_type: req.file.mimetype.startsWith("image/")
+          ? "image"
+          : "raw",
+        format: req.file.originalname
+          ? req.file.originalname.split(".").pop()
+          : null,
+        bytes: req.file.size,
+        created_at: new Date().toISOString(),
+      },
+      "KYC document uploaded successfully"
+    )
+  );
+});
+
+export const getKycDocument = asyncHandler(async (req, res) => {
+  const { filename } = req.params;
+  const userId = req.user._id || req.user.id;
+  const isStaff = STAFF_ROLES.includes(req.user.role);
+
+  if (!isStaff) {
+    const kyc = await Kyc.findOne({ user: userId }).lean();
+    const ownsDocument = (kyc?.documents || []).some(
+      (d) =>
+        d.publicId === filename ||
+        (typeof d.url === "string" &&
+          (d.url.endsWith(`/${filename}`) ||
+            d.url.includes(`${KYC_DOCUMENT_PATH}${encodeURIComponent(filename)}`)))
+    );
+
+    if (!ownsDocument) {
+      throw new ApiError(403, "You do not have access to this document");
+    }
+  }
+
+  const filePath = getKycDocumentPath(filename);
+  if (!fs.existsSync(filePath)) {
+    throw new ApiError(404, "Document not found");
+  }
+
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.sendFile(filePath);
+});
 
 export const getMyKyc = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
@@ -34,11 +101,29 @@ export const submitKyc = asyncHandler(async (req, res) => {
 
   const sanitizedDocs = documents
     .filter((d) => d && typeof d.url === "string" && d.url)
-    .map((d) => ({
-      documentType: String(d.documentType || "other"),
-      url: d.url,
-      publicId: d.publicId || null,
-    }));
+    .map((d) => {
+      const rawUrl = String(d.url);
+
+      if (!rawUrl.includes(KYC_DOCUMENT_PATH)) {
+        throw new ApiError(
+          400,
+          "KYC documents must be uploaded through the secure KYC upload endpoint (/api/v1/kyc/upload). Public /uploads URLs are not allowed."
+        );
+      }
+
+      let filenameFromUrl;
+      try {
+        filenameFromUrl = decodeURIComponent(rawUrl.split("/").pop().split("?")[0]);
+      } catch {
+        throw new ApiError(400, "KYC document url is invalid");
+      }
+
+      return {
+        documentType: String(d.documentType || "other"),
+        url: rawUrl,
+        publicId: d.publicId || filenameFromUrl || null,
+      };
+    });
 
   if (sanitizedDocs.length === 0) {
     throw new ApiError(400, "Documents must include a valid url");
@@ -50,6 +135,15 @@ export const submitKyc = asyncHandler(async (req, res) => {
     new Kyc({
       user: userId,
     });
+
+  if (existing && Array.isArray(existing.documents)) {
+    const keptIds = new Set(sanitizedDocs.map((d) => d.publicId));
+    for (const oldDoc of existing.documents) {
+      if (oldDoc.publicId && !keptIds.has(oldDoc.publicId)) {
+        deleteKycDocument(oldDoc.publicId);
+      }
+    }
+  }
 
   if (entityName !== undefined) kyc.entityName = String(entityName);
   if (entityType !== undefined) kyc.entityType = String(entityType);

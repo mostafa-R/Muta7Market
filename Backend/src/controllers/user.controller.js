@@ -3,6 +3,7 @@ import { generatePublicUrl } from "../config/localStorage.js";
 import Invoice from "../models/invoice.model.js";
 import User from "../models/user.model.js";
 import { deleteMediaFromLocal } from "../utils/localMediaUtils.js";
+import { validateFileSignature } from "../utils/magicBytes.js";
 
 export const update = async (req, res) => {
   try {
@@ -90,6 +91,12 @@ export const update = async (req, res) => {
         return res
           .status(400)
           .json({ message: "Invalid image file. Must be an image." });
+      }
+
+      try {
+        validateFileSignature(imageFile);
+      } catch (err) {
+        return res.status(400).json({ message: err.message });
       }
 
       if (currentUser.profileImage && currentUser.profileImage.public_id) {
