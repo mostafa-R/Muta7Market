@@ -87,22 +87,22 @@ export const SportsInfoCard = ({ formik }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ConditionalSelect
             label={t("registerProfile.form.sportsInfo.category")}
-            name="jop"
-            value={formik.values.jop || ""}
+            name="job"
+            value={formik.values.job || ""}
             onValueChange={(value) => {
               // Store the job type value
-              formik.setFieldValue("jop", value);
-              formik.setFieldValue("jopSelected", true);
-              formik.setFieldTouched("jop", true);
+              formik.setFieldValue("job", value);
+              formik.setFieldValue("jobSelected", true);
+              formik.setFieldTouched("job", true);
 
               // Store the multilingual job type name
               if (value === "player") {
-                formik.setFieldValue("jopName", {
+                formik.setFieldValue("jobName", {
                   ar: "لاعب",
                   en: "Player",
                 });
               } else if (value === "coach") {
-                formik.setFieldValue("jopName", {
+                formik.setFieldValue("jobName", {
                   ar: "مدرب",
                   en: "Coach",
                 });
@@ -118,7 +118,7 @@ export const SportsInfoCard = ({ formik }) => {
               formik.setFieldValue("positionData", null);
               formik.setFieldTouched("position", false);
             }}
-            onBlur={() => formik.setFieldTouched("jop", true)}
+            onBlur={() => formik.setFieldTouched("job", true)}
             placeholder={t(
               "registerProfile.form.sportsInfo.categoryPlaceholder"
             )}
@@ -138,10 +138,10 @@ export const SportsInfoCard = ({ formik }) => {
             formik={formik}
           >
             {/* Conditional Role Type Selection */}
-            {formik.values.jop && (
+            {formik.values.job && (
               <div className="mt-4 space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  {formik.values.jop === "player"
+                  {formik.values.job === "player"
                     ? t("registerProfile.form.sportsInfo.playerType")
                     : t("registerProfile.form.sportsInfo.coachType")}
                   <span className="text-red-500 mr-1 ml-1">*</span>
@@ -151,7 +151,7 @@ export const SportsInfoCard = ({ formik }) => {
                   onValueChange={(value) => {
                     // Find the selected role type with all its multilingual data
                     const roleTypes = getRoleTypesForJob(
-                      formik.values.jop,
+                      formik.values.job,
                       formik.values.game
                     );
                     const selectedRoleType = roleTypes.find(
@@ -213,7 +213,7 @@ export const SportsInfoCard = ({ formik }) => {
                   >
                     <SelectValue
                       placeholder={
-                        formik.values.jop === "player"
+                        formik.values.job === "player"
                           ? t(
                               "registerProfile.form.sportsInfo.selectPlayerType"
                             )
@@ -223,7 +223,7 @@ export const SportsInfoCard = ({ formik }) => {
                   </SelectTrigger>
                   <SelectContent className="max-h-80">
                     {getRoleTypesForJob(
-                      formik.values.jop,
+                      formik.values.job,
                       formik.values.game
                     ).map((role) => (
                       <SelectItem key={role.value} value={role.value}>
@@ -251,7 +251,7 @@ export const SportsInfoCard = ({ formik }) => {
                 {isOtherRoleType(formik.values.roleType) && (
                   <div className="mt-4 space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      {formik.values.jop === "player"
+                      {formik.values.job === "player"
                         ? t("registerProfile.form.sportsInfo.customPlayerType")
                         : t("registerProfile.form.sportsInfo.customCoachType")}
                       <span className="text-red-500 mx-1">*</span>
@@ -264,7 +264,7 @@ export const SportsInfoCard = ({ formik }) => {
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       placeholder={
-                        formik.values.jop === "player"
+                        formik.values.job === "player"
                           ? t(
                               "registerProfile.form.sportsInfo.customPlayerTypePlaceholder"
                             )
@@ -286,7 +286,7 @@ export const SportsInfoCard = ({ formik }) => {
                       </div>
                     ) : (
                       <div className="text-gray-500 text-xs mt-1">
-                        {formik.values.jop === "player"
+                        {formik.values.job === "player"
                           ? t(
                               "registerProfile.form.sportsInfo.customPlayerTypePlaceholder"
                             )
@@ -457,7 +457,7 @@ export const SportsInfoCard = ({ formik }) => {
             )}
           </div>
 
-          {formik.values.jop === "player" && (
+          {formik.values.job === "player" && (
             <div className="space-y-2 relative">
               <Label
                 htmlFor="position"

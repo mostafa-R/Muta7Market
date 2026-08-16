@@ -1,0 +1,56 @@
+{
+  "name": "muta7market-server",
+  "version": "1.0.0",
+  "description": "Muta7 Market - Professional sports transfer & recruitment marketplace API (Node.js + Express + MongoDB)",
+  "main": "index.js",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "NODE_ENV=production node index.js",
+    "start:gc": "NODE_ENV=production node --expose-gc index.js",
+    "seed": "node src/seeds/seed.js",
+    "seed:fresh": "node src/seeds/seed.js --fresh",
+    "sync-indexes": "node scripts/sync-indexes.js",
+    "health": "node -e \"fetch('http://localhost:'+(process.env.PORT||5000)+'/health').then(r=>{if(!r.ok)process.exit(1);console.log('healthy')}).catch(e=>{console.error(e);process.exit(1)})\""
+  },
+  "keywords": [
+    "sports",
+    "marketplace",
+    "transfers",
+    "scouting",
+    "api",
+    "express",
+    "mongodb"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.19.2",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.5",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "redis": "^4.7.0",
+    "socket.io": "^4.8.1",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

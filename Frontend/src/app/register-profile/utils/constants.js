@@ -21,7 +21,7 @@ export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export const sectionRequiredFields = {
   personal: ["name", "age", "gender", "nationality", "birthCountry"],
-  sports: ["game", "jop", "status", "roleType", "position"],
+  sports: ["game", "job", "status", "roleType", "position"],
   financial: [],
   transfer: [],
   contact: [],
@@ -40,9 +40,9 @@ export const initialFormValues = {
   customBirthCountry: "",
 
   // Job type (player/coach)
-  jop: "",
-  jopSelected: false,
-  jopName: null, // Multilingual job type name { ar: "لاعب", en: "Player" }
+  job: "",
+  jobSelected: false,
+  jobName: null, // Multilingual job type name { ar: "لاعب", en: "Player" }
 
   // Role type (e.g., professional player, head coach)
   roleType: "",

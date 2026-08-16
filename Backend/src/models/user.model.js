@@ -52,6 +52,12 @@ const userSchema = new mongoose.Schema(
     },
     emailVerificationToken: String,
     emailVerificationExpires: Date,
+    pendingEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      default: null,
+    },
     phoneVerificationOTP: String,
     phoneVerificationExpires: Date,
     passwordResetToken: String,

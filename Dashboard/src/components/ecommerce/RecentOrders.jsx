@@ -93,7 +93,7 @@ export default function RecentUnconfirmedTable() {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
   const [query, setQuery] = React.useState('');
-  const [jopFilter, setJopFilter] = React.useState('all');          
+  const [jobFilter, setJobFilter] = React.useState('all');          
   const [activeFilter, setActiveFilter] = React.useState('all');    
   const [promotedFilter, setPromotedFilter] = React.useState('all'); 
   const [days, setDays] = React.useState(RECENT_DAYS_DEFAULT);       
@@ -121,13 +121,13 @@ if (typeof window !== 'undefined') {
     page, 
     limit: rowsPerPage,
     search: query || undefined,
-    jop: jopFilter !== 'all' ? jopFilter : undefined,
+    job: jobFilter !== 'all' ? jobFilter : undefined,
     isActive: activeFilter !== 'all' ? activeFilter : undefined,
     isPromoted: promotedFilter !== 'all' ? promotedFilter : undefined,
     days,
     sortBy: sortBy !== 'createdAt' ? sortBy : undefined,
     sortDir: sortDir !== 'desc' ? sortDir : undefined,
-  }), [page, rowsPerPage, query, jopFilter, activeFilter, promotedFilter, days, sortBy, sortDir]);
+  }), [page, rowsPerPage, query, jobFilter, activeFilter, promotedFilter, days, sortBy, sortDir]);
 
   const getStringValue = React.useCallback((value) => {
     if (!value) return '-';
@@ -151,7 +151,7 @@ if (typeof window !== 'undefined') {
         name: p.name || p?.user?.name || '-',
         email,
         phone,
-        jop: p.jop || '-', 
+        job: p.job || '-', 
         image: img,
         date: p.createdAt ? new Date(p.createdAt) : null,
         dateLabel: p.createdAt ? new Date(p.createdAt).toLocaleString('ar-EG') : '—',
@@ -210,8 +210,8 @@ if (typeof window !== 'undefined') {
 
   const handleHeaderClick = (col) => {
     switch (col) {
-      case 'jop':
-        setJopFilter((prev) => cycle(prev, ['all', 'player', 'coach']));
+      case 'job':
+        setJobFilter((prev) => cycle(prev, ['all', 'player', 'coach']));
         setPage(1);
         break;
       case 'isActive':
@@ -365,7 +365,7 @@ if (typeof window !== 'undefined') {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
                 <tr>
                   <Th label="الشخص" onClick={() => handleHeaderClick('name')} sort={<SortIcon column="name" />} />
-                  <Th label="الفئة" onClick={() => handleHeaderClick('jop')} hint={`(اضغط للتبديل: الكل/لاعب/مدرب)`} />
+                  <Th label="الفئة" onClick={() => handleHeaderClick('job')} hint={`(اضغط للتبديل: الكل/لاعب/مدرب)`} />
                   <Th label="البريد" onClick={() => handleHeaderClick('email')} sort={<SortIcon column="email" />} />
                   <Th label="الهاتف" onClick={() => handleHeaderClick('phone')} />
                   <Th label="الجنسية" onClick={() => handleHeaderClick('nationality')} sort={<SortIcon column="nationality" />} />
@@ -423,7 +423,7 @@ if (typeof window !== 'undefined') {
                       {/* الفئة */}
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300">
-                          {r.jop === 'coach' ? 'مدرب' : 'لاعب'}
+                          {r.job === 'coach' ? 'مدرب' : 'لاعب'}
                         </span>
                       </td>
 

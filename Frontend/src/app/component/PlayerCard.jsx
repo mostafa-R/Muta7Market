@@ -21,12 +21,12 @@ const getStatusColor = (status) => {
   return colors[status] || "bg-slate-500";
 };
 
-const getCategoryColor = (jop) => {
+const getCategoryColor = (job) => {
   const colors = {
     player: "bg-blue-500",
     coach: "bg-blue-500",
   };
-  return colors[jop] || "bg-gray-500";
+  return colors[job] || "bg-gray-500";
 };
 
 const getStatusText = (status, t) => {
@@ -38,12 +38,12 @@ const getStatusText = (status, t) => {
   return texts[status] || status;
 };
 
-const getCategoryText = (jop, t) => {
+const getCategoryText = (job, t) => {
   const texts = {
     player: t("common.player"),
     coach: t("common.coach"),
   };
-  return texts[jop] || jop;
+  return texts[job] || job;
 };
 
 const getGenderBorderColor = (gender) => {
@@ -62,8 +62,8 @@ const PlayerCard = ({ player }) => {
     [player.status, t]
   );
   const categoryText = useMemo(
-    () => getCategoryText(player.jop, t),
-    [player.jop, t]
+    () => getCategoryText(player.job, t),
+    [player.job, t]
   );
   const sportText = useMemo(
     () => translateSport(t, player.game || player.sport, language),

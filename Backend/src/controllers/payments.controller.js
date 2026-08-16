@@ -22,6 +22,14 @@ import { emitToUser } from "../services/socket.service.js";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+const amountMatchesInvoice = (verify, invoice) => {
+  if (!verify?.amount) return null;
+  const paidAmount = Number(verify.amount);
+  const expectedAmount = Number(invoice?.amount);
+  if (Number.isNaN(paidAmount) || Number.isNaN(expectedAmount)) return null;
+  return Math.abs(paidAmount - expectedAmount) <= 0.01;
+};
+
 
 function entitlementDurationDays(invoice, PRICING) {
   if (invoice.product === "contacts_access")
@@ -206,7 +214,7 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
           status: "active",
           playerProfileId: invoice.playerProfileId || null,
           startDate: new Date(),
-          endDate,
+          endDate: end,
           autoRenew: false,
           billingInterval: invoice.featureType === "year" ? "year" : "month",
           sourceInvoice: invoice._id,
@@ -237,7 +245,7 @@ async function grantPaidInvoiceEffects(invoice, PRICING, session) {
           status: "active",
           playerProfileId: null,
           startDate: new Date(),
-          endDate,
+          endDate: end,
           autoRenew: false,
           billingInterval: invoice.featureType === "year" ? "year" : "month",
           sourceInvoice: invoice._id,
@@ -394,6 +402,22 @@ export const reconcileMyInvoices = async (req, res) => {
         inv.lastVerifiedAt = new Date();
 
         if (isPaid) {
+          const amountOk = amountMatchesInvoice(verify, inv);
+          if (amountOk === false) {
+            mapPaymentErrors(inv, {
+              paymentErrors: [
+                {
+                  code: "AMOUNT_MISMATCH",
+                  title: "Amount mismatch",
+                  message: `expected ${inv.amount}, got ${verify.amount}`,
+                  at: new Date(),
+                },
+              ],
+            });
+            await inv.save({ session });
+            return;
+          }
+
           if (inv.status !== "paid") {
             await applyPaidEffects(inv, verify, session);
             updated += 1;
@@ -461,7 +485,7 @@ export const reconcileMyInvoices = async (req, res) => {
 };
 
 function detectTargetTypeFromProfile(profileDoc) {
-  const j = String(profileDoc?.jop || profileDoc?.job || "").toLowerCase();
+  const j = String(profileDoc?.job || "").toLowerCase();
   return j === "coach" ? "coach" : "player";
 }
 
@@ -515,7 +539,7 @@ export const createDraftInvoice = async (req, res) => {
       const profile = await PlayerProfile.findOne({
         _id: playerProfileId,
         user: userId,
-      }).select("jop job user");
+      }).select("job user");
       if (!profile)
         return res
           .status(404)
@@ -735,44 +759,48 @@ export const paymentWebhook = async (req, res) => {
 
   const isPaid = String(verify.orderStatus || "").toLowerCase() === "paid";
 
-  try {
-    await PaymentEvent.create({
-      provider: "paylink",
-      providerEventId: transactionNo,
-      orderNumber,
-      type: isPaid ? "invoice.paid" : "invoice.update",
-      raw: payload,
-    });
-  } catch {
-    return res.status(200).json({ ok: true, duplicate: true });
-  }
+  let duplicate = false;
 
   try {
     await runInTransaction(async (session) => {
+      const existingEvent = await PaymentEvent.findOne({
+        providerEventId: transactionNo,
+      }).session(session);
+      if (existingEvent) {
+        duplicate = true;
+        return;
+      }
+
       const inv = await Invoice.findOne({ orderNumber }).session(session);
       if (!inv) return;
+
+      await PaymentEvent.create(
+        [
+          {
+            provider: "paylink",
+            providerEventId: transactionNo,
+            orderNumber,
+            type: isPaid ? "invoice.paid" : "invoice.update",
+            raw: payload,
+          },
+        ],
+        { session }
+      );
 
       if (verifyOrder && inv.orderNumber && verifyOrder !== inv.orderNumber) {
         return;
       }
 
-      if (isPaid && verify?.amount) {
-        const paidAmount = Number(verify.amount);
-        const expectedAmount = Number(inv.amount);
-        if (
-          !Number.isNaN(paidAmount) &&
-          !Number.isNaN(expectedAmount) &&
-          Math.abs(paidAmount - expectedAmount) > 0.01
-        ) {
-          mapPaymentErrors(inv, {
-            paymentErrors: [
-              { code: "AMOUNT_MISMATCH", title: "Amount mismatch", message: `expected ${expectedAmount}, got ${paidAmount}`, at: new Date() },
-            ],
-          });
-          inv.lastProviderStatus = String(verify.orderStatus || "");
-          await inv.save({ session });
-          return;
-        }
+      const amountOk = amountMatchesInvoice(verify, inv);
+      if (isPaid && amountOk === false) {
+        mapPaymentErrors(inv, {
+          paymentErrors: [
+            { code: "AMOUNT_MISMATCH", title: "Amount mismatch", message: `expected ${inv.amount}, got ${verify.amount}`, at: new Date() },
+          ],
+        });
+        inv.lastProviderStatus = String(verify.orderStatus || "");
+        await inv.save({ session });
+        return;
       }
 
       if (!isPaid) {
@@ -797,6 +825,10 @@ export const paymentWebhook = async (req, res) => {
     });
   } catch (err) {
     console.error("webhook txn error", err);
+  }
+
+  if (duplicate) {
+    return res.status(200).json({ ok: true, duplicate: true });
   }
 
   return res.status(200).json({ ok: true, verified: isPaid });
@@ -993,12 +1025,13 @@ async function verifyWithPaylinkAndApply(inv) {
   try {
     const verify = await paylinkGetInvoice(String(transactionNo));
     const isPaid = String(verify.orderStatus || "").toLowerCase() === "paid";
-    if (isPaid && inv.status !== "paid") {
+    const amountOk = amountMatchesInvoice(verify, inv);
+    if (isPaid && inv.status !== "paid" && amountOk !== false) {
       await applyPaidEffects(inv, verify);
     }
     return {
       verified: true,
-      paid: isPaid,
+      paid: isPaid && amountOk !== false,
       status: String(verify.orderStatus || ""),
     };
   } catch (err) {

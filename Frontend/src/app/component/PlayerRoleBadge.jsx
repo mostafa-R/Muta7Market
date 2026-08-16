@@ -7,8 +7,8 @@ import { translateCoachRole } from "../../utils/translationFallback";
  * @param {string} positionText
  */
 const PlayerRoleBadge = ({ player, t, positionText }) => {
-  const isCoach = player.jop === "coach";
-  const isPlayer = player.jop === "player";
+  const isCoach = player.job === "coach";
+  const isPlayer = player.job === "player";
 
   const displayText = isCoach
     ? translateCoachRole(t, player.roleType)

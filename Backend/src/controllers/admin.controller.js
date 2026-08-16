@@ -6,22 +6,54 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { processPlayerMedia } from "../utils/localMediaUtils.js";
 import { safelyUpdatePlayerMedia } from "../utils/mediaSimple.js";
+import { escapeRegex } from "../utils/helpers.js";
 import { makeOrderNumber } from "../utils/orderNumber.js";
 import { getPricingSettings } from "../utils/pricingUtils.js";
 import {
   ensureSearchIndexes,
   reindexAll,
 } from "../services/search.service.js";
+import { recordProfileChanges } from "../services/profileChange.service.js";
+
+const ROLE_RANK = {
+  super_admin: 3,
+  admin: 2,
+  club: 1,
+  agent: 1,
+  scout: 1,
+  coach: 1,
+  player: 1,
+  user: 0,
+};
+
+const roleRank = (role) => ROLE_RANK[role] ?? 0;
 
 const assertRoleEscalation = (requester, requestedRole) => {
+  if (!requestedRole) return;
   if (
-    requestedRole === "super_admin" &&
-    (!requester || requester.role !== "super_admin")
+    requester?.role !== "super_admin" &&
+    (requestedRole === "super_admin" || requestedRole === "admin")
   ) {
     throw new ApiError(
       403,
-      "Only a super admin can assign the super_admin role"
+      "Only a super admin can assign the admin or super_admin role"
     );
+  }
+};
+
+const assertCanManageUser = (requester, targetUser) => {
+  if (!targetUser) {
+    throw new ApiError(404, "User not found");
+  }
+  if (requester?.role !== "super_admin") {
+    const requesterRank = roleRank(requester?.role);
+    const targetRank = roleRank(targetUser.role);
+    if (targetRank >= requesterRank) {
+      throw new ApiError(
+        403,
+        "You cannot modify a user with equal or higher privileges"
+      );
+    }
   }
 };
 
@@ -32,8 +64,8 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 
   if (search) {
     filter.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
+      { name: { $regex: escapeRegex(search), $options: "i" } },
+      { email: { $regex: escapeRegex(search), $options: "i" } },
     ];
   }
 
@@ -131,6 +163,9 @@ export const verifyUserEmail = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { isEmailVerified } = req.body;
 
+  const targetUser = await User.findById(id).select("role").lean();
+  assertCanManageUser(req.user, targetUser);
+
   const updatedUser = await User.findByIdAndUpdate(
     id,
     { isEmailVerified },
@@ -153,6 +188,8 @@ export const updateUser = asyncHandler(async (req, res) => {
   delete updates.password;
   delete updates.refreshTokens;
 
+  const targetUser = await User.findById(id).select("role").lean();
+  assertCanManageUser(req.user, targetUser);
   assertRoleEscalation(req.user, updates.role);
 
   const updatedUser = await User.findByIdAndUpdate(id, updates, {
@@ -174,6 +211,9 @@ export const updateUser = asyncHandler(async (req, res) => {
 export const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { soft = false } = req.query;
+
+  const targetUser = await User.findById(id).select("role").lean();
+  assertCanManageUser(req.user, targetUser);
 
   if (soft === "true") {
     const user = await User.findByIdAndUpdate(
@@ -214,7 +254,7 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
     minAge,
     maxAge,
     isActive,
-    jop,
+    job,
   } = req.query;
 
   page = parseInt(page) || 10;
@@ -222,10 +262,10 @@ export const getAllPlayers = asyncHandler(async (req, res) => {
 
   const filter = {};
 
-  filter.job = jop || req.query.job || "player";
+  filter.job = job || "player";
 
   if (search) {
-    filter.name = { $regex: search, $options: "i" };
+    filter.name = { $regex: escapeRegex(search), $options: "i" };
   }
 
   if (position) {
@@ -303,6 +343,9 @@ export const getPlayerById = asyncHandler(async (req, res) => {
 });
 
 export const updateConfirmation = asyncHandler(async (req, res, next) => {
+  const before = await Player.findById(req.params.id).lean();
+  if (!before) return res.status(404).json({ success: false, message: "Player not found" });
+
   const p = await Player.findByIdAndUpdate(
     req.params.id,
     { $set: { isConfirmed: req.body.isConfirmed } },
@@ -312,10 +355,22 @@ export const updateConfirmation = asyncHandler(async (req, res, next) => {
     return res
       .status(404)
       .json({ success: false, message: "Player not found" });
+
+  await recordProfileChanges({
+    profileType: "player",
+    before,
+    after: p,
+    changedBy: req.user._id,
+    changedByRole: req.user.role,
+  });
+
   res.json({ success: true, message: "Confirmation updated", data: p });
 });
 
 export const updateActivation = asyncHandler(async (req, res, next) => {
+  const before = await Player.findById(req.params.id).lean();
+  if (!before) return res.status(404).json({ success: false, message: "Player not found" });
+
   const p = await Player.findByIdAndUpdate(
     req.params.id,
     { $set: { isActive: req.body.isActive } },
@@ -325,11 +380,24 @@ export const updateActivation = asyncHandler(async (req, res, next) => {
     return res
       .status(404)
       .json({ success: false, message: "Player not found" });
+
+  await recordProfileChanges({
+    profileType: "player",
+    before,
+    after: p,
+    changedBy: req.user._id,
+    changedByRole: req.user.role,
+  });
+
   res.json({ success: true, message: "Active updated", data: p });
 });
 
 export const updatePromotion = asyncHandler(async (req, res, next) => {
   const { status, startDate, endDate, type } = req.body;
+
+  const before = await Player.findById(req.params.id).lean();
+  if (!before) return res.status(404).json({ success: false, message: "Player not found" });
+
   const p = await Player.findByIdAndUpdate(
     req.params.id,
     {
@@ -346,6 +414,15 @@ export const updatePromotion = asyncHandler(async (req, res, next) => {
     return res
       .status(404)
       .json({ success: false, message: "Player not found" });
+
+  await recordProfileChanges({
+    profileType: "player",
+    before,
+    after: p,
+    changedBy: req.user._id,
+    changedByRole: req.user.role,
+  });
+
   res.json({ success: true, message: "Promotion updated", data: p });
 });
 
@@ -358,8 +435,7 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
     game,
     minAge,
     maxAge,
-    jop = "all",
-    job,
+    job = "all",
     isActive,
     isPromoted,
     days,
@@ -370,22 +446,20 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   page = parseInt(page, 10) || 1;
   limit = parseInt(limit, 10) || 10;
 
-  if (job) jop = job || "all";
-
   const baseFilter = [];
 
   baseFilter.push({
     $or: [{ isConfirmed: { $ne: true } }, { isConfirmed: { $exists: false } }],
   });
 
-  if (jop === "player" || jop === "coach") {
-    baseFilter.push({ job: jop });
+  if (job === "player" || job === "coach") {
+    baseFilter.push({ job });
   } else {
     baseFilter.push({ job: { $in: ["player", "coach"] } });
   }
 
   if (search) {
-    baseFilter.push({ name: { $regex: search, $options: "i" } });
+    baseFilter.push({ name: { $regex: escapeRegex(search), $options: "i" } });
   }
 
   if (nationality) {
@@ -436,7 +510,7 @@ export const getRecentUnconfirmedPlayers = asyncHandler(async (req, res) => {
   const [players, total] = await Promise.all([
     Player.find(query)
       .select(
-        "name job jop createdAt isActive isConfirmed status age nationality game media.profileImage contactInfo.email contactInfo.phone isPromoted"
+        "name job createdAt isActive isConfirmed status age nationality game media.profileImage contactInfo.email contactInfo.phone isPromoted"
       )
       .populate("user", "name email phone role isActive")
       .sort(sort)
@@ -484,7 +558,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     customNationality,
     birthCountry,
     customBirthCountry,
-    jop,
     job,
     roleType,
     customRoleType,
@@ -504,7 +577,6 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
     customSport,
     isListed = true,
     playerIsActive = true,
-    ...otherPlayerData
   } = req.body;
 
   if (!email || !name || !password) {
@@ -556,7 +628,7 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       customNationality,
       birthCountry,
       customBirthCountry,
-      job: job || jop,
+      job,
       roleType,
       customRoleType,
       position,
@@ -576,11 +648,10 @@ export const createUserWithPlayerProfile = asyncHandler(async (req, res) => {
       media,
       isListed,
       isActive: playerIsActive,
-      ...otherPlayerData,
     });
 
     try {
-      const raw = String(jop || job || "").toLowerCase();
+      const raw = String(job || "").toLowerCase();
       const targetType = raw === "coach" ? "coach" : "player";
       const pricing = await getPricingSettings();
 
@@ -714,7 +785,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "customNationality",
     "birthCountry",
     "customBirthCountry",
-    "jop",
     "job",
     "roleType",
     "customRoleType",
@@ -724,6 +794,12 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     "customSecondaryPosition",
     "status",
     "experience",
+    "contractStatus",
+    "height",
+    "weight",
+    "preferredFoot",
+    "preferredHand",
+    "physicalCondition",
     "game",
     "customSport",
     "monthlySalary",
@@ -916,6 +992,13 @@ export const bulkUpdateUsers = asyncHandler(async (req, res) => {
   delete updates.refreshTokens;
 
   assertRoleEscalation(req.user, updates.role);
+
+  const targets = await User.find({ _id: { $in: userIds } })
+    .select("role")
+    .lean();
+  for (const target of targets) {
+    assertCanManageUser(req.user, target);
+  }
 
   const result = await User.updateMany({ _id: { $in: userIds } }, updates, {
     runValidators: true,

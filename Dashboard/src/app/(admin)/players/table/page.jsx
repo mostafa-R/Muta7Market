@@ -199,7 +199,7 @@ if (typeof window !== 'undefined') {
     const params = new URLSearchParams();
     params.set('page', String(page));
     params.set('limit', String(rowsPerPage));
-    params.set('jop', 'player');
+    params.set('job', 'player');
     if (query.trim()) params.set('search', query.trim());
     
     if (filterMode === 'active') params.set('isActive', 'true');

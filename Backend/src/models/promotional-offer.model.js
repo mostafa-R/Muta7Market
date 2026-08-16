@@ -173,6 +173,66 @@ promotionalOfferSchema.methods.recordUsage = async function (userId) {
   return this.save();
 };
 
+promotionalOfferSchema.methods.recordUsageAtomic = async function (userId) {
+  const now = new Date();
+  const perUserLimit = this.usageLimit.perUser || 1;
+
+  const baseTotalFilter =
+    this.usageLimit.total !== null
+      ? { "currentUsage.total": { $lt: this.usageLimit.total } }
+      : {};
+
+  const firstUse = await this.constructor.findOneAndUpdate(
+    {
+      _id: this._id,
+      "currentUsage.byUsers.userId": { $ne: userId },
+      ...baseTotalFilter,
+    },
+    {
+      $push: { "currentUsage.byUsers": { userId, count: 1, lastUsed: now } },
+      $inc: { "currentUsage.total": 1 },
+    },
+    { new: true }
+  );
+
+  if (firstUse) {
+    if (
+      this.usageLimit.total !== null &&
+      firstUse.currentUsage.total >= this.usageLimit.total
+    ) {
+      firstUse.status = OFFER_STATUS.EXPIRED;
+      await firstUse.save();
+    }
+    return firstUse;
+  }
+
+  const existingUse = await this.constructor.findOneAndUpdate(
+    {
+      _id: this._id,
+      "currentUsage.byUsers.userId": userId,
+      "currentUsage.byUsers.count": { $lt: perUserLimit },
+      ...baseTotalFilter,
+    },
+    {
+      $inc: { "currentUsage.byUsers.$.count": 1, "currentUsage.total": 1 },
+      $set: { "currentUsage.byUsers.$.lastUsed": now },
+    },
+    { new: true }
+  );
+
+  if (existingUse) {
+    if (
+      this.usageLimit.total !== null &&
+      existingUse.currentUsage.total >= this.usageLimit.total
+    ) {
+      existingUse.status = OFFER_STATUS.EXPIRED;
+      await existingUse.save();
+    }
+  }
+
+  return existingUse;
+};
+
 promotionalOfferSchema.statics.getActiveOffers = async function () {
   const now = new Date();
   return this.find({

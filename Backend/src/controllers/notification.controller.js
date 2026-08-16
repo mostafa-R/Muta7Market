@@ -157,24 +157,24 @@ const sendPushNotification = async (
   }
 };
 
-export const sendNotification = asyncHandler(async (req, res) => {
-  const { recipients, title, message, data = {}, options = {} } = req.body;
+const ALLOWED_CHANNELS = ["push", "email", "sms"];
+const MAX_BATCH_SIZE = 500;
 
-  if (!recipients || !title || !message) {
-    throw new ApiError(400, "Recipients, title, and message are required");
-  }
+const dispatchToUsers = async (
+  recipientUsers,
+  { title, message, data = {}, options = {}, templateId = null }
+) => {
+  const channels = (options.channels || ["push"]).filter((c) =>
+    ALLOWED_CHANNELS.includes(c)
+  );
 
-  const { channels = ["push", "email"], templateId, segment } = options;
-
-  let template;
+  let template = null;
   if (templateId) {
     template = await NotificationTemplate.findById(templateId);
     if (!template || !template.isActive) {
       throw new ApiError(404, "Notification template not found");
     }
   }
-
-  const recipientUsers = await prepareRecipients(recipients, segment);
 
   const results = {
     push: { success: 0, failed: 0, errors: [] },
@@ -192,7 +192,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
         switch (channel) {
           case "push":
             await sendPushNotification(user, title, message, data, options);
-            results.push.success++;
             break;
 
           case "email": {
@@ -205,7 +204,6 @@ export const sendNotification = asyncHandler(async (req, res) => {
               emailContent.body,
               data
             );
-            results.email.success++;
             break;
           }
 
@@ -214,11 +212,11 @@ export const sendNotification = asyncHandler(async (req, res) => {
               ? await renderTemplate(template, "sms", { user, data })
               : message;
             await smsService.sendSMS(user.phone, smsContent);
-            results.sms.success++;
             break;
           }
         }
 
+        results[channel].success++;
         await logNotification({
           user: user._id,
           channel,
@@ -248,6 +246,39 @@ export const sendNotification = asyncHandler(async (req, res) => {
       }
     }
   }
+
+  return results;
+};
+
+export const sendNotification = asyncHandler(async (req, res) => {
+  const { recipients, title, message, data = {}, options = {} } = req.body;
+
+  if (!recipients || !title || !message) {
+    throw new ApiError(400, "Recipients, title, and message are required");
+  }
+
+  const { channels = ["push"], templateId } = options;
+  for (const channel of channels) {
+    if (!ALLOWED_CHANNELS.includes(channel)) {
+      throw new ApiError(400, `Unsupported notification channel: ${channel}`);
+    }
+  }
+
+  const recipientUsers = await prepareRecipients(recipients, options.segment);
+  if (recipientUsers.length > MAX_BATCH_SIZE) {
+    throw new ApiError(
+      400,
+      `Cannot send to more than ${MAX_BATCH_SIZE} recipients at once`
+    );
+  }
+
+  const results = await dispatchToUsers(recipientUsers, {
+    title,
+    message,
+    data,
+    options,
+    templateId,
+  });
 
   res.status(200).json(
     new ApiResponse(
@@ -326,7 +357,7 @@ export const markAsRead = asyncHandler(async (req, res) => {
       _id: { $in: notificationIds },
       readAt: null,
     },
-    { readAt: new Date() }
+    { readAt: new Date(), status: "read" }
   );
 
   res
@@ -361,6 +392,12 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
   if (!notifications || !Array.isArray(notifications)) {
     throw new ApiError(400, "Notifications array is required");
   }
+  if (notifications.length > MAX_BATCH_SIZE) {
+    throw new ApiError(
+      400,
+      `Cannot process more than ${MAX_BATCH_SIZE} notifications at once`
+    );
+  }
 
   const results = [];
 
@@ -369,12 +406,23 @@ export const sendBulkNotifications = asyncHandler(async (req, res) => {
 
     const batchPromises = batch.map(async (notification) => {
       try {
+        const { title, message, data = {}, options: itemOptions = {} } =
+          notification;
+        if (!title || !message) {
+          throw new ApiError(400, "Each notification needs a title and message");
+        }
         const recipientUsers = await prepareRecipients(
           notification.recipients,
-          notification.options?.segment
+          itemOptions.segment
         );
-
-        return { success: true, recipients: recipientUsers.length };
+        const sent = await dispatchToUsers(recipientUsers, {
+          title,
+          message,
+          data,
+          options: itemOptions,
+          templateId: itemOptions.templateId || null,
+        });
+        return { success: true, recipients: recipientUsers.length, sent };
       } catch (error) {
         return {
           error: true,

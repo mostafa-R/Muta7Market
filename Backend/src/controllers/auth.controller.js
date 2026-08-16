@@ -303,6 +303,27 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid or expired verification code");
   }
 
+  if (user.pendingEmail) {
+    const taken = await userModel.findOne({
+      $or: [
+        { email: user.pendingEmail },
+        { pendingEmail: user.pendingEmail },
+      ],
+      _id: { $ne: user._id },
+    });
+
+    if (taken) {
+      user.pendingEmail = undefined;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      await user.save();
+      throw new ApiError(400, "This email is already in use");
+    }
+
+    user.email = user.pendingEmail;
+    user.pendingEmail = undefined;
+  }
+
   user.isEmailVerified = true;
   user.emailVerificationToken = undefined;
   user.emailVerificationExpires = undefined;

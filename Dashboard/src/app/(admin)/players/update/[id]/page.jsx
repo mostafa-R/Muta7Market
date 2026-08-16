@@ -39,7 +39,7 @@ const initialFormData = {
   customNationality: "",
   birthCountry: "",
   customBirthCountry: "",
-  jop: "",
+  job: "",
   roleType: null,
   customRoleType: "",
   position: null, 
@@ -187,7 +187,7 @@ export default function UpdatePlayerPage() {
 
         const sportObject = typeof player.game === 'object' ? player.game : getSportBySlug(player.game);
         const positionObject = typeof player.position === 'object' ? player.position : getPositionBySlug(player.game, player.position);
-        const roleTypeObject = typeof player.roleType === 'object' ? player.roleType : getRoleTypeBySlug(player.game, player.roleType, player.jop);
+        const roleTypeObject = typeof player.roleType === 'object' ? player.roleType : getRoleTypeBySlug(player.game, player.roleType, player.job);
 
 
         setFormData({
@@ -198,7 +198,7 @@ export default function UpdatePlayerPage() {
           customNationality: player.customNationality || "",
           birthCountry: player.birthCountry || "",
           customBirthCountry: player.customBirthCountry || "",
-          jop: player.jop || "",
+          job: player.job || "",
           roleType: roleTypeObject,
           customRoleType: player.customRoleType || "",
           position: positionObject,
@@ -384,7 +384,7 @@ export default function UpdatePlayerPage() {
       return;
     }
     if (name === "roleType") {
-      const roleTypeObject = getRoleTypeBySlug(formData.game?.slug, value, formData.jop);
+      const roleTypeObject = getRoleTypeBySlug(formData.game?.slug, value, formData.job);
       setFormData(prev => ({
         ...prev,
         roleType: roleTypeObject,
@@ -413,7 +413,7 @@ export default function UpdatePlayerPage() {
           [name]: type === "checkbox" ? checked : value,
         };
 
-        if (name === "jop") {
+        if (name === "job") {
           updated.roleType = null;
           updated.customRoleType = "";
           if (value === "coach") {
@@ -462,7 +462,7 @@ export default function UpdatePlayerPage() {
       if (formData.customNationality) formDataToSend.append("customNationality", formData.customNationality);
       if (formData.birthCountry) formDataToSend.append("birthCountry", formData.birthCountry);
       if (formData.customBirthCountry) formDataToSend.append("customBirthCountry", formData.customBirthCountry);
-      if (formData.jop) formDataToSend.append("jop", formData.jop);
+      if (formData.job) formDataToSend.append("job", formData.job);
       
       if (formData.roleType) formDataToSend.append("roleType", JSON.stringify(formData.roleType));
       if (formData.customRoleType) formDataToSend.append("customRoleType", formData.customRoleType);

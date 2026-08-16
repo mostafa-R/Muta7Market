@@ -41,11 +41,11 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   experience: apiPlayer.experience || apiPlayer.expreiance, // Fixed typo
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   annualContractValue: apiPlayer.yearSalary?.amount,
-  jop: apiPlayer.jop,
+  job: apiPlayer.job,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?jop=coach`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/players?job=coach`;
 
 export default function CoachesPage() {
   const { t } = useTranslation();

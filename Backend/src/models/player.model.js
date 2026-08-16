@@ -37,6 +37,20 @@ const mediaImageSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const validateLocalized = (v) => {
+  if (v === null || v === undefined) return true;
+  return typeof v === "string" || (v && typeof v === "object" && v.ar && v.en);
+};
+
+const localizedField = (label) => ({
+  type: mongoose.Schema.Types.Mixed,
+  default: null,
+  validate: {
+    validator: validateLocalized,
+    message: `${label} must be a string or an object with ar, en, and optional slug properties`,
+  },
+});
+
 const playerSchema = new mongoose.Schema(
   {
     isListed: {
@@ -58,6 +72,10 @@ const playerSchema = new mongoose.Schema(
     agentCode: {
       type: String,
       trim: true,
+      default: null,
+    },
+    agentCodeExpiresAt: {
+      type: Date,
       default: null,
     },
     agentLinkedAt: {
@@ -105,65 +123,19 @@ const playerSchema = new mongoose.Schema(
       enum: ["player", "coach"],
       required: true,
     },
-    jop: {
-      type: String,
-      enum: ["player", "coach"],
-      default: null,
-    },
-    roleType: {
-      type: mongoose.Schema.Types.Mixed,
-      default: null,
-      validate: {
-        validator: function (v) {
-          if (v === null) return true;
-          return (
-            typeof v === "string" ||
-            (v && typeof v === "object" && v.ar && v.en)
-          );
-        },
-        message:
-          "RoleType must be a string or an object with ar, en, and optional slug properties",
-      },
-    },
+    roleType: localizedField("RoleType"),
     customRoleType: {
       type: String,
       default: null,
       trim: true,
     },
-    position: {
-      type: mongoose.Schema.Types.Mixed,
-      validate: {
-        validator: function (v) {
-          if (v === null) return true;
-          return (
-            typeof v === "string" ||
-            (v && typeof v === "object" && v.ar && v.en)
-          );
-        },
-        message:
-          "Position must be a string or an object with ar, en, and optional slug properties",
-      },
-    },
+    position: localizedField("Position"),
     customPosition: {
       type: String,
       default: null,
       trim: true,
     },
-    secondaryPosition: {
-      type: mongoose.Schema.Types.Mixed,
-      default: null,
-      validate: {
-        validator: function (v) {
-          if (v === null) return true;
-          return (
-            typeof v === "string" ||
-            (v && typeof v === "object" && v.ar && v.en)
-          );
-        },
-        message:
-          "Secondary position must be a string or an object with ar, en, and optional slug properties",
-      },
-    },
+    secondaryPosition: localizedField("Secondary position"),
     customSecondaryPosition: {
       type: String,
       default: null,
@@ -205,6 +177,11 @@ const playerSchema = new mongoose.Schema(
       default: null,
     },
     preferredFoot: {
+      type: String,
+      enum: ["right", "left", "both", ""],
+      default: "",
+    },
+    preferredHand: {
       type: String,
       enum: ["right", "left", "both", ""],
       default: "",
@@ -269,6 +246,7 @@ const playerSchema = new mongoose.Schema(
     },
 
     contactInfo: {
+      isHidden: { type: Boolean, default: false },
       email: { type: String, default: null },
       phone: { type: String, default: null },
       agent: {
@@ -332,12 +310,7 @@ const playerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       required: true,
       validate: {
-        validator: function (v) {
-          return (
-            typeof v === "string" ||
-            (v && typeof v === "object" && v.ar && v.en)
-          );
-        },
+        validator: validateLocalized,
         message:
           "Game must be a string or an object with ar, en, and optional slug properties",
       },
@@ -382,10 +355,6 @@ const playerSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
-        if (ret.job !== undefined) {
-          ret.jop = ret.job;
-        }
-
         if (
           (ret.nationality === "other" || ret.nationality === "") &&
           ret.customNationality
@@ -443,11 +412,13 @@ const playerSchema = new mongoose.Schema(
   }
 );
 
+playerSchema.index({ user: 1 }, { unique: true, sparse: true });
 playerSchema.index({ isActive: 1, activeExpireAt: 1 });
 playerSchema.index({ name: "text", position: "text" });
 playerSchema.index({ nationality: 1, job: 1, status: 1 });
 playerSchema.index({ "isPromoted.status": 1, "isPromoted.endDate": 1 });
 playerSchema.index({ game: 1 });
+playerSchema.index({ agentCode: 1 }, { unique: true, sparse: true });
 
 playerSchema.virtual("isCurrentlyPromoted").get(function () {
   return (
@@ -467,12 +438,17 @@ playerSchema.methods.promote = async function (days, type = "featured") {
   return this.save();
 };
 
-playerSchema.methods.transfer = async function (clubName, amount) {
+playerSchema.methods.transfer = async function (
+  clubName,
+  amount,
+  options = {}
+) {
   this.status = PROFILE_STATUS.TRANSFERRED;
   this.transferredTo = {
     club: clubName,
-    date: new Date(),
-    amount,
+    startDate: options.transferDate || new Date(),
+    endDate: options.endDate || null,
+    amount: Number(amount) || 0,
   };
   return this.save();
 };

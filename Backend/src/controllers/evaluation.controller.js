@@ -24,6 +24,16 @@ const getSubjectOwnerId = async (subjectType, subject) => {
 
 const validateContext = async (evaluator, subjectType, subject, context) => {
   const contextType = context?.type || "general";
+  const ALLOWED_CONTEXT_TYPES = [
+    "trial",
+    "interview",
+    "training",
+    "general",
+    "transfer",
+  ];
+  if (!ALLOWED_CONTEXT_TYPES.includes(contextType)) {
+    throw new ApiError(400, "Invalid context type");
+  }
 
   if (PROFILE_SUBJECT_TYPES.includes(subjectType)) {
     const TargetModel = subjectType === "coach" ? Coach : Player;
@@ -45,37 +55,51 @@ const validateContext = async (evaluator, subjectType, subject, context) => {
         `Subject is not of type ${subjectType}`
       );
     }
+    if (String(user._id) === String(evaluator)) {
+      throw new ApiError(403, "You cannot evaluate yourself");
+    }
   }
 
-  if (contextType !== "general") {
-    const ref = context?.ref;
-    if (!ref || !isValidObjectId(ref)) {
+  if (contextType === "general") {
+    return contextType;
+  }
+
+  const ref = context?.ref;
+  if (!ref || !isValidObjectId(ref)) {
+    throw new ApiError(
+      400,
+      "context.ref is required when context.type is provided"
+    );
+  }
+
+  if (contextType === "transfer") {
+    const offer = await TransferOffer.findById(ref).select(
+      "fromUser toUser type status"
+    );
+    if (!offer) throw new ApiError(404, "Linked transfer offer not found");
+    const isParty =
+      String(offer.fromUser) === String(evaluator) ||
+      String(offer.toUser) === String(evaluator);
+    if (!isParty) {
+      throw new ApiError(
+        403,
+        "You can only evaluate within a transfer offer you are a party to"
+      );
+    }
+    if (offer.status === "pending" || offer.status === "countered") {
       throw new ApiError(
         400,
-        "context.ref is required when context.type is provided"
+        "Evaluations are only allowed after the offer is resolved"
       );
     }
-    if (["transfer_offer", "interest", "official_offer"].includes(contextType)) {
-      const offer = await TransferOffer.findById(ref).select(
-        "fromUser toUser type status"
-      );
-      if (!offer) throw new ApiError(404, "Linked transfer offer not found");
-      const isParty =
-        String(offer.fromUser) === String(evaluator) ||
-        String(offer.toUser) === String(evaluator);
-      if (!isParty) {
-        throw new ApiError(
-          403,
-          "You can only evaluate within a transfer offer you are a party to"
-        );
-      }
-      if (offer.status === "pending" || offer.status === "countered") {
-        throw new ApiError(
-          400,
-          "Evaluations are only allowed after the offer is resolved"
-        );
-      }
-    }
+    return contextType;
+  }
+
+  if (String(ref) !== String(subject)) {
+    throw new ApiError(
+      400,
+      `context.ref must reference the evaluated ${subjectType} for ${contextType} context`
+    );
   }
   return contextType;
 };

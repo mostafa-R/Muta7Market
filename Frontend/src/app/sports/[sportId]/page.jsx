@@ -27,7 +27,7 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
   experience: apiPlayer.expreiance,
-  jop: apiPlayer.jop,
+  job: apiPlayer.job,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 
@@ -143,7 +143,7 @@ const SportDetailPage = () => {
     const matchesStatus =
       statusFilter === "all" || player.status === statusFilter;
     const matchesCategory =
-      categoryFilter === "all" || player.jop === categoryFilter;
+      categoryFilter === "all" || player.job === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 

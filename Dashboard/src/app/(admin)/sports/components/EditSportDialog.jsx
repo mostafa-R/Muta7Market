@@ -76,7 +76,7 @@ export default function EditSportDialog({
       })) || [],
     roleTypes:
       sport?.roleTypes?.map((r) => ({
-        jop: r?.jop || "",
+        job: r?.job || "",
         name: { ar: r?.name?.ar || "", en: r?.name?.en || "" },
       })) || [],
     seo: {
@@ -127,7 +127,7 @@ export default function EditSportDialog({
         })) || [],
       roleTypes:
         sport?.roleTypes?.map((r) => ({
-          jop: r?.jop || "",
+          job: r?.job || "",
           name: { ar: r?.name?.ar || "", en: r?.name?.en || "" },
         })) || [],
       seo: {
@@ -178,7 +178,7 @@ export default function EditSportDialog({
 
 
     form.roleTypes.forEach((r, index) => {
-      if ((r?.name?.ar || r?.name?.en || r?.jop) && (!r?.jop || !r?.name?.ar || !r?.name?.en)) {
+      if ((r?.name?.ar || r?.name?.en || r?.job) && (!r?.job || !r?.name?.ar || !r?.name?.en)) {
         errors[`role_${index}`] = "كل نوع دور يجب أن يحتوي على الفئة (لاعب/مدرب) والاسم بالعربية والإنجليزية";
       }
     });
@@ -243,7 +243,7 @@ export default function EditSportDialog({
     }
     setForm((prev) => ({
       ...prev,
-      roleTypes: [...prev.roleTypes, { jop: "", name: { ar: "", en: "" } }],
+      roleTypes: [...prev.roleTypes, { job: "", name: { ar: "", en: "" } }],
     }));
     setHasUnsavedChanges(true);
   }, [form.roleTypes.length]);
@@ -259,8 +259,8 @@ export default function EditSportDialog({
   const updateRole = useCallback((index, path, value) => {
     setForm((prev) => {
       const next = structuredClone(prev);
-      if (path === "jop") {
-        next.roleTypes[index].jop = value;
+      if (path === "job") {
+        next.roleTypes[index].job = value;
       } else {
         next.roleTypes[index].name[path] = value;
       }
@@ -316,13 +316,13 @@ export default function EditSportDialog({
 
     const roleTypes = form.roleTypes
       .map((r) => ({
-        jop: (r?.jop || "").trim(),
+        job: (r?.job || "").trim(),
         name: {
           ar: (r?.name?.ar || "").trim(),
           en: (r?.name?.en || "").trim(),
         },
       }))
-      .filter((r) => r.jop && r.name.ar && r.name.en);
+      .filter((r) => r.job && r.name.ar && r.name.en);
 
     return {
       name: {
@@ -739,7 +739,7 @@ export default function EditSportDialog({
               ) : (
                 <div className="space-y-4">
                   {form.roleTypes.map((role, index) => {
-                    const jobOption = JOB_OPTIONS.find(opt => opt.value === role.jop);
+                    const jobOption = JOB_OPTIONS.find(opt => opt.value === role.job);
                     return (
                       <div
                         key={`role-${index}`}
@@ -769,8 +769,8 @@ export default function EditSportDialog({
                           <div>
                             <label className="block text-xs font-medium text-gray-600 mb-1">الفئة</label>
                             <Select
-                              value={role.jop || ""}
-                              onValueChange={(value) => updateRole(index, "jop", value)}
+                              value={role.job || ""}
+                              onValueChange={(value) => updateRole(index, "job", value)}
                             >
                               <SelectTrigger className={validationErrors[`role_${index}`] ? "border-red-300" : ""}>
                                 <SelectValue placeholder="الفئة" />

@@ -96,7 +96,7 @@ export const useSportsData = () => {
     }
 
     const filteredRoles = sport.roleTypes.filter(
-      (role) => role.jop === jobType
+      (role) => role.job === jobType
     );
 
     const roleTypes = filteredRoles.map((role) => ({

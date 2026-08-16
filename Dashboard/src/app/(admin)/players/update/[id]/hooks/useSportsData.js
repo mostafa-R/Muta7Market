@@ -59,10 +59,10 @@ export function useSportsData() {
     return formatObject(position);
   }, [sportsOptions, formatObject]);
 
-  const getRoleTypeBySlug = useCallback((sportSlug, roleTypeSlug, jop) => {
+  const getRoleTypeBySlug = useCallback((sportSlug, roleTypeSlug, job) => {
     const sport = sportsOptions.find(s => s.slug === sportSlug);
     if (!sport || !sport.roleTypes) return null;
-    const role = sport.roleTypes.find(r => r.jop === jop && formatObject(r)?.slug === roleTypeSlug);
+    const role = sport.roleTypes.find(r => r.job === job && formatObject(r)?.slug === roleTypeSlug);
     return formatObject(role);
   }, [sportsOptions, formatObject]);
   

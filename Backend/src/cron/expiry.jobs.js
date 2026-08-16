@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import Entitlement from "../models/entitlement.model.js";
+import Listing from "../models/listing.model.js";
 import Player from "../models/player.model.js";
 import Subscription from "../models/subscription.model.js";
 import User from "../models/user.model.js";
@@ -70,11 +71,28 @@ async function runExpirySweep(now = new Date()) {
       }
     );
 
+    const listingsPromo = await Listing.updateMany(
+      {
+        "promotion.isPromoted": true,
+        "promotion.endDate": { $ne: null, $lte: n },
+      },
+      {
+        $set: { "promotion.isPromoted": false },
+        $unset: {
+          "promotion.endDate": "",
+          "promotion.startDate": "",
+          "promotion.promotionType": "",
+          "promotion.position": "",
+        },
+      }
+    );
+
     const result = {
       users: users.modifiedCount,
       playersActive: playersActive.modifiedCount,
       playersPromo: playersPromo.modifiedCount,
       playersPro: playersPro.modifiedCount,
+      listingsPromo: listingsPromo.modifiedCount,
       entitlements: entitlements.modifiedCount,
       subscriptions: subscriptions.modifiedCount,
     };

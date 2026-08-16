@@ -46,6 +46,7 @@ const INDEX_MAPPINGS = {
     status: { type: "keyword" },
     gender: { type: "keyword" },
     preferredFoot: { type: "keyword" },
+    preferredHand: { type: "keyword" },
     contractStatus: { type: "keyword" },
     physicalCondition: { type: "keyword" },
     age: { type: "integer" },
@@ -106,6 +107,7 @@ const buildPlayerSearchDoc = (player) => {
     height: doc.height ?? null,
     weight: doc.weight ?? null,
     preferredFoot: doc.preferredFoot || null,
+    preferredHand: doc.preferredHand || null,
     contractStatus: doc.contractStatus || null,
     physicalCondition: doc.physicalCondition || null,
     monthlySalaryAmount: salary.amount ?? null,
@@ -258,6 +260,8 @@ const buildSearchQuery = (type, { q, filters = {} }) => {
   if (filters.status) filter.push({ term: { status: filters.status } });
   if (filters.preferredFoot)
     filter.push({ term: { preferredFoot: filters.preferredFoot } });
+  if (filters.preferredHand)
+    filter.push({ term: { preferredHand: filters.preferredHand } });
   if (filters.contractStatus)
     filter.push({ term: { contractStatus: filters.contractStatus } });
   if (filters.physicalCondition)

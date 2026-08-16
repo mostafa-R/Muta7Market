@@ -286,9 +286,11 @@ export const getAllCoaches = async (req, res) => {
     const total = await Coach.countDocuments(filter);
     const totalPages = Math.ceil(total / limitNum);
 
+    const canSeeContacts = await viewerCanSeeContacts(req);
+
     res.status(200).json({
       success: true,
-      data: coaches,
+      data: coaches.map((c) => sanitizeCoachForViewer(c, canSeeContacts)),
       pagination: {
         currentPage: pageNum,
         totalPages,
@@ -673,9 +675,11 @@ export const getCoachesByCategory = async (req, res) => {
       status: PROFILE_STATUS.AVAILABLE,
     });
 
+    const canSeeContacts = await viewerCanSeeContacts(req);
+
     res.status(200).json({
       success: true,
-      data: coaches,
+      data: coaches.map((c) => sanitizeCoachForViewer(c, canSeeContacts)),
       pagination: {
         currentPage: pageNum,
         totalPages: Math.ceil(total / limitNum),

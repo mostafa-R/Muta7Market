@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { escapeRegex } from "../utils/helpers.js";
 import { sendInternalNotification } from "./notification.controller.js";
 
 
@@ -35,15 +36,18 @@ const generateAgentCode = () => {
   return code;
 };
 
+const AGENT_CODE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 export const getManagedPlayers = asyncHandler(async (req, res) => {
   const agentId = req.user._id;
   const { page = 1, limit = 20, search } = req.query;
 
   const filter = { agentUser: agentId };
   if (search) {
+    const safeSearch = escapeRegex(search);
     filter.$or = [
-      { "name.en": { $regex: search, $options: "i" } },
-      { "name.ar": { $regex: search, $options: "i" } },
+      { "name.en": { $regex: safeSearch, $options: "i" } },
+      { "name.ar": { $regex: safeSearch, $options: "i" } },
     ];
   }
 
@@ -138,6 +142,7 @@ export const removeAgent = asyncHandler(async (req, res) => {
   const previousAgent = player.agentUser;
   player.agentUser = null;
   player.agentCode = null;
+  player.agentCodeExpiresAt = null;
   player.agentLinkedAt = null;
   await player.save();
 
@@ -168,6 +173,7 @@ export const generateAgentLinkCode = asyncHandler(async (req, res) => {
   }
 
   player.agentCode = generateAgentCode();
+  player.agentCodeExpiresAt = new Date(Date.now() + AGENT_CODE_TTL_MS);
   await player.save();
 
   res.status(200).json(
@@ -192,9 +198,24 @@ export const redeemAgentCode = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Invalid or expired agent link code");
   }
 
+  if (player.agentCodeExpiresAt && player.agentCodeExpiresAt < new Date()) {
+    player.agentCode = null;
+    player.agentCodeExpiresAt = null;
+    await player.save();
+    throw new ApiError(404, "Invalid or expired agent link code");
+  }
+
+  if (
+    player.agentUser &&
+    String(player.agentUser) !== String(agentId)
+  ) {
+    throw new ApiError(400, "This player is already managed by an agent");
+  }
+
   player.agentUser = agentId;
   player.agentLinkedAt = new Date();
   player.agentCode = null;
+  player.agentCodeExpiresAt = null;
   await player.save();
 
   await sendInternalNotification(

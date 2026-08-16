@@ -87,8 +87,8 @@ export default function CreateSportForm({ onSportCreated }) {
 
     const invalidRoles = formData.roleTypes.some(
       (r, index) => {
-        if (!r?.jop && !r?.name?.ar && !r?.name?.en) return false; 
-        if (!r?.jop || !r?.name?.ar || !r?.name?.en) {
+        if (!r?.job && !r?.name?.ar && !r?.name?.en) return false; 
+        if (!r?.job || !r?.name?.ar || !r?.name?.en) {
           errors[`role_${index}`] = "كل نوع دور يجب أن يحتوي على (لاعب/مدرب) والاسم بالعربية والإنجليزية";
           return true;
         }
@@ -183,7 +183,7 @@ export default function CreateSportForm({ onSportCreated }) {
     }
     setFormData((prev) => ({
       ...prev,
-      roleTypes: [...prev.roleTypes, { jop: "", name: { ar: "", en: "" } }],
+      roleTypes: [...prev.roleTypes, { job: "", name: { ar: "", en: "" } }],
     }));
     setHasUnsavedChanges(true);
   }, [formData.roleTypes.length]);
@@ -199,8 +199,8 @@ export default function CreateSportForm({ onSportCreated }) {
   const updateRole = useCallback((index, path, value) => {
     setFormData((prev) => {
       const clone = structuredClone(prev);
-      if (path === "jop") {
-        clone.roleTypes[index].jop = value;
+      if (path === "job") {
+        clone.roleTypes[index].job = value;
       } else {
         const segments = path.split(".");
         let target = clone.roleTypes[index];
@@ -261,13 +261,13 @@ export default function CreateSportForm({ onSportCreated }) {
 
     const roleTypes = formData.roleTypes
       .map((r) => ({
-        jop: (r?.jop || "").trim(),
+        job: (r?.job || "").trim(),
         name: {
           ar: (r?.name?.ar || "").trim(),
           en: (r?.name?.en || "").trim(),
         },
       }))
-      .filter((r) => r.jop && r.name.ar && r.name.en);
+      .filter((r) => r.job && r.name.ar && r.name.en);
 
     const payload = {
       name: { 
@@ -595,7 +595,7 @@ export default function CreateSportForm({ onSportCreated }) {
                 </div>
               ) : (
                 formData.roleTypes.map((role, index) => {
-                  const jobOption = JOB_OPTIONS.find(opt => opt.value === role.jop);
+                  const jobOption = JOB_OPTIONS.find(opt => opt.value === role.job);
                   return (
                     <div key={`role-${index}`} className="p-4 bg-gray-50 rounded-lg border">
                       <div className="flex items-center justify-between mb-3">
@@ -621,8 +621,8 @@ export default function CreateSportForm({ onSportCreated }) {
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-1">الفئة</label>
                           <Select 
-                            value={role.jop || ""} 
-                            onValueChange={(value) => updateRole(index, "jop", value)}
+                            value={role.job || ""} 
+                            onValueChange={(value) => updateRole(index, "job", value)}
                           >
                             <SelectTrigger className={validationErrors[`role_${index}`] ? "border-red-300" : ""}>
                               <SelectValue placeholder="اختر الفئة" />

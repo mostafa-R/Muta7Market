@@ -79,7 +79,7 @@ const useSportsStore = create((set, get) => ({
     if (!sport) return [];
 
     if (jobType) {
-      return sport.roleTypes.filter((role) => role.jop === jobType) || [];
+      return sport.roleTypes.filter((role) => role.job === jobType) || [];
     }
 
     return sport.roleTypes || [];

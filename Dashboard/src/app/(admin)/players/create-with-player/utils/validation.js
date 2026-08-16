@@ -103,7 +103,7 @@ export const validateStep2 = (formData) => {
  */
 export const validateStep3 = (formData) => {
   // Check required job field
-  if (!formData.jop) {
+  if (!formData.job) {
     toast.error("يرجى اختيار الوظيفة", {
       description: "اختر ما إذا كنت لاعب أو مدرب",
       duration: 4000

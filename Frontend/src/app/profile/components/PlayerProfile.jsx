@@ -219,7 +219,7 @@ const PlayerProfile = ({
         age: player.age || "",
         gender: player.gender || "",
         nationality: player.nationality || "",
-        jop: player.jop || "",
+        job: player.job || "",
         position: player.position || "",
         status: player.status || "",
         experience: player.experience || 0,
@@ -373,15 +373,15 @@ const PlayerProfile = ({
                 <FormField
                   label={t("profile.job")}
                   value={
-                    formData.jop === "player"
+                    formData.job === "player"
                       ? t("common.player")
-                      : formData.jop === "coach"
+                      : formData.job === "coach"
                       ? t("common.coach")
-                      : formData.jop
+                      : formData.job
                   }
                   onChange={handleChange}
                   isDisabled={true}
-                  name="jop"
+                  name="job"
                 />
                 <FormField
                   label={t("player.position")}
@@ -416,7 +416,7 @@ const PlayerProfile = ({
                     value={getTranslatedValue(
                       "roleType",
                       player.roleType,
-                      player.jop === "player" ? "playerRoles" : "coachRoles"
+                      player.job === "player" ? "playerRoles" : "coachRoles"
                     )}
                     isDisabled={true}
                   />

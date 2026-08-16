@@ -14,7 +14,6 @@ export const createPlayerSchema = Joi.object({
   customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
   job: Joi.string().valid("player", "coach"),
-  jop: Joi.string().valid("player", "coach"),
   roleType: Joi.alternatives()
     .try(
       Joi.string().trim().allow("", null),
@@ -60,6 +59,7 @@ export const createPlayerSchema = Joi.object({
   height: Joi.number().min(100).max(230).optional(),
   weight: Joi.number().min(30).max(250).optional(),
   preferredFoot: Joi.string().valid("right", "left", "both", "").optional(),
+  preferredHand: Joi.string().valid("right", "left", "both", "").optional(),
   physicalCondition: Joi.string().valid("available", "injured").optional(),
   careerHistory: Joi.array()
     .items(
@@ -189,7 +189,6 @@ export const updatePlayerSchema = Joi.object({
   birthCountry: Joi.string().trim().allow("", null).optional(),
   customBirthCountry: Joi.string().trim().allow("", null).optional(),
 
-  jop: Joi.string().valid("player", "coach"),
   job: Joi.string().valid("player", "coach"),
   roleType: Joi.alternatives()
     .try(
@@ -234,6 +233,7 @@ export const updatePlayerSchema = Joi.object({
   height: Joi.number().min(100).max(230).optional(),
   weight: Joi.number().min(30).max(250).optional(),
   preferredFoot: Joi.string().valid("right", "left", "both", "").optional(),
+  preferredHand: Joi.string().valid("right", "left", "both", "").optional(),
   physicalCondition: Joi.string().valid("available", "injured").optional(),
   careerHistory: Joi.array()
     .items(
@@ -347,6 +347,7 @@ export const filterPlayerSchema = Joi.object({
   position: Joi.string(),
   secondaryPosition: Joi.string(),
   preferredFoot: Joi.string(),
+  preferredHand: Joi.string(),
   contractStatus: Joi.string(),
   physicalCondition: Joi.string(),
   skills: Joi.string(),

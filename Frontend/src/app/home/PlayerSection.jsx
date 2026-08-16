@@ -29,7 +29,7 @@ const transformApiDataToPlayer = (apiPlayer) => ({
   profileImage: apiPlayer.media?.profileImage?.url || undefined,
   rating: undefined,
   experience: apiPlayer.experience || apiPlayer.expreiance, // Fixed typo
-  jop: apiPlayer.jop,
+  job: apiPlayer.job,
   isPromoted: apiPlayer.isPromoted || { status: false },
 });
 

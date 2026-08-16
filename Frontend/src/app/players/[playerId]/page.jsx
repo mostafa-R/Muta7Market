@@ -715,12 +715,12 @@ const PlayerProfile = () => {
       {/* Dynamic Social Media Meta Tags for Enhanced Sharing */}
       <DynamicSocialMeta
         title={`${player.name} - ${
-          player.jop === "coach" ? "مدرب" : "لاعب"
+          player.job === "coach" ? "مدرب" : "لاعب"
         } ${getSportText(player.game, t)} | ${
-          player.jop === "coach" ? "Coach" : "Player"
+          player.job === "coach" ? "Coach" : "Player"
         } Profile`}
         description={
-          player.jop === "coach"
+          player.job === "coach"
             ? `Professional ${getSportText(
                 player.game,
                 t
@@ -745,7 +745,7 @@ const PlayerProfile = () => {
           age: player.age,
           category: player.category,
           status: player.status,
-          isCoach: player.jop === "coach",
+          isCoach: player.job === "coach",
         }}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -808,7 +808,7 @@ const PlayerProfile = () => {
                         </Badge>
                         <Badge
                           className={`${getCategoryColor(
-                            player.category || player.jop
+                            player.category || player.job
                           )} text-white px-4 py-2 text-sm font-medium`}
                         >
                           {player.category === "Elite"
@@ -817,9 +817,9 @@ const PlayerProfile = () => {
                             ? t("players.category.professional")
                             : player.category === "Amateur"
                             ? t("players.category.amateur")
-                            : player.jop === "player"
+                            : player.job === "player"
                             ? t("common.player")
-                            : player.jop === "coach"
+                            : player.job === "coach"
                             ? t("common.coach")
                             : t("common.player")}
                         </Badge>
@@ -883,7 +883,7 @@ const PlayerProfile = () => {
                 <CardTitle className="flex items-center space-x-2">
                   <Award className="w-5 h-5 text-primary" />
                   <span>
-                    {player.jop === "coach"
+                    {player.job === "coach"
                       ? t("playerDetail.coachInformation")
                       : t("playerDetail.playerInformation")}
                   </span>
@@ -971,7 +971,7 @@ const PlayerProfile = () => {
                                 {player.roleType[language]}
                               </div>
                             </div>
-                          ) : player.jop === "player" ? (
+                          ) : player.job === "player" ? (
                             t(
                               `playerRoles.${getStringValue(player.roleType)}`,
                               {
@@ -1003,7 +1003,7 @@ const PlayerProfile = () => {
                 {!isUserActive && (
                   <>
                     <div className="p-4 text-center bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm">
-                      {player.jop === "coach"
+                      {player.job === "coach"
                         ? t("playerDetail.activateToViewGalleryForCoaches")
                         : t("playerDetail.activateToViewGallery")}
                     </div>

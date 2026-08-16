@@ -99,14 +99,14 @@ export const useSportsData = () => {
     if (!sport || !sport.roleTypes) return [];
     
     return sport.roleTypes
-      .filter(roleType => roleType.jop === jobType)
+      .filter(roleType => roleType.job === jobType)
       .map((roleType) => ({
         id: roleType._id,
         name: roleType.name.ar, // Use Arabic name
         value: roleType.name.en.toLowerCase().replace(/\s+/g, "_"), // Create value from English name
         nameAr: roleType.name.ar,
         nameEn: roleType.name.en,
-        jop: roleType.jop,
+        job: roleType.job,
         // Include full object data for form submission
         objectData: {
           ar: roleType.name.ar,
@@ -123,7 +123,7 @@ export const useSportsData = () => {
     sportsData.forEach(sport => {
       if (sport.roleTypes) {
         sport.roleTypes
-          .filter(roleType => roleType.jop === jobType)
+          .filter(roleType => roleType.job === jobType)
           .forEach(roleType => {
             // Check if this role type already exists (by name)
             const exists = allRoleTypes.some(existing => 
@@ -137,7 +137,7 @@ export const useSportsData = () => {
                  value: roleType.name.en.toLowerCase().replace(/\s+/g, "_"),
                  nameAr: roleType.name.ar,
                  nameEn: roleType.name.en,
-                 jop: roleType.jop,
+                 job: roleType.job,
                  // Include full object data for form submission
                  objectData: {
                    ar: roleType.name.ar,

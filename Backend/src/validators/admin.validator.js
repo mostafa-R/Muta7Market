@@ -21,8 +21,7 @@ export const updatePromotionSchema = Joi.object({
 export const getRecentPeopleQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
-  jop: Joi.string().valid("player", "coach", "all").default("all"),
-  job: Joi.string().valid("player", "coach", "all").optional(),
+  job: Joi.string().valid("player", "coach", "all").default("all"),
   isActive: Joi.string().valid("true", "false").optional(),
   isPromoted: Joi.string().valid("true", "false").optional(),
   minAge: Joi.number().integer().min(0).optional(),
@@ -168,12 +167,10 @@ export const createPlayerSchema = Joi.object({
     "string.max": "Nationality cannot exceed 100 characters",
   }),
 
-  jop: Joi.string().valid("player", "coach").messages({
+  job: Joi.string().valid("player", "coach").messages({
     "any.only": "Job must be either player or coach",
     "any.required": "Job is required",
   }),
-
-  job: Joi.string().valid("player", "coach").optional(),
 
   position: Joi.string().trim().max(100).messages({
     "string.max": "Position cannot exceed 100 characters",
@@ -294,7 +291,7 @@ export const createPlayerSchema = Joi.object({
     }).default({ en: "", ar: "" }),
     keywords: Joi.array().items(Joi.string().max(50)).default([]),
   }).default(),
-}).or("jop", "job").messages({
+}).or("job").messages({
   "object.missing": "Job is required",
 });
 
@@ -340,10 +337,9 @@ export const updatePlayerSchema = Joi.object({
   }),
 
   // Professional Information
-  jop: Joi.string().valid("player", "coach").messages({
+  job: Joi.string().valid("player", "coach").messages({
     "any.only": "Job must be either player or coach",
   }),
-  job: Joi.string().valid("player", "coach").optional(),
 
   roleType: Joi.alternatives()
     .try(
@@ -642,7 +638,6 @@ export const getPlayersQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   search: Joi.string().trim().max(200),
-  jop: Joi.string().valid("player", "coach").optional(), // ✅ إضافة jop field
   job: Joi.string().valid("player", "coach").optional(),
   position: Joi.string().max(100),
   secondaryPosition: Joi.string().max(100),

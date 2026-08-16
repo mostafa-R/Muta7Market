@@ -192,12 +192,12 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        if (!values.jop) {
-          errors.jop = t("sportsValidation.categoryRequired");
+        if (!values.job) {
+          errors.job = t("sportsValidation.categoryRequired");
         }
 
         if (
-          values.jop &&
+          values.job &&
           (!values.roleType || getRoleTypeValue(values.roleType).trim() === "")
         ) {
           errors.roleType = t("sportsValidation.roleTypeRequired");
@@ -217,7 +217,7 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        if (values.jop === "player") {
+        if (values.job === "player") {
           if (
             !values.position ||
             getPositionValue(values.position).trim() === ""
@@ -231,7 +231,7 @@ export const usePlayerForm = (idParam, router) => {
           }
         }
 
-        if (values.jop === "player" && isOtherPosition(values.position)) {
+        if (values.job === "player" && isOtherPosition(values.position)) {
           if (!values.customPosition || values.customPosition.trim() === "") {
             errors.customPosition = t(
               "sportsValidation.customPositionRequired"
@@ -355,8 +355,8 @@ export const usePlayerForm = (idParam, router) => {
               customNationality: playerData.customNationality || "",
               birthCountry: playerData.birthCountry || "",
               customBirthCountry: playerData.customBirthCountry || "",
-              jop: playerData.jop || "",
-              jopSelected: true,
+              job: playerData.job || "",
+              jobSelected: true,
               roleType: playerData.roleType || "",
               customRoleType: playerData.customRoleType || "",
               position: playerData.position || "",
@@ -652,7 +652,7 @@ export const usePlayerForm = (idParam, router) => {
     delete payload.profilePicturePreview;
     delete payload.profilePictureFile;
     delete payload.documentFile;
-    delete payload.jopSelected;
+    delete payload.jobSelected;
     delete payload.statusSelected;
 
     return payload;
@@ -734,7 +734,7 @@ export const usePlayerForm = (idParam, router) => {
       fd.append("game", payload.game || "");
     }
     fd.append("customSport", payload.customSport || "");
-    fd.append("jop", payload.jop || "");
+    fd.append("job", payload.job || "");
     // Handle roleType field which can be string or object
     if (typeof payload.roleType === "object") {
       // Make sure the object is properly serialized
@@ -780,7 +780,7 @@ export const usePlayerForm = (idParam, router) => {
           "customBirthCountry",
           "game",
           "customSport",
-          "jop",
+          "job",
           "roleType",
           "customRoleType",
           "position",
@@ -804,7 +804,7 @@ export const usePlayerForm = (idParam, router) => {
       "isPromoted",
       "contactInfo",
       // Add multilingual data fields
-      "jopName",
+      "jobName",
       "roleTypeName",
       "gameName",
       "positionName",

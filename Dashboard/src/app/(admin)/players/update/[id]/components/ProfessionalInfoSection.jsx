@@ -21,13 +21,13 @@ export default function ProfessionalInfoSection({
   })) || [];
   
   const availableRoleTypes = selectedSport?.roleTypes
-    ?.filter(r => r.jop === formData.jop)
+    ?.filter(r => r.job === formData.job)
     .map(r => ({ ...formatObject(r), id: r._id })) || [];
   
-  if (selectedSport && formData.jop === 'player') {
+  if (selectedSport && formData.job === 'player') {
     availablePositions.push({ ar: "أخرى", en: "Other", slug: "other", id: "other" });
   }
-  if (selectedSport && formData.jop) {
+  if (selectedSport && formData.job) {
     availableRoleTypes.push({ ar: "أخرى", en: "Other", slug: "other", id: "other" });
   }
 
@@ -52,8 +52,8 @@ export default function ProfessionalInfoSection({
             الوظيفة
           </label>
           <select
-            name="jop"
-            value={formData.jop}
+            name="job"
+            value={formData.job}
             onChange={handleInputChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white"
             required
@@ -115,10 +115,10 @@ export default function ProfessionalInfoSection({
             value={formData.roleType?.slug || ""}
             onChange={handleInputChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-            disabled={isLoading || !formData.jop || !formData.game}
+            disabled={isLoading || !formData.job || !formData.game}
           >
             <option value="" disabled>
-              {isLoading ? "جاري التحميل..." : !formData.jop ? "اختر الوظيفة أولاً" : !formData.game ? "اختر الرياضة أولاً" : "اختر الفئة"}
+              {isLoading ? "جاري التحميل..." : !formData.job ? "اختر الوظيفة أولاً" : !formData.game ? "اختر الرياضة أولاً" : "اختر الفئة"}
             </option>
             {availableRoleTypes.map((option) => (
               <option key={option.id} value={option.slug}>
@@ -155,12 +155,12 @@ export default function ProfessionalInfoSection({
             value={formData.position?.slug || ""}
             onChange={handleInputChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-            disabled={!formData.game || formData.jop === "coach"}
+            disabled={!formData.game || formData.job === "coach"}
           >
             <option value="" disabled>
-              {formData.jop === "coach" ? "غير متاح للمدربين" : !formData.game ? "اختر الرياضة أولاً" : "اختر المركز"}
+              {formData.job === "coach" ? "غير متاح للمدربين" : !formData.game ? "اختر الرياضة أولاً" : "اختر المركز"}
             </option>
-            {formData.jop !== "coach" && availablePositions.map((option) => (
+            {formData.job !== "coach" && availablePositions.map((option) => (
               <option key={option.id} value={option.slug}>
                 {option.ar}
               </option>
@@ -169,7 +169,7 @@ export default function ProfessionalInfoSection({
         </div>
 
         {/* Custom Position Field - Conditional */}
-        {showCustomFields.position && formData.jop !== "coach" && (
+        {showCustomFields.position && formData.job !== "coach" && (
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-2">
               حدد المركز

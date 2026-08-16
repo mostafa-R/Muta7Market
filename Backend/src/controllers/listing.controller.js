@@ -36,6 +36,26 @@ const updateExpiredListings = async () => {
   );
 };
 
+const sanitizeListingForViewer = (offer, viewer, isStaff, unlockCost) => {
+  const data = offer?.toJSON ? offer.toJSON() : { ...offer };
+  if (!data) return data;
+  if (!isStaff) {
+    if (data.user && typeof data.user === "object") {
+      delete data.user.email;
+      delete data.user.phone;
+    }
+    const userId = String(viewer?._id || viewer?.id || "");
+    const ownerId = data.user?._id
+      ? String(data.user._id)
+      : String(data.user || "");
+    const isOwner = userId && ownerId === userId;
+    if (!isOwner && data.contactInfo?.isHidden) {
+      data.contactInfo = { isHidden: true, unlockCost: unlockCost ?? null };
+    }
+  }
+  return data;
+};
+
 async function createListingInvoice(
   userId,
   offerId,
@@ -285,11 +305,16 @@ export const getAllListings = asyncHandler(async (req, res) => {
     Listing.countDocuments(query),
   ]);
 
+  const pricing = await getPricingSettings();
+  const sanitized = offers.map((o) =>
+    sanitizeListingForViewer(o, req.user, isStaff, pricing.UNLOCK_CONTACT)
+  );
+
   res.status(200).json(
     new ApiResponse(
       200,
       {
-        offers,
+        offers: sanitized,
         pagination: {
           total,
           pages: Math.ceil(total / limitNum),
@@ -342,6 +367,11 @@ export const getListingById = asyncHandler(async (req, res) => {
       isHidden: true,
       unlockCost: offer.pricing?.unlockContactCost || pricing.UNLOCK_CONTACT,
     };
+  }
+
+  if (!isStaff && !isOwner && offerData.user && typeof offerData.user === "object") {
+    delete offerData.user.email;
+    delete offerData.user.phone;
   }
 
   res
@@ -706,10 +736,10 @@ export const searchListings = asyncHandler(async (req, res) => {
     isActive: true,
     "payment.isPaid": true,
     $or: [
-      { "title.en": { $regex: search, $options: "i" } },
-      { "title.ar": { $regex: search, $options: "i" } },
-      { "description.en": { $regex: search, $options: "i" } },
-      { "description.ar": { $regex: search, $options: "i" } },
+      { "title.en": { $regex: escapeRegex(search), $options: "i" } },
+      { "title.ar": { $regex: escapeRegex(search), $options: "i" } },
+      { "description.en": { $regex: escapeRegex(search), $options: "i" } },
+      { "description.ar": { $regex: escapeRegex(search), $options: "i" } },
     ],
   };
 
@@ -717,7 +747,7 @@ export const searchListings = asyncHandler(async (req, res) => {
     query.category = category;
   }
   if (location) {
-    query["offerDetails.location"] = { $regex: location, $options: "i" };
+    query["offerDetails.location"] = { $regex: escapeRegex(location), $options: "i" };
   }
   if (nationality) {
     query["targetProfile.nationality"] = nationality;
@@ -753,11 +783,21 @@ export const searchListings = asyncHandler(async (req, res) => {
     Listing.countDocuments(query),
   ]);
 
+  const pricing = await getPricingSettings();
+  const sanitized = offers.map((o) =>
+    sanitizeListingForViewer(
+      o,
+      req.user,
+      STAFF_ROLES.includes(req.user?.role),
+      pricing.UNLOCK_CONTACT
+    )
+  );
+
   res.status(200).json(
     new ApiResponse(
       200,
       {
-        offers,
+        offers: sanitized,
         searchQuery: search,
         pagination: {
           total,
@@ -789,9 +829,21 @@ export const getFeaturedListings = asyncHandler(async (req, res) => {
     .select("-unlockedBy")
     .lean();
 
+  const pricing = await getPricingSettings();
+  const sanitized = offers.map((o) =>
+    sanitizeListingForViewer(
+      o,
+      req.user,
+      STAFF_ROLES.includes(req.user?.role),
+      pricing.UNLOCK_CONTACT
+    )
+  );
+
   res
     .status(200)
-    .json(new ApiResponse(200, offers, "Featured offers fetched successfully"));
+    .json(
+      new ApiResponse(200, sanitized, "Featured offers fetched successfully")
+    );
 });
 
 export const getSimilarListings = asyncHandler(async (req, res) => {
@@ -823,10 +875,20 @@ export const getSimilarListings = asyncHandler(async (req, res) => {
     .select("-unlockedBy")
     .lean();
 
+  const pricing = await getPricingSettings();
+  const sanitized = similarListings.map((o) =>
+    sanitizeListingForViewer(
+      o,
+      req.user,
+      STAFF_ROLES.includes(req.user?.role),
+      pricing.UNLOCK_CONTACT
+    )
+  );
+
   res
     .status(200)
     .json(
-      new ApiResponse(200, similarListings, "Similar offers fetched successfully")
+      new ApiResponse(200, sanitized, "Similar offers fetched successfully")
     );
 });
 

@@ -116,7 +116,7 @@ export const createPlayerFormSchema = (t) =>
       otherwise: Joi.optional(),
     }),
 
-    jop: Joi.string()
+    job: Joi.string()
       .valid("player", "coach")
       .required()
       .messages({
@@ -124,7 +124,7 @@ export const createPlayerFormSchema = (t) =>
         "string.empty": t("sportsValidation.categoryRequired"),
       }),
 
-    roleType: Joi.when("jop", {
+    roleType: Joi.when("job", {
       is: Joi.exist(),
       then: Joi.alternatives()
         .try(
@@ -175,7 +175,7 @@ export const createPlayerFormSchema = (t) =>
         }),
       otherwise: Joi.optional(),
     }),
-    position: Joi.when("jop", {
+    position: Joi.when("job", {
       is: "player",
       then: Joi.alternatives()
         .try(
@@ -216,7 +216,7 @@ export const createPlayerFormSchema = (t) =>
         .optional(),
     }),
 
-    customPosition: Joi.when(Joi.ref("jop"), {
+    customPosition: Joi.when(Joi.ref("job"), {
       is: "player",
       then: Joi.when("position", {
         is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
@@ -403,7 +403,7 @@ export const createPlayerFormSchema = (t) =>
     profilePicturePreview: Joi.string().allow("").optional(),
     profilePictureFile: Joi.any().optional(),
     documentFile: Joi.any().optional(),
-    jopSelected: Joi.boolean().optional(),
+    jobSelected: Joi.boolean().optional(),
     statusSelected: Joi.boolean().optional(),
     gameSelected: Joi.boolean().optional(),
     isActive: Joi.boolean().default(false),
@@ -470,8 +470,8 @@ export const playerFormSchema = (t) =>
       then: Joi.string().min(2).max(50).required(),
       otherwise: Joi.optional(),
     }),
-    jop: Joi.string().valid("player", "coach").required(),
-    roleType: Joi.when("jop", {
+    job: Joi.string().valid("player", "coach").required(),
+    roleType: Joi.when("job", {
       is: Joi.exist(),
       then: Joi.alternatives()
         .try(
@@ -521,7 +521,7 @@ export const playerFormSchema = (t) =>
         }),
       otherwise: Joi.optional(),
     }),
-    position: Joi.when("jop", {
+    position: Joi.when("job", {
       is: "player",
       then: Joi.alternatives()
         .try(
@@ -561,7 +561,7 @@ export const playerFormSchema = (t) =>
         )
         .optional(),
     }),
-    customPosition: Joi.when(Joi.ref("jop"), {
+    customPosition: Joi.when(Joi.ref("job"), {
       is: "player",
       then: Joi.when("position", {
         is: Joi.alternatives().try("other", Joi.object({ slug: "other" })),
@@ -715,7 +715,7 @@ export const playerFormSchema = (t) =>
     profilePicturePreview: Joi.string().allow("").optional(),
     profilePictureFile: Joi.any().optional(),
     documentFile: Joi.any().optional(),
-    jopSelected: Joi.boolean().optional(),
+    jobSelected: Joi.boolean().optional(),
     statusSelected: Joi.boolean().optional(),
     gameSelected: Joi.boolean().optional(),
     customPosition: Joi.when("position", {

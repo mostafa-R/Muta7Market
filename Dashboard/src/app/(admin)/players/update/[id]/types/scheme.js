@@ -39,7 +39,7 @@ export const playerFormSchema = Joi.object({
   }),
 
   // --- Professional Info ---
-  jop: Joi.string().valid("player", "coach").required().messages({
+  job: Joi.string().valid("player", "coach").required().messages({
     "any.only": "الفئة (الوظيفة) مطلوبة",
     "string.empty": "الفئة (الوظيفة) مطلوبة",
   }),
@@ -52,7 +52,7 @@ export const playerFormSchema = Joi.object({
     then: Joi.string().required().messages({ "string.empty": "يرجى تحديد الرياضة" }),
     otherwise: Joi.optional().allow(""),
   }),
-  roleType: sportObjectSchema.when('jop', {
+  roleType: sportObjectSchema.when('job', {
     is: Joi.exist(),
     then: Joi.required(),
     otherwise: Joi.optional(),
@@ -64,7 +64,7 @@ export const playerFormSchema = Joi.object({
     then: Joi.string().required().messages({ "string.empty": "يرجى تحديد الفئة" }),
     otherwise: Joi.optional().allow(""),
   }),
-  position: sportObjectSchema.when('jop', {
+  position: sportObjectSchema.when('job', {
     is: 'player',
     then: Joi.required().messages({ "any.required": "المركز مطلوب للاعب" }),
     otherwise: Joi.optional(),

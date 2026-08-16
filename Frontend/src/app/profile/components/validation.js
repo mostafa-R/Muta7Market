@@ -91,7 +91,7 @@ export const createPlayerSchema = (t) =>
       .messages({
         "string.min": t("validation.nationalityMinLength"),
       }),
-    jop: Joi.string()
+    job: Joi.string()
       .valid("player", "coach")
       .allow(null)
       .optional()

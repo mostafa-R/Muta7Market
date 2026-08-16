@@ -161,9 +161,8 @@ export const validatePromotionalOfferCodeSchema = Joi.object({
       "any.only": "نوع الخدمة غير صالح",
     }),
 
-  price: Joi.number().min(0).required().messages({
+  price: Joi.number().min(0).messages({
     "number.base": "السعر يجب أن يكون رقماً",
     "number.min": "السعر يجب أن يكون أكبر من أو يساوي صفر",
-    "any.required": "يجب توفير السعر",
   }),
 });

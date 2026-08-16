@@ -1,5 +1,6 @@
 import { deleteLocalFile } from "../middleware/localUpload.middleware.js";
 import SiteSettings from "../models/site-settings.model.js";
+import { STAFF_ROLES } from "../config/constants.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -7,9 +8,35 @@ import { handleMediaUpload } from "../utils/localMediaUtils.js";
 
 export const getSiteSettings = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.findOneOrCreate();
+
+  const publicSettings = {
+    siteName: settings.siteName,
+    logo: settings.logo?.url ? { url: settings.logo.url } : { url: null },
+    favicon: settings.favicon?.url
+      ? { url: settings.favicon.url }
+      : { url: null },
+    contactInfo: settings.contactInfo,
+    termsAndConditions: settings.termsAndConditions,
+    privacyPolicy: settings.privacyPolicy,
+    translations: settings.translations?.custom || {},
+  };
+
+  if (req.user && STAFF_ROLES.includes(req.user.role)) {
+    publicSettings.seo = settings.seo;
+    publicSettings.pricing = settings.pricing;
+    publicSettings.maintenance = settings.maintenance;
+    publicSettings.ads = settings.ads;
+  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, settings, "تم الحصول على إعدادات الموقع بنجاح"));
+    .json(
+      new ApiResponse(
+        200,
+        publicSettings,
+        "تم الحصول على إعدادات الموقع بنجاح"
+      )
+    );
 });
 
 export const updateSiteSettings = asyncHandler(async (req, res) => {

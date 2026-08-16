@@ -6,6 +6,31 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { handleMediaUpload } from "../utils/localMediaUtils.js";
+import { escapeRegex } from "../utils/helpers.js";
+import { getPricingSettings } from "../utils/pricingUtils.js";
+
+const SERVICE_PRICE_RESOLVER = {
+  contacts_access_year: (p) => p.contacts_access_year ?? p.contacts_access_price,
+  listing_year_player: (p) => p.listing_year?.player,
+  listing_year_coach: (p) => p.listing_year?.coach,
+  promotion_year_player: (p) => p.promotion_year?.player,
+  promotion_year_coach: (p) => p.promotion_year?.coach,
+  promotion_per_day_player: (p) => p.promotion_per_day?.player,
+  promotion_per_day_coach: (p) => p.promotion_per_day?.coach,
+};
+
+const resolveServicePrice = async (serviceType) => {
+  const resolver = SERVICE_PRICE_RESOLVER[serviceType];
+  if (!resolver) {
+    throw new ApiError(400, "غير قادر على تحديد سعر الخدمة");
+  }
+  const PRICING = await getPricingSettings();
+  const price = resolver(PRICING);
+  if (price === undefined || price === null || Number.isNaN(Number(price))) {
+    throw new ApiError(400, "غير قادر على تحديد سعر الخدمة");
+  }
+  return Number(price);
+};
 
 export const getAllPromotionalOffers = asyncHandler(async (req, res) => {
   const {
@@ -35,10 +60,11 @@ export const getAllPromotionalOffers = asyncHandler(async (req, res) => {
   }
 
   if (search) {
+    const safeSearch = escapeRegex(search);
     filter.$or = [
-      { "name.ar": { $regex: search, $options: "i" } },
-      { "name.en": { $regex: search, $options: "i" } },
-      { code: { $regex: search, $options: "i" } },
+      { "name.ar": { $regex: safeSearch, $options: "i" } },
+      { "name.en": { $regex: safeSearch, $options: "i" } },
+      { code: { $regex: safeSearch, $options: "i" } },
     ];
   }
 
@@ -301,17 +327,19 @@ export const deletePromotionalOffer = asyncHandler(async (req, res) => {
 });
 
 export const validatePromotionalOfferCode = asyncHandler(async (req, res) => {
-  const { code, serviceType, price } = req.body;
+  const { code, serviceType } = req.body;
 
-  if (!code || !serviceType || price === undefined) {
+  if (!code || !serviceType) {
     throw new ApiError(400, "يرجى توفير جميع البيانات المطلوبة");
   }
+
+  const serverPrice = await resolveServicePrice(serviceType);
 
   const result = await PromotionalOffer.validateCode(
     code,
     req.user._id,
     serviceType,
-    price
+    serverPrice
   );
 
   if (!result.valid) {
@@ -337,24 +365,31 @@ export const validatePromotionalOfferCode = asyncHandler(async (req, res) => {
 });
 
 export const usePromotionalOfferCode = asyncHandler(async (req, res) => {
-  const { code, serviceType, price } = req.body;
+  const { code, serviceType } = req.body;
 
-  if (!code || !serviceType || price === undefined) {
+  if (!code || !serviceType) {
     throw new ApiError(400, "يرجى توفير جميع البيانات المطلوبة");
   }
+
+  const serverPrice = await resolveServicePrice(serviceType);
 
   const result = await PromotionalOffer.validateCode(
     code,
     req.user._id,
     serviceType,
-    price
+    serverPrice
   );
 
   if (!result.valid) {
     return res.status(400).json(new ApiResponse(400, null, result.message));
   }
 
-  await result.offer.recordUsage(req.user._id);
+  const updated = await result.offer.recordUsageAtomic(req.user._id);
+  if (!updated) {
+    return res
+      .status(409)
+      .json(new ApiResponse(409, null, "تم استخدام الحد الأقصى من هذا العرض"));
+  }
 
   return res.status(200).json(
     new ApiResponse(

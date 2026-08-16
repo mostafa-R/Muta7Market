@@ -66,8 +66,8 @@ const renderBadgesDual = (items = [], maxShow = 3) => {
 const splitRoleTypes = (roleTypes = []) => {
   const result = { player: [], coach: [] };
   for (const roleType of roleTypes || []) {
-    if (roleType?.jop === "player") result.player.push(roleType);
-    else if (roleType?.jop === "coach") result.coach.push(roleType);
+    if (roleType?.job === "player") result.player.push(roleType);
+    else if (roleType?.job === "coach") result.coach.push(roleType);
   }
   return result;
 };

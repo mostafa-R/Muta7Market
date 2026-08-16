@@ -39,7 +39,7 @@ export const INITIAL_FORM_DATA = {
   customNationality: "",
   birthCountry: "",
   customBirthCountry: "",
-  jop: "",
+  job: "",
   roleType: "",
   customRoleType: "",
   position: "",
@@ -161,7 +161,7 @@ export const TOAST_DURATIONS = {
  * @property {string} customNationality - Custom nationality if "other" selected
  * @property {string} birthCountry - Player birth country (required)
  * @property {string} customBirthCountry - Custom birth country if "other" selected
- * @property {string} jop - Job type ("player" or "coach")
+ * @property {string} job - Job type ("player" or "coach")
  * @property {string} roleType - Role type (depends on job)
  * @property {string} customRoleType - Custom role type if "other" selected
  * @property {string} position - Player position

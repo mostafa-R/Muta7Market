@@ -11,7 +11,7 @@ import { paginate } from "../utils/helpers.js";
 const getUserId = (req) => req.user._id || req.user.id;
 
 const PLAYER_SUMMARY_FIELDS =
-  "name age nationality position job jop roleType game contractStatus isActive media isListed";
+  "name age nationality position job roleType game contractStatus isActive media isListed";
 const COACH_SUMMARY_FIELDS =
   "name age nationality category contractStatus isActive media";
 
@@ -34,7 +34,7 @@ export const getMyShortlists = asyncHandler(async (req, res) => {
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(limitNum)
-      .populate("players", "name age nationality position job jop isActive")
+      .populate("players", "name age nationality position job isActive")
       .populate("coaches", "name age nationality category isActive"),
     Shortlist.countDocuments({ user: userId }),
   ]);
@@ -372,7 +372,7 @@ export const getScoutDashboard = asyncHandler(async (req, res) => {
   const changeProfileIds = new Set(recentChanges.map((c) => String(c.profileId)));
   const [changePlayers, changeCoaches] = await Promise.all([
     Player.find({ _id: { $in: [...changeProfileIds] } })
-      .select("name age nationality position job jop roleType game contractStatus isActive media")
+      .select("name age nationality position job roleType game contractStatus isActive media")
       .lean(),
     Coach.find({ _id: { $in: [...changeProfileIds] } })
       .select("name age nationality category contractStatus isActive media")

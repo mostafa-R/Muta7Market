@@ -159,7 +159,10 @@ export const update = async (req, res) => {
 
     if (req.body.email && req.body.email.toLowerCase() !== currentUser.email) {
       const emailExists = await User.findOne({
-        email: req.body.email.toLowerCase(),
+        $or: [
+          { email: req.body.email.toLowerCase() },
+          { pendingEmail: req.body.email.toLowerCase() },
+        ],
         _id: { $ne: id },
       });
 
@@ -172,8 +175,7 @@ export const update = async (req, res) => {
           .toString()
           .padStart(6, "0");
 
-        updates.email = newEmail;
-        updates.isEmailVerified = false;
+        updates.pendingEmail = newEmail;
         updates.emailVerificationToken = crypto
           .createHash("sha256")
           .update(emailToken)

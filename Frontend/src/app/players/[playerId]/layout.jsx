@@ -34,7 +34,7 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  const isCoach = player.jop === "coach";
+  const isCoach = player.job === "coach";
   const playerType = isCoach ? "Coach" : "Player";
   const playerTypeAr = isCoach ? "مدرب" : "لاعب";
 

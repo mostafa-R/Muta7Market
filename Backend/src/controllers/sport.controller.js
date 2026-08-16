@@ -20,7 +20,7 @@ const sanitizePositions = (positions = []) => {
     .filter((p) => isNonEmptyString(p.name.ar) && isNonEmptyString(p.name.en));
 };
 
-const normalizeJop = (v) => {
+const normalizeJob = (v) => {
   if (!v) return null;
   const t = String(v).trim().toLowerCase();
   if (t === "player" || t === "لاعب") return "player";
@@ -32,7 +32,7 @@ const sanitizeRoleTypes = (roleTypes = []) => {
   if (!Array.isArray(roleTypes)) return [];
   return roleTypes
     .map((r) => ({
-      job: normalizeJop(r?.job || r?.jop),
+      job: normalizeJob(r?.job),
       name: {
         ar: typeof r?.name?.ar === "string" ? r.name.ar.trim() : "",
         en: typeof r?.name?.en === "string" ? r.name.en.trim() : "",

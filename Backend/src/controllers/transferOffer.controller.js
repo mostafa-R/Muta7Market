@@ -409,7 +409,7 @@ export const getTransferOffers = asyncHandler(async (req, res) => {
   }
 
   const [offers, total] = await Promise.all([
-    baseQuery.populate("targetProfileId", "name age nationality position job jop"),
+    baseQuery.populate("targetProfileId", "name age nationality position job"),
     TransferOffer.countDocuments(query),
   ]);
 
@@ -444,7 +444,7 @@ export const getMyTransferOffers = asyncHandler(async (req, res) => {
       .skip(skip)
       .populate("fromUser", "name email role")
       .populate("toUser", "name email role")
-      .populate("targetProfileId", "name age nationality position job jop"),
+      .populate("targetProfileId", "name age nationality position job"),
     TransferOffer.countDocuments(query),
   ]);
 

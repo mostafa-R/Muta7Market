@@ -331,7 +331,7 @@ export default function CoachesDashboardTable() {
     const params = new URLSearchParams({
       page: String(page),
       limit: String(rowsPerPage),
-      jop: 'coach',
+      job: 'coach',
     });
 
     if (query.trim()) {
@@ -369,7 +369,7 @@ export default function CoachesDashboardTable() {
       const countQuery = new URLSearchParams({
         page: '1',
         pageSize: '1',
-        jop: 'coach'
+        job: 'coach'
       });
       
       const countRes = await fetch(`/api/players?${countQuery}`, {
@@ -391,7 +391,7 @@ export default function CoachesDashboardTable() {
         const coachQuery = new URLSearchParams({
           page: String(page),
           pageSize: String(pageSize),
-          jop: 'coach'
+          job: 'coach'
         });
         
         const res = await fetch(`/api/players?${coachQuery}`, {

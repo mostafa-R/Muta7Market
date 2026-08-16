@@ -49,7 +49,7 @@ export const usePlayerForm = () => {
     customNationality: "",
     birthCountry: "",
     customBirthCountry: "",
-    jop: "",
+    job: "",
     roleType: "",
     customRoleType: "",
     position: "",
@@ -163,7 +163,7 @@ export const usePlayerForm = () => {
     }
 
     // Clear roleType when job type changes
-    if (name === "jop") {
+    if (name === "job") {
       setFormData((prev) => ({
         ...prev,
         roleType: "",
@@ -316,7 +316,7 @@ export const usePlayerForm = () => {
     }
     
     if (currentStep === 3) {
-      if (!formData.jop) {
+      if (!formData.job) {
         toast.error("يرجى اختيار الوظيفة", {
           description: "اختر ما إذا كنت لاعب أو مدرب",
           duration: 4000
@@ -326,7 +326,7 @@ export const usePlayerForm = () => {
       
       if (!formData.roleType) {
         toast.error("يرجى اختيار نوع الدور", {
-          description: `اختر نوع ${formData.jop === "player" ? "اللاعب" : "المدرب"}`,
+          description: `اختر نوع ${formData.job === "player" ? "اللاعب" : "المدرب"}`,
           duration: 4000
         });
         return false;
@@ -357,7 +357,7 @@ export const usePlayerForm = () => {
       }
       
       // Position validation only for players
-      if (formData.jop === "player") {
+      if (formData.job === "player") {
         // If sport is "other", we only need to check customPosition
         if (formData.game === "other") {
           if (!formData.customPosition) {
@@ -469,7 +469,7 @@ export const usePlayerForm = () => {
         const roleTypeObject = getRoleTypeObjectByValue(
           transformedFormData.roleType, 
           originalGameSlug, 
-          transformedFormData.jop
+          transformedFormData.job
         );
         if (roleTypeObject) {
           transformedFormData.roleType = roleTypeObject;
@@ -478,7 +478,7 @@ export const usePlayerForm = () => {
       // If roleType is "other", keep it as string and use customRoleType
       
       // Transform position field (only for players)
-      if (transformedFormData.jop === "player" && transformedFormData.position && transformedFormData.position !== "other") {
+      if (transformedFormData.job === "player" && transformedFormData.position && transformedFormData.position !== "other") {
         const positionObject = getPositionObjectByValue(
           transformedFormData.position, 
           originalGameSlug
@@ -686,7 +686,7 @@ export const usePlayerForm = () => {
       customNationality: "",
       birthCountry: "",
       customBirthCountry: "",
-      jop: "",
+      job: "",
       roleType: "",
       customRoleType: "",
       position: "",

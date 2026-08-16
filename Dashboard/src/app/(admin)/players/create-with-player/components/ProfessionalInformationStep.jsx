@@ -21,9 +21,9 @@ const ProfessionalInformationStep = ({
   // Get dynamic options based on current form state
   const sportsOptions = getSportOptions();
   const availablePositions = formData.game ? getPositionsForSport(formData.game) : [];
-  const availableRoleTypes = formData.game && formData.jop 
-    ? getRoleTypesForSport(formData.game, formData.jop)
-    : getAllRoleTypes(formData.jop || "player");
+  const availableRoleTypes = formData.game && formData.job 
+    ? getRoleTypesForSport(formData.game, formData.job)
+    : getAllRoleTypes(formData.job || "player");
 
   // Enhanced handleInputChange to handle automatic position setting when sport is "other"
   const handleEnhancedInputChange = (e) => {
@@ -33,7 +33,7 @@ const ProfessionalInformationStep = ({
     handleInputChange(e);
     
     // Special logic: when sport is "other", automatically set position to "other" for players
-    if (name === "game" && value === "other" && formData.jop === "player") {
+    if (name === "game" && value === "other" && formData.job === "player") {
       const positionEvent = {
         target: {
           name: "position",
@@ -62,8 +62,8 @@ const ProfessionalInformationStep = ({
             الفئة <span className="text-red-500">*</span>
           </label>
           <select
-            name="jop"
-            value={formData.jop}
+            name="job"
+            value={formData.job}
             onChange={(e) => {
               handleEnhancedInputChange(e);
               // Clear position and role type when changing job category
@@ -83,10 +83,10 @@ const ProfessionalInformationStep = ({
           </select>
 
           {/* نوع الدور - يظهر بعد اختيار الفئة */}
-          {formData.jop && (
+          {formData.job && (
             <div className="mt-4 space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                {formData.jop === "player" ? "نوع اللاعب" : "نوع المدرب"}
+                {formData.job === "player" ? "نوع اللاعب" : "نوع المدرب"}
                 <span className="text-red-500 mr-1 ml-1">*</span>
               </label>
               <select
@@ -98,7 +98,7 @@ const ProfessionalInformationStep = ({
               >
                 <option value="" disabled>
                   {sportsLoading ? "جاري تحميل الأنواع..." : 
-                   formData.jop === "player" ? "اختر نوع اللاعب" : "اختر نوع المدرب"}
+                   formData.job === "player" ? "اختر نوع اللاعب" : "اختر نوع المدرب"}
                 </option>
                 {availableRoleTypes.map((option) => (
                   <option key={option.id} value={option.value}>
@@ -112,7 +112,7 @@ const ProfessionalInformationStep = ({
               {formData.roleType === "other" && (
                 <div className="mt-4 space-y-2">
                   <label className="text-sm font-medium text-gray-700">
-                    {formData.jop === "player" ? "حدد نوع اللاعب" : "حدد نوع المدرب"}
+                    {formData.job === "player" ? "حدد نوع اللاعب" : "حدد نوع المدرب"}
                     <span className="text-red-500 mx-1">*</span>
                   </label>
                   <input
@@ -121,12 +121,12 @@ const ProfessionalInformationStep = ({
                     value={formData.customRoleType}
                     onChange={handleEnhancedInputChange}
                     placeholder={
-                      formData.jop === "player" ? "أدخل نوع اللاعب" : "أدخل نوع المدرب"
+                      formData.job === "player" ? "أدخل نوع اللاعب" : "أدخل نوع المدرب"
                     }
                     className="w-full h-11 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors hover:border-blue-400"
                   />
                   <div className="text-gray-500 text-xs mt-1">
-                    {formData.jop === "player" ? "أدخل نوع اللاعب" : "أدخل نوع المدرب"}
+                    {formData.job === "player" ? "أدخل نوع اللاعب" : "أدخل نوع المدرب"}
                   </div>
                 </div>
               )}
@@ -189,7 +189,7 @@ const ProfessionalInformationStep = ({
         </div>
 
         {/* المركز/التخصص - للاعبين فقط */}
-        {formData.jop === "player" && (
+        {formData.job === "player" && (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               المركز <span className="text-red-500">*</span>

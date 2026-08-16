@@ -31,12 +31,6 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     return res.status(403).json({ message: "Account has been deactivated" });
   }
 
-  if (user.deletedAt) {
-    return res
-      .status(403)
-      .json({ message: "Your account has been deactivated" });
-  }
-
   req.user = {
     ...decoded,
     _id: user._id,

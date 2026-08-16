@@ -101,7 +101,7 @@ export const validateFields = (fields, values, t) => {
 
   if (
     fields.includes("roleType") &&
-    values.jop &&
+    values.job &&
     (!values.roleType || getRoleTypeValue(values.roleType).trim() === "")
   ) {
     errors.roleType = t("sportsValidation.roleTypeRequired");
@@ -117,7 +117,7 @@ export const validateFields = (fields, values, t) => {
 
   if (
     fields.includes("position") &&
-    values.jop === "player" &&
+    values.job === "player" &&
     (!values.position || getPositionValue(values.position).trim() === "")
   ) {
     errors.position = t("sportsValidation.positionRequired");
@@ -125,18 +125,18 @@ export const validateFields = (fields, values, t) => {
 
   if (
     fields.includes("position") &&
-    values.jop === "player" &&
+    values.job === "player" &&
     isOtherPosition(values.position) &&
     (!values.customPosition || values.customPosition.trim() === "")
   ) {
     errors.customPosition = t("sportsValidation.customPositionRequired");
   }
 
-  if (fields.includes("jop")) {
-    if (!values.jopSelected) {
-      errors.jop = t("sportsValidation.categoryRequired");
-    } else if (!values.jop || !["player", "coach"].includes(values.jop)) {
-      errors.jop = t("sportsValidation.categoryInvalid");
+  if (fields.includes("job")) {
+    if (!values.jobSelected) {
+      errors.job = t("sportsValidation.categoryRequired");
+    } else if (!values.job || !["player", "coach"].includes(values.job)) {
+      errors.job = t("sportsValidation.categoryInvalid");
     }
   }
 

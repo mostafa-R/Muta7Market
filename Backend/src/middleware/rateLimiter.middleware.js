@@ -1,7 +1,7 @@
 import rateLimit from "express-rate-limit";
 import ApiError from "../utils/ApiError.js";
 
-const createRateLimiter = (options) => {
+export const createRateLimiter = (options) => {
   return rateLimit({
     windowMs: options.windowMs || 15 * 60 * 1000,
     max: options.max || 100,

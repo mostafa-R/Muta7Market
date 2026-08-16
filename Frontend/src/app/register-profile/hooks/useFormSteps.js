@@ -91,11 +91,11 @@ export const useFormSteps = (formik) => {
       formik.setFieldTouched("customBirthCountry", true, true);
     }
 
-    if (requiredFields.includes("position") && formik.values.jop === "player") {
+    if (requiredFields.includes("position") && formik.values.job === "player") {
       formik.setFieldTouched("position", true, true);
     }
 
-    if (formik.values.jop === "player" && formik.values.position === "other") {
+    if (formik.values.job === "player" && formik.values.position === "other") {
       formik.setFieldTouched("customPosition", true, true);
     }
 
@@ -128,13 +128,13 @@ export const useFormSteps = (formik) => {
         if (
           path === "position" &&
           requiredFields.includes("position") &&
-          formik.values.jop === "player"
+          formik.values.job === "player"
         ) {
           currentSectionErrors[path] = mergedErrors[path];
         }
         if (
           path === "customPosition" &&
-          formik.values.jop === "player" &&
+          formik.values.job === "player" &&
           formik.values.position === "other"
         ) {
           currentSectionErrors[path] = mergedErrors[path];
